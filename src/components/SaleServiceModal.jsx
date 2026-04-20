@@ -236,7 +236,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh
                     {currency === 'USD' ? '$' : '€'}{totalPrice}
                   </div>
                   <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-                    {(totalPrice * (currency === 'EUR' ? rates.eur : rates.usd)).toFixed(2)} BS
+                    {(totalPrice * (rates?.[currency?.toLowerCase()] || rates?.usd || 1)).toFixed(2)} BS
                   </div>
                 </div>
               </div>

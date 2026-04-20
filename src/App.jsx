@@ -134,6 +134,8 @@ function App() {
           services={dbData.services}
           staff={dbData.staff}
           onRefresh={fetchInitialData}
+          rates={rates}
+          currency={currency}
         />
       </MobileLayout>
     );
@@ -160,6 +162,8 @@ function App() {
         services={dbData.services}
         staff={dbData.staff}
         onRefresh={fetchInitialData}
+        rates={rates}
+        currency={currency}
       />
     </div>
   );
