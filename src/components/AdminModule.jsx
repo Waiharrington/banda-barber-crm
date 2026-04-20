@@ -86,13 +86,13 @@ const AdminModule = ({ isMobile, onRefresh, rates, setRates }) => {
                 style={{ width: '100%', height: '40px', fontSize: '13px' }}
               />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)' }}>CATEGORÍA</label>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>CATEGORÍA</label>
                 <select 
                   value={newService.category} 
                   onChange={(e) => setNewService({...newService, category: e.target.value})}
-                  style={{ width: '100%', height: '40px', fontSize: '13px' }}
+                  style={{ width: '100%', height: '42px', fontSize: '13px', borderRadius: '10px' }}
                 >
                   <option value="Barbería">Barbería</option>
                   <option value="Estilismo">Estilismo</option>
@@ -100,14 +100,14 @@ const AdminModule = ({ isMobile, onRefresh, rates, setRates }) => {
                   <option value="Tratamientos">Tratamientos</option>
                 </select>
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO ($)</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>PRECIO ($)</label>
                 <input 
                   type="number" 
                   placeholder="0" 
                   value={newService.price} 
                   onChange={(e) => setNewService({...newService, price: e.target.value})}
-                  style={{ width: '100%', height: '40px', fontSize: '13px' }}
+                  style={{ width: '100%', height: '42px', fontSize: '13px', borderRadius: '10px' }}
                 />
               </div>
             </div>
@@ -130,23 +130,23 @@ const AdminModule = ({ isMobile, onRefresh, rates, setRates }) => {
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)' }}>NOMBRE</label>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>NOMBRE</label>
                 <input 
                   type="text" 
                   placeholder="Ej. Marco Silva" 
                   value={newMember.name} 
                   onChange={(e) => setNewMember({...newMember, name: e.target.value})}
-                  style={{ width: '100%', height: '40px', fontSize: '13px' }}
+                  style={{ width: '100%', height: '42px', fontSize: '13px', borderRadius: '10px' }}
                 />
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)' }}>ROL</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>ROL</label>
                 <select 
                   value={newMember.role} 
                   onChange={(e) => setNewMember({...newMember, role: e.target.value})}
-                  style={{ width: '100%', height: '40px', fontSize: '13px' }}
+                  style={{ width: '100%', height: '42px', fontSize: '13px', borderRadius: '10px' }}
                 >
                   <option value="Barbero">Barbero</option>
                   <option value="Lavacabezas">Asistente</option>
@@ -155,24 +155,24 @@ const AdminModule = ({ isMobile, onRefresh, rates, setRates }) => {
                 </select>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '10px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)' }}>% COM.</label>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '80px 1fr' : '100px 1fr', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>% COM.</label>
                 <input 
                   type="number" 
                   value={newMember.commission_pct} 
                   onChange={(e) => setNewMember({...newMember, commission_pct: e.target.value})}
-                  style={{ width: '100%', height: '40px', fontSize: '13px' }}
+                  style={{ width: '100%', height: '42px', fontSize: '13px', borderRadius: '10px' }}
                 />
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)' }}>URL AVATAR (OPCIONAL)</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>URL AVATAR (OPCIONAL)</label>
                 <input 
                   type="text" 
                   placeholder="https://..." 
                   value={newMember.image_url} 
                   onChange={(e) => setNewMember({...newMember, image_url: e.target.value})}
-                  style={{ width: '100%', height: '40px', fontSize: '13px' }}
+                  style={{ width: '100%', height: '42px', fontSize: '13px', borderRadius: '10px' }}
                 />
               </div>
             </div>
@@ -250,12 +250,12 @@ const AdminModule = ({ isMobile, onRefresh, rates, setRates }) => {
                 </div>
              </div>
 
-             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '12px', minHeight: '52px' }}>
                 <span style={{ fontSize: '13px', fontWeight: '600' }}>Moneda Principal</span>
                 <select 
                   value={currency} 
                   onChange={(e) => setCurrency(e.target.value)}
-                  style={{ width: '80px', height: '32px', background: 'none', border: 'none', fontSize: '12px', color: 'white' }}
+                  style={{ width: '100px', height: '32px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px', color: 'white', padding: '0 8px' }}
                 >
                   <option value="USD">USD ($)</option>
                   <option value="COP">COP ($)</option>
