@@ -6,7 +6,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Plus,
-  Rocket
+  Rocket,
+  Sparkles
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -34,7 +35,41 @@ ChartJS.register(
   Filler
 );
 
+const QUOTES = [
+  { text: "Cada cabeza es un mundo.", creator: "Refrán Popular" },
+  { text: "La grandeza nace de pequeños comienzos.", creator: "Sir Francis Drake" },
+  { text: "La disciplina es el puente entre metas y logros.", creator: "Jim Rohn" },
+  { text: "El estilo es una forma de decir quién eres sin hablar.", creator: "Rachel Zoe" },
+  { text: "Invierte en tu imagen, es tu carta de presentación.", creator: "Negocios" },
+  { text: "Un corte de pelo puede cambiar una vida.", creator: "Arte Astro" },
+  { text: "La calidad atrae, el detalle retiene.", creator: "Estrategia" },
+  { text: "No busques clientes, busca fans.", creator: "Crecimiento" },
+  { text: "La barbería es el arte de esculpir confianza.", creator: "Mística Astro" },
+  { text: "El éxito es la suma de pequeños esfuerzos diarios.", creator: "Robert Collier" },
+  { text: "Domina tu oficio, luego rompe las reglas.", creator: "Maestros" },
+  { text: "Cada cliente es una oportunidad de crear una obra maestra.", creator: "Visión" },
+  { text: "El mejor marketing es un cliente satisfecho.", creator: "Marketing" },
+  { text: "Sé tan bueno que no puedan ignorarte.", creator: "Steve Martin" }
+];
+
 const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handleSeedData }) => {
+  const [quoteIndex, setQuoteIndex] = useState(0);
+
+  useEffect(() => {
+    // Pick random on mount
+    setQuoteIndex(Math.floor(Math.random() * QUOTES.length));
+  }, []);
+
+  const shuffleQuote = () => {
+    let newIndex;
+    do {
+      newIndex = Math.floor(Math.random() * QUOTES.length);
+    } while (newIndex === quoteIndex && QUOTES.length > 1);
+    setQuoteIndex(newIndex);
+  };
+
+  const currentQuote = QUOTES[quoteIndex];
+
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -110,13 +145,24 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
             <div style={{ width: '30px', height: '1px', backgroundColor: 'var(--gold-primary)' }} />
-            <span style={{ color: 'var(--gold-primary)', fontSize: '10px', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>Identidad Astro</span>
+            <span style={{ color: 'var(--gold-primary)', fontSize: '10px', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>Pensamiento Astro</span>
+            <button 
+              onClick={shuffleQuote}
+              style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', padding: '4px', opacity: 0.6, display: 'flex', alignItems: 'center', transition: 'all 0.3s' }}
+              className="refresh-btn"
+            >
+              <Sparkles size={12} />
+            </button>
           </div>
-          <h2 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '900', letterSpacing: '-1px', marginBottom: '16px', lineHeight: 1.1 }}>
-            LA GRANDEZA NACE DE <br />
-            <span className="text-gold">PEQUEÑOS COMIENZOS</span>
+          <h2 key={quoteIndex} className="animate-fade-in" style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '900', letterSpacing: '-1px', marginBottom: '16px', lineHeight: 1.1 }}>
+            {currentQuote.text.includes('<br />') ? currentQuote.text : (
+              <>
+                {currentQuote.text.split(' ').slice(0, Math.ceil(currentQuote.text.split(' ').length / 2)).join(' ')} <br />
+                <span className="text-gold">{currentQuote.text.split(' ').slice(Math.ceil(currentQuote.text.split(' ').length / 2)).join(' ')}</span>
+              </>
+            )}
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic', opacity: 0.7 }}>— CONCEPT BRAND EXPERIENCE</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic', opacity: 0.7 }}>— {currentQuote.creator}</p>
         </div>
 
         <div style={{ 
@@ -190,8 +236,11 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
         .chair-float:hover {
           filter: drop-shadow(0 40px 70px rgba(212,175,55,0.4)) brightness(1.1) !important;
         }
+        .refresh-btn:hover {
+          opacity: 1 !important;
+          transform: rotate(15deg) scale(1.2);
+        }
       `}</style>
- Riverside
 
       <section style={{
         display: 'grid',
