@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNotifs } from '../context/NotificationContext';
 import { 
   Scissors, 
   Trash2, 
@@ -14,6 +15,7 @@ import {
 import { dataService } from '../services/dataService';
 
 const PersonnelModule = ({ isMobile }) => {
+  const { showToast } = useNotifs();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,8 +41,9 @@ const PersonnelModule = ({ isMobile }) => {
       setLoading(true);
       await dataService.deleteStaff(id);
       await fetchStaff();
+      showToast(`${name} ha sido eliminado del equipo.`);
     } catch (error) {
-      alert('Error al eliminar');
+      showToast('Error al eliminar personal.', 'error');
     } finally {
       setLoading(false);
     }
@@ -57,8 +60,9 @@ const PersonnelModule = ({ isMobile }) => {
       setNewStaff({ name: '', role: 'Barbero', commission_pct: 40 });
       setShowAddForm(false);
       await fetchStaff();
+      showToast(`¡${newStaff.name} se ha unido al equipo!`);
     } catch (e) {
-      alert('Error al crear');
+      showToast('Error al crear registro de personal.', 'error');
     } finally {
       setLoading(false);
     }
@@ -147,7 +151,14 @@ const PersonnelModule = ({ isMobile }) => {
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button className="action-btn" onClick={() => {
                     const newName = window.prompt('Nuevo nombre:', person.name);
-                    if (newName) dataService.updateStaff(person.id, { name: newName }).then(fetchStaff);
+                    if (newName) {
+                      dataService.updateStaff(person.id, { name: newName })
+                        .then(() => {
+                          fetchStaff();
+                          showToast('Nombre actualizado');
+                        })
+                        .catch(() => showToast('Error al actualizar', 'error'));
+                    }
                   }}><Edit2 size={16} /></button>
                   <button className="action-btn" style={{ color: '#ff453a' }} onClick={() => handleDeleteStaff(person.id, person.name)}><Trash2 size={16} /></button>
                 </div>

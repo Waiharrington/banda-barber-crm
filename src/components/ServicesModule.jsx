@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNotifs } from '../context/NotificationContext';
 import { 
   Star, 
   Trash2, 
@@ -16,6 +17,7 @@ import {
 import { dataService } from '../services/dataService';
 
 const ServicesModule = ({ isMobile }) => {
+  const { showToast } = useNotifs();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -41,8 +43,9 @@ const ServicesModule = ({ isMobile }) => {
       setLoading(true);
       await dataService.deleteService(id);
       await fetchServices();
+      showToast(`Servicio ${name} eliminado.`);
     } catch (e) {
-      alert('Error al eliminar');
+      showToast('Error al eliminar servicio.', 'error');
     } finally {
       setLoading(false);
     }
@@ -59,8 +62,9 @@ const ServicesModule = ({ isMobile }) => {
       setNewService({ name: '', price: '', category: 'Barbería' });
       setShowAddForm(false);
       await fetchServices();
+      showToast(`¡Servicio ${newService.name} agregado al catálogo!`);
     } catch (e) {
-      alert('Error al crear');
+      showToast('Error al crear servicio.', 'error');
     } finally {
       setLoading(false);
     }
@@ -178,7 +182,14 @@ const ServicesModule = ({ isMobile }) => {
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                   <button className="action-btn" onClick={() => {
                     const newPrice = window.prompt(`Nuevo precio para ${service.name}:`, service.price);
-                    if (newPrice) dataService.updateService(service.id, { price: Number(newPrice) }).then(fetchServices);
+                    if (newPrice) {
+                      dataService.updateService(service.id, { price: Number(newPrice) })
+                        .then(() => {
+                          fetchServices();
+                          showToast('Precio actualizado');
+                        })
+                        .catch(() => showToast('Error al actualizar precio.', 'error'));
+                    }
                   }}><Edit2 size={16} /></button>
                   <button className="action-btn" style={{ color: '#ff453a' }} onClick={() => handleDeleteService(service.id, service.name)}><Trash2 size={16} /></button>
                 </div>

@@ -14,6 +14,7 @@ import logo from './assets/logo.png';
 import MobileLayout from './components/mobile/MobileLayout';
 import MobileDashboard from './components/mobile/MobileDashboard';
 import AdminModule from './components/AdminModule';
+import ParticleBackground from './components/ParticleBackground';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -142,7 +143,8 @@ function App() {
   }
 
   return (
-    <div className="app-container" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+    <div className="app-container" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)', position: 'relative' }}>
+      <ParticleBackground />
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="main-content" style={{ 
         flex: 1, 

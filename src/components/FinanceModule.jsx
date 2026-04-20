@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNotifs } from '../context/NotificationContext';
 import { 
   Plus, 
   Minus, 
@@ -15,6 +16,7 @@ import {
 import { dataService } from '../services/dataService';
 
 const FinanceModule = ({ isMobile }) => {
+  const { showToast } = useNotifs();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,33 +52,39 @@ const FinanceModule = ({ isMobile }) => {
         exchange_rate: 1
       });
       fetchTransactions();
+      showToast(`${type === 'income' ? 'Ingreso' : 'Gasto'} registrado correctamente.`);
     } catch (e) {
-      alert('Error al registrar');
+      showToast('Error al registrar transacción.', 'error');
     }
   };
 
   const handleExport = () => {
-    const headers = ['ID', 'Fecha', 'Descripción', 'Tipo', 'Monto', 'Categoría'];
-    const rows = transactions.map(t => [
-      t.id, 
-      new Date(t.created_at).toLocaleString('es-VE', { hour12: true }), 
-      t.description, 
-      t.type, 
-      t.amount, 
-      t.category
-    ]);
-    
-    let csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(",") + "\n"
-      + rows.map(e => e.join(",")).join("\n");
+    try {
+      const headers = ['ID', 'Fecha', 'Descripción', 'Tipo', 'Monto', 'Categoría'];
+      const rows = transactions.map(t => [
+        t.id, 
+        new Date(t.created_at).toLocaleString('es-VE', { hour12: true }), 
+        t.description, 
+        t.type, 
+        t.amount, 
+        t.category
+      ]);
       
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `finanzas_astro_${new Date().toLocaleDateString()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      let csvContent = "data:text/csv;charset=utf-8," 
+        + headers.join(",") + "\n"
+        + rows.map(e => e.join(",")).join("\n");
+        
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `finanzas_astro_${new Date().toLocaleDateString()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Reporte exportado con éxito.');
+    } catch (e) {
+      showToast('Error al exportar reporte.', 'error');
+    }
   };
 
   const totalIncome = transactions.reduce((acc, t) => t.type === 'income' ? acc + t.amount : acc, 0);

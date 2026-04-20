@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNotifs } from '../context/NotificationContext';
 import { X, User, Star, Scissors, CreditCard, Loader2, Plus, Sparkles } from 'lucide-react';
 import { dataService } from '../services/dataService';
 
 const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh, rates, currency }) => {
   const [selectedClient, setSelectedClient] = useState('');
   const [selectedService, setSelectedService] = useState('');
-  const [involvedStaff, setInvolvedStaff] = useState([]); 
   const [totalPrice, setTotalPrice] = useState(0);
+  const [involvedStaff, setInvolvedStaff] = useState([{ staffId: '', commissionEarned: 0 }]);
   const [loading, setLoading] = useState(false);
+  const { showToast, triggerConfetti, sendPushNotification } = useNotifs();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
@@ -20,7 +22,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh
 
   const handleSubmit = async () => {
     if (!selectedClient || !selectedService || involvedStaff.length === 0) {
-      alert('Por favor completa todos los campos.');
+      showToast('Por favor completa todos los campos.', 'error');
       return;
     }
 
@@ -38,10 +40,16 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh
       }, involvedStaff);
 
       if (onRefresh) onRefresh();
+      
+      // Astro Experience Triggers
+      triggerConfetti();
+      showToast(`¡Venta de ${serviceObj?.name} exitosa!`);
+      sendPushNotification('🚀 ¡Nueva Venta!', `${serviceObj?.name} por ${currency === 'USD' ? '$' : '€'}${totalPrice}`);
+      
       onClose();
     } catch (error) {
       console.error('Error registering sale:', error);
-      alert('Error técnico al registrar venta. Revisa la tasa.');
+      showToast('Error técnico al registrar venta.', 'error');
     } finally {
       setLoading(false);
     }

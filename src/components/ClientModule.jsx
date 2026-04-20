@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNotifs } from '../context/NotificationContext';
 import { 
   Search, 
   Plus, 
@@ -15,6 +16,7 @@ import {
 import { dataService } from '../services/dataService';
 
 const ClientModule = () => {
+  const { showToast } = useNotifs();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
   const [clients, setClients] = useState([]);
@@ -47,9 +49,10 @@ const ClientModule = () => {
       await dataService.deleteClient(id);
       if (selectedClient?.id === id) setSelectedClient(null);
       await fetchClients();
+      showToast(`${name} ha sido eliminado.`);
     } catch (error) {
       console.error('Error deleting client:', error);
-      alert('Error al eliminar cliente.');
+      showToast('Error al eliminar cliente.', 'error');
     } finally {
       setLoading(false);
     }
@@ -63,10 +66,10 @@ const ClientModule = () => {
       setNewClient({ name: '', phone: '', hair_type: 'Normal', scalp_type: 'Normal' });
       setShowAddForm(false);
       await fetchClients();
-      alert('¡Ficha de cliente creada con éxito!');
+      showToast('¡Ficha de cliente creada con éxito!');
     } catch (error) {
       console.error('Error addClient:', error);
-      alert('Error técnico al agregar cliente. Revisa la consola.');
+      showToast('Error técnico al agregar cliente.', 'error');
     } finally {
       setCreating(false);
     }
@@ -141,7 +144,6 @@ const ClientModule = () => {
             </div>
           )}
 
-          {/* iOS Style Search Bar with focus-ring */}
           <div className="focus-ring" style={{ 
             backgroundColor: 'var(--bg-tertiary)', 
             borderRadius: '16px', 
@@ -165,7 +167,7 @@ const ClientModule = () => {
                 width: '100%',
                 padding: '12px 0',
                 fontSize: '16px',
-                boxShadow: 'none' /* Remove individual input shadow */
+                boxShadow: 'none'
               }}
             />
           </div>
@@ -248,9 +250,9 @@ const ClientModule = () => {
               const updated = await dataService.updateClient(selectedClient.id, updates);
               setSelectedClient(updated);
               fetchClients();
-              alert('Datos actualizados');
+              showToast('Datos actualizados');
             } catch (e) {
-              alert('Error al actualizar');
+              showToast('Error al actualizar', 'error');
             }
           }}
         />

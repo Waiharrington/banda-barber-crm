@@ -12,8 +12,10 @@ import {
   Zap
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
+import { useNotifs } from '../context/NotificationContext';
 
 const InventoryModule = ({ isMobile }) => {
+  const { showToast } = useNotifs();
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,7 +44,7 @@ const InventoryModule = ({ isMobile }) => {
       await dataService.updateStock(id, newStock);
       fetchInventory();
     } catch (error) {
-      alert('Error al ajustar stock');
+      showToast('Error al ajustar stock', 'error');
     }
   };
 
@@ -53,8 +55,9 @@ const InventoryModule = ({ isMobile }) => {
       setShowAddForm(false);
       setNewItem({ name: '', stock: 0, price: 0, category: 'Producto' });
       fetchInventory();
+      showToast('Producto agregado al almacén');
     } catch (error) {
-      alert('Error al agregar item de inventario');
+      showToast('Error al agregar item de inventario', 'error');
     }
   };
 

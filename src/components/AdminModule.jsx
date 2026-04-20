@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNotifs } from '../context/NotificationContext';
 import { 
   Settings, 
   Database, 
@@ -14,9 +15,11 @@ import {
 import { dataService } from '../services/dataService';
 
 const AdminModule = ({ isMobile, onRefresh, rates, setRates }) => {
+  const { showToast, requestPushPermission, sendPushNotification } = useNotifs();
   const [businessName, setBusinessName] = useState('ASTRO BARBERSHOP');
   const [currency, setCurrency] = useState('USD');
-  const [notifsEnabled, setNotifsEnabled] = useState(true);
+  const [dailyGoal, setDailyGoal] = useState(() => localStorage.getItem('astro_daily_goal') || '500');
+  const [notifsEnabled, setNotifsEnabled] = useState('Notification' in window && Notification.permission === 'granted');
 
   // Management States
   const [loading, setLoading] = useState(false);
@@ -30,9 +33,9 @@ const AdminModule = ({ isMobile, onRefresh, rates, setRates }) => {
       await dataService.addService(newService);
       setNewService({ name: '', price: '', category: 'Barbería' });
       if (onRefresh) onRefresh();
-      alert('Servicio agregado exitosamente');
+      showToast('Servicio agregado exitosamente');
     } catch (error) {
-      alert('Error al agregar servicio');
+      showToast('Error al agregar servicio', 'error');
     } finally {
       setLoading(false);
     }
@@ -223,30 +226,65 @@ const AdminModule = ({ isMobile, onRefresh, rates, setRates }) => {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
-                <span style={{ fontSize: '13px', fontWeight: '600' }}>Notificaciones Push</span>
-                <div 
-                  onClick={() => setNotifsEnabled(!notifsEnabled)}
-                  style={{ 
-                    width: '36px', 
-                    height: '20px', 
-                    backgroundColor: notifsEnabled ? 'var(--gold-primary)' : 'var(--bg-tertiary)', 
-                    borderRadius: '20px',
-                    position: 'relative',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s'
-                  }}
-                >
-                  <div style={{ 
-                    width: '14px', 
-                    height: '14px', 
-                    backgroundColor: notifsEnabled ? 'black' : 'white', 
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    top: '3px',
-                    left: notifsEnabled ? '19px' : '3px',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                  }} />
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '600' }}>Notificaciones Push</span>
+                  <div 
+                    onClick={async () => {
+                      const granted = await requestPushPermission();
+                      setNotifsEnabled(granted);
+                    }}
+                    style={{ 
+                      width: '36px', 
+                      height: '20px', 
+                      backgroundColor: notifsEnabled ? 'var(--gold-primary)' : 'var(--bg-tertiary)', 
+                      borderRadius: '20px',
+                      position: 'relative',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s'
+                    }}
+                  >
+                    <div style={{ 
+                      width: '14px', 
+                      height: '14px', 
+                      backgroundColor: notifsEnabled ? 'black' : 'white', 
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      top: '3px',
+                      left: notifsEnabled ? '19px' : '3px',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }} />
+                  </div>
+                </div>
+                
+                {notifsEnabled && (
+                  <button 
+                    onClick={() => sendPushNotification('¡Astro Notificación!', 'Sistema conectado correctamente. 😎')}
+                    style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)', color: 'var(--gold-primary)', padding: '6px', borderRadius: '8px', fontSize: '10px', width: '100%', marginTop: '4px', cursor: 'pointer' }}
+                  >
+                    Probar Notificación
+                  </button>
+                )}
+             </div>
+
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                <span style={{ fontSize: '13px', fontWeight: '600' }}>Meta Diaria ($)</span>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input 
+                    type="number" 
+                    value={dailyGoal} 
+                    onChange={(e) => setDailyGoal(e.target.value)}
+                    style={{ flex: 1, height: '32px', fontSize: '12px' }}
+                  />
+                  <button 
+                    onClick={() => {
+                      localStorage.setItem('astro_daily_goal', dailyGoal);
+                      showToast('Meta diaria actualizada');
+                    }}
+                    style={{ padding: '0 12px', borderRadius: '8px', border: 'none', background: 'var(--gold-primary)', color: 'black', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}
+                  >
+                    Guardar
+                  </button>
                 </div>
              </div>
 

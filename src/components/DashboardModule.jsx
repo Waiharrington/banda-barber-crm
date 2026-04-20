@@ -7,7 +7,9 @@ import {
   ArrowDownRight,
   Plus,
   Rocket,
-  Sparkles
+  Sparkles,
+  Target,
+  Edit3
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -21,8 +23,8 @@ import {
   Filler
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import SaleServiceModal from './SaleServiceModal';
 import { dataService } from '../services/dataService';
+import { useNotifs } from '../context/NotificationContext';
 
 ChartJS.register(
   CategoryScale,
@@ -49,14 +51,18 @@ const QUOTES = [
   { text: "Domina tu oficio, luego rompe las reglas.", creator: "Maestros" },
   { text: "Cada cliente es una oportunidad de crear una obra maestra.", creator: "Visión" },
   { text: "El mejor marketing es un cliente satisfecho.", creator: "Marketing" },
-  { text: "Sé tan bueno que no puedan ignorarte.", creator: "Steve Martin" }
+  { text: "Sé tan bueno que no puedan ignorarte.", creator: "Steve Martin" },
+  { text: "Tu única competencia es la persona que ves en el espejo.", creator: "Superación" },
+  { text: "El negocio de la belleza es el negocio de la felicidad.", creator: "Emprendimiento" }
 ];
 
-const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handleSeedData }) => {
+const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handleSeedData, onNavigate }) => {
   const [quoteIndex, setQuoteIndex] = useState(0);
+  const { showToast } = useNotifs();
+  const dailyGoal = parseFloat(localStorage.getItem('astro_daily_goal') || '500');
 
   useEffect(() => {
-    // Pick random on mount
+    // Pick random quote on mount / login
     setQuoteIndex(Math.floor(Math.random() * QUOTES.length));
   }, []);
 
@@ -66,6 +72,17 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
       newIndex = Math.floor(Math.random() * QUOTES.length);
     } while (newIndex === quoteIndex && QUOTES.length > 1);
     setQuoteIndex(newIndex);
+  };
+
+  const handleEditGoal = () => {
+    const newGoal = window.prompt('Define la Meta del Día ($):', dailyGoal);
+    if (newGoal && !isNaN(newGoal)) {
+      localStorage.setItem('astro_daily_goal', newGoal);
+      showToast(`Meta diaria actualizada a $${newGoal}`);
+      // Simple force re-render via state or just let next refresh handle it
+      // But for better UX, we could use a local state. For now, it's a persistent setting.
+      window.location.reload(); 
+    }
   };
 
   const currentQuote = QUOTES[quoteIndex];
@@ -123,7 +140,6 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
       </div>
 
       {/* Decorative Quote Section */}
-      {/* 3D Hero Section - Brand Identity */}
       <div className="glass-card animate-slide-up" style={{ 
         marginBottom: '60px', 
         padding: '0', 
@@ -131,7 +147,7 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
         background: 'linear-gradient(135deg, rgba(28,28,30,0.95), rgba(212,175,55,0.05))',
         border: '1px solid rgba(255,255,255,0.03)',
         position: 'relative',
-        overflow: 'visible', // Critical for 3D effect
+        overflow: 'visible',
         display: 'flex',
         flexDirection: isMobile ? 'column' : 'row',
         alignItems: 'center',
@@ -173,9 +189,8 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          marginTop: isMobile ? '0' : '20px' // Extra clearance from top buttons
+          marginTop: isMobile ? '0' : '20px'
         }}>
-          {/* Pulsing Golden Aura / Destello */}
           <div style={{
             position: 'absolute',
             width: '240px',
@@ -186,7 +201,6 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
             animation: 'pulse-gold 4s infinite ease-in-out'
           }} />
 
-          {/* Dynamic Floor Shadow */}
           <div style={{
             position: 'absolute',
             bottom: '10px',
@@ -217,6 +231,41 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
         </div>
       </div>
 
+      {/* Goal Progress Section */}
+      <div className="glass-card animate-slide-up" style={{ marginBottom: '40px', padding: '20px 24px', position: 'relative' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Target size={18} color="var(--gold-primary)" />
+            <span style={{ fontSize: '14px', fontWeight: '850', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Misión del Día</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--gold-primary)' }}>
+              ${stats.income.toFixed(2)} / <span style={{ opacity: 0.6 }}>${dailyGoal}</span>
+            </span>
+            <button 
+              onClick={handleEditGoal}
+              style={{ background: 'rgba(212,175,55,0.1)', border: 'none', color: 'var(--gold-primary)', padding: '6px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            >
+              <Edit3 size={14} />
+            </button>
+          </div>
+        </div>
+        <div className="goal-bar-container" style={{ height: '10px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '5px', overflow: 'hidden' }}>
+          <div className="goal-bar-fill" style={{ 
+            width: `${Math.min((stats.income / dailyGoal) * 100, 100)}%`,
+            height: '100%',
+            background: 'var(--gold-gradient)',
+            boxShadow: 'var(--gold-glow)',
+            transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}>
+            <div className="goal-bar-glow" />
+          </div>
+        </div>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '10px', textAlign: 'right', fontWeight: '600' }}>
+          {stats.income >= dailyGoal ? '¡MISIÓN CUMPLIDA! 🚀' : `${(100 - (stats.income / dailyGoal) * 100).toFixed(0)}% restante para el objetivo`}
+        </p>
+      </div>
+
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
@@ -224,17 +273,17 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
         }
         @keyframes shadow-scale {
           0%, 100% { transform: scaleX(1.5) opacity(0.6); }
-          50% { transform: scaleX(1.2) opacity(0.3); }
+          50% { transform: scaleX(1.1) opacity(0.2); }
         }
         @keyframes pulse-gold {
-          0%, 100% { transform: scale(1); opacity: 0.5; }
-          50% { transform: scale(1.2); opacity: 1; }
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(1.15); opacity: 0.7; }
         }
         .chair-float {
           transition: all 0.5s ease;
         }
         .chair-float:hover {
-          filter: drop-shadow(0 40px 70px rgba(212,175,55,0.4)) brightness(1.1) !important;
+          filter: drop-shadow(0 40px 70px rgba(212,175,55,0.4)) brightness(1.2) !important;
         }
         .refresh-btn:hover {
           opacity: 1 !important;
@@ -280,14 +329,14 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
 
       <section style={{
         display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
+        gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr',
         gap: '24px',
         marginBottom: '40px'
       }}>
         <div className="glass-card">
           <h3 style={{ marginBottom: '20px' }}>Evolución de Ventas Semanal</h3>
           <div style={{ height: '300px' }}>
-            <Line data={chartData} options={chartOptions} />
+            < Line data={chartData} options={chartOptions} />
           </div>
         </div>
         
