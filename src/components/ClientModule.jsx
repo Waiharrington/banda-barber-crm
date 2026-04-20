@@ -428,7 +428,7 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
                 history.map(h => (
                   <HistoryItem 
                     key={h.id} 
-                    date={new Date(h.created_at).toLocaleDateString()} 
+                    date={new Date(h.created_at).toLocaleString('es-VE', { hour12: true })} 
                     service={h.description.split(' - ')[0].replace('Servicio: ', '')} 
                     price={h.amount} 
                   />

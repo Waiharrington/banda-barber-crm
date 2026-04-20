@@ -59,7 +59,7 @@ const FinanceModule = ({ isMobile }) => {
     const headers = ['ID', 'Fecha', 'Descripción', 'Tipo', 'Monto', 'Categoría'];
     const rows = transactions.map(t => [
       t.id, 
-      new Date(t.created_at).toLocaleString(), 
+      new Date(t.created_at).toLocaleString('es-VE', { hour12: true }), 
       t.description, 
       t.type, 
       t.amount, 
@@ -281,7 +281,7 @@ const FinanceModule = ({ isMobile }) => {
                   </div>
                   <div>
                     <div style={{ fontSize: '14px', fontWeight: '700' }}>{t.description}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(t.created_at).toLocaleString()}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(t.created_at).toLocaleString('es-VE', { hour12: true })}</div>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -312,7 +312,7 @@ const FinanceModule = ({ isMobile }) => {
               <tbody>
                 {transactions.map(t => (
                   <tr key={t.id} className="table-row-hover" style={{ borderBottom: '1px solid var(--border-color)', fontSize: '14px', transition: 'all 0.2s' }}>
-                    <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{new Date(t.created_at).toLocaleString()}</td>
+                    <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{new Date(t.created_at).toLocaleString('es-VE', { hour12: true })}</td>
                     <td style={{ padding: '16px', fontWeight: '600' }}>{t.description}</td>
                     <td style={{ padding: '16px' }}>
                       <span style={{ 

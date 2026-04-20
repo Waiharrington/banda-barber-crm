@@ -297,7 +297,7 @@ const AdminModule = ({ isMobile, onRefresh, rates, setRates }) => {
                 </div>
               </div>
               <p style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                Actualizado: {rates.updated_at ? new Date(rates.updated_at).toLocaleString() : 'Sincronizando...'}
+                Actualizado: {rates.updated_at ? new Date(rates.updated_at).toLocaleString('es-VE', { hour12: true }) : 'Sincronizando...'}
               </p>
             </div>
 
