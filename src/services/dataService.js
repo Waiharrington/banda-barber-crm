@@ -155,12 +155,14 @@ export const dataService = {
   // BCV Exchange Rates
   async getExchangeRates() {
     try {
-      // 1. Get USD/BS (BCV)
-      const usdRes = await fetch('https://ve.dolarapi.com/v1/dolares/bcv');
+      // 1. Get USD/BS (Official/BCV)
+      const usdRes = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+      if (!usdRes.ok) throw new Error('USD rate not available');
       const usdData = await usdRes.json();
       
-      // 2. Get EUR/BS (BCV)
+      // 2. Get EUR/BS (Official/BCV)
       const eurRes = await fetch('https://ve.dolarapi.com/v1/euros/oficial');
+      if (!eurRes.ok) throw new Error('EUR rate not available');
       const eurData = await eurRes.json();
 
       return {
@@ -170,7 +172,13 @@ export const dataService = {
       };
     } catch (error) {
       console.error('Error fetching BCV rates:', error);
-      return null;
+      // Fallback rates if API is down
+      return {
+        usd: 36.5, 
+        eur: 39.5,
+        updated_at: null,
+        error: true
+      };
     }
   }
 };
