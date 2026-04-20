@@ -65,7 +65,6 @@ const ServicesModule = ({ isMobile }) => {
       setLoading(false);
     }
   };
- Riverside
 
 
   const getCategoryIcon = (cat) => {

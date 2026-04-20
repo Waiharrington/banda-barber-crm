@@ -386,6 +386,5 @@ const AdminActionRow = ({ icon, label, actionLabel, isDanger, compact, onClick }
     </button>
   </div>
 );
- Riverside
 
 export default AdminModule;
