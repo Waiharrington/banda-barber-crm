@@ -122,38 +122,59 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
         <div style={{ 
           flex: isMobile ? 'none' : '0.8', 
           position: 'relative', 
-          height: isMobile ? '200px' : '100%',
+          height: isMobile ? '220px' : '260px',
           width: isMobile ? '100%' : 'auto',
           display: 'flex',
           justifyContent: 'center',
-          alignItems: isMobile ? 'flex-end' : 'center'
+          alignItems: 'center'
         }}>
-          {/* Shadow/Glow effect behind chair */}
+          {/* Enhanced Glow/Ambient Light */}
           <div style={{
             position: 'absolute',
-            width: '180px',
-            height: '180px',
-            background: 'radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 70%)',
-            filter: 'blur(20px)',
+            width: '200px',
+            height: '200px',
+            background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 75%)',
+            filter: 'blur(30px)',
             zIndex: 1
+          }} />
+
+          {/* Floor Shadow for 'Grounding' */}
+          <div style={{
+            position: 'absolute',
+            bottom: '20px',
+            width: '140px',
+            height: '20px',
+            background: 'rgba(0,0,0,0.5)',
+            filter: 'blur(15px)',
+            borderRadius: '50%',
+            zIndex: 2,
+            transform: 'scaleX(1.5)'
           }} />
           
           <img 
             src="/barber-chair.png" 
             alt="Astro Chair" 
+            className="hover-lift"
             style={{ 
-              height: isMobile ? '240px' : '320px', 
+              height: isMobile ? '260px' : '340px', 
               width: 'auto',
               objectFit: 'contain',
               zIndex: 3,
-              transform: isMobile ? 'translateY(20px) rotate(-5deg)' : 'translate(20px, -20px) rotate(-8deg)',
-              filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.8))',
-              transition: 'all 0.5s ease',
+              transform: isMobile ? 'translateY(10px)' : 'translateY(-20px)',
+              filter: 'drop-shadow(0 15px 30px rgba(0,0,0,0.6))',
+              transition: 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
               pointerEvents: 'none'
             }} 
           />
         </div>
       </div>
+
+      <style>{`
+        .hover-lift:hover {
+          transform: ${isMobile ? 'translateY(0px)' : 'translateY(-35px)'} scale(1.05) !important;
+          filter: drop-shadow(0 30px 60px rgba(0,0,0,0.8)) brightness(1.05) !important;
+        }
+      `}</style>
 
       <section style={{
         display: 'grid',
