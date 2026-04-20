@@ -34,7 +34,7 @@ ChartJS.register(
   Filler
 );
 
-const DashboardModule = ({ onOpenSale, stats, chartData, dbData, handleSeedData }) => {
+const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handleSeedData }) => {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -88,16 +88,71 @@ const DashboardModule = ({ onOpenSale, stats, chartData, dbData, handleSeedData 
       </div>
 
       {/* Decorative Quote Section */}
-      <div className="glass-card" style={{ 
-        marginBottom: '40px', 
-        textAlign: 'center', 
-        padding: '32px',
-        border: '1px solid rgba(212, 175, 55, 0.2)',
-        background: 'linear-gradient(rgba(31,31,31,0.8), rgba(20,20,20,0.9))'
+      {/* 3D Hero Section - Brand Identity */}
+      <div className="glass-card animate-slide-up" style={{ 
+        marginBottom: '60px', 
+        padding: '0', 
+        borderRadius: '32px',
+        background: 'linear-gradient(135deg, rgba(28,28,30,0.95), rgba(212,175,55,0.05))',
+        border: '1px solid rgba(255,255,255,0.03)',
+        position: 'relative',
+        overflow: 'visible', // Critical for 3D effect
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: 'center',
+        minHeight: '220px'
       }}>
-        <h4 className="text-gold" style={{ letterSpacing: '4px', fontSize: '14px', marginBottom: '12px', opacity: 0.8 }}>"SIC PARVIS MAGNA"</h4>
-        <h2 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '8px', letterSpacing: '1px' }}>LA GRANDEZA NACE DE PEQUEÑOS COMIENZOS</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic' }}>— FRANCIS DRAKE</p>
+        <div style={{ 
+          flex: 1, 
+          padding: isMobile ? '40px 24px' : '48px', 
+          textAlign: isMobile ? 'center' : 'left',
+          zIndex: 2 
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
+            <div style={{ width: '30px', height: '1px', backgroundColor: 'var(--gold-primary)' }} />
+            <span style={{ color: 'var(--gold-primary)', fontSize: '10px', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>Identidad Astro</span>
+          </div>
+          <h2 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '900', letterSpacing: '-1px', marginBottom: '16px', lineHeight: 1.1 }}>
+            LA GRANDEZA NACE DE <br />
+            <span className="text-gold">PEQUEÑOS COMIENZOS</span>
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic', opacity: 0.7 }}>— CONCEPT BRAND EXPERIENCE</p>
+        </div>
+
+        <div style={{ 
+          flex: isMobile ? 'none' : '0.8', 
+          position: 'relative', 
+          height: isMobile ? '200px' : '100%',
+          width: isMobile ? '100%' : 'auto',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: isMobile ? 'flex-end' : 'center'
+        }}>
+          {/* Shadow/Glow effect behind chair */}
+          <div style={{
+            position: 'absolute',
+            width: '180px',
+            height: '180px',
+            background: 'radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 70%)',
+            filter: 'blur(20px)',
+            zIndex: 1
+          }} />
+          
+          <img 
+            src="/barber-chair.png" 
+            alt="Astro Chair" 
+            style={{ 
+              height: isMobile ? '240px' : '320px', 
+              width: 'auto',
+              objectFit: 'contain',
+              zIndex: 3,
+              transform: isMobile ? 'translateY(20px) rotate(-5deg)' : 'translate(20px, -20px) rotate(-8deg)',
+              filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.8))',
+              transition: 'all 0.5s ease',
+              pointerEvents: 'none'
+            }} 
+          />
+        </div>
       </div>
 
       <section style={{

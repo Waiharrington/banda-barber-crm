@@ -109,7 +109,7 @@ function App() {
         return isMobile ? (
           <MobileDashboard onOpenSale={() => setIsSaleModalOpen(true)} stats={stats} chartData={chartData} dbData={dbData} />
         ) : (
-          <DashboardModule onOpenSale={() => setIsSaleModalOpen(true)} stats={stats} chartData={chartData} dbData={dbData} handleSeedData={handleSeedData} />
+          <DashboardModule isMobile={isMobile} onOpenSale={() => setIsSaleModalOpen(true)} stats={stats} chartData={chartData} dbData={dbData} handleSeedData={handleSeedData} />
         );
       case 'services': return <div className="p-container"><ServicesModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
       case 'inventory': return <div className="p-container"><InventoryModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
