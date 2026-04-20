@@ -33,6 +33,37 @@ const PersonnelModule = ({ isMobile }) => {
     }
   };
 
+  const handleDeleteStaff = async (id, name) => {
+    if (!window.confirm(`¿Estás seguro de eliminar a ${name}?`)) return;
+    try {
+      setLoading(true);
+      await dataService.deleteStaff(id);
+      await fetchStaff();
+    } catch (error) {
+      alert('Error al eliminar');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newStaff, setNewStaff] = useState({ name: '', role: 'Barbero', commission_pct: 40 });
+
+  const handleCreateStaff = async () => {
+    if (!newStaff.name) return;
+    try {
+      setLoading(true);
+      await dataService.addStaff(newStaff);
+      setNewStaff({ name: '', role: 'Barbero', commission_pct: 40 });
+      setShowAddForm(false);
+      await fetchStaff();
+    } catch (e) {
+      alert('Error al crear');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -46,7 +77,27 @@ const PersonnelModule = ({ isMobile }) => {
           <h2 style={{ fontSize: '28px', fontWeight: '700', letterSpacing: '-0.5px' }}>Nuestro <span className="text-gold">Equipo</span></h2>
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Gestión de talento y desempeño.</p>
         </div>
+        <button className="btn-gold" onClick={() => setShowAddForm(!showAddForm)}>
+          <UserPlus size={18} style={{ marginRight: '8px' }} />
+          {showAddForm ? 'Cancelar' : 'Contratar Artista'}
+        </button>
       </div>
+
+      {showAddForm && (
+        <div className="glass-card animate-slide-up" style={{ marginBottom: '32px', padding: '24px' }}>
+          <h3 style={{ marginBottom: '20px' }}>Nuevo integrante del equipo</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+            <input className="form-input" placeholder="Nombre" value={newStaff.name} onChange={e => setNewStaff({...newStaff, name: e.target.value})} />
+            <select className="form-input" value={newStaff.role} onChange={e => setNewStaff({...newStaff, role: e.target.value})}>
+              <option value="Barbero">Barbero</option>
+              <option value="Estilista">Estilista</option>
+              <option value="Asistente">Asistente</option>
+            </select>
+            <input className="form-input" type="number" placeholder="% Comisión" value={newStaff.commission_pct} onChange={e => setNewStaff({...newStaff, commission_pct: Number(e.target.value)})} />
+            <button className="btn-gold" onClick={handleCreateStaff}>Guardar Registro</button>
+          </div>
+        </div>
+      )}
 
 
       {loading ? (
@@ -94,8 +145,11 @@ const PersonnelModule = ({ isMobile }) => {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '12px' }}>
-                  <button className="action-btn"><Edit2 size={16} /></button>
-                  <button className="action-btn" style={{ color: '#ff453a' }}><Trash2 size={16} /></button>
+                  <button className="action-btn" onClick={() => {
+                    const newName = window.prompt('Nuevo nombre:', person.name);
+                    if (newName) dataService.updateStaff(person.id, { name: newName }).then(fetchStaff);
+                  }}><Edit2 size={16} /></button>
+                  <button className="action-btn" style={{ color: '#ff453a' }} onClick={() => handleDeleteStaff(person.id, person.name)}><Trash2 size={16} /></button>
                 </div>
               </div>
 

@@ -308,8 +308,39 @@ const AdminModule = ({ isMobile, onRefresh, rates, setRates }) => {
                 <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Base de Datos</h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <AdminActionRow compact icon={<Download size={14} />} label="Exportar Backup" actionLabel="Descargar" />
-                <AdminActionRow compact isDanger icon={<Trash2 size={14} />} label="Reset Datos" actionLabel="Borrar" />
+                <AdminActionRow 
+                  compact 
+                  icon={<Download size={14} />} 
+                  label="Exportar Backup" 
+                  actionLabel="Descargar" 
+                  onClick={async () => {
+                    const data = await dataService.getTransactions();
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `backup_astro_${new Date().getTime()}.json`;
+                    a.click();
+                  }}
+                />
+                <AdminActionRow 
+                  compact 
+                  isDanger 
+                  icon={<Trash2 size={14} />} 
+                  label="Reset Datos" 
+                  actionLabel="Borrar" 
+                  onClick={async () => {
+                    try {
+                      const success = await dataService.resetDatabase();
+                      if (success) {
+                        alert('Sistema reiniciado. La página se recargará.');
+                        window.location.reload();
+                      }
+                    } catch (e) {
+                      alert('Error al reiniciar');
+                    }
+                  }}
+                />
               </div>
             </div>
 
@@ -324,7 +355,7 @@ const AdminModule = ({ isMobile, onRefresh, rates, setRates }) => {
   );
 };
 
-const AdminActionRow = ({ icon, label, actionLabel, isDanger, compact }) => (
+const AdminActionRow = ({ icon, label, actionLabel, isDanger, compact, onClick }) => (
   <div style={{ 
     display: 'flex', 
     justifyContent: 'space-between', 
@@ -338,19 +369,23 @@ const AdminActionRow = ({ icon, label, actionLabel, isDanger, compact }) => (
       <div style={{ color: isDanger ? '#ff453a' : 'var(--text-secondary)' }}>{icon}</div>
       <div style={{ fontWeight: '700', fontSize: '13px' }}>{label}</div>
     </div>
-    <button style={{ 
-      backgroundColor: isDanger ? 'rgba(255, 69, 58, 0.1)' : 'rgba(255,255,255,0.05)', 
-      color: isDanger ? '#ff453a' : 'white', 
-      border: 'none', 
-      padding: '6px 12px', 
-      borderRadius: '8px', 
-      fontSize: '11px', 
-      fontWeight: '800',
-      cursor: 'pointer'
-    }}>
+    <button 
+      onClick={onClick}
+      style={{ 
+        backgroundColor: isDanger ? 'rgba(255, 69, 58, 0.1)' : 'rgba(255,255,255,0.05)', 
+        color: isDanger ? '#ff453a' : 'white', 
+        border: 'none', 
+        padding: '6px 12px', 
+        borderRadius: '8px', 
+        fontSize: '11px', 
+        fontWeight: '800',
+        cursor: 'pointer'
+      }}
+    >
       {actionLabel}
     </button>
   </div>
 );
+ Riverside
 
 export default AdminModule;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Minus, 
@@ -12,13 +12,72 @@ import {
   ChevronRight
 } from 'lucide-react';
 
+import { dataService } from '../services/dataService';
+
 const FinanceModule = ({ isMobile }) => {
-  const [transactions, setTransactions] = useState([
-    { id: 1, date: '2024-04-20 10:30', desc: 'Venta Producto: Cera Gold', type: 'income', amount: 45, category: 'Productos' },
-    { id: 2, date: '2024-04-20 11:15', desc: 'Corte Astro Deluxe - Carlos M.', type: 'income', amount: 80, category: 'Servicios' },
-    { id: 3, date: '2024-04-20 12:00', desc: 'Pago Luz Local', type: 'expense', amount: 120, category: 'Gastos Fijos' },
-    { id: 4, date: '2024-04-20 13:45', desc: 'Reparación Tijeras', type: 'expense', amount: 30, category: 'Mantenimiento' },
-  ]);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      const data = await dataService.getTransactions();
+      setTransactions(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManualTransaction = async (type) => {
+    const desc = window.prompt(`Descripción del ${type === 'income' ? 'Ingreso' : 'Gasto'}:`);
+    if (!desc) return;
+    const amount = window.prompt(`Monto en $ (USD):`);
+    if (!amount || isNaN(amount)) return;
+
+    try {
+      await dataService.addTransaction({
+        description: desc,
+        amount: parseFloat(amount),
+        type: type,
+        category: type === 'income' ? 'Ingreso Manual' : 'Gasto Manual',
+        currency: 'USD',
+        exchange_rate: 1
+      });
+      fetchTransactions();
+    } catch (e) {
+      alert('Error al registrar');
+    }
+  };
+
+  const handleExport = () => {
+    const headers = ['ID', 'Fecha', 'Descripción', 'Tipo', 'Monto', 'Categoría'];
+    const rows = transactions.map(t => [
+      t.id, 
+      new Date(t.created_at).toLocaleString(), 
+      t.description, 
+      t.type, 
+      t.amount, 
+      t.category
+    ]);
+    
+    let csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(",") + "\n"
+      + rows.map(e => e.join(",")).join("\n");
+      
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `finanzas_astro_${new Date().toLocaleDateString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const totalIncome = transactions.reduce((acc, t) => t.type === 'income' ? acc + t.amount : acc, 0);
   const totalExpense = transactions.reduce((acc, t) => t.type === 'expense' ? acc + t.amount : acc, 0);
@@ -47,7 +106,7 @@ const FinanceModule = ({ isMobile }) => {
           width: isMobile ? '100%' : 'auto',
           flexDirection: isMobile ? 'row' : 'row' // Keep side-by-side if refined enough
         }}>
-          <button className="btn-gold" style={{ 
+          <button className="btn-gold" onClick={() => handleManualTransaction('income')} style={{ 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
@@ -60,7 +119,7 @@ const FinanceModule = ({ isMobile }) => {
           }}>
             <Plus size={16} /> Ingreso
           </button>
-          <button style={{ 
+          <button onClick={() => handleManualTransaction('expense')} style={{ 
             backgroundColor: 'rgba(255, 69, 58, 0.08)', 
             border: '1px solid rgba(255, 69, 58, 0.15)', 
             color: '#ff453a',
@@ -162,7 +221,7 @@ const FinanceModule = ({ isMobile }) => {
         }}>
           <h3 style={{ fontSize: '20px', fontWeight: '700' }}>Historial de Transacciones</h3>
           <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
-            <button style={{ 
+            <button onClick={handleExport} style={{ 
               flex: 1,
               background: 'var(--bg-tertiary)', 
               border: '1px solid var(--border-color)', 
@@ -221,8 +280,8 @@ const FinanceModule = ({ isMobile }) => {
                     {t.type === 'income' ? <Plus size={18} color="#32d74b" /> : <Minus size={18} color="#ff453a" />}
                   </div>
                   <div>
-                    <div style={{ fontSize: '14px', fontWeight: '700' }}>{t.desc}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t.date}</div>
+                    <div style={{ fontSize: '14px', fontWeight: '700' }}>{t.description}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(t.created_at).toLocaleString()}</div>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -253,8 +312,8 @@ const FinanceModule = ({ isMobile }) => {
               <tbody>
                 {transactions.map(t => (
                   <tr key={t.id} className="table-row-hover" style={{ borderBottom: '1px solid var(--border-color)', fontSize: '14px', transition: 'all 0.2s' }}>
-                    <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{t.date}</td>
-                    <td style={{ padding: '16px', fontWeight: '600' }}>{t.desc}</td>
+                    <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{new Date(t.created_at).toLocaleString()}</td>
+                    <td style={{ padding: '16px', fontWeight: '600' }}>{t.description}</td>
                     <td style={{ padding: '16px' }}>
                       <span style={{ 
                         padding: '6px 12px', 

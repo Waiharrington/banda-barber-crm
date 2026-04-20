@@ -35,6 +35,38 @@ const ServicesModule = ({ isMobile }) => {
     }
   };
 
+  const handleDeleteService = async (id, name) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el servicio: ${name}?`)) return;
+    try {
+      setLoading(true);
+      await dataService.deleteService(id);
+      await fetchServices();
+    } catch (e) {
+      alert('Error al eliminar');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newService, setNewService] = useState({ name: '', price: '', category: 'Barbería' });
+
+  const handleCreateService = async () => {
+    if (!newService.name || !newService.price) return;
+    try {
+      setLoading(true);
+      await dataService.addService(newService);
+      setNewService({ name: '', price: '', category: 'Barbería' });
+      setShowAddForm(false);
+      await fetchServices();
+    } catch (e) {
+      alert('Error al crear');
+    } finally {
+      setLoading(false);
+    }
+  };
+ Riverside
+
 
   const getCategoryIcon = (cat) => {
     switch(cat) {
@@ -61,7 +93,27 @@ const ServicesModule = ({ isMobile }) => {
           </h2>
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Define los servicios y el valor de tu arte.</p>
         </div>
+        <button className="btn-gold" onClick={() => setShowAddForm(!showAddForm)}>
+          <Plus size={18} style={{ marginRight: '8px' }} />
+          {showAddForm ? 'Cancelar' : 'Agregar Servicio'}
+        </button>
       </div>
+
+      {showAddForm && (
+        <div className="glass-card animate-slide-up" style={{ marginBottom: '32px', padding: '24px' }}>
+          <h3 style={{ marginBottom: '20px' }}>Nuevo Servicio</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+            <input className="form-input" placeholder="Nombre (ej. Corte Astro)" value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})} />
+            <input className="form-input" type="number" placeholder="Precio ($)" value={newService.price} onChange={e => setNewService({...newService, price: Number(e.target.value)})} />
+            <select className="form-input" value={newService.category} onChange={e => setNewService({...newService, category: e.target.value})}>
+              <option value="Barbería">Barbería</option>
+              <option value="Estilismo">Estilismo</option>
+              <option value="Tratamientos">Tratamientos</option>
+            </select>
+            <button className="btn-gold" onClick={handleCreateService}>Guardar Catálogo</button>
+          </div>
+        </div>
+      )}
 
 
       {loading ? (
@@ -125,7 +177,11 @@ const ServicesModule = ({ isMobile }) => {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                  <button className="action-btn"><Edit2 size={16} /></button>
+                  <button className="action-btn" onClick={() => {
+                    const newPrice = window.prompt(`Nuevo precio para ${service.name}:`, service.price);
+                    if (newPrice) dataService.updateService(service.id, { price: Number(newPrice) }).then(fetchServices);
+                  }}><Edit2 size={16} /></button>
+                  <button className="action-btn" style={{ color: '#ff453a' }} onClick={() => handleDeleteService(service.id, service.name)}><Trash2 size={16} /></button>
                 </div>
               </div>
 

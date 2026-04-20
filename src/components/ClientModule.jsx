@@ -40,6 +40,21 @@ const ClientModule = () => {
     }
   };
 
+  const handleDeleteClient = async (id, name) => {
+    if (!window.confirm(`¿Estás seguro de eliminar a ${name}? Esta acción no se puede deshacer.`)) return;
+    try {
+      setLoading(true);
+      await dataService.deleteClient(id);
+      if (selectedClient?.id === id) setSelectedClient(null);
+      await fetchClients();
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      alert('Error al eliminar cliente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddClient = async () => {
     if (!newClient.name) return;
     try {
@@ -224,7 +239,21 @@ const ClientModule = () => {
           )}
         </>
       ) : (
-        <ClientDetail client={selectedClient} onBack={() => setSelectedClient(null)} />
+        <ClientDetail 
+          client={selectedClient} 
+          onBack={() => setSelectedClient(null)} 
+          onDelete={() => handleDeleteClient(selectedClient.id, selectedClient.name)}
+          onUpdate={async (updates) => {
+            try {
+              const updated = await dataService.updateClient(selectedClient.id, updates);
+              setSelectedClient(updated);
+              fetchClients();
+              alert('Datos actualizados');
+            } catch (e) {
+              alert('Error al actualizar');
+            }
+          }}
+        />
       )}
       
       <style>{`
@@ -239,40 +268,103 @@ const ClientModule = () => {
   );
 };
 
-const ClientDetail = ({ client, onBack }) => {
+const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
   const [showCollage, setShowCollage] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({ name: client.name, phone: client.phone });
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        setLoadingHistory(true);
+        const data = await dataService.getClientTransactions(client.id);
+        setHistory(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+    loadHistory();
+  }, [client.id]);
 
   return (
     <div className="animate-fade-in">
-      <button onClick={onBack} style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        &larr; Volver al Listado
-      </button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <button onClick={onBack} style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          &larr; Volver al Listado
+        </button>
+        <button 
+          onClick={onDelete}
+          style={{ 
+            color: '#ff453a', 
+            background: 'rgba(255, 69, 58, 0.1)', 
+            border: 'none', 
+            padding: '8px 16px', 
+            borderRadius: '8px', 
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: '600'
+          }}
+        >
+          Eliminar Ficha
+        </button>
+      </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 300px) 1fr', gap: '32px' }}>
         {/* Left Sidebar: Info */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div className="glass-card" style={{ textAlign: 'center' }}>
             <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', border: '2px solid var(--border-color)' }}>
               <User size={64} color="var(--gold-primary)" />
             </div>
-            <h3 style={{ fontSize: '20px', marginBottom: '4px' }}>{client.name}</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{client.phone}</p>
-            <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', fontSize: '14px' }}>
-              <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>{client.visits}</span> Visitas en el último año
-            </div>
+            {isEditing ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <input 
+                  className="form-input" 
+                  value={editData.name} 
+                  onChange={e => setEditData({...editData, name: e.target.value})}
+                  placeholder="Nombre"
+                  style={{ width: '100%', padding: '8px' }}
+                />
+                <input 
+                  className="form-input" 
+                  value={editData.phone} 
+                  onChange={e => setEditData({...editData, phone: e.target.value})}
+                  placeholder="Teléfono"
+                  style={{ width: '100%', padding: '8px' }}
+                />
+                <button className="btn-gold" onClick={() => { onUpdate(editData); setIsEditing(false); }}>Guardar</button>
+                <button onClick={() => setIsEditing(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '12px' }}>Cancelar</button>
+              </div>
+            ) : (
+              <>
+                <h3 style={{ fontSize: '20px', marginBottom: '4px' }}>{client.name}</h3>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{client.phone}</p>
+                <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', fontSize: '14px' }}>
+                  <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>{history.length}</span> Visitas registradas
+                </div>
+              </>
+            )}
           </div>
 
           <div className="glass-card">
             <h4 style={{ marginBottom: '16px', fontSize: '16px' }}>Ficha Técnica Capilar</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <DetailItem label="Tipo de Cabello" value={client.hairType} />
-              <DetailItem label="Cuero Cabelludo" value={client.scalp} />
-              <DetailItem label="Último Servicio" value={client.lastService} />
-              <DetailItem label="Sensibilidad" value="Media" />
+              <DetailItem label="Tipo de Cabello" value={client.hair_type || 'Normal'} />
+              <DetailItem label="Cuero Cabelludo" value={client.scalp_type || 'Normal'} />
+              <DetailItem label="Registrado" value={client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'} />
             </div>
-            <button style={{ width: '100%', marginTop: '20px', background: 'none', border: '1px solid var(--gold-primary)', color: 'var(--gold-primary)', padding: '8px', borderRadius: '6px', cursor: 'pointer' }}>
-              Editar Ficha
-            </button>
+            {!isEditing && (
+              <button 
+                onClick={() => setIsEditing(true)}
+                style={{ width: '100%', marginTop: '20px', background: 'none', border: '1px solid var(--gold-primary)', color: 'var(--gold-primary)', padding: '8px', borderRadius: '6px', cursor: 'pointer' }}
+              >
+                Editar Perfil
+              </button>
+            )}
           </div>
         </div>
         
@@ -305,11 +397,11 @@ const ClientDetail = ({ client, onBack }) => {
             {showCollage ? (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', backgroundColor: 'var(--bg-secondary)', padding: '12px', borderRadius: '12px' }}>
                 <div style={{ aspectRatio: '4/5', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px', position: 'relative' }}>
-                  <span style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize: '10px' }}>ANTES (12 ENE)</span>
+                  <span style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize: '10px' }}>ANTES</span>
                 </div>
                 <div style={{ aspectRatio: '4/5', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px', border: '2px dashed var(--gold-primary)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Plus size={24} color="var(--gold-primary)" />
-                  <span style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize: '10px' }}>DESPUÉS (HOY)</span>
+                  <span style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize: '10px' }}>DESPUÉS</span>
                 </div>
               </div>
             ) : (
@@ -317,9 +409,6 @@ const ClientDetail = ({ client, onBack }) => {
                 <div style={{ aspectRatio: '1/1', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px', border: '2px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                   <Plus size={24} color="var(--text-muted)" />
                 </div>
-                {[1, 2, 3].map(i => (
-                  <div key={i} style={{ aspectRatio: '1/1', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}></div>
-                ))}
               </div>
             )}
           </div>
@@ -329,9 +418,22 @@ const ClientDetail = ({ client, onBack }) => {
               <Calendar size={18} color="var(--gold-primary)" /> Historial de Visitas
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <HistoryItem date="20 Abr 2024" service="Corte Astro Deluxe" staff="Marco S." price={80} />
-              <HistoryItem date="15 Mar 2024" service="Perfilado Barba" staff="Marco S." price={35} />
-              <HistoryItem date="02 Feb 2024" service="Lavado Estimulante" staff="Elena T." price={20} />
+              {loadingHistory ? (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <Loader2 className="animate-spin" size={16} /> Cargando...
+                </div>
+              ) : history.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No hay historial registrado.</p>
+              ) : (
+                history.map(h => (
+                  <HistoryItem 
+                    key={h.id} 
+                    date={new Date(h.created_at).toLocaleDateString()} 
+                    service={h.description.split(' - ')[0].replace('Servicio: ', '')} 
+                    price={h.amount} 
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -347,11 +449,11 @@ const DetailItem = ({ label, value }) => (
   </div>
 );
 
-const HistoryItem = ({ date, service, staff, price }) => (
+const HistoryItem = ({ date, service, price }) => (
   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
     <div>
       <div style={{ fontWeight: '600', fontSize: '14px' }}>{service}</div>
-      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{date} • con {staff}</div>
+      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{date}</div>
     </div>
     <div style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>${price}</div>
   </div>

@@ -21,12 +21,31 @@ export const dataService = {
     return data;
   },
 
+  async updateClient(id, updates) {
+    const { data, error } = await supabase
+      .from('clients')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteClient(id) {
+    const { error } = await supabase
+      .from('clients')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+
   // Staff
   async getStaff() {
     const { data, error } = await supabase
       .from('staff')
       .select('*')
-      .eq('active', true);
+      .order('name');
     if (error) throw error;
     return data;
   },
@@ -41,11 +60,31 @@ export const dataService = {
     return data;
   },
 
+  async updateStaff(id, updates) {
+    const { data, error } = await supabase
+      .from('staff')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteStaff(id) {
+    const { error } = await supabase
+      .from('staff')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+
   // Services
   async getServices() {
     const { data, error } = await supabase
       .from('services')
-      .select('*');
+      .select('*')
+      .order('name');
     if (error) throw error;
     return data;
   },
@@ -60,11 +99,44 @@ export const dataService = {
     return data;
   },
 
+  async updateService(id, updates) {
+    const { data, error } = await supabase
+      .from('services')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteService(id) {
+    const { error } = await supabase
+      .from('services')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+
   // Transactions (Finance)
   async getTransactions() {
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  async getClientTransactions(clientId) {
+    // Note: description contains 'Cliente ID: XYZ'. 
+    // Ideally we have a client_id column. 
+    // In current registerServiceSale we save 'description'.
+    // Let's first check if we have client_id in transactions.
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .ilike('description', `%Cliente ID: ${clientId}%`)
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data;
@@ -109,6 +181,14 @@ export const dataService = {
       .single();
     if (error) throw error;
     return data;
+  },
+
+  async deleteInventoryItem(id) {
+    const { error } = await supabase
+      .from('inventory')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
   },
 
   // Appointments (The Core Logic)
@@ -179,6 +259,25 @@ export const dataService = {
         updated_at: null,
         error: true
       };
+    }
+  },
+
+  async resetDatabase() {
+    if (!window.confirm('¿ESTÁS ABSOLUTAMENTE SEGURO? Se borrarán todos los clientes, personal y ventas. Esta acción es irreversible.')) return;
+    
+    try {
+      // Order of deletion to avoid foreign key issues
+      await supabase.from('appointment_staff').delete().neq('id', 0);
+      await supabase.from('appointments').delete().neq('id', 0);
+      await supabase.from('transactions').delete().neq('id', 0);
+      await supabase.from('clients').delete().neq('id', 0);
+      await supabase.from('staff').delete().neq('id', 0);
+      await supabase.from('services').delete().neq('id', 0);
+      await supabase.from('inventory').delete().neq('id', 0);
+      return true;
+    } catch (error) {
+      console.error('Reset error:', error);
+      throw error;
     }
   }
 };
