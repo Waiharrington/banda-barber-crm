@@ -122,59 +122,76 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
         <div style={{ 
           flex: isMobile ? 'none' : '0.8', 
           position: 'relative', 
-          height: isMobile ? '220px' : '260px',
+          height: isMobile ? '240px' : '280px',
           width: isMobile ? '100%' : 'auto',
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'center'
+          alignItems: 'center',
+          marginTop: isMobile ? '0' : '20px' // Extra clearance from top buttons
         }}>
-          {/* Enhanced Glow/Ambient Light */}
+          {/* Pulsing Golden Aura / Destello */}
           <div style={{
             position: 'absolute',
-            width: '200px',
-            height: '200px',
-            background: 'radial-gradient(circle, rgba(212,175,55,0.12) 0%, transparent 75%)',
+            width: '240px',
+            height: '240px',
+            background: 'radial-gradient(circle, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.05) 40%, transparent 70%)',
             filter: 'blur(30px)',
-            zIndex: 1
+            zIndex: 1,
+            animation: 'pulse-gold 4s infinite ease-in-out'
           }} />
 
-          {/* Floor Shadow for 'Grounding' */}
+          {/* Dynamic Floor Shadow */}
           <div style={{
             position: 'absolute',
-            bottom: '20px',
-            width: '140px',
-            height: '20px',
-            background: 'rgba(0,0,0,0.5)',
-            filter: 'blur(15px)',
+            bottom: '10px',
+            width: '120px',
+            height: '15px',
+            background: 'rgba(0,0,0,0.6)',
+            filter: 'blur(12px)',
             borderRadius: '50%',
             zIndex: 2,
-            transform: 'scaleX(1.5)'
+            transform: 'scaleX(1.5)',
+            animation: 'shadow-scale 4s infinite ease-in-out'
           }} />
           
           <img 
             src="/barber-chair.png" 
             alt="Astro Chair" 
-            className="hover-lift"
+            className="chair-float"
             style={{ 
-              height: isMobile ? '260px' : '340px', 
+              height: isMobile ? '280px' : '360px', 
               width: 'auto',
               objectFit: 'contain',
               zIndex: 3,
-              transform: isMobile ? 'translateY(10px)' : 'translateY(-20px)',
-              filter: 'drop-shadow(0 15px 30px rgba(0,0,0,0.6))',
-              transition: 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              pointerEvents: 'none'
+              filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.7))',
+              pointerEvents: 'none',
+              animation: 'float 4s infinite ease-in-out'
             }} 
           />
         </div>
       </div>
 
       <style>{`
-        .hover-lift:hover {
-          transform: ${isMobile ? 'translateY(0px)' : 'translateY(-35px)'} scale(1.05) !important;
-          filter: drop-shadow(0 30px 60px rgba(0,0,0,0.8)) brightness(1.05) !important;
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-25px); }
+        }
+        @keyframes shadow-scale {
+          0%, 100% { transform: scaleX(1.5) opacity(0.6); }
+          50% { transform: scaleX(1.2) opacity(0.3); }
+        }
+        @keyframes pulse-gold {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.2); opacity: 1; }
+        }
+        .chair-float {
+          transition: all 0.5s ease;
+        }
+        .chair-float:hover {
+          filter: drop-shadow(0 40px 70px rgba(212,175,55,0.4)) brightness(1.1) !important;
         }
       `}</style>
+ Riverside
 
       <section style={{
         display: 'grid',
