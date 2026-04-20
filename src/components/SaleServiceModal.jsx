@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { X, User, Star, Scissors, CreditCard, Loader2, Plus, Sparkles } from 'lucide-react';
 import { dataService } from '../services/dataService';
 
-const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh }) => {
+const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh, rates, currency }) => {
   const [selectedClient, setSelectedClient] = useState('');
   const [selectedService, setSelectedService] = useState('');
   const [involvedStaff, setInvolvedStaff] = useState([]); 
   const [totalPrice, setTotalPrice] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -32,14 +32,16 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh
         clientId: selectedClient,
         serviceId: selectedService,
         serviceName: serviceObj?.name,
-        totalPrice: totalPrice
+        totalPrice: totalPrice,
+        exchangeRate: currency === 'EUR' ? rates.eur : rates.usd,
+        currency: currency
       }, involvedStaff);
 
       if (onRefresh) onRefresh();
       onClose();
     } catch (error) {
       console.error('Error registering sale:', error);
-      alert('Error al registrar la venta.');
+      alert('Error técnico al registrar venta. Revisa la tasa.');
     } finally {
       setLoading(false);
     }
@@ -218,24 +220,31 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh
             </div>
           </div>
 
-          {/* Checkout Footer */}
+          {/* Checkout Footer with Dual Pricing */}
           <div style={{ 
             marginTop: '12px', 
-            padding: '24px', 
+            padding: '20px 24px', 
             backgroundColor: 'rgba(212, 175, 55, 0.08)', 
             borderRadius: '24px',
             border: '1px solid rgba(212, 175, 55, 0.1)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '700', textTransform: 'uppercase' }}>Total a cobrar</div>
-                <div style={{ fontSize: '36px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '-1.5px' }}>${totalPrice}</div>
+                <div style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px' }}>RESUMEN DE COBRO</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ fontSize: '28px', fontWeight: '950', color: 'white', letterSpacing: '-1px' }}>
+                    {currency === 'USD' ? '$' : '€'}{totalPrice}
+                  </div>
+                  <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-secondary)' }}>
+                    {(totalPrice * (currency === 'EUR' ? rates.eur : rates.usd)).toFixed(2)} BS
+                  </div>
+                </div>
               </div>
               <button 
                 className="btn-gold" 
                 onClick={handleSubmit}
                 disabled={loading}
-                style={{ height: '56px', padding: '0 32px', borderRadius: '16px', fontSize: '16px' }}
+                style={{ height: '56px', padding: '0 32px', borderRadius: '16px', fontSize: '15px' }}
               >
                 {loading ? <Loader2 className="animate-spin" /> : 'Confirmar'}
               </button>

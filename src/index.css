@@ -160,10 +160,20 @@ input, select, textarea {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-input:focus, select:focus {
+select option {
+  background-color: #1c1c1e; /* Using fixed color for dropdown menu stability */
+  color: white;
+}
+
+input:focus, select:focus, textarea:focus {
   border-color: var(--gold-primary);
   background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+}
+
+/* Container focus highlight (for search bars and grouped inputs) */
+.focus-ring:focus-within {
+  border-color: var(--gold-primary) !important;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
 }
 
 .action-btn {

@@ -26,6 +26,8 @@ const ClientModule = () => {
     fetchClients();
   }, []);
 
+  const [creating, setCreating] = useState(false);
+
   const fetchClients = async () => {
     try {
       setLoading(true);
@@ -41,12 +43,17 @@ const ClientModule = () => {
   const handleAddClient = async () => {
     if (!newClient.name) return;
     try {
+      setCreating(true);
       await dataService.addClient(newClient);
-      setShowAddForm(false);
       setNewClient({ name: '', phone: '', hair_type: 'Normal', scalp_type: 'Normal' });
-      fetchClients();
+      setShowAddForm(false);
+      await fetchClients();
+      alert('¡Ficha de cliente creada con éxito!');
     } catch (error) {
-      alert('Error al agregar cliente');
+      console.error('Error addClient:', error);
+      alert('Error técnico al agregar cliente. Revisa la consola.');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -106,14 +113,21 @@ const ClientModule = () => {
                   </select>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                  <button className="btn-gold" onClick={handleAddClient} style={{ width: '100%', height: '48px', borderRadius: '12px' }}>Crear Ficha</button>
+                  <button 
+                    className="btn-gold" 
+                    onClick={handleAddClient} 
+                    disabled={creating}
+                    style={{ width: '100%', height: '48px', borderRadius: '12px' }}
+                  >
+                    {creating ? <Loader2 className="animate-spin" /> : 'Crear Ficha'}
+                  </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* iOS Style Search Bar */}
-          <div style={{ 
+          {/* iOS Style Search Bar with focus-ring */}
+          <div className="focus-ring" style={{ 
             backgroundColor: 'var(--bg-tertiary)', 
             borderRadius: '16px', 
             padding: '4px 16px', 
@@ -121,7 +135,8 @@ const ClientModule = () => {
             display: 'flex', 
             alignItems: 'center', 
             gap: '12px',
-            border: '1px solid var(--border-color)'
+            border: '1px solid var(--border-color)',
+            transition: 'all 0.2s'
           }}>
             <Search size={20} color="var(--text-muted)" />
             <input 
@@ -134,7 +149,8 @@ const ClientModule = () => {
                 border: 'none',
                 width: '100%',
                 padding: '12px 0',
-                fontSize: '16px'
+                fontSize: '16px',
+                boxShadow: 'none' /* Remove individual input shadow */
               }}
             />
           </div>

@@ -138,15 +138,39 @@ export const dataService = {
       .insert(staffRecords);
 
     if (staffError) throw staffError;
-
-    // 3. Add to finance (Income)
+    
+    // 3. Add to finance (Income) with exchange rate snapshot
     await this.addTransaction({
       description: `Servicio: ${appointmentData.serviceName} - Cliente ID: ${appointmentData.clientId}`,
       amount: appointmentData.totalPrice,
       type: 'income',
-      category: 'Servicios'
+      category: 'Servicios',
+      exchange_rate: appointmentData.exchangeRate || 1,
+      currency: appointmentData.currency || 'USD'
     });
 
     return appointment;
+  },
+
+  // BCV Exchange Rates
+  async getExchangeRates() {
+    try {
+      // 1. Get USD/BS (BCV)
+      const usdRes = await fetch('https://ve.dolarapi.com/v1/dolares/bcv');
+      const usdData = await usdRes.json();
+      
+      // 2. Get EUR/BS (BCV)
+      const eurRes = await fetch('https://ve.dolarapi.com/v1/euros/oficial');
+      const eurData = await eurRes.json();
+
+      return {
+        usd: usdData.promedio,
+        eur: eurData.promedio,
+        updated_at: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error fetching BCV rates:', error);
+      return null;
+    }
   }
 };

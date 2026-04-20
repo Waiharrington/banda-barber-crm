@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 
-const AdminModule = ({ isMobile, onRefresh }) => {
+const AdminModule = ({ isMobile, onRefresh, rates, setRates }) => {
   const [businessName, setBusinessName] = useState('ASTRO BARBERSHOP');
   const [currency, setCurrency] = useState('USD');
   const [notifsEnabled, setNotifsEnabled] = useState(true);
@@ -265,17 +265,54 @@ const AdminModule = ({ isMobile, onRefresh }) => {
           </div>
         </section>
 
-        {/* SECCIÓN: MANTENIMIENTO */}
+        {/* SECCIÓN: MANTENIMIENTO & DIVISAS */}
         <section className="glass-card animate-slide-up" style={{ borderRadius: '24px', padding: '20px', gridColumn: isMobile ? 'span 1' : 'span 2' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-            <Database size={18} color="var(--gold-primary)" />
-            <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Mantenimiento de Datos</h3>
-          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap: '32px' }}>
+            
+            {/* Tasas de Cambio BCV */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <RefreshCw size={18} color="var(--gold-primary)" className={!rates.updated_at ? 'animate-spin' : ''} />
+                <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Tasas de Cambio (BCV)</h3>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '16px' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800' }}>USD / BS</div>
+                  <input 
+                    type="number" 
+                    value={rates.usd} 
+                    onChange={(e) => setRates({...rates, usd: parseFloat(e.target.value)})}
+                    style={{ background: 'none', border: 'none', fontSize: '18px', fontWeight: '900', color: 'var(--gold-primary)', padding: '4px 0' }}
+                  />
+                </div>
+                <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '16px' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800' }}>EUR / BS</div>
+                  <input 
+                    type="number" 
+                    value={rates.eur} 
+                    onChange={(e) => setRates({...rates, eur: parseFloat(e.target.value)})}
+                    style={{ background: 'none', border: 'none', fontSize: '18px', fontWeight: '900', color: 'var(--gold-primary)', padding: '4px 0' }}
+                  />
+                </div>
+              </div>
+              <p style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                Actualizado: {rates.updated_at ? new Date(rates.updated_at).toLocaleString() : 'Sincronizando...'}
+              </p>
+            </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px' }}>
-            <AdminActionRow compact icon={<Download size={14} />} label="Exportar Backup" actionLabel="Descargar" />
-            <AdminActionRow compact icon={<RefreshCw size={14} />} label="Sincronizar Caja" actionLabel="Ejecutar" />
-            <AdminActionRow compact isDanger icon={<Trash2 size={14} />} label="Reset Historial" actionLabel="Borrar" />
+            {/* Acciones de Base de Datos */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <Database size={18} color="var(--gold-primary)" />
+                <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Base de Datos</h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <AdminActionRow compact icon={<Download size={14} />} label="Exportar Backup" actionLabel="Descargar" />
+                <AdminActionRow compact isDanger icon={<Trash2 size={14} />} label="Reset Datos" actionLabel="Borrar" />
+              </div>
+            </div>
+
           </div>
         </section>
       </div>

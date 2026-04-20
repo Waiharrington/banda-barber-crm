@@ -17,7 +17,24 @@ import AdminModule from './components/AdminModule';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024); // More aggressive mobile detection
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Multi-currency State
+  const [currency, setCurrency] = useState('USD'); // Moneda de vista GLOBAL
+  const [rates, setRates] = useState({ usd: 0, eur: 0, updated_at: null });
+
+  const handleRefresh = () => setRefreshKey(prev => prev + 1);
+
+  // Auto-Sync BCV Rates on Mount
+  useEffect(() => {
+    const syncRates = async () => {
+      const data = await dataService.getExchangeRates();
+      if (data) setRates(data);
+    };
+    syncRates();
+  }, []);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
   
@@ -94,20 +111,13 @@ function App() {
         ) : (
           <DashboardModule onOpenSale={() => setIsSaleModalOpen(true)} stats={stats} chartData={chartData} dbData={dbData} handleSeedData={handleSeedData} />
         );
-      case 'clients':
-        return <ClientModule />;
-      case 'personnel':
-        return <PersonnelModule isMobile={isMobile} />;
-      case 'services':
-        return <ServicesModule isMobile={isMobile} />;
-      case 'inventory':
-        return <InventoryModule isMobile={isMobile} />;
-      case 'finance':
-        return <FinanceModule isMobile={isMobile} />;
-      case 'admin':
-        return <AdminModule isMobile={isMobile} onRefresh={fetchInitialData} />;
-      default:
-        return <div>Módulo en desarrollo</div>;
+      case 'services': return <div className="p-container"><ServicesModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
+      case 'inventory': return <div className="p-container"><InventoryModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
+      case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
+      case 'clients': return <div className="p-container"><ClientModule isMobile={isMobile} /></div>;
+      case 'personnel': return <div className="p-container"><PersonnelModule isMobile={isMobile} /></div>;
+      case 'admin': return <div className="p-container"><AdminModule isMobile={isMobile} onRefresh={handleRefresh} rates={rates} setRates={setRates} /></div>;
+      default: return <div className="p-container"><DashboardModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
     }
   };
 
