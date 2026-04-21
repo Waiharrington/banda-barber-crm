@@ -356,6 +356,18 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
     }
   };
 
+  const handlePhotoDelete = async (index) => {
+    if (!window.confirm('¿Deseas eliminar esta foto de la galería?')) return;
+    try {
+      const newGallery = gallery.filter((_, i) => i !== index);
+      setGallery(newGallery);
+      await onUpdate({ work_gallery: newGallery });
+      showToast('Foto eliminada');
+    } catch (e) {
+      showToast('Error al eliminar foto', 'error');
+    }
+  };
+
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -505,8 +517,24 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
                 {gallery.map((img, i) => (
-                  <div key={i} style={{ aspectRatio: '1/1', backgroundColor: 'var(--bg-tertiary)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                  <div key={i} style={{ aspectRatio: '1/1', backgroundColor: 'var(--bg-tertiary)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }} className="group">
                     <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handlePhotoDelete(i); }}
+                      style={{ 
+                        position: 'absolute', top: '8px', right: '8px', 
+                        backgroundColor: 'rgba(255, 69, 58, 0.8)', 
+                        border: 'none', borderRadius: '8px', color: 'white', 
+                        padding: '6px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+                        transition: '0.2s'
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ff453a'}
+                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 69, 58, 0.8)'}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 ))}
                 <div 
