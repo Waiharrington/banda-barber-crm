@@ -22,6 +22,8 @@ const ReceptionModule = ({ isMobile }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [idSearch, setIdSearch] = useState('');
   
   const [formData, setFormData] = useState({
     serviceId: '',
@@ -48,12 +50,27 @@ const ReceptionModule = ({ isMobile }) => {
     }
   };
 
-  const filteredClients = searchTerm.length > 1 
-    ? clients.filter(c => 
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        c.phone?.includes(searchTerm)
-      )
-    : [];
+  const handleIdSearch = () => {
+    const client = clients.find(c => c.id_card === idSearch);
+    if (client) {
+      setSelectedClient(client);
+      setIdSearch('');
+      showToast(`Cliente identificado: ${client.name}`);
+    } else {
+      showToast("Cédula no encontrada. Registra al cliente.", "warning");
+    }
+  };
+
+  const addService = (serviceId) => {
+    const service = services.find(s => s.id === serviceId);
+    if (service && !selectedServices.find(s => s.id === serviceId)) {
+      setSelectedServices([...selectedServices, service]);
+    }
+  };
+
+  const removeService = (serviceId) => {
+    setSelectedServices(selectedServices.filter(s => s.id !== serviceId));
+  };
 
   const handleCreateClient = async () => {
     const name = window.prompt("Nombre del nuevo cliente:");
@@ -70,32 +87,37 @@ const ReceptionModule = ({ isMobile }) => {
   };
 
   const handleSubmit = async (statusOverride) => {
-    if (!selectedClient || !formData.serviceId || !formData.staffId) {
-      showToast("Por favor completa todos los campos", "error");
+    if (!selectedClient || selectedServices.length === 0 || !formData.staffId) {
+      showToast("Selecciona cliente, al menos un servicio y barbero", "error");
       return;
     }
 
     try {
       setLoading(true);
-      const service = services.find(s => s.id === formData.serviceId);
       
-      await dataService.createAppointment({
-        client_id: selectedClient.id,
-        service_id: formData.serviceId,
-        staff_id: formData.staffId, // Assigned barber
-        status: statusOverride || formData.status,
-        total_price: service.price
-      });
+      // We process multiple services as individual appointments/lines for now 
+      // but linked to the same event. In a complex DB we'd have a Transaction table.
+      const promises = selectedServices.map(service => 
+        dataService.createAppointment({
+          client_id: selectedClient.id,
+          service_id: service.id,
+          staff_id: formData.staffId,
+          status: statusOverride || formData.status,
+          total_price: service.price
+        })
+      );
+      
+      await Promise.all(promises);
 
-      showToast(`¡Servicio iniciado! El cliente está ${statusOverride || formData.status}`);
+      showToast(`¡Orden enviada! ${selectedServices.length} servicios en cola.`);
       if (!statusOverride || statusOverride === 'En Silla') triggerConfetti();
       
-      // Reset form
+      // Reset
       setSelectedClient(null);
-      setSearchTerm('');
+      setSelectedServices([]);
       setFormData({ serviceId: '', staffId: '', status: 'En Silla' });
     } catch (err) {
-      showToast("Error al procesar recepción", "error");
+      showToast("Error al procesar orden", "error");
       console.error(err);
     } finally {
       setLoading(false);
@@ -128,39 +150,43 @@ const ReceptionModule = ({ isMobile }) => {
             </div>
 
             {selectedClient ? (
-              <div className="animate-scale-in" style={{ padding: '20px', backgroundColor: 'rgba(212,175,55,0.05)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: '800', fontSize: '18px' }}>{selectedClient.name}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{selectedClient.phone || 'S/N'}</div>
+              <div className="animate-scale-in" style={{ padding: '20px', backgroundColor: 'rgba(212,175,55,0.05)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div>
+                    <div style={{ fontWeight: '800', fontSize: '18px' }}>{selectedClient.name}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>V-{selectedClient.id_card}</div>
+                  </div>
+                  <button onClick={() => setSelectedClient(null)} style={{ background: 'none', border: 'none', color: '#ff453a', fontWeight: '800', cursor: 'pointer' }}>Cambiar</button>
                 </div>
-                <button onClick={() => setSelectedClient(null)} style={{ background: 'none', border: 'none', color: '#ff453a', fontWeight: '800', cursor: 'pointer' }}>Cambiar</button>
+                
+                {/* Technical File Mini View */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '2px' }}>Cabello</div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--gold-primary)' }}>{selectedClient.hair_type || 'No especificado'}</div>
+                  </div>
+                  <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '2px' }}>Cuero</div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--gold-primary)' }}>{selectedClient.scalp_type || 'No especificado'}</div>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div style={{ position: 'relative' }}>
-                <Search style={{ position: 'absolute', left: '16px', top: '14px' }} size={18} color="var(--text-muted)" />
-                <input 
-                  type="text" 
-                  placeholder="Buscar por nombre o celular..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ width: '100%', paddingLeft: '48px', height: '48px' }}
-                />
-                
-                {filteredClients.length > 0 && (
-                  <div className="glass-card" style={{ position: 'absolute', top: '60px', left: 0, right: 0, zIndex: 10, padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
-                    {filteredClients.map(c => (
-                      <div 
-                        key={c.id} 
-                        onClick={() => setSelectedClient(c)}
-                        style={{ padding: '12px 16px', cursor: 'pointer', borderRadius: '8px', transition: '0.2s', display: 'flex', justifyContent: 'space-between' }}
-                        className="hover-item"
-                      >
-                        <span style={{ fontWeight: '700' }}>{c.name}</span>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{c.phone}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                  <Search style={{ position: 'absolute', left: '16px', top: '14px' }} size={18} color="var(--text-muted)" />
+                  <input 
+                    type="text" 
+                    placeholder="Escribe Cédula..." 
+                    value={idSearch}
+                    onChange={(e) => setIdSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleIdSearch()}
+                    style={{ width: '100%', paddingLeft: '48px', height: '48px' }}
+                  />
+                </div>
+                <button onClick={handleIdSearch} className="btn-gold" style={{ width: '48px', height: '48px', padding: 0, borderRadius: '12px' }}>
+                  <ArrowRight size={20} />
+                </button>
               </div>
             )}
           </div>
@@ -172,13 +198,30 @@ const ReceptionModule = ({ isMobile }) => {
             </div>
             
             <AstroSelect 
-              label="SERVICIO"
-              placeholder="Selecciona un servicio"
-              value={formData.serviceId}
-              onChange={val => setFormData({...formData, serviceId: val})}
+              label="AÑADIR SERVICIO / UPSELL"
+              placeholder="Selecciona servicio"
+              value="" // Static selector that adds to list
+              onChange={val => addService(val)}
               options={services.map(s => ({ label: `${s.name} ($${s.price})`, value: s.id }))}
-              style={{ marginBottom: '20px' }}
+              style={{ marginBottom: '16px' }}
             />
+
+            {selectedServices.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+                {selectedServices.map(s => (
+                  <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: '700' }}>{s.name}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--gold-primary)' }}>${s.price}</div>
+                    </div>
+                    <button onClick={() => removeService(s.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px' }}>&times;</button>
+                  </div>
+                ))}
+                <div style={{ textAlign: 'right', padding: '10px', fontWeight: '800', color: 'var(--gold-primary)' }}>
+                  TOTAL: ${selectedServices.reduce((acc, s) => acc + s.price, 0)}
+                </div>
+              </div>
+            )}
 
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>BARBERO DISPONIBLE</label>
@@ -217,13 +260,15 @@ const ReceptionModule = ({ isMobile }) => {
           <div className="glass-card" style={{ borderRadius: '24px', background: 'linear-gradient(135deg, rgba(28,28,30,0.9), rgba(212,175,55,0.05))', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '40px 30px' }}>
             {!selectedClient ? (
               <>
-                <Clock size={48} color="rgba(255,255,255,0.1)" style={{ marginBottom: '20px' }} />
-                <h3 style={{ color: 'var(--text-muted)' }}>Esperando cliente...</h3>
+                <Search size={48} color="rgba(255,255,255,0.1)" style={{ marginBottom: '20px' }} />
+                <h3 style={{ color: 'var(--text-muted)' }}>Identifica al cliente</h3>
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.2)', marginTop: '8px' }}>Ingresa la Cédula para cargar su ficha técnica.</p>
               </>
-            ) : !formData.serviceId ? (
+            ) : selectedServices.length === 0 ? (
               <>
                 <Scissors size={48} color="rgba(212,175,55,0.2)" style={{ marginBottom: '20px' }} />
-                <h3 style={{ color: 'var(--text-secondary)' }}>Selecciona el servicio</h3>
+                <h3 style={{ color: 'var(--text-secondary)' }}>Añade los servicios</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>Busca el MVP y añade los Upsells correspondientes.</p>
               </>
             ) : (
               <div className="animate-slide-up">
