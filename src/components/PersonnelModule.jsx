@@ -195,6 +195,7 @@ const PersonnelModule = ({ isMobile }) => {
                     <span style={{ color: 'var(--gold-primary)', fontSize: '13px', fontWeight: '600' }}>{person.role.toUpperCase()}</span>
                   </div>
                 </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
                   <button className="action-btn" onClick={() => {
                     setDialog({
                       isOpen: true,
