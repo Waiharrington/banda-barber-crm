@@ -32,7 +32,7 @@ import BarberPanel from './components/BarberPanel';
 import SchedulingModule from './components/SchedulingModule';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('astro_active_tab') || 'dashboard');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isAppLoading, setIsAppLoading] = useState(true);
@@ -150,6 +150,7 @@ function App() {
     // Short transition to maintain the premium feel
     setTimeout(() => {
       setActiveTab(tabId);
+      localStorage.setItem('astro_active_tab', tabId);
       setIsTabLoading(false);
     }, 600);
   };
