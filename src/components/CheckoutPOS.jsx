@@ -77,25 +77,25 @@ const CheckoutPOS = ({ isMobile, rates }) => {
     try {
       setLoading(true);
       
-      const paymentData = {
-        appointmentId: selectedApp.id,
-        clientName: selectedApp.clients.name,
-        serviceName: selectedApp.services.name,
-        totalUsd: totalUsd,
-        fixedRate: fixedRate,
-        isMixed: paymentMode === 'mixed',
-        cashUsd: Number(cashUsd),
-        transferBs: Number(remainingBs),
-        totalTips: Number(tip),
-        staffInvolved: [
-          { 
-            staffId: selectedApp.staff_id, 
-            commissionEarned: selectedApp.services.price * 0.4, // Assumption 40%
-            tip: Number(tip)
-          }
-        ],
-        products: cart
-      };
+        const paymentData = {
+          appointmentId: selectedApp.id,
+          clientName: selectedApp.clients.name,
+          serviceName: selectedApp.services.name,
+          totalUsd: totalUsd,
+          fixedRate: fixedRate,
+          isMixed: paymentMode === 'mixed',
+          cashUsd: Number(cashUsd),
+          transferBs: Number(remainingBs),
+          totalTips: Number(tip),
+          staffInvolved: [
+            { 
+              staffId: selectedApp.staff_id, 
+              commissionEarned: selectedApp.services.price * ((selectedApp.staff?.commission_pct || 40) / 100), 
+              tip: Number(tip)
+            }
+          ],
+          products: cart
+        };
 
       await dataService.processFinalPayment(paymentData);
       

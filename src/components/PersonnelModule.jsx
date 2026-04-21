@@ -50,14 +50,14 @@ const PersonnelModule = ({ isMobile }) => {
   };
 
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newStaff, setNewStaff] = useState({ name: '', role: 'Barbero', commission_pct: 40 });
+  const [newStaff, setNewStaff] = useState({ name: '', role: 'Barbero', commission_pct: 40, image_url: '' });
 
   const handleCreateStaff = async () => {
     if (!newStaff.name) return;
     try {
       setLoading(true);
       await dataService.addStaff(newStaff);
-      setNewStaff({ name: '', role: 'Barbero', commission_pct: 40 });
+      setNewStaff({ name: '', role: 'Barbero', commission_pct: 40, image_url: '' });
       setShowAddForm(false);
       await fetchStaff();
       showToast(`¡${newStaff.name} se ha unido al equipo!`);
@@ -98,6 +98,7 @@ const PersonnelModule = ({ isMobile }) => {
               <option value="Asistente">Asistente</option>
             </select>
             <input className="form-input" type="number" placeholder="% Comisión" value={newStaff.commission_pct} onChange={e => setNewStaff({...newStaff, commission_pct: Number(e.target.value)})} />
+            <input className="form-input" placeholder="URL Foto (opcional)" value={newStaff.image_url} onChange={e => setNewStaff({...newStaff, image_url: e.target.value})} />
             <button className="btn-gold" onClick={handleCreateStaff}>Guardar Registro</button>
           </div>
         </div>
@@ -151,11 +152,21 @@ const PersonnelModule = ({ isMobile }) => {
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button className="action-btn" onClick={() => {
                     const newName = window.prompt('Nuevo nombre:', person.name);
-                    if (newName) {
-                      dataService.updateStaff(person.id, { name: newName })
+                    const newRole = window.prompt('Nuevo rol (Barbero/Estilista/Asistente):', person.role);
+                    const newComm = window.prompt('Nueva comisión (%):', person.commission_pct);
+                    const newImg = window.prompt('Nueva URL de foto:', person.image_url || '');
+                    
+                    if (newName || newRole || newComm || newImg) {
+                      const updates = {};
+                      if (newName) updates.name = newName;
+                      if (newRole) updates.role = newRole;
+                      if (newComm) updates.commission_pct = Number(newComm);
+                      if (newImg !== null) updates.image_url = newImg;
+
+                      dataService.updateStaff(person.id, updates)
                         .then(() => {
                           fetchStaff();
-                          showToast('Nombre actualizado');
+                          showToast('Personal actualizado con éxito');
                         })
                         .catch(() => showToast('Error al actualizar', 'error'));
                     }

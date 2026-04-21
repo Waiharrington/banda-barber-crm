@@ -217,6 +217,49 @@ const FinanceModule = ({ isMobile }) => {
         </div>
       </section>
 
+      {/* Astro Cash Closing (AUTOCONCILIATION) */}
+      <section className="glass-card animate-slide-up" style={{ 
+        marginBottom: '40px', 
+        padding: '32px', 
+        borderRadius: '28px',
+        background: 'linear-gradient(135deg, rgba(28,28,30,0.8), rgba(212,175,55,0.05))',
+        border: '1px solid rgba(212,175,55,0.1)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Wallet size={20} color="black" />
+          </div>
+          <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Cierre de Caja <span className="text-gold">Astro</span></h3>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '20px' }}>
+          <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>EFECTIVO ($)</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: '#32d74b' }}>
+              ${transactions.filter(t => t.metadata?.cash_usd).reduce((acc, t) => acc + (t.metadata.cash_usd || 0), 0).toFixed(2)}
+            </div>
+          </div>
+          <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>TRANSFERENCIA (BS)</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+              {transactions.filter(t => t.metadata?.transfer_bs).reduce((acc, t) => acc + (t.metadata.transfer_bs || 0), 0).toFixed(2)} <span style={{fontSize: '12px'}}>BS</span>
+            </div>
+          </div>
+          <div style={{ padding: '20px', backgroundColor: 'rgba(255,69,58,0.05)', borderRadius: '20px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>COMISIONES DEUDA</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: '#ff453a' }}>
+              ${(totalIncome * 0.4).toFixed(2)} {/* Placeholder for real aggregated commission logic */}
+            </div>
+          </div>
+          <div style={{ padding: '20px', backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: '20px', border: '1px solid var(--gold-primary)' }}>
+            <div style={{ fontSize: '10px', fontWeight: '900', color: 'black', backgroundColor: 'var(--gold-primary)', display: 'inline-block', padding: '2px 6px', borderRadius: '4px', marginBottom: '4px' }}>NETO REAL</div>
+            <div style={{ fontSize: '24px', fontWeight: '950', color: 'white' }}>
+              ${(totalIncome - totalExpense).toFixed(2)}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Transactions Section */}
       <div className="glass-card" style={{ padding: isMobile ? '20px' : '32px', borderRadius: '28px' }}>
         <div style={{ 
