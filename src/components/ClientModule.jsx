@@ -255,7 +255,10 @@ const ClientModule = () => {
       ) : (
         <ClientDetail 
           client={selectedClient} 
-          onBack={() => setSelectedClient(null)} 
+          onBack={() => {
+            setSelectedClient(null);
+            setShowCamera(false); // Reset camera state on back
+          }} 
           onDelete={() => handleDeleteClient(selectedClient.id, selectedClient.name)}
           onUpdate={async (updates) => {
             try {

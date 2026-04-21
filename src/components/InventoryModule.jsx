@@ -14,6 +14,8 @@ import {
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import AstroSelect from './AstroSelect';
+import AstroCamera from './AstroCamera';
+import { Camera } from 'lucide-react';
 
 const InventoryModule = ({ isMobile }) => {
   const { showToast } = useNotifs();
@@ -21,7 +23,8 @@ const InventoryModule = ({ isMobile }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newItem, setNewItem] = useState({ name: '', stock: 0, price: 0, category: 'Producto' });
+  const [showCamera, setShowCamera] = useState(false);
+  const [newItem, setNewItem] = useState({ name: '', stock: 0, price: 0, category: 'Producto', image_url: '' });
 
   useEffect(() => {
     fetchInventory();
@@ -54,7 +57,7 @@ const InventoryModule = ({ isMobile }) => {
     try {
       await dataService.addInventoryItem(newItem);
       setShowAddForm(false);
-      setNewItem({ name: '', stock: 0, price: 0, category: 'Producto' });
+      setNewItem({ name: '', stock: 0, price: 0, category: 'Producto', image_url: '' });
       fetchInventory();
       showToast('Producto agregado al almacén');
     } catch (error) {
@@ -110,14 +113,47 @@ const InventoryModule = ({ isMobile }) => {
               ]}
             />
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>STOCK INICIAL</label>
-              <input type="number" value={newItem.stock} onChange={(e) => setNewItem({...newItem, stock: Number(e.target.value)})} style={{ width: '100%', height: '48px' }} />
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>IMAGEN DEL PRODUCTO</label>
+              <div 
+                onClick={() => setShowCamera(true)}
+                style={{ 
+                  height: '48px', 
+                  backgroundColor: 'rgba(255,255,255,0.03)', 
+                  border: '1px solid var(--border-color)', 
+                  borderRadius: '12px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px',
+                  padding: '0 16px',
+                  cursor: 'pointer',
+                  overflow: 'hidden'
+                }}
+              >
+                {newItem.image_url ? (
+                  <>
+                    <img src={newItem.image_url} style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover' }} />
+                    <span style={{ fontSize: '13px', color: 'var(--gold-primary)', fontWeight: '700' }}>¡Imagen lista!</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera size={18} color="var(--gold-primary)" />
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Tomar o subir foto...</span>
+                  </>
+                )}
+              </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end' }}>
               <button className="btn-gold" onClick={handleAddItem} style={{ width: '100%', height: '48px' }}>Registrar Stock</button>
             </div>
           </div>
         </div>
+      )}
+
+      {showCamera && (
+        <AstroCamera 
+          onCapture={(img) => setNewItem({...newItem, image_url: img})} 
+          onClose={() => setShowCamera(false)} 
+        />
       )}
 
       {/* Search & Alerts Header */}
@@ -204,10 +240,31 @@ const InventoryModule = ({ isMobile }) => {
                   )}
                 </div>
                 
-                <h4 style={{ fontSize: '20px', fontWeight: '850', marginBottom: '4px', letterSpacing: '-0.3px' }}>{item.name}</h4>
-                <div style={{ fontSize: '24px', fontWeight: '950', color: 'var(--text-primary)', marginBottom: '24px' }}>
-                  <span style={{ fontSize: '14px', verticalAlign: 'super', marginRight: '2px', opacity: 0.6 }}>$</span>
-                  {item.price.toFixed(2)}
+                <div style={{ display: 'flex', gap: '20px', marginBottom: '24px' }}>
+                  <div style={{ 
+                    width: '64px', 
+                    height: '64px', 
+                    borderRadius: '16px', 
+                    backgroundColor: 'rgba(255,255,255,0.02)', 
+                    overflow: 'hidden',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {item.image_url ? (
+                      <img src={item.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <Package size={24} color="rgba(255,255,255,0.1)" />
+                    )}
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '18px', fontWeight: '850', marginBottom: '4px', letterSpacing: '-0.3px' }}>{item.name}</h4>
+                    <div style={{ fontSize: '20px', fontWeight: '950', color: 'var(--gold-primary)' }}>
+                      <span style={{ fontSize: '12px', verticalAlign: 'super', marginRight: '2px', opacity: 0.6 }}>$</span>
+                      {item.price.toFixed(2)}
+                    </div>
+                  </div>
                 </div>
 
                 <div style={{ 
