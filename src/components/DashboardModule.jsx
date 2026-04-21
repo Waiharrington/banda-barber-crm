@@ -25,6 +25,15 @@ import {
 import { Line } from 'react-chartjs-2';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
+import { 
+  Trophy, 
+  Crown, 
+  Medal, 
+  ArrowRight,
+  ShoppingBag,
+  Scissors as ScissorsIcon,
+  Circle
+} from 'lucide-react';
 
 ChartJS.register(
   CategoryScale,
@@ -56,13 +65,13 @@ const QUOTES = [
   { text: "El negocio de la belleza es el negocio de la felicidad.", creator: "Emprendimiento" }
 ];
 
-const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handleSeedData, onNavigate }) => {
+const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handleSeedData }) => {
   const [quoteIndex, setQuoteIndex] = useState(0);
   const { showToast } = useNotifs();
   const dailyGoal = parseFloat(localStorage.getItem('astro_daily_goal') || '500');
+  const [isStoreOpen] = useState(true); // Can be linked to schedule later
 
   useEffect(() => {
-    // Pick random quote on mount / login
     setQuoteIndex(Math.floor(Math.random() * QUOTES.length));
   }, []);
 
@@ -79,8 +88,6 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
     if (newGoal && !isNaN(newGoal)) {
       localStorage.setItem('astro_daily_goal', newGoal);
       showToast(`Meta diaria actualizada a $${newGoal}`);
-      // Simple force re-render via state or just let next refresh handle it
-      // But for better UX, we could use a local state. For now, it's a persistent setting.
       window.location.reload(); 
     }
   };
@@ -96,200 +103,195 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
         backgroundColor: '#1a1a1a',
         borderColor: '#d4af37',
         borderWidth: 1,
-        titleColor: '#d4af37'
+        titleColor: '#d4af37',
+        padding: 12,
+        cornerRadius: 12
       }
     },
     scales: {
       y: { display: false },
       x: { 
         grid: { display: false },
-        ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 } }
+        ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10, weight: '700' } }
       }
     }
   };
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in" style={{ paddingBottom: isMobile ? '100px' : '0' }}>
+      {/* Header Elite */}
       <div style={{
         display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '32px'
+        alignItems: isMobile ? 'flex-start' : 'center',
+        gap: '20px',
+        marginBottom: '40px'
       }}>
-        <div>
-          <h1 style={{ fontSize: '28px', marginBottom: '8px' }}>Panel de <span className="text-gold">Control</span></h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Resumen celestial del día.</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ position: 'relative' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--gold-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--gold-glow)' }}>
+              <User size={24} color="black" />
+            </div>
+            <Circle size={12} fill={isStoreOpen ? '#32d74b' : '#ff453a'} color="none" style={{ position: 'absolute', bottom: 0, right: 0, border: '2px solid var(--bg-primary)', borderRadius: '50%' }} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: '24px', fontWeight: '900', letterSpacing: '-0.5px' }}>¡Hola, <span className="text-gold">Admin</span>!</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '13px' }}>
+              <span style={{ color: isStoreOpen ? '#32d74b' : '#ff453a', fontWeight: '800' }}>● {isStoreOpen ? 'TIENDA ABIERTA' : 'CERRADO'}</span>
+              <span style={{ opacity: 0.3 }}>|</span>
+              <span>{new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase()}</span>
+            </div>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        
+        <div style={{ display: 'flex', gap: '12px', width: isMobile ? '100%' : 'auto' }}>
           {dbData.staff.length === 0 && (
-            <button 
-              onClick={handleSeedData}
-              style={{ background: 'none', border: '1px solid var(--gold-primary)', color: 'var(--gold-primary)', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              <Rocket size={18} /> Cargar Demo
-            </button>
+            <button key="seed" onClick={handleSeedData} className="action-btn" style={{ flex: 1 }}><Rocket size={18} /> Demo</button>
           )}
           <button 
+            key="sale"
             className="btn-gold" 
             onClick={onOpenSale}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: isMobile ? 3 : 'none', height: '48px', borderRadius: '14px' }}
           >
-            <Plus size={18} /> Nueva Venta / Servicio
+            <Plus size={18} /> Nueva Operación Astro
           </button>
         </div>
       </div>
 
-      {/* Decorative Quote Section */}
-      <div className="glass-card animate-slide-up" style={{ 
-        marginBottom: '60px', 
-        padding: '0', 
-        borderRadius: '32px',
-        background: 'linear-gradient(135deg, rgba(28,28,30,0.95), rgba(212,175,55,0.05))',
-        border: '1px solid rgba(255,255,255,0.03)',
-        position: 'relative',
-        overflow: 'visible',
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        alignItems: 'center',
-        minHeight: '220px'
-      }}>
-        <div style={{ 
-          flex: 1, 
-          padding: isMobile ? '40px 24px' : '48px', 
-          textAlign: isMobile ? 'center' : 'left',
-          zIndex: 2 
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
-            <div style={{ width: '30px', height: '1px', backgroundColor: 'var(--gold-primary)' }} />
-            <span style={{ color: 'var(--gold-primary)', fontSize: '10px', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>Pensamiento Astro</span>
-            <button 
-              onClick={shuffleQuote}
-              style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', padding: '4px', opacity: 0.6, display: 'flex', alignItems: 'center', transition: 'all 0.3s' }}
-              className="refresh-btn"
-            >
-              <Sparkles size={12} />
-            </button>
-          </div>
-          <h2 key={quoteIndex} className="animate-fade-in" style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '900', letterSpacing: '-1px', marginBottom: '16px', lineHeight: 1.1 }}>
-            {currentQuote.text.includes('<br />') ? currentQuote.text : (
-              <>
-                {currentQuote.text.split(' ').slice(0, Math.ceil(currentQuote.text.split(' ').length / 2)).join(' ')} <br />
-                <span className="text-gold">{currentQuote.text.split(' ').slice(Math.ceil(currentQuote.text.split(' ').length / 2)).join(' ')}</span>
-              </>
-            )}
-          </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic', opacity: 0.7 }}>— {currentQuote.creator}</p>
-        </div>
-
-        <div style={{ 
-          flex: isMobile ? 'none' : '0.8', 
-          position: 'relative', 
-          height: isMobile ? '240px' : '280px',
-          width: isMobile ? '100%' : 'auto',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginTop: isMobile ? '0' : '20px'
-        }}>
-          <div style={{
-            position: 'absolute',
-            width: '240px',
-            height: '240px',
-            background: 'radial-gradient(circle, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.05) 40%, transparent 70%)',
-            filter: 'blur(30px)',
-            zIndex: 1,
-            animation: 'pulse-gold 4s infinite ease-in-out'
-          }} />
-
-          <div style={{
-            position: 'absolute',
-            bottom: '10px',
-            width: '120px',
-            height: '15px',
-            background: 'rgba(0,0,0,0.6)',
-            filter: 'blur(12px)',
-            borderRadius: '50%',
-            zIndex: 2,
-            transform: 'scaleX(1.5)',
-            animation: 'shadow-scale 4s infinite ease-in-out'
-          }} />
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }}>
+        {/* Main Section */}
+        <div style={{ gridColumn: isMobile ? 'span 1' : 'span 2', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          <img 
-            src="/barber-chair.png" 
-            alt="Astro Chair" 
-            className="chair-float"
-            style={{ 
-              height: isMobile ? '280px' : '360px', 
-              width: 'auto',
-              objectFit: 'contain',
-              zIndex: 3,
-              filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.7))',
-              pointerEvents: 'none',
-              animation: 'float 4s infinite ease-in-out'
-            }} 
-          />
-        </div>
-      </div>
-
-      {/* Goal Progress Section */}
-      <div className="glass-card animate-slide-up" style={{ marginBottom: '40px', padding: '20px 24px', position: 'relative' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Target size={18} color="var(--gold-primary)" />
-            <span style={{ fontSize: '14px', fontWeight: '850', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Misión del Día</span>
+          {/* Quote Card (Refined) */}
+          <div className="glass-card" style={{ 
+            padding: '32px', 
+            borderRadius: '28px',
+            background: 'linear-gradient(135deg, rgba(28,28,30,0.98), rgba(212,175,55,0.08))',
+            border: '1px solid rgba(212,175,55,0.1)',
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'center',
+            position: 'relative'
+          }}>
+            <div style={{ flex: 1, zIndex: 2, textAlign: isMobile ? 'center' : 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
+                <Sparkles size={14} color="var(--gold-primary)" />
+                <span style={{ color: 'var(--gold-primary)', fontSize: '10px', fontWeight: '900', letterSpacing: '3px' }}>PENSAMIENTO ASTRO</span>
+              </div>
+              <h2 style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '900', color: 'white', lineHeight: 1.2 }}>
+                {currentQuote.text}
+              </h2>
+              <p style={{ marginTop: '12px', color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '14px' }}>— {currentQuote.creator}</p>
+            </div>
+            {!isMobile && (
+              <div style={{ flex: 0.5, display: 'flex', justifyContent: 'center' }}>
+                <Rocket size={80} color="var(--gold-primary)" opacity={0.2} style={{ animation: 'float 6s infinite ease-in-out' }} />
+              </div>
+            )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--gold-primary)' }}>
-              ${stats.income.toFixed(2)} / <span style={{ opacity: 0.6 }}>${dailyGoal}</span>
-            </span>
-            <button 
-              onClick={handleEditGoal}
-              style={{ background: 'rgba(212,175,55,0.1)', border: 'none', color: 'var(--gold-primary)', padding: '6px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-            >
-              <Edit3 size={14} />
+
+          {/* Business Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
+            <StatCard title="Producción Hoy" value={`$${stats.income.toFixed(2)}`} icon={<TrendingUp size={18} color="var(--gold-primary)" />} color="var(--gold-primary)" />
+            <StatCard title="Servicios" value={stats.appointments} icon={<ScissorsIcon size={18} color="#4caf50" />} color="#4caf50" />
+            <StatCard title="En Inventario" value={dbData.services.length + dbData.clients.length} icon={<ShoppingBag size={18} color="#2196f3" />} color="#2196f3" />
+          </div>
+
+          {/* Goal Progress */}
+          <div className="glass-card" style={{ padding: '24px', borderRadius: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <span style={{ fontWeight: '900', fontSize: '14px', letterSpacing: '1px' }}>MISIÓN DIARIA <span style={{ opacity: 0.4 }}>$</span>{dailyGoal}</span>
+              <button onClick={handleEditGoal} className="action-btn" style={{ padding: '4px 10px', fontSize: '11px' }}>EDITAR META</button>
+            </div>
+            <div style={{ height: '12px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
+              <div style={{ 
+                width: `${Math.min((stats.income / dailyGoal) * 100, 100)}%`, 
+                height: '100%', 
+                background: 'var(--gold-gradient)', 
+                boxShadow: 'var(--gold-glow)',
+                transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)' 
+              }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Top Performers Ranking (Sidebar) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div className="glass-card" style={{ 
+            height: '100%', 
+            borderRadius: '28px', 
+            padding: '24px', 
+            background: 'rgba(28,28,30,0.6)',
+            border: '1px solid rgba(255,255,255,0.03)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Trophy size={20} color="var(--gold-primary)" />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: '900' }}>Top <span className="text-gold">Artistas</span></h3>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {dbData.staff.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '40px 0' }}>Sin datos de personal.</p>
+              ) : dbData.staff.slice(0, 5).sort((a,b) => (b.stats?.income || 0) - (a.stats?.income || 0)).map((barber, index) => (
+                <div key={barber.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                  <div style={{ position: 'relative' }}>
+                    <div style={{ 
+                      width: '44px', 
+                      height: '44px', 
+                      borderRadius: '14px', 
+                      backgroundColor: 'var(--bg-tertiary)', 
+                      overflow: 'hidden',
+                      border: index === 0 ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)'
+                    }}>
+                      <img src={barber.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${barber.name}`} alt={barber.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    {index === 0 && <Crown size={14} color="var(--gold-primary)" fill="var(--gold-primary)" style={{ position: 'absolute', top: '-6px', right: '-6px' }} />}
+                    {index === 1 && <Medal size={14} color="#C0C0C0" style={{ position: 'absolute', top: '-6px', right: '-6px' }} />}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '800', fontSize: '13px' }}>{barber.name.split(' ')[0]}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{barber.role}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '14px' }}>${(barber.stats?.income || 0).toFixed(0)}</div>
+                    <div style={{ fontSize: '9px', fontWeight: '800', opacity: 0.4 }}>PRODUCCIÓN</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <button style={{ width: '100%', marginTop: '24px', backgroundColor: 'rgba(255,255,255,0.03)', border: 'none', color: 'var(--text-secondary)', padding: '12px', borderRadius: '12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              Ver Todos los Miembros <ArrowRight size={14} />
             </button>
           </div>
         </div>
-        <div className="goal-bar-container" style={{ height: '10px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '5px', overflow: 'hidden' }}>
-          <div className="goal-bar-fill" style={{ 
-            width: `${Math.min((stats.income / dailyGoal) * 100, 100)}%`,
-            height: '100%',
-            background: 'var(--gold-gradient)',
-            boxShadow: 'var(--gold-glow)',
-            transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}>
-            <div className="goal-bar-glow" />
-          </div>
-        </div>
-        <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '10px', textAlign: 'right', fontWeight: '600' }}>
-          {stats.income >= dailyGoal ? '¡MISIÓN CUMPLIDA! 🚀' : `${(100 - (stats.income / dailyGoal) * 100).toFixed(0)}% restante para el objetivo`}
-        </p>
       </div>
 
       <style>{`
         @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-25px); }
-        }
-        @keyframes shadow-scale {
-          0%, 100% { transform: scaleX(1.5) opacity(0.6); }
-          50% { transform: scaleX(1.1) opacity(0.2); }
-        }
-        @keyframes pulse-gold {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(1.15); opacity: 0.7; }
-        }
-        .chair-float {
-          transition: all 0.5s ease;
-        }
-        .chair-float:hover {
-          filter: drop-shadow(0 40px 70px rgba(212,175,55,0.4)) brightness(1.2) !important;
-        }
-        .refresh-btn:hover {
-          opacity: 1 !important;
-          transform: rotate(15deg) scale(1.2);
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(5deg); }
         }
       `}</style>
+    </div>
+  );
+};
+
+const StatCard = ({ title, value, icon, color }) => (
+  <div className="glass-card" style={{ padding: '20px', borderRadius: '20px', border: `1px solid ${color}1A` }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+      <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: `${color}1A`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {icon}
+      </div>
+    </div>
+    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>{title}</div>
+    <div style={{ fontSize: '24px', fontWeight: '900', marginTop: '4px' }}>{value}</div>
+  </div>
+);
 
       <section style={{
         display: 'grid',
