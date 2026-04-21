@@ -34,6 +34,14 @@ const ClientModule = ({ clients, onRefresh }) => {
 
   const [creating, setCreating] = useState(false);
 
+  // Sync selected client when global list updates (Crucial for persistence visibility)
+  useEffect(() => {
+    if (selectedClient) {
+      const updated = clients.find(c => c.id === selectedClient.id);
+      if (updated) setSelectedClient(updated);
+    }
+  }, [clients]);
+
   const handleDeleteClient = async (id, name) => {
     if (!window.confirm(`¿Estás seguro de eliminar a ${name}? Esta acción no se puede deshacer.`)) return;
     try {
