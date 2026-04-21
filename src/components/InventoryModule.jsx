@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
+import AstroSelect from './AstroSelect';
 
 const InventoryModule = ({ isMobile }) => {
   const { showToast } = useNotifs();
@@ -98,14 +99,16 @@ const InventoryModule = ({ isMobile }) => {
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>NOMBRE</label>
               <input type="text" placeholder="Ej. Cera Gold Premium" value={newItem.name} onChange={(e) => setNewItem({...newItem, name: e.target.value})} style={{ width: '100%', height: '48px' }} />
             </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>CATEGORÍA</label>
-              <select value={newItem.category} onChange={(e) => setNewItem({...newItem, category: e.target.value})} style={{ width: '100%', height: '48px' }}>
-                <option value="Venta">🛒 Para Venta</option>
-                <option value="Uso Interno">💈 Uso Interno</option>
-                <option value="Accesorios">✂️ Accesorios</option>
-              </select>
-            </div>
+            <AstroSelect 
+              label="CATEGORÍA"
+              value={newItem.category}
+              onChange={(val) => setNewItem({...newItem, category: val})}
+              options={[
+                { label: '🛒 Para Venta', value: 'Venta' },
+                { label: '💈 Uso Interno', value: 'Uso Interno' },
+                { label: '✂️ Accesorios', value: 'Accesorios' }
+              ]}
+            />
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>STOCK INICIAL</label>
               <input type="number" value={newItem.stock} onChange={(e) => setNewItem({...newItem, stock: Number(e.target.value)})} style={{ width: '100%', height: '48px' }} />
