@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
+import AstroSelect from './AstroSelect';
+import AstroDialog from './AstroDialog';
 
 const CheckoutPOS = ({ isMobile, rates }) => {
   const { showToast, triggerConfetti } = useNotifs();
@@ -32,6 +34,9 @@ const CheckoutPOS = ({ isMobile, rates }) => {
   const [cart, setCart] = useState([]); // Sold products
   const [paymentMode, setPaymentMode] = useState('full_usd'); // or 'mixed'
   const [cashUsd, setCashUsd] = useState(0);
+
+  // Dialog State
+  const [dialog, setDialog] = useState({ isOpen: false, type: 'alert', title: '', message: '', onConfirm: null });
 
   useEffect(() => {
     loadData();
@@ -113,6 +118,20 @@ const CheckoutPOS = ({ isMobile, rates }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleManualSale = () => {
+    setDialog({
+      isOpen: true,
+      type: 'confirm',
+      title: 'Nueva Venta Directa',
+      message: '¿Deseas iniciar una venta manual sin cita previa?',
+      onConfirm: () => {
+        // Implementation for direct sale if needed
+        setDialog({ ...dialog, isOpen: false });
+        showToast("Selecciona los productos y servicios abajo.");
+      }
+    });
   };
 
   if (!rates?.usd && !loading) {
@@ -309,6 +328,15 @@ const CheckoutPOS = ({ isMobile, rates }) => {
           )}
         </section>
       </div>
+
+      <AstroDialog 
+        isOpen={dialog.isOpen}
+        title={dialog.title}
+        message={dialog.message}
+        type={dialog.type}
+        onConfirm={dialog.onConfirm}
+        onCancel={() => setDialog({ ...dialog, isOpen: false })}
+      />
 
       <style>{`
         .hover-item:hover {
