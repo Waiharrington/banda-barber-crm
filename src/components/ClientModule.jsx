@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import AstroSelect from './AstroSelect';
+import AstroCamera from './AstroCamera';
 
 const ClientModule = () => {
   const { showToast } = useNotifs();
@@ -285,6 +286,9 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [gallery, setGallery] = useState(client.work_gallery || []);
+  const fileInputRef = useRef(null);
   const [editData, setEditData] = useState({ 
     name: client.name, 
     phone: client.phone,
@@ -307,6 +311,27 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
     };
     loadHistory();
   }, [client.id]);
+
+  const handlePhotoCaptured = async (image) => {
+    try {
+      const newGallery = [...gallery, image];
+      setGallery(newGallery);
+      await onUpdate({ work_gallery: newGallery });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        handlePhotoCaptured(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <div className="animate-fade-in">
@@ -430,20 +455,49 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
 
             {showCollage ? (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', backgroundColor: 'var(--bg-secondary)', padding: '12px', borderRadius: '12px' }}>
-                <div style={{ aspectRatio: '4/5', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px', position: 'relative' }}>
+                <div style={{ aspectRatio: '4/5', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px', position: 'relative', overflow: 'hidden' }}>
+                  {gallery[gallery.length - 2] && <img src={gallery[gallery.length - 2]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                   <span style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize: '10px' }}>ANTES</span>
                 </div>
-                <div style={{ aspectRatio: '4/5', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px', border: '2px dashed var(--gold-primary)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Plus size={24} color="var(--gold-primary)" />
+                <div style={{ aspectRatio: '4/5', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px', border: '2px dashed var(--gold-primary)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  {gallery[gallery.length - 1] ? (
+                    <img src={gallery[gallery.length - 1]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <Plus size={24} color="var(--gold-primary)" />
+                  )}
                   <span style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize: '10px' }}>DESPUÉS</span>
                 </div>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
-                <div style={{ aspectRatio: '1/1', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px', border: '2px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                  <Plus size={24} color="var(--text-muted)" />
+                {gallery.map((img, i) => (
+                  <div key={i} style={{ aspectRatio: '1/1', backgroundColor: 'var(--bg-tertiary)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                    <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                ))}
+                <div 
+                  onClick={() => setShowCamera(true)}
+                  style={{ aspectRatio: '1/1', backgroundColor: 'rgba(212,175,55,0.02)', borderRadius: '12px', border: '2px dashed var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: '0.2s' }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(212,175,55,0.05)'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(212,175,55,0.02)'}
+                >
+                  <Camera size={24} color="var(--gold-primary)" />
                 </div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileSelect} 
+                  accept="image/*" 
+                  style={{ display: 'none' }} 
+                />
               </div>
+            )}
+            
+            {showCamera && (
+              <AstroCamera 
+                onCapture={handlePhotoCaptured} 
+                onClose={() => setShowCamera(false)} 
+              />
             )}
           </div>
 
