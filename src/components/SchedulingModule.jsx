@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
+import AstroSelect from './AstroSelect';
 
 const SchedulingModule = ({ isMobile }) => {
   const { showToast } = useNotifs();
@@ -195,31 +196,42 @@ const SchedulingModule = ({ isMobile }) => {
             <h2 style={{ marginBottom: '24px', fontWeight: '900' }}>Nueva Cita</h2>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div>
-                <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>CLIENTE</label>
-                <select value={newApp.clientId} onChange={(e) => setNewApp({...newApp, clientId: e.target.value})} style={{ width: '100%', height: '48px' }}>
-                  <option value="">Selecciona cliente</option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>SERVICIO</label>
-                <select value={newApp.serviceId} onChange={(e) => setNewApp({...newApp, serviceId: e.target.value})} style={{ width: '100%', height: '48px' }}>
-                  <option value="">Selecciona servicio</option>
-                  {services.map(s => <option key={s.id} value={s.id}>{s.name} (${s.price})</option>)}
-                </select>
-              </div>
+              <AstroSelect 
+                label="CLIENTE"
+                placeholder="Selecciona cliente"
+                value={newApp.clientId}
+                onChange={(val) => setNewApp({...newApp, clientId: val})}
+                options={clients.map(c => ({ label: c.name, value: c.id }))}
+              />
+
+              <AstroSelect 
+                label="SERVICIO"
+                placeholder="Selecciona servicio"
+                value={newApp.serviceId}
+                onChange={(val) => setNewApp({...newApp, serviceId: val})}
+                options={services.map(s => ({ label: `${s.name} ($${s.price})`, value: s.id }))}
+              />
+
               <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>BARBERO</label>
-                  <select value={newApp.staffId} onChange={(e) => setNewApp({...newApp, staffId: e.target.value})} style={{ width: '100%', height: '48px' }}>
-                    <option value="">Cualquiera</option>
-                    {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                </div>
+                <AstroSelect 
+                  label="BARBERO"
+                  placeholder="Cualquiera"
+                  value={newApp.staffId}
+                  onChange={(val) => setNewApp({...newApp, staffId: val})}
+                  options={staff.map(s => ({ label: s.name, value: s.id }))}
+                />
+                
                 <div>
                   <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>HORA</label>
-                  <input type="time" value={newApp.time} onChange={(e) => setNewApp({...newApp, time: e.target.value})} style={{ width: '100%', height: '48px' }} />
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="time" 
+                      value={newApp.time} 
+                      onChange={(e) => setNewApp({...newApp, time: e.target.value})} 
+                      style={{ width: '100%', height: '48px', paddingLeft: '40px' }} 
+                    />
+                    <Clock size={16} color="var(--gold-primary)" style={{ position: 'absolute', left: '14px', top: '16px' }} />
+                  </div>
                 </div>
               </div>
             </div>
