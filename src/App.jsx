@@ -15,11 +15,13 @@ import MobileLayout from './components/mobile/MobileLayout';
 import MobileDashboard from './components/mobile/MobileDashboard';
 import AdminModule from './components/AdminModule';
 import ParticleBackground from './components/ParticleBackground';
+import AstroLoader from './components/AstroLoader';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isAppLoading, setIsAppLoading] = useState(true);
   
   // Multi-currency State
   const [currency, setCurrency] = useState('USD'); // Moneda de vista GLOBAL
@@ -57,7 +59,22 @@ function App() {
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener('resize', handleResize);
-    fetchInitialData();
+    
+    // Initial Load Sequence
+    const initApp = async () => {
+      const startTime = Date.now();
+      await fetchInitialData();
+      
+      // Ensure at least 1.5s of "Astro Experience" loader
+      const elapsed = Date.now() - startTime;
+      const delay = Math.max(0, 1500 - elapsed);
+      
+      setTimeout(() => {
+        setIsAppLoading(false);
+      }, delay);
+    };
+
+    initApp();
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -125,6 +142,7 @@ function App() {
   if (isMobile) {
     return (
       <MobileLayout activeTab={activeTab} setActiveTab={setActiveTab} onOpenSale={() => setIsSaleModalOpen(true)}>
+        <AstroLoader visible={isAppLoading} />
         <div key={activeTab} className="animate-fade-in" style={{ height: '100%' }}>
           {renderContent()}
         </div>
@@ -144,6 +162,7 @@ function App() {
 
   return (
     <div className="app-container" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)', position: 'relative' }}>
+      <AstroLoader visible={isAppLoading} />
       <ParticleBackground />
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="main-content" style={{ 
