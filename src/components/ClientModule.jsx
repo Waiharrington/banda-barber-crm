@@ -14,6 +14,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
+import AstroSelect from './AstroSelect';
 
 const ClientModule = () => {
   const { showToast } = useNotifs();
@@ -122,24 +123,28 @@ const ClientModule = () => {
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Teléfono</label>
                   <input className="form-input" placeholder="WhatsApp" value={newClient.phone} onChange={(e) => setNewClient({...newClient, phone: e.target.value})} style={{ width: '100%' }} />
                 </div>
-                <div className="form-group">
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Tipo de Cabello</label>
-                  <select className="form-input" value={newClient.hair_type} onChange={(e) => setNewClient({...newClient, hair_type: e.target.value})} style={{ width: '100%' }}>
-                    <option value="Normal">Normal</option>
-                    <option value="Graso">Graso</option>
-                    <option value="Seco">Seco</option>
-                    <option value="Mixto">Mixto</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Cuero Cabelludo</label>
-                  <select className="form-input" value={newClient.scalp_type} onChange={(e) => setNewClient({...newClient, scalp_type: e.target.value})} style={{ width: '100%' }}>
-                    <option value="Sano">Sano / Normal</option>
-                    <option value="Sensible">Sensible</option>
-                    <option value="Irritado">Irritado</option>
-                    <option value="Caspa">Caspa / Seborrea</option>
-                  </select>
-                </div>
+                <AstroSelect 
+                  label="Tipo de Cabello"
+                  value={newClient.hair_type}
+                  onChange={(val) => setNewClient({...newClient, hair_type: val})}
+                  options={[
+                    { label: 'Normal', value: 'Normal' },
+                    { label: 'Graso', value: 'Graso' },
+                    { label: 'Seco', value: 'Seco' },
+                    { label: 'Mixto', value: 'Mixto' }
+                  ]}
+                />
+                <AstroSelect 
+                  label="Cuero Cabelludo"
+                  value={newClient.scalp_type}
+                  onChange={(val) => setNewClient({...newClient, scalp_type: val})}
+                  options={[
+                    { label: 'Sano / Normal', value: 'Sano' },
+                    { label: 'Sensible', value: 'Sensible' },
+                    { label: 'Irritado', value: 'Irritado' },
+                    { label: 'Caspa / Seborrea', value: 'Caspa' }
+                  ]}
+                />
                 <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                   <button className="btn-gold" onClick={handleAddClient} disabled={creating} style={{ width: '100%', height: '48px', borderRadius: '12px' }}>
                     {creating ? <Loader2 className="animate-spin" /> : 'Registrar Ficha Técnica'}
@@ -338,18 +343,30 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
                 <input className="form-input" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} placeholder="Nombre" style={{ width: '100%' }} />
                 <input className="form-input" value={editData.id_card} onChange={e => setEditData({...editData, id_card: e.target.value})} placeholder="Cédula" style={{ width: '100%' }} />
                 <input className="form-input" value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} placeholder="Teléfono" style={{ width: '100%' }} />
-                <select className="form-input" value={editData.hair_type} onChange={e => setEditData({...editData, hair_type: e.target.value})} style={{ width: '100%' }}>
-                  <option value="Normal">Cabello: Normal</option>
-                  <option value="Graso">Cabello: Graso</option>
-                  <option value="Seco">Cabello: Seco</option>
-                  <option value="Mixto">Cabello: Mixto</option>
-                </select>
-                <select className="form-input" value={editData.scalp_type} onChange={e => setEditData({...editData, scalp_type: e.target.value})} style={{ width: '100%' }}>
-                  <option value="Sano">Cuero: Sano</option>
-                  <option value="Sensible">Cuero: Sensible</option>
-                  <option value="Irritado">Cuero: Irritado</option>
-                  <option value="Caspa">Cuero: Caspa</option>
-                </select>
+                <AstroSelect 
+                  label="Tipo de Cabello"
+                  value={editData.hair_type}
+                  onChange={(val) => setEditData({...editData, hair_type: val})}
+                  options={[
+                    { label: 'Normal', value: 'Normal' },
+                    { label: 'Graso', value: 'Graso' },
+                    { label: 'Seco', value: 'Seco' },
+                    { label: 'Mixto', value: 'Mixto' }
+                  ]}
+                  style={{ marginBottom: '12px' }}
+                />
+                <AstroSelect 
+                  label="Cuero Cabelludo"
+                  value={editData.scalp_type}
+                  onChange={(val) => setEditData({...editData, scalp_type: val})}
+                  options={[
+                    { label: 'Sano', value: 'Sano' },
+                    { label: 'Sensible', value: 'Sensible' },
+                    { label: 'Irritado', value: 'Irritado' },
+                    { label: 'Caspa', value: 'Caspa' }
+                  ]}
+                  style={{ marginBottom: '12px' }}
+                />
                 <button className="btn-gold" onClick={() => { onUpdate(editData); setIsEditing(false); }}>Actualizar Ficha</button>
                 <button onClick={() => setIsEditing(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '12px' }}>Cancelar</button>
               </div>
