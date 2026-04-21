@@ -318,11 +318,33 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
 
   const handlePhotoCaptured = async (image) => {
     try {
-      const newGallery = [...gallery, image];
+      // Small optimization to avoid oversized Base64 payloads
+      const img = new Image();
+      img.src = image;
+      await new Promise(resolve => img.onload = resolve);
+      
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 1000; // Efficient size for CRM
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > MAX_WIDTH) {
+        height = (MAX_WIDTH / width) * height;
+        width = MAX_WIDTH;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      const optimizedImage = canvas.toDataURL('image/jpeg', 0.8); // 80% quality JPEG
+
+      const newGallery = [...gallery, optimizedImage];
       setGallery(newGallery);
       await onUpdate({ work_gallery: newGallery });
     } catch (e) {
-      console.error(e);
+      console.error('Error optimizing/saving image:', e);
+      showToast('Error al procesar imagen', 'error');
     }
   };
 
