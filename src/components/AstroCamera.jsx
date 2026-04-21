@@ -3,7 +3,7 @@ import { Camera, X, Check, RefreshCw, Upload, Image as ImageIcon } from 'lucide-
 
 /**
  * AstroCamera - Un componente premium para capturar o subir fotos.
- * Optimizado para móvil y escritorio.
+ * Diseñado para permitir ambas opciones desde el primer momento.
  */
 const AstroCamera = ({ onCapture, onClose }) => {
   const videoRef = useRef(null);
@@ -29,7 +29,7 @@ const AstroCamera = ({ onCapture, onClose }) => {
         setError(null);
       }
     } catch (err) {
-      setError("Cámara no disponible o permisos denegados.");
+      setError("Cámara no disponible, pero puedes subir fotos.");
       console.warn("Camera access failed:", err);
     }
   };
@@ -81,8 +81,8 @@ const AstroCamera = ({ onCapture, onClose }) => {
     <div style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.95)',
-      backdropFilter: 'blur(10px)',
+      backgroundColor: 'rgba(0,0,0,0.98)',
+      backdropFilter: 'blur(15px)',
       zIndex: 10000,
       display: 'flex',
       flexDirection: 'column',
@@ -91,25 +91,28 @@ const AstroCamera = ({ onCapture, onClose }) => {
       padding: '20px',
       animation: 'fadeIn 0.3s ease'
     }}>
-      {/* Botón Cerrar */}
-      <button 
-        onClick={onClose}
-        style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '12px', borderRadius: '50%', cursor: 'pointer', zIndex: 11 }}
-      >
-        <X size={24} />
-      </button>
+      {/* Header with Close */}
+      <div style={{ position: 'absolute', top: '24px', left: 0, right: 0, padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 12 }}>
+        <div style={{ color: 'white', fontWeight: '800', fontSize: '14px', letterSpacing: '1px' }}>ASTRO REC</div>
+        <button 
+          onClick={onClose}
+          style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', padding: '12px', borderRadius: '50%', cursor: 'pointer' }}
+        >
+          <X size={24} />
+        </button>
+      </div>
 
-      {/* Contenedor de Previsualización (Tamaño optimizado para PC) */}
+      {/* Main Viewport */}
       <div style={{ 
         position: 'relative', 
         width: '100%', 
-        maxWidth: '420px', // Reducido para que no se vea gigante en PC
+        maxWidth: '400px',
         aspectRatio: '3/4', 
-        backgroundColor: '#111', 
+        backgroundColor: '#050505', 
         overflow: 'hidden', 
-        borderRadius: '32px', 
-        border: '1px solid rgba(212,175,55,0.2)',
-        boxShadow: '0 20px 80px rgba(0,0,0,0.8)' 
+        borderRadius: '40px', 
+        border: '1.5px solid rgba(212,175,55,0.3)',
+        boxShadow: '0 40px 100px rgba(0,0,0,0.9)' 
       }}>
         {!capturedImage ? (
           <>
@@ -117,60 +120,87 @@ const AstroCamera = ({ onCapture, onClose }) => {
               ref={videoRef} 
               autoPlay 
               playsInline 
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: error ? 0.3 : 1 }} 
             />
             
-            {/* Controles modo cámara */}
-            <div style={{ position: 'absolute', bottom: '32px', left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px' }}>
-              {/* Botón Subir Foto Alternativo */}
-              <button 
-                onClick={() => fileInputRef.current.click()}
-                style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-              >
-                <Upload size={20} />
-              </button>
-
-              <button 
-                onClick={takePhoto}
-                style={{
-                  width: '72px', height: '72px', borderRadius: '50%', border: '4px solid white', backgroundColor: 'rgba(212, 175, 55, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
-                }}
-              >
-                <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: 'white' }} />
-              </button>
-
-              <div style={{ width: '52px' }} /> {/* Espaciador */}
-            </div>
+            {/* Visual Guides */}
+            {!error && (
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', border: '1px solid rgba(212,175,55,0.2)', width: '70%', height: '70%', borderRadius: '20px', pointerEvents: 'none' }} />
+            )}
 
             {error && (
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px', textAlign: 'center' }}>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px', textAlign: 'center' }}>
                 <ImageIcon size={48} color="rgba(212,175,55,0.3)" style={{ marginBottom: '20px' }} />
-                <p style={{ color: 'white', fontWeight: '700', fontSize: '14px', marginBottom: '24px' }}>{error}</p>
-                <button 
-                  onClick={() => fileInputRef.current.click()}
-                  className="btn-gold"
-                  style={{ padding: '12px 24px', borderRadius: '12px', fontSize: '13px' }}
-                >
-                  Subir desde la Galería
-                </button>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', fontWeight: '500', lineHeight: 1.5 }}>{error}</p>
               </div>
             )}
+            
+            {/* Action Bar (Simplified & Integrated) */}
+            <div style={{ 
+              position: 'absolute', 
+              bottom: '0', 
+              left: 0, 
+              right: 0, 
+              padding: '32px', 
+              background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              gap: '40px' 
+            }}>
+              {/* Option 1: Gallery */}
+              <button 
+                onClick={() => fileInputRef.current.click()}
+                className="hover-scale"
+                style={{ 
+                  width: '56px', height: '56px', borderRadius: '18px', 
+                  backgroundColor: 'rgba(255,255,255,0.05)', 
+                  border: '1px solid rgba(255,255,255,0.1)', 
+                  color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' 
+                }}
+              >
+                <Upload size={20} />
+                <span style={{ fontSize: '8px', fontWeight: '900', marginTop: '4px' }}>GALERÍA</span>
+              </button>
+
+              {/* Option 2: Live Shutter */}
+              <button 
+                onClick={takePhoto}
+                disabled={!!error}
+                style={{
+                  width: '84px', height: '84px', borderRadius: '50%', 
+                  border: '4px solid white', 
+                  backgroundColor: error ? 'rgba(255,255,255,0.05)' : 'rgba(212, 175, 55, 0.2)', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                  cursor: error ? 'not-allowed' : 'pointer',
+                  opacity: error ? 0.3 : 1
+                }}
+              >
+                <div style={{ 
+                  width: '64px', height: '64px', borderRadius: '50%', 
+                  backgroundColor: 'white',
+                  animation: !error ? 'shutterPulse 2s infinite' : 'none'
+                }} />
+              </button>
+
+              <div style={{ width: '56px' }} /> {/* Spacer for balance */}
+            </div>
           </>
         ) : (
-          <div style={{ width: '100%', height: '100%' }}>
+          <div style={{ width: '100%', height: '100%', animation: 'slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
             <img src={capturedImage} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', bottom: '32px', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '24px' }}>
               <button 
                 onClick={retake}
-                style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid white', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(10px)' }}
               >
                 <RefreshCw size={24} />
               </button>
               <button 
                 onClick={confirm}
-                style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'var(--gold-primary)', border: 'none', color: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--gold-primary)', border: 'none', color: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 25px rgba(212,175,55,0.4)' }}
               >
-                <Check size={28} strokeWidth={3} />
+                <Check size={32} strokeWidth={3} />
               </button>
             </div>
           </div>
@@ -187,14 +217,17 @@ const AstroCamera = ({ onCapture, onClose }) => {
 
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-      <div style={{ marginTop: '32px', textAlign: 'center' }}>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: '600' }}>
-          {!capturedImage ? "Captura el arte o sube una foto" : "¡Imagen lista! ¿Confirmamos?"}
+      <div style={{ marginTop: '40px', textAlign: 'center' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '700', letterSpacing: '2px', textTransform: 'uppercase' }}>
+          {!capturedImage ? "Capturar • Subir" : "Previsualización Elite"}
         </p>
       </div>
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes shutterPulse { 0% { transform: scale(1); } 50% { transform: scale(0.95); } 100% { transform: scale(1); } }
+        .hover-scale:hover { transform: scale(1.1); background-color: rgba(255,255,255,0.1) !important; }
       `}</style>
     </div>
   );
