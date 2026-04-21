@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNotifs } from '../context/NotificationContext';
 import { X, User, Star, Scissors, CreditCard, Loader2, Plus, Sparkles } from 'lucide-react';
 import { dataService } from '../services/dataService';
+import AstroSelect from './AstroSelect';
 
 const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh, rates, currency }) => {
   const [selectedClient, setSelectedClient] = useState('');
@@ -146,35 +147,23 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh
           {/* Section: Who & What */}
           <div className="glass-card" style={{ padding: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '10px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cliente</label>
-                <div style={{ position: 'relative' }}>
-                  <User size={18} style={{ position: 'absolute', left: '16px', top: '14px' }} color="var(--gold-primary)" />
-                  <select 
-                    value={selectedClient} 
-                    onChange={(e) => setSelectedClient(e.target.value)}
-                    style={{ width: '100%', paddingLeft: '48px', height: '48px', fontSize: '15px', fontWeight: '600' }}
-                  >
-                    <option value="">Seleccionar cliente...</option>
-                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-              </div>
+              <AstroSelect 
+                label="Cliente"
+                value={selectedClient}
+                onChange={val => setSelectedClient(val)}
+                options={clients.map(c => ({ label: c.name, value: c.id }))}
+                placeholder="Seleccionar cliente..."
+                icon={<User size={18} color="var(--gold-primary)" />}
+              />
 
-              <div>
-                <label style={{ display: 'block', marginBottom: '10px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Servicio Estrella</label>
-                <div style={{ position: 'relative' }}>
-                  <Sparkles size={18} style={{ position: 'absolute', left: '16px', top: '14px' }} color="var(--gold-primary)" />
-                  <select 
-                    value={selectedService} 
-                    onChange={(e) => handleServiceChange(e.target.value)}
-                    style={{ width: '100%', paddingLeft: '48px', height: '48px', fontSize: '15px', fontWeight: '600' }}
-                  >
-                    <option value="">Seleccionar servicio...</option>
-                    {services.map(s => <option key={s.id} value={s.id}>{s.name} — ${s.price}</option>)}
-                  </select>
-                </div>
-              </div>
+              <AstroSelect 
+                label="Servicio Estrella"
+                value={selectedService}
+                onChange={val => handleServiceChange(val)}
+                options={services.map(s => ({ label: `${s.name} — $${s.price}`, value: s.id }))}
+                placeholder="Seleccionar servicio..."
+                icon={<Sparkles size={18} color="var(--gold-primary)" />}
+              />
             </div>
           </div>
 
@@ -183,25 +172,17 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh
             <label style={{ display: 'block', marginBottom: '12px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Personal Asignado</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {involvedStaff.map((item, index) => (
-                <div key={index} className="animate-fade-in" style={{ 
-                  display: 'flex', 
-                  gap: '12px', 
-                  alignItems: 'center',
-                  backgroundColor: 'rgba(255,255,255,0.03)',
-                  padding: '12px',
-                  borderRadius: '16px',
-                  border: '1px solid rgba(255,255,255,0.05)'
-                }}>
-                  <div style={{ color: 'var(--gold-primary)' }}><Scissors size={18} /></div>
-                  <select 
-                    value={item.staffId} 
-                    onChange={(e) => handleStaffChange(index, e.target.value)}
-                    style={{ flex: 1, height: '40px', background: 'none', border: 'none', padding: 0 }}
-                  >
-                    <option value="">¿Quién atendió?</option>
-                    {staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                  <button onClick={() => handleRemoveStaff(index)} style={{ color: '#ff4d4d', background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}>
+                <div key={index} className="animate-fade-in" style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                  <div style={{ flex: 1 }}>
+                    <AstroSelect 
+                      value={item.staffId}
+                      onChange={val => handleStaffChange(index, val)}
+                      options={staff.map(s => ({ label: s.name, value: s.id }))}
+                      placeholder="¿Quién atendió?"
+                      icon={<Scissors size={18} color="var(--gold-primary)" />}
+                    />
+                  </div>
+                  <button onClick={() => handleRemoveStaff(index)} className="action-btn" style={{ color: '#ff4d4d', height: '48px', width: '48px', borderRadius: '12px', border: '1px solid rgba(255,77,77,0.2)' }}>
                     <X size={18} />
                   </button>
                 </div>
