@@ -13,6 +13,7 @@ import {
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import AstroSelect from './AstroSelect';
+import AstroTimePicker from './AstroTimePicker';
 
 const SchedulingModule = ({ isMobile }) => {
   const { showToast } = useNotifs();
@@ -221,18 +222,11 @@ const SchedulingModule = ({ isMobile }) => {
                   options={staff.map(s => ({ label: s.name, value: s.id }))}
                 />
                 
-                <div>
-                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>HORA</label>
-                  <div style={{ position: 'relative' }}>
-                    <input 
-                      type="time" 
-                      value={newApp.time} 
-                      onChange={(e) => setNewApp({...newApp, time: e.target.value})} 
-                      style={{ width: '100%', height: '48px', paddingLeft: '40px' }} 
-                    />
-                    <Clock size={16} color="var(--gold-primary)" style={{ position: 'absolute', left: '14px', top: '16px' }} />
-                  </div>
-                </div>
+                <AstroTimePicker 
+                  label="HORA"
+                  value={newApp.time}
+                  onChange={(val) => setNewApp({...newApp, time: val})}
+                />
               </div>
             </div>
 
