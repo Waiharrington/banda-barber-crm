@@ -9,7 +9,15 @@ import {
   Rocket,
   Sparkles,
   Target,
-  Edit3
+  Edit3,
+  User,
+  Trophy, 
+  Crown, 
+  Medal, 
+  ArrowRight,
+  ShoppingBag,
+  Scissors as ScissorsIcon,
+  Circle
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -25,15 +33,6 @@ import {
 import { Line } from 'react-chartjs-2';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
-import { 
-  Trophy, 
-  Crown, 
-  Medal, 
-  ArrowRight,
-  ShoppingBag,
-  Scissors as ScissorsIcon,
-  Circle
-} from 'lucide-react';
 
 ChartJS.register(
   CategoryScale,
