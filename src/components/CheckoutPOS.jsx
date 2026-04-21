@@ -27,6 +27,7 @@ const CheckoutPOS = ({ isMobile, rates }) => {
   
   // Selection State
   const [selectedApp, setSelectedApp] = useState(null);
+  const [idSearch, setIdSearch] = useState('');
   
   // Checkout Multi-State
   const [fixedRate, setFixedRate] = useState(rates?.usd || 0);
@@ -155,9 +156,31 @@ const CheckoutPOS = ({ isMobile, rates }) => {
         {/* Left: Pending Queue */}
         <section>
           <div className="glass-card" style={{ marginBottom: '32px', borderRadius: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
               <History size={20} color="var(--gold-primary)" />
-              <span style={{ fontWeight: '800', fontSize: '13px', letterSpacing: '1px', textTransform: 'uppercase' }}>Servicios en Curso</span>
+              <span style={{ fontWeight: '800', fontSize: '13px', letterSpacing: '1px', textTransform: 'uppercase' }}>Sincronizar por Cédula</span>
+            </div>
+
+            <div style={{ position: 'relative', marginBottom: '24px' }}>
+              <Search style={{ position: 'absolute', left: '16px', top: '14px' }} size={18} color="var(--gold-primary)" />
+              <input 
+                type="text" 
+                placeholder="Ingresa Cédula / ID..." 
+                value={idSearch}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setIdSearch(val);
+                  // Auto-select if matches exactly
+                  const match = pendingServices.find(app => app.clients?.id_card === val);
+                  if (match) setSelectedApp(match);
+                }}
+                style={{ width: '100%', paddingLeft: '48px', backgroundColor: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.2)' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <TrendingUp size={16} color="var(--text-muted)" />
+              <span style={{ fontWeight: '800', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Lista de Espera por Cobrar</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -181,8 +204,14 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                       <span style={{ fontWeight: '800' }}>{app.clients.name}</span>
                       <span style={{ fontSize: '10px', backgroundColor: 'var(--gold-primary)', color: 'black', padding: '2px 8px', borderRadius: '10px', fontWeight: '900' }}>{app.status}</span>
                     </div>
-                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Scissors size={12} /> {app.services.name} — <span style={{ fontWeight: '700', color: 'white' }}>${app.services.price}</span>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Scissors size={12} /> {app.services.name}
+                      </div>
+                      <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>${app.services.price}</span>
+                    </div>
+                    <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                      ID: {app.clients.id_card || 'Sin Cédula'}
                     </div>
                   </div>
                 ))
