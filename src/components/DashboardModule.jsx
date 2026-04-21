@@ -17,7 +17,8 @@ import {
   ArrowRight,
   ShoppingBag,
   Scissors as ScissorsIcon,
-  Circle
+  Circle,
+  RefreshCw
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -64,7 +65,7 @@ const QUOTES = [
   { text: "El negocio de la belleza es el negocio de la felicidad.", creator: "Emprendimiento" }
 ];
 
-const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handleSeedData }) => {
+const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handleSeedData, rates }) => {
   const [quoteIndex, setQuoteIndex] = useState(0);
   const { showToast } = useNotifs();
   const dailyGoal = parseFloat(localStorage.getItem('astro_daily_goal') || '500');
@@ -143,6 +144,34 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
             </div>
           </div>
         </div>
+
+        {/* REPLACEMENT: BCV Rates Widget (Elegante) */}
+        {!isMobile && rates && rates.usd > 0 && (
+          <div style={{ 
+            display: 'flex', 
+            gap: '24px', 
+            padding: '12px 24px', 
+            backgroundColor: 'rgba(255,255,255,0.02)', 
+            borderRadius: '20px',
+            border: '1px solid rgba(212,175,55,0.05)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '2px' }}>USD / BS</span>
+              <span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--gold-primary)' }}>{rates.usd.toFixed(2)}</span>
+            </div>
+            <div style={{ width: '1px', backgroundColor: 'rgba(212,175,55,0.1)', height: '24px', alignSelf: 'center' }} />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '2px' }}>EUR / BS</span>
+              <span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--gold-primary)' }}>{rates.eur.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', marginLeft: '4px' }}>
+              <div title={`Actualizado: ${new Date(rates.updated_at).toLocaleTimeString()}`} style={{ cursor: 'help' }}>
+                <RefreshCw size={12} color="var(--text-muted)" opacity={0.5} />
+              </div>
+            </div>
+          </div>
+        )}
         
         <div style={{ display: 'flex', gap: '12px', width: isMobile ? '100%' : 'auto' }}>
           {dbData.staff.length === 0 && (

@@ -24,7 +24,6 @@ import logo from './assets/logo.png';
 // Mobile Components
 import MobileLayout from './components/mobile/MobileLayout';
 import MobileDashboard from './components/mobile/MobileDashboard';
-import AdminModule from './components/AdminModule';
 import ParticleBackground from './components/ParticleBackground';
 import AstroLoader from './components/AstroLoader';
 import ReceptionModule from './components/ReceptionModule';
@@ -80,7 +79,6 @@ function App() {
     { id: 'services', label: 'Servicios', icon: Star },
     { id: 'inventory', label: 'Inventario', icon: Package },
     { id: 'finance', label: 'Caja Chica', icon: Wallet },
-    { id: 'admin', label: 'Administración', icon: Settings },
   ];
 
   useEffect(() => {
@@ -162,9 +160,9 @@ function App() {
     switch (activeTab) {
       case 'dashboard':
         return isMobile ? (
-          <MobileDashboard onOpenSale={() => setIsSaleModalOpen(true)} stats={stats} chartData={chartData} dbData={dbData} />
+          <MobileDashboard onOpenSale={() => setIsSaleModalOpen(true)} stats={stats} chartData={chartData} dbData={dbData} rates={rates} />
         ) : (
-          <DashboardModule isMobile={isMobile} onOpenSale={() => setIsSaleModalOpen(true)} stats={stats} chartData={chartData} dbData={dbData} handleSeedData={handleSeedData} />
+          <DashboardModule isMobile={isMobile} onOpenSale={() => setIsSaleModalOpen(true)} stats={stats} chartData={chartData} dbData={dbData} handleSeedData={handleSeedData} rates={rates} />
         );
       case 'reception': return <div className="p-container"><ReceptionModule isMobile={isMobile} /></div>;
       case 'checkout': return <div className="p-container"><CheckoutPOS isMobile={isMobile} rates={rates} /></div>;
@@ -175,7 +173,6 @@ function App() {
       case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
       case 'clients': return <div className="p-container"><ClientModule isMobile={isMobile} /></div>;
       case 'personnel': return <div className="p-container"><PersonnelModule isMobile={isMobile} /></div>;
-      case 'admin': return <div className="p-container"><AdminModule isMobile={isMobile} onRefresh={handleRefresh} rates={rates} setRates={setRates} /></div>;
       default: return <div className="p-container"><DashboardModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
     }
   };

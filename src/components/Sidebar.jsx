@@ -25,7 +25,6 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
     { id: 'services', label: 'Servicios', icon: Star },
     { id: 'inventory', label: 'Inventario', icon: Package },
     { id: 'finance', label: 'Caja Chica', icon: Wallet },
-    { id: 'admin', label: 'Administración', icon: Settings },
   ];
 
   const sidebarStyle = isMobile ? {
