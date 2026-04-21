@@ -7,6 +7,7 @@ import {
   Phone, 
   Calendar, 
   Scissors, 
+  Camera,
   Image as ImageIcon,
   ChevronRight,
   Filter,
