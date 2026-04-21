@@ -16,6 +16,10 @@ import MobileDashboard from './components/mobile/MobileDashboard';
 import AdminModule from './components/AdminModule';
 import ParticleBackground from './components/ParticleBackground';
 import AstroLoader from './components/AstroLoader';
+import ReceptionModule from './components/ReceptionModule';
+import CheckoutPOS from './components/CheckoutPOS';
+import BarberPanel from './components/BarberPanel';
+import SchedulingModule from './components/SchedulingModule';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -56,6 +60,17 @@ function App() {
       tension: 0.4
     }]
   });
+
+  const menuItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'reception', label: 'Recepción (Padre)', icon: UserCircle },
+    { id: 'clients', label: 'Clientes', icon: Users },
+    { id: 'personnel', label: 'Personal', icon: Scissors },
+    { id: 'services', label: 'Servicios', icon: Star },
+    { id: 'inventory', label: 'Inventario', icon: Package },
+    { id: 'finance', label: 'Caja Chica', icon: Wallet },
+    { id: 'admin', label: 'Administración', icon: Settings },
+  ];
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -140,6 +155,10 @@ function App() {
         ) : (
           <DashboardModule isMobile={isMobile} onOpenSale={() => setIsSaleModalOpen(true)} stats={stats} chartData={chartData} dbData={dbData} handleSeedData={handleSeedData} />
         );
+      case 'reception': return <div className="p-container"><ReceptionModule isMobile={isMobile} /></div>;
+      case 'checkout': return <div className="p-container"><CheckoutPOS isMobile={isMobile} rates={rates} /></div>;
+      case 'barber': return <div className="p-container"><BarberPanel isMobile={isMobile} /></div>;
+      case 'scheduling': return <div className="p-container"><SchedulingModule isMobile={isMobile} /></div>;
       case 'services': return <div className="p-container"><ServicesModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
       case 'inventory': return <div className="p-container"><InventoryModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
       case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={rates} /></div>;

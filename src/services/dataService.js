@@ -129,10 +129,6 @@ export const dataService = {
   },
 
   async getClientTransactions(clientId) {
-    // Note: description contains 'Cliente ID: XYZ'. 
-    // Ideally we have a client_id column. 
-    // In current registerServiceSale we save 'description'.
-    // Let's first check if we have client_id in transactions.
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
@@ -191,56 +187,90 @@ export const dataService = {
     if (error) throw error;
   },
 
-  // Appointments (The Core Logic)
-  async registerServiceSale(appointmentData, staffInvolved) {
-    // 1. Create the appointment
-    const { data: appointment, error: appError } = await supabase
+  // Appointments (Operational States)
+  async getAppointmentsByState(states = []) {
+    let query = supabase.from('appointments').select('*, clients(name, phone), services(name, price)');
+    if (states.length > 0) query = query.in('status', states);
+    const { data, error } = await query.order('created_at', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  async createAppointment(appointment) {
+    const { data, error } = await supabase
       .from('appointments')
       .insert([{
-        client_id: appointmentData.clientId,
-        service_id: appointmentData.serviceId,
-        total_price: appointmentData.totalPrice
+        ...appointment,
+        status: appointment.status || 'Agendado'
       }])
       .select()
       .single();
+    if (error) throw error;
+    return data;
+  },
 
-    if (appError) throw appError;
+  async updateAppointmentStatus(id, newStatus) {
+    const { data, error } = await supabase
+      .from('appointments')
+      .update({ status: newStatus })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
 
-    // 2. Register staff involved and their commissions
-    const staffRecords = staffInvolved.map(s => ({
-      appointment_id: appointment.id,
-      staff_id: s.staffId,
-      commission_earned: s.commissionEarned
-    }));
+  // Final Checkout Logic
+  async processFinalPayment(paymentRecord) {
+    // 1. Mark appointment as completed
+    await this.updateAppointmentStatus(paymentRecord.appointmentId, 'Completado');
 
-    const { error: staffError } = await supabase
-      .from('appointment_staff')
-      .insert(staffRecords);
+    // 2. Register commissioners (Staff involved)
+    if (paymentRecord.staffInvolved) {
+      const staffRecords = paymentRecord.staffInvolved.map(s => ({
+        appointment_id: paymentRecord.appointmentId,
+        staff_id: s.staffId,
+        commission_earned: s.commissionEarned,
+        tip_amount: s.tip || 0
+      }));
+      await supabase.from('appointment_staff').insert(staffRecords);
+    }
 
-    if (staffError) throw staffError;
-    
-    // 3. Add to finance (Income) with exchange rate snapshot
+    // 3. Register Sold Products and Stock reduction
+    if (paymentRecord.products && paymentRecord.products.length > 0) {
+      for (const p of paymentRecord.products) {
+        // Reduced stock logic should be handle in real usage
+        const { data: inv } = await supabase.from('inventory').select('stock').eq('id', p.id).single();
+        if (inv) await this.updateStock(p.id, inv.stock - (p.quantity || 1));
+      }
+    }
+
+    // 4. Create Financial Transaction (CONGELED SNAPSHOT)
     await this.addTransaction({
-      description: `Servicio: ${appointmentData.serviceName} - Cliente ID: ${appointmentData.clientId}`,
-      amount: appointmentData.totalPrice,
+      description: `VENTA FINAL - Cliente: ${paymentRecord.clientName} - Servi: ${paymentRecord.serviceName}`,
+      amount: paymentRecord.totalUsd,
       type: 'income',
-      category: 'Servicios',
-      exchange_rate: appointmentData.exchangeRate || 1,
-      currency: appointmentData.currency || 'USD'
+      category: 'Ventas Pro',
+      exchange_rate: paymentRecord.fixedRate,
+      currency: 'USD',
+      metadata: { 
+        mixed_payment: paymentRecord.isMixed,
+        cash_usd: paymentRecord.cashUsd,
+        transfer_bs: paymentRecord.transferBs,
+        tips_total: paymentRecord.totalTips
+      }
     });
 
-    return appointment;
+    return true;
   },
 
   // BCV Exchange Rates
   async getExchangeRates() {
     try {
-      // 1. Get USD/BS (Official/BCV)
       const usdRes = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
       if (!usdRes.ok) throw new Error('USD rate not available');
       const usdData = await usdRes.json();
       
-      // 2. Get EUR/BS (Official/BCV)
       const eurRes = await fetch('https://ve.dolarapi.com/v1/euros/oficial');
       if (!eurRes.ok) throw new Error('EUR rate not available');
       const eurData = await eurRes.json();
@@ -252,21 +282,13 @@ export const dataService = {
       };
     } catch (error) {
       console.error('Error fetching BCV rates:', error);
-      // Fallback rates if API is down
-      return {
-        usd: 36.5, 
-        eur: 39.5,
-        updated_at: null,
-        error: true
-      };
+      return { usd: 36.5, eur: 39.5, updated_at: null, error: true };
     }
   },
 
   async resetDatabase() {
     if (!window.confirm('¿ESTÁS ABSOLUTAMENTE SEGURO? Se borrarán todos los clientes, personal y ventas. Esta acción es irreversible.')) return;
-    
     try {
-      // Order of deletion to avoid foreign key issues
       await supabase.from('appointment_staff').delete().neq('id', 0);
       await supabase.from('appointments').delete().neq('id', 0);
       await supabase.from('transactions').delete().neq('id', 0);
