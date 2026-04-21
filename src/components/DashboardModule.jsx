@@ -163,48 +163,118 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
         {/* Main Section */}
         <div style={{ gridColumn: isMobile ? 'span 1' : 'span 2', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          {/* Quote Card (Refined) */}
-          <div className="glass-card" style={{ 
-            padding: '32px', 
-            borderRadius: '28px',
-            background: 'linear-gradient(135deg, rgba(28,28,30,0.98), rgba(212,175,55,0.08))',
-            border: '1px solid rgba(212,175,55,0.1)',
+          {/* Decorative Quote Section (RESTORED MAGIC) */}
+          <div className="glass-card animate-slide-up" style={{ 
+            marginBottom: '24px', 
+            padding: '0', 
+            borderRadius: '32px',
+            background: 'linear-gradient(135deg, rgba(28,28,30,0.95), rgba(212,175,55,0.05))',
+            border: '1px solid rgba(255,255,255,0.03)',
+            position: 'relative',
+            overflow: 'visible',
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
             alignItems: 'center',
-            position: 'relative'
+            minHeight: '220px'
           }}>
-            <div style={{ flex: 1, zIndex: 2, textAlign: isMobile ? 'center' : 'left' }}>
+            <div style={{ 
+              flex: 1, 
+              padding: isMobile ? '40px 24px' : '32px 48px', 
+              textAlign: isMobile ? 'center' : 'left',
+              zIndex: 2 
+            }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
-                <Sparkles size={14} color="var(--gold-primary)" />
-                <span style={{ color: 'var(--gold-primary)', fontSize: '10px', fontWeight: '900', letterSpacing: '3px' }}>PENSAMIENTO ASTRO</span>
+                <div style={{ width: '30px', height: '1px', backgroundColor: 'var(--gold-primary)' }} />
+                <span style={{ color: 'var(--gold-primary)', fontSize: '10px', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>Pensamiento Astro</span>
+                <button 
+                  onClick={shuffleQuote}
+                  style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', padding: '4px', opacity: 0.6, display: 'flex', alignItems: 'center', transition: 'all 0.3s' }}
+                  className="refresh-btn"
+                >
+                  <Sparkles size={12} />
+                </button>
               </div>
-              <h2 style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '900', color: 'white', lineHeight: 1.2 }}>
-                {currentQuote.text}
+              <h2 key={quoteIndex} className="animate-fade-in" style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '900', letterSpacing: '-1px', marginBottom: '16px', lineHeight: 1.1 }}>
+                {currentQuote.text.includes('<br />') ? currentQuote.text : (
+                  <>
+                    {currentQuote.text.split(' ').slice(0, Math.ceil(currentQuote.text.split(' ').length / 2)).join(' ')} <br />
+                    <span className="text-gold">{currentQuote.text.split(' ').slice(Math.ceil(currentQuote.text.split(' ').length / 2)).join(' ')}</span>
+                  </>
+                )}
               </h2>
-              <p style={{ marginTop: '12px', color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '14px' }}>— {currentQuote.creator}</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic', opacity: 0.7 }}>— {currentQuote.creator}</p>
             </div>
-            {!isMobile && (
-              <div style={{ flex: 0.5, display: 'flex', justifyContent: 'center' }}>
-                <Rocket size={80} color="var(--gold-primary)" opacity={0.2} style={{ animation: 'float 6s infinite ease-in-out' }} />
-              </div>
-            )}
+
+            <div style={{ 
+              flex: isMobile ? 'none' : '0.8', 
+              position: 'relative', 
+              height: isMobile ? '200px' : '240px',
+              width: isMobile ? '100%' : 'auto',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginTop: isMobile ? '0' : '0'
+            }}>
+              <div style={{
+                position: 'absolute',
+                width: '180px',
+                height: '180px',
+                background: 'radial-gradient(circle, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.05) 40%, transparent 70%)',
+                filter: 'blur(30px)',
+                zIndex: 1,
+                animation: 'pulse-gold 4s infinite ease-in-out'
+              }} />
+
+              <div style={{
+                position: 'absolute',
+                bottom: '10px',
+                width: '100px',
+                height: '12px',
+                background: 'rgba(0,0,0,0.6)',
+                filter: 'blur(10px)',
+                borderRadius: '50%',
+                zIndex: 2,
+                transform: 'scaleX(1.5)',
+                animation: 'shadow-scale 4s infinite ease-in-out'
+              }} />
+              
+              <img 
+                src="/barber-chair.png" 
+                alt="Astro Chair" 
+                className="chair-float"
+                style={{ 
+                  height: isMobile ? '220px' : '280px', 
+                  width: 'auto',
+                  objectFit: 'contain',
+                  zIndex: 3,
+                  filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.7))',
+                  pointerEvents: 'none',
+                  animation: 'float 4s infinite ease-in-out'
+                }} 
+              />
+            </div>
           </div>
 
-          {/* Business Stats */}
+          {/* Business Stats (Astro Style) */}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
-            <StatCard title="Producción Hoy" value={`$${stats.income.toFixed(2)}`} icon={<TrendingUp size={18} color="var(--gold-primary)" />} color="var(--gold-primary)" />
-            <StatCard title="Servicios" value={stats.appointments} icon={<ScissorsIcon size={18} color="#4caf50" />} color="#4caf50" />
-            <StatCard title="En Inventario" value={dbData.services.length + dbData.clients.length} icon={<ShoppingBag size={18} color="#2196f3" />} color="#2196f3" />
+            <StatCard title="Producción Hoy" value={`$${stats.income.toFixed(2)}`} icon={<TrendingUp size={18} color="var(--gold-primary)" />} color="var(--gold-primary)" trend="+12%" positive={true} />
+            <StatCard title="Servicios" value={stats.appointments} icon={<ScissorsIcon size={18} color="var(--gold-primary)" />} color="#4caf50" trend="Listo" positive={true} />
+            <StatCard title="En Inventario" value={dbData.services.length + dbData.clients.length} icon={<ShoppingBag size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />
           </div>
 
-          {/* Goal Progress */}
-          <div className="glass-card" style={{ padding: '24px', borderRadius: '24px' }}>
+          {/* Goal Progress (Refined) */}
+          <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <span style={{ fontWeight: '900', fontSize: '14px', letterSpacing: '1px' }}>MISIÓN DIARIA <span style={{ opacity: 0.4 }}>$</span>{dailyGoal}</span>
-              <button onClick={handleEditGoal} className="action-btn" style={{ padding: '4px 10px', fontSize: '11px' }}>EDITAR META</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Target size={18} color="var(--gold-primary)" />
+                <span style={{ fontWeight: '900', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>Misión Diaria</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '14px', fontWeight: '800' }}>${stats.income.toFixed(0)} <span style={{ opacity: 0.3 }}>/</span> ${dailyGoal}</span>
+                <button onClick={handleEditGoal} className="action-btn" style={{ padding: '6px', borderRadius: '8px' }}><Edit3 size={14} /></button>
+              </div>
             </div>
-            <div style={{ height: '12px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
+            <div style={{ height: '10px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '5px', overflow: 'hidden' }}>
               <div style={{ 
                 width: `${Math.min((stats.income / dailyGoal) * 100, 100)}%`, 
                 height: '100%', 
@@ -273,7 +343,25 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(5deg); }
+          50% { transform: translateY(-25px) rotate(5deg); }
+        }
+        @keyframes shadow-scale {
+          0%, 100% { transform: scaleX(1.5); opacity: 0.6; }
+          50% { transform: scaleX(1.1); opacity: 0.2; }
+        }
+        @keyframes pulse-gold {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50% { transform: scale(1.15); opacity: 0.7; }
+        }
+        .refresh-btn:hover {
+          opacity: 1 !important;
+          transform: rotate(15deg) scale(1.2);
+        }
+        .chair-float {
+          transition: all 0.5s ease;
+        }
+        .chair-float:hover {
+          filter: drop-shadow(0 40px 70px rgba(212,175,55,0.4)) brightness(1.2) !important;
         }
       `}</style>
     </div>
