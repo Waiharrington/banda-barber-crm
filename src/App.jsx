@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
+import { 
+  BarChart3, 
+  UserCircle, 
+  Users, 
+  Scissors, 
+  Star, 
+  Package, 
+  Wallet, 
+  Settings,
+  Calendar
+} from 'lucide-react';
 import DashboardModule from './components/DashboardModule';
 import ClientModule from './components/ClientModule';
 import PersonnelModule from './components/PersonnelModule';
