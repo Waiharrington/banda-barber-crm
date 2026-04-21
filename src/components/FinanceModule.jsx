@@ -14,11 +14,24 @@ import {
 } from 'lucide-react';
 
 import { dataService } from '../services/dataService';
+import AstroDialog from './AstroDialog';
 
 const FinanceModule = ({ isMobile }) => {
   const { showToast } = useNotifs();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Custom Dialog State
+  const [dialog, setDialog] = useState({
+    isOpen: false,
+    type: 'prompt',
+    title: '',
+    message: '',
+    placeholder: '',
+    onConfirm: null,
+    step: 1, // To handle sequential prompts (desc -> amount)
+    tempData: {}
+  });
 
   useEffect(() => {
     fetchTransactions();
@@ -36,26 +49,55 @@ const FinanceModule = ({ isMobile }) => {
     }
   };
 
-  const handleManualTransaction = async (type) => {
-    const desc = window.prompt(`Descripción del ${type === 'income' ? 'Ingreso' : 'Gasto'}:`);
-    if (!desc) return;
-    const amount = window.prompt(`Monto en $ (USD):`);
-    if (!amount || isNaN(amount)) return;
-
-    try {
-      await dataService.addTransaction({
-        description: desc,
-        amount: parseFloat(amount),
-        type: type,
-        category: type === 'income' ? 'Ingreso Manual' : 'Gasto Manual',
-        currency: 'USD',
-        exchange_rate: 1
-      });
-      fetchTransactions();
-      showToast(`${type === 'income' ? 'Ingreso' : 'Gasto'} registrado correctamente.`);
-    } catch (e) {
-      showToast('Error al registrar transacción.', 'error');
-    }
+  const handleManualTransaction = (type) => {
+    setDialog({
+      isOpen: true,
+      type: 'prompt',
+      title: type === 'income' ? 'Registrar Ingreso' : 'Registrar Gasto',
+      message: 'Ingresa una descripción para este movimiento:',
+      placeholder: 'Ej. Compra de Insumos, Propina...',
+      step: 1,
+      tempData: { type },
+      onConfirm: (desc) => {
+        if (!desc) {
+          setDialog(prev => ({ ...prev, isOpen: false }));
+          return;
+        }
+        // Move to step 2: Amount
+        setDialog({
+          isOpen: true,
+          type: 'prompt',
+          title: 'Monto de la Operación',
+          message: `¿Cuánto es el monto para: "${desc}"?`,
+          placeholder: 'Monto en $ (USD)',
+          step: 2,
+          tempData: { type, desc },
+          onConfirm: async (amount) => {
+            if (!amount || isNaN(amount)) {
+              showToast("Monto inválido", "error");
+              setDialog(prev => ({ ...prev, isOpen: false }));
+              return;
+            }
+            try {
+              await dataService.addTransaction({
+                description: desc,
+                amount: parseFloat(amount),
+                type: type,
+                category: type === 'income' ? 'Ingreso Manual' : 'Gasto Manual',
+                currency: 'USD',
+                exchange_rate: 1
+              });
+              fetchTransactions();
+              showToast(`${type === 'income' ? 'Ingreso' : 'Gasto'} registrado correctamente.`);
+            } catch (e) {
+              showToast('Error al registrar transacción.', 'error');
+            } finally {
+              setDialog(prev => ({ ...prev, isOpen: false }));
+            }
+          }
+        });
+      }
+    });
   };
 
   const handleExport = () => {
@@ -387,6 +429,16 @@ const FinanceModule = ({ isMobile }) => {
           </div>
         )}
       </div>
+
+      <AstroDialog 
+        isOpen={dialog.isOpen}
+        title={dialog.title}
+        message={dialog.message}
+        type={dialog.type}
+        placeholder={dialog.placeholder}
+        onConfirm={dialog.onConfirm}
+        onCancel={() => setDialog({ ...dialog, isOpen: false })}
+      />
 
       <style>{`
         .table-row-hover:hover {
