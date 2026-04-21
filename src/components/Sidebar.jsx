@@ -7,7 +7,8 @@ import {
   Package, 
   Wallet, 
   Settings,
-  Star
+  Star,
+  Calendar
 } from 'lucide-react';
 
 import logo from '../assets/logo.png';
@@ -15,7 +16,7 @@ import logo from '../assets/logo.png';
 const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'scheduling', label: 'Agenda (Astro)', icon: CalendarIcon },
+    { id: 'scheduling', label: 'Agenda (Astro)', icon: Calendar },
     { id: 'reception', label: 'Recepción (Padre)', icon: UserCircle },
     { id: 'checkout', label: 'Caja (Pro)', icon: Wallet },
     { id: 'barber', label: 'Panel Barber (Hijo)', icon: Scissors },
