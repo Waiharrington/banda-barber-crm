@@ -22,7 +22,13 @@ const ClientModule = () => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newClient, setNewClient] = useState({ name: '', phone: '', hair_type: 'Normal', scalp_type: 'Normal' });
+  const [newClient, setNewClient] = useState({ 
+    name: '', 
+    phone: '', 
+    id_card: '',
+    hair_type: 'Normal', 
+    scalp_type: 'Normal' 
+  });
 
   useEffect(() => {
     fetchClients();
@@ -63,7 +69,13 @@ const ClientModule = () => {
     try {
       setCreating(true);
       await dataService.addClient(newClient);
-      setNewClient({ name: '', phone: '', hair_type: 'Normal', scalp_type: 'Normal' });
+      setNewClient({ 
+        name: '', 
+        phone: '', 
+        id_card: '',
+        hair_type: 'Normal', 
+        scalp_type: 'Normal' 
+      });
       setShowAddForm(false);
       await fetchClients();
       showToast('¡Ficha de cliente creada con éxito!');
@@ -100,44 +112,37 @@ const ClientModule = () => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
                 <div className="form-group">
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Nombre Completo</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ej. Juan Pérez" 
-                    value={newClient.name}
-                    onChange={(e) => setNewClient({...newClient, name: e.target.value})}
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px' }}
-                  />
+                  <input className="form-input" placeholder="Ej. Juan Pérez" value={newClient.name} onChange={(e) => setNewClient({...newClient, name: e.target.value})} style={{ width: '100%' }} />
+                </div>
+                <div className="form-group">
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Cédula / ID</label>
+                  <input className="form-input" placeholder="Ej. 28.123.456" value={newClient.id_card} onChange={(e) => setNewClient({...newClient, id_card: e.target.value})} style={{ width: '100%' }} />
                 </div>
                 <div className="form-group">
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Teléfono</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ej. 123456789" 
-                    value={newClient.phone}
-                    onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px' }}
-                  />
+                  <input className="form-input" placeholder="WhatsApp" value={newClient.phone} onChange={(e) => setNewClient({...newClient, phone: e.target.value})} style={{ width: '100%' }} />
                 </div>
                 <div className="form-group">
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Tipo de Cabello</label>
-                  <select 
-                    value={newClient.hair_type}
-                    onChange={(e) => setNewClient({...newClient, hair_type: e.target.value})}
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px' }}
-                  >
+                  <select className="form-input" value={newClient.hair_type} onChange={(e) => setNewClient({...newClient, hair_type: e.target.value})} style={{ width: '100%' }}>
                     <option value="Normal">Normal</option>
                     <option value="Graso">Graso</option>
                     <option value="Seco">Seco</option>
+                    <option value="Mixto">Mixto</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Cuero Cabelludo</label>
+                  <select className="form-input" value={newClient.scalp_type} onChange={(e) => setNewClient({...newClient, scalp_type: e.target.value})} style={{ width: '100%' }}>
+                    <option value="Sano">Sano / Normal</option>
+                    <option value="Sensible">Sensible</option>
+                    <option value="Irritado">Irritado</option>
+                    <option value="Caspa">Caspa / Seborrea</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                  <button 
-                    className="btn-gold" 
-                    onClick={handleAddClient} 
-                    disabled={creating}
-                    style={{ width: '100%', height: '48px', borderRadius: '12px' }}
-                  >
-                    {creating ? <Loader2 className="animate-spin" /> : 'Crear Ficha'}
+                  <button className="btn-gold" onClick={handleAddClient} disabled={creating} style={{ width: '100%', height: '48px', borderRadius: '12px' }}>
+                    {creating ? <Loader2 className="animate-spin" /> : 'Registrar Ficha Técnica'}
                   </button>
                 </div>
               </div>
@@ -275,7 +280,13 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({ name: client.name, phone: client.phone });
+  const [editData, setEditData] = useState({ 
+    name: client.name, 
+    phone: client.phone,
+    id_card: client.id_card,
+    hair_type: client.hair_type,
+    scalp_type: client.scalp_type
+  });
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -324,27 +335,31 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
             </div>
             {isEditing ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <input 
-                  className="form-input" 
-                  value={editData.name} 
-                  onChange={e => setEditData({...editData, name: e.target.value})}
-                  placeholder="Nombre"
-                  style={{ width: '100%', padding: '8px' }}
-                />
-                <input 
-                  className="form-input" 
-                  value={editData.phone} 
-                  onChange={e => setEditData({...editData, phone: e.target.value})}
-                  placeholder="Teléfono"
-                  style={{ width: '100%', padding: '8px' }}
-                />
-                <button className="btn-gold" onClick={() => { onUpdate(editData); setIsEditing(false); }}>Guardar</button>
+                <input className="form-input" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} placeholder="Nombre" style={{ width: '100%' }} />
+                <input className="form-input" value={editData.id_card} onChange={e => setEditData({...editData, id_card: e.target.value})} placeholder="Cédula" style={{ width: '100%' }} />
+                <input className="form-input" value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} placeholder="Teléfono" style={{ width: '100%' }} />
+                <select className="form-input" value={editData.hair_type} onChange={e => setEditData({...editData, hair_type: e.target.value})} style={{ width: '100%' }}>
+                  <option value="Normal">Cabello: Normal</option>
+                  <option value="Graso">Cabello: Graso</option>
+                  <option value="Seco">Cabello: Seco</option>
+                  <option value="Mixto">Cabello: Mixto</option>
+                </select>
+                <select className="form-input" value={editData.scalp_type} onChange={e => setEditData({...editData, scalp_type: e.target.value})} style={{ width: '100%' }}>
+                  <option value="Sano">Cuero: Sano</option>
+                  <option value="Sensible">Cuero: Sensible</option>
+                  <option value="Irritado">Cuero: Irritado</option>
+                  <option value="Caspa">Cuero: Caspa</option>
+                </select>
+                <button className="btn-gold" onClick={() => { onUpdate(editData); setIsEditing(false); }}>Actualizar Ficha</button>
                 <button onClick={() => setIsEditing(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '12px' }}>Cancelar</button>
               </div>
             ) : (
               <>
                 <h3 style={{ fontSize: '20px', marginBottom: '4px' }}>{client.name}</h3>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{client.phone}</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '16px' }}>V-{client.id_card || '00.000.000'}</p>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <Phone size={14} color="var(--gold-primary)" /> {client.phone}
+                </p>
                 <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', fontSize: '14px' }}>
                   <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>{history.length}</span> Visitas registradas
                 </div>

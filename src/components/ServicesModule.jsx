@@ -12,7 +12,10 @@ import {
   Sparkles,
   Zap,
   Droplets,
-  Crown
+  Crown,
+  Clock,
+  LayoutList,
+  Check
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 
@@ -20,6 +23,10 @@ const ServicesModule = ({ isMobile }) => {
   const { showToast } = useNotifs();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [baseItems, setBaseItems] = useState([
+    "Bebida de Cortesía", "Lavado de Cabello", "Toalla Caliente", 
+    "Exfoliación", "Masaje Capilar", "Secado / Peinado", "Afeitado a Navaja"
+  ]);
 
   useEffect(() => {
     fetchServices();
@@ -52,14 +59,30 @@ const ServicesModule = ({ isMobile }) => {
   };
 
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newService, setNewService] = useState({ name: '', price: '', category: 'Barbería' });
+  const [newService, setNewService] = useState({ 
+    name: '', 
+    price: '', 
+    category: 'Barbería',
+    strategy_type: 'MVP',
+    duration: 30,
+    insumo_cost: 0,
+    included_items: []
+  });
 
   const handleCreateService = async () => {
     if (!newService.name || !newService.price) return;
     try {
       setLoading(true);
       await dataService.addService(newService);
-      setNewService({ name: '', price: '', category: 'Barbería' });
+      setNewService({ 
+        name: '', 
+        price: '', 
+        category: 'Barbería',
+        strategy_type: 'MVP',
+        duration: 30,
+        insumo_cost: 0,
+        included_items: []
+      });
       setShowAddForm(false);
       await fetchServices();
       showToast(`¡Servicio ${newService.name} agregado al catálogo!`);
@@ -76,7 +99,17 @@ const ServicesModule = ({ isMobile }) => {
       case 'Barbería': return <Scissors size={20} />;
       case 'Estilismo': return <Sparkles size={20} />;
       case 'Tratamientos': return <Droplets size={20} />;
-      default: return <Crown size={20} />;
+      default: return <Zap size={20} />;
+    }
+  };
+
+  const getStrategyColor = (type) => {
+    switch(type) {
+      case 'MVP': return 'var(--gold-primary)';
+      case 'Entrada': return '#32d74b';
+      case 'Upsell': return '#ff9f0a';
+      case 'Mantenimiento': return '#5e5ce6';
+      default: return 'white';
     }
   };
 
@@ -102,21 +135,112 @@ const ServicesModule = ({ isMobile }) => {
         </button>
       </div>
 
-      {showAddForm && (
-        <div className="glass-card animate-slide-up" style={{ marginBottom: '32px', padding: '24px' }}>
-          <h3 style={{ marginBottom: '20px' }}>Nuevo Servicio</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-            <input className="form-input" placeholder="Nombre (ej. Corte Astro)" value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})} />
-            <input className="form-input" type="number" placeholder="Precio ($)" value={newService.price} onChange={e => setNewService({...newService, price: Number(e.target.value)})} />
-            <select className="form-input" value={newService.category} onChange={e => setNewService({...newService, category: e.target.value})}>
-              <option value="Barbería">Barbería</option>
-              <option value="Estilismo">Estilismo</option>
-              <option value="Tratamientos">Tratamientos</option>
-            </select>
-            <button className="btn-gold" onClick={handleCreateService}>Guardar Catálogo</button>
+        {showAddForm && (
+          <div className="glass-card animate-slide-up" style={{ marginBottom: '32px', padding: '32px', borderRadius: '28px' }}>
+            <h3 style={{ marginBottom: '24px', fontSize: '22px', fontWeight: '800' }}>Nueva Experiencia Astro</h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '32px' }}>
+              {/* Left Column: Basic Info */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>NOMBRE DEL SERVICIO</label>
+                  <input className="form-input" placeholder="Ej. Corte Astro MVP" value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})} style={{ width: '100%' }} />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>PRECIO ($)</label>
+                    <input className="form-input" type="number" placeholder="25" value={newService.price} onChange={e => setNewService({...newService, price: Number(e.target.value)})} style={{ width: '100%' }} />
+                  </div>
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>DURACIÓN (MIN)</label>
+                    <input className="form-input" type="number" placeholder="45" value={newService.duration} onChange={e => setNewService({...newService, duration: Number(e.target.value)})} style={{ width: '100%' }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>CATEGORÍA</label>
+                    <select className="form-input" value={newService.category} onChange={e => setNewService({...newService, category: e.target.value})} style={{ width: '100%' }}>
+                      <option value="Barbería">Barbería</option>
+                      <option value="Estilismo">Estilismo</option>
+                      <option value="Tratamientos">Tratamientos</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>ESTRATEGIA</label>
+                    <select className="form-input" value={newService.strategy_type} onChange={e => setNewService({...newService, strategy_type: e.target.value})} style={{ width: '100%' }}>
+                      <option value="MVP">MVP (Estrella)</option>
+                      <option value="Entrada">Comodín Entrada</option>
+                      <option value="Upsell">Comodín Upsell</option>
+                      <option value="Mantenimiento">Mantenimiento</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>COSTO INSUMOS ($ TOTAL)</label>
+                  <input className="form-input" type="number" step="0.1" placeholder="1.50" value={newService.insumo_cost} onChange={e => setNewService({...newService, insumo_cost: Number(e.target.value)})} style={{ width: '100%', color: '#ff9f0a', fontWeight: '800' }} />
+                </div>
+              </div>
+
+              {/* Right Column: Checklist */}
+              <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '20px', letterSpacing: '1px' }}>
+                  <LayoutList size={16} /> CHECKLIST: QUÉ INCLUYE
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  {baseItems.map(item => (
+                    <button 
+                      key={item}
+                      onClick={() => {
+                        const current = newService.included_items || [];
+                        const next = current.includes(item) 
+                          ? current.filter(i => i !== item)
+                          : [...current, item];
+                        setNewService({...newService, included_items: next});
+                      }}
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        fontSize: '13px',
+                        textAlign: 'left',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        background: newService.included_items?.includes(item) ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.02)',
+                        border: newService.included_items?.includes(item) ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
+                        color: newService.included_items?.includes(item) ? 'white' : 'var(--text-muted)'
+                      }}
+                    >
+                      <div style={{ 
+                        width: '18px', 
+                        height: '18px', 
+                        borderRadius: '4px', 
+                        border: '1px solid var(--border-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: newService.included_items?.includes(item) ? 'var(--gold-primary)' : 'transparent'
+                      }}>
+                        {newService.included_items?.includes(item) && <Check size={12} color="black" strokeWidth={4} />}
+                      </div>
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn-gold" onClick={handleCreateService} style={{ height: '54px', padding: '0 40px', fontSize: '16px', borderRadius: '16px' }}>
+                Lanzar Servicio al Catálogo
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
 
       {loading ? (
@@ -175,8 +299,23 @@ const ServicesModule = ({ isMobile }) => {
                     {getCategoryIcon(service.category)}
                   </div>
                   <div>
-                    <h4 style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.3px' }}>{service.name}</h4>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>Experiencia Premium</div>
+                    <h4 style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {service.name}
+                      <span style={{ 
+                        fontSize: '10px', 
+                        padding: '2px 8px', 
+                        borderRadius: '6px', 
+                        backgroundColor: 'rgba(255,255,255,0.05)',
+                        border: `1px solid ${getStrategyColor(service.strategy_type)}`,
+                        color: getStrategyColor(service.strategy_type),
+                        fontWeight: '900'
+                      }}>
+                        {service.strategy_type}
+                      </span>
+                    </h4>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Clock size={12} /> {service.duration || 30} min
+                    </div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
@@ -195,9 +334,11 @@ const ServicesModule = ({ isMobile }) => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '20px' }}>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {[1,2,3,4,5].map(s => <Star key={s} size={10} fill="var(--gold-primary)" color="none" />)}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '20px', padding: '16px', backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: '16px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  <div style={{ fontWeight: '800', color: 'var(--gold-primary)', marginBottom: '4px', fontSize: '10px' }}>INCLUYE:</div>
+                  {(service.included_items || []).slice(0, 3).join(' • ')}
+                  {(service.included_items || []).length > 3 && '...'}
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '28px', fontWeight: '950', color: 'var(--text-primary)', letterSpacing: '-1px' }}>
