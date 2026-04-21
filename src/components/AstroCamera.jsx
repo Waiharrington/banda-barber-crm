@@ -52,9 +52,16 @@ const AstroCamera = ({ onCapture, onClose }) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
+      reader.onloadstart = () => setError("Leyendo archivo...");
       reader.onloadend = () => {
         setCapturedImage(reader.result);
+        setError(null);
         if (stream) stream.getTracks().forEach(track => track.stop());
+        e.target.value = ''; // Clear for same-file re-uploads
+      };
+      reader.onerror = () => {
+        setError("Error al leer el archivo. Intenta con otra imagen.");
+        e.target.value = '';
       };
       reader.readAsDataURL(file);
     }
