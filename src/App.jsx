@@ -39,8 +39,18 @@ function App() {
   const [isTabLoading, setIsTabLoading] = useState(false);
   
   // Multi-currency State
-  const [currency, setCurrency] = useState('USD'); // Moneda de vista GLOBAL
+  const [currency, setCurrency] = useState('USD'); 
   const [rates, setRates] = useState({ usd: 0, eur: 0, updated_at: null });
+  
+  // Custom Rates State (Persisted)
+  const [isCustomRate, setIsCustomRate] = useState(() => localStorage.getItem('astro_is_custom_rate') === 'true');
+  const [customRates, setCustomRates] = useState(() => {
+    const saved = localStorage.getItem('astro_custom_rates');
+    return saved ? JSON.parse(saved) : { usd: 40, eur: 45 };
+  });
+
+  // Effective Rates Logic
+  const effectiveRates = isCustomRate ? { ...customRates, updated_at: 'Manual' } : rates;
 
   const handleRefresh = () => setRefreshKey(prev => prev + 1);
 
@@ -160,17 +170,42 @@ function App() {
     switch (activeTab) {
       case 'dashboard':
         return isMobile ? (
-          <MobileDashboard onOpenSale={() => setIsSaleModalOpen(true)} stats={stats} chartData={chartData} dbData={dbData} rates={rates} />
+          <MobileDashboard 
+            onOpenSale={() => setIsSaleModalOpen(true)} 
+            stats={stats} 
+            chartData={chartData} 
+            dbData={dbData} 
+            rates={effectiveRates} 
+          />
         ) : (
-          <DashboardModule isMobile={isMobile} onOpenSale={() => setIsSaleModalOpen(true)} stats={stats} chartData={chartData} dbData={dbData} handleSeedData={handleSeedData} rates={rates} />
+          <DashboardModule 
+            isMobile={isMobile} 
+            onOpenSale={() => setIsSaleModalOpen(true)} 
+            stats={stats} 
+            chartData={chartData} 
+            dbData={dbData} 
+            handleSeedData={handleSeedData} 
+            rates={effectiveRates}
+            bcvRates={rates}
+            isCustomRate={isCustomRate}
+            setIsCustomRate={(val) => {
+              setIsCustomRate(val);
+              localStorage.setItem('astro_is_custom_rate', val);
+            }}
+            customRates={customRates}
+            setCustomRates={(val) => {
+              setCustomRates(val);
+              localStorage.setItem('astro_custom_rates', JSON.stringify(val));
+            }}
+          />
         );
       case 'reception': return <div className="p-container"><ReceptionModule isMobile={isMobile} /></div>;
-      case 'checkout': return <div className="p-container"><CheckoutPOS isMobile={isMobile} rates={rates} /></div>;
+      case 'checkout': return <div className="p-container"><CheckoutPOS isMobile={isMobile} rates={effectiveRates} /></div>;
       case 'barber': return <div className="p-container"><BarberPanel isMobile={isMobile} /></div>;
       case 'scheduling': return <div className="p-container"><SchedulingModule isMobile={isMobile} /></div>;
-      case 'services': return <div className="p-container"><ServicesModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
-      case 'inventory': return <div className="p-container"><InventoryModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
-      case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
+      case 'services': return <div className="p-container"><ServicesModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
+      case 'inventory': return <div className="p-container"><InventoryModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
+      case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
       case 'clients': return <div className="p-container"><ClientModule isMobile={isMobile} /></div>;
       case 'personnel': return <div className="p-container"><PersonnelModule isMobile={isMobile} /></div>;
       default: return <div className="p-container"><DashboardModule isMobile={isMobile} currency={currency} rates={rates} /></div>;

@@ -65,8 +65,23 @@ const QUOTES = [
   { text: "El negocio de la belleza es el negocio de la felicidad.", creator: "Emprendimiento" }
 ];
 
-const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handleSeedData, rates }) => {
+const DashboardModule = ({ 
+  isMobile, 
+  onOpenSale, 
+  stats, 
+  chartData, 
+  dbData, 
+  handleSeedData, 
+  rates, 
+  bcvRates,
+  isCustomRate,
+  setIsCustomRate,
+  customRates,
+  setCustomRates
+}) => {
   const [quoteIndex, setQuoteIndex] = useState(0);
+  const [isEditingRates, setIsEditingRates] = useState(false);
+  const [tempRates, setTempRates] = useState({ ...customRates });
   const { showToast } = useNotifs();
   const dailyGoal = parseFloat(localStorage.getItem('astro_daily_goal') || '500');
   const [isStoreOpen] = useState(true); // Can be linked to schedule later
@@ -144,26 +159,83 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
             </div>
           </div>
 
-          {/* BCV Rates Widget (Grouped Left) */}
-          {!isMobile && rates && rates.usd > 0 && (
+          {/* DUAL RATES WIDGET (RESTORED & IMPROVED) */}
+          {!isMobile && (
             <div style={{ 
               display: 'flex', 
-              gap: '24px', 
-              padding: '8px 20px', 
+              alignItems: 'center',
+              gap: '12px',
+              padding: '8px 12px', 
               backgroundColor: 'rgba(255,255,255,0.02)', 
-              borderRadius: '16px',
+              borderRadius: '24px',
               border: '1px solid rgba(212,175,55,0.05)',
-              marginLeft: '12px'
+              marginLeft: '20px',
+              backdropFilter: 'blur(10px)'
             }}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '8px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '1px' }}>USD / BS</span>
-                <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>{rates.usd.toFixed(2)}</span>
+              {/* Mode Switcher */}
+              <div 
+                onClick={() => setIsCustomRate(!isCustomRate)}
+                style={{
+                  display: 'flex',
+                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  padding: '4px',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  width: '70px',
+                  height: '28px'
+                }}
+              >
+                <div style={{
+                  position: 'absolute',
+                  left: isCustomRate ? '36px' : '4px',
+                  width: '30px',
+                  height: '20px',
+                  backgroundColor: isCustomRate ? 'var(--gold-primary)' : 'rgba(255,255,255,0.1)',
+                  borderRadius: '16px',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: isCustomRate ? '0 0 10px var(--gold-primary)' : 'none'
+                }} />
+                <div style={{ flex: 1, textAlign: 'center', fontSize: '8px', fontWeight: '900', zIndex: 2, color: !isCustomRate ? 'black' : 'white', lineHeight: '20px' }}>BCV</div>
+                <div style={{ flex: 1, textAlign: 'center', fontSize: '8px', fontWeight: '900', zIndex: 2, color: isCustomRate ? 'black' : 'white', lineHeight: '20px' }}>MAN</div>
               </div>
-              <div style={{ width: '1px', backgroundColor: 'rgba(212,175,55,0.1)', height: '20px', alignSelf: 'center' }} />
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '8px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '1px' }}>EUR / BS</span>
-                <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>{rates.eur.toFixed(2)}</span>
+
+              {/* Rate Values */}
+              <div style={{ display: 'flex', gap: '16px', padding: '0 8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '8px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px' }}>USD</span>
+                  <span style={{ fontSize: '13px', fontWeight: '900', color: isCustomRate ? 'var(--gold-primary)' : 'white' }}>{rates.usd.toFixed(2)}</span>
+                </div>
+                <div style={{ width: '1px', backgroundColor: 'rgba(255,255,255,0.05)', height: '20px', alignSelf: 'center' }} />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '8px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px' }}>EUR</span>
+                  <span style={{ fontSize: '13px', fontWeight: '900', color: isCustomRate ? 'var(--gold-primary)' : 'white' }}>{rates.eur.toFixed(2)}</span>
+                </div>
               </div>
+
+              {/* Edit Button */}
+              <button 
+                onClick={() => {
+                  setTempRates({ ...customRates });
+                  setIsEditingRates(true);
+                }}
+                className="edit-rates-btn"
+                style={{
+                  background: 'rgba(212,175,55,0.1)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '28px',
+                  height: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: 'var(--gold-primary)',
+                  transition: 'all 0.3s'
+                }}
+              >
+                <Edit3 size={14} />
+              </button>
             </div>
           )}
         </div>
@@ -377,9 +449,9 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
           0%, 100% { transform: scale(1); opacity: 0.3; }
           50% { transform: scale(1.15); opacity: 0.7; }
         }
-        .refresh-btn:hover {
+        .refresh-btn:hover, .edit-rates-btn:hover {
           opacity: 1 !important;
-          transform: rotate(15deg) scale(1.2);
+          transform: rotate(15deg) scale(1.1);
         }
         .chair-float {
           transition: all 0.5s ease;
@@ -388,6 +460,86 @@ const DashboardModule = ({ isMobile, onOpenSale, stats, chartData, dbData, handl
           filter: drop-shadow(0 40px 70px rgba(212,175,55,0.4)) brightness(1.2) !important;
         }
       `}</style>
+
+      {/* Manual Rates Edit Modal */}
+      {isEditingRates && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div className="glass-card animate-slide-up" style={{
+            width: '100%',
+            maxWidth: '400px',
+            padding: '32px',
+            borderRadius: '28px',
+            border: '1px solid rgba(212,175,55,0.2)',
+            background: 'linear-gradient(135deg, rgba(30,30,35,1), rgba(20,20,25,1))'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Edit3 color="var(--gold-primary)" size={20} />
+              </div>
+              <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Tasas <span className="text-gold">Astro</span></h3>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '8px' }}>TASA USD / BS</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="number" 
+                    value={tempRates.usd}
+                    onChange={(e) => setTempRates({ ...tempRates, usd: parseFloat(e.target.value) || 0 })}
+                    style={{ width: '100%', height: '52px', paddingLeft: '44px', fontSize: '18px', fontWeight: '900', color: 'var(--gold-primary)' }}
+                  />
+                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: '900', color: 'rgba(255,255,255,0.2)' }}>$</span>
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '8px' }}>TASA EUR / BS</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="number" 
+                    value={tempRates.eur}
+                    onChange={(e) => setTempRates({ ...tempRates, eur: parseFloat(e.target.value) || 0 })}
+                    style={{ width: '100%', height: '52px', paddingLeft: '44px', fontSize: '18px', fontWeight: '900', color: 'var(--gold-primary)' }}
+                  />
+                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: '900', color: 'rgba(255,255,255,0.2)' }}>€</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={() => setIsEditingRates(false)}
+                className="action-btn"
+                style={{ flex: 1, height: '48px', opacity: 0.5 }}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  setCustomRates(tempRates);
+                  setIsCustomRate(true);
+                  setIsEditingRates(false);
+                  showToast('Tasa personalizada activada');
+                }}
+                className="btn-gold"
+                style={{ flex: 1, height: '48px' }}
+              >
+                Activar Tasa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
