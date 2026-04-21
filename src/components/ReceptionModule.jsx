@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
+import AstroSelect from './AstroSelect';
 
 const ReceptionModule = ({ isMobile }) => {
   const { showToast, triggerConfetti } = useNotifs();
@@ -170,19 +171,14 @@ const ReceptionModule = ({ isMobile }) => {
               <span style={{ fontWeight: '800', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>2. Detalle del Servicio</span>
             </div>
             
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>SERVICIO</label>
-              <select 
-                value={formData.serviceId} 
-                onChange={(e) => setFormData({...formData, serviceId: e.target.value})}
-                style={{ width: '100%', height: '48px' }}
-              >
-                <option value="">Selecciona un servicio</option>
-                {services.map(s => (
-                  <option key={s.id} value={s.id}>{s.name} - ${s.price}</option>
-                ))}
-              </select>
-            </div>
+            <AstroSelect 
+              label="SERVICIO"
+              placeholder="Selecciona un servicio"
+              value={formData.serviceId}
+              onChange={val => setFormData({...formData, serviceId: val})}
+              options={services.map(s => ({ label: `${s.name} ($${s.price})`, value: s.id }))}
+              style={{ marginBottom: '20px' }}
+            />
 
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>BARBERO DISPONIBLE</label>

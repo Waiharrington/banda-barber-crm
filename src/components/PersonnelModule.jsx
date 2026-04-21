@@ -10,9 +10,12 @@ import {
   Loader2,
   Droplets,
   Sparkles,
-  Settings
+  Sparkles,
+  Settings,
+  UserPlus as UserPlusIcon
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
+import AstroSelect from './AstroSelect';
 
 const PersonnelModule = ({ isMobile }) => {
   const { showToast } = useNotifs();
@@ -92,11 +95,16 @@ const PersonnelModule = ({ isMobile }) => {
           <h3 style={{ marginBottom: '20px' }}>Nuevo integrante del equipo</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
             <input className="form-input" placeholder="Nombre" value={newStaff.name} onChange={e => setNewStaff({...newStaff, name: e.target.value})} />
-            <select className="form-input" value={newStaff.role} onChange={e => setNewStaff({...newStaff, role: e.target.value})}>
-              <option value="Barbero">Barbero</option>
-              <option value="Estilista">Estilista</option>
-              <option value="Asistente">Asistente</option>
-            </select>
+            <AstroSelect 
+              label="ROL"
+              value={newStaff.role}
+              onChange={val => setNewStaff({...newStaff, role: val})}
+              options={[
+                { label: 'Barbero', value: 'Barbero' },
+                { label: 'Estilista', value: 'Estilista' },
+                { label: 'Asistente', value: 'Asistente' }
+              ]}
+            />
             <input className="form-input" type="number" placeholder="% Comisión" value={newStaff.commission_pct} onChange={e => setNewStaff({...newStaff, commission_pct: Number(e.target.value)})} />
             <input className="form-input" placeholder="URL Foto (opcional)" value={newStaff.image_url} onChange={e => setNewStaff({...newStaff, image_url: e.target.value})} />
             <button className="btn-gold" onClick={handleCreateStaff}>Guardar Registro</button>

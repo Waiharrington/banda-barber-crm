@@ -18,6 +18,7 @@ import {
   Check
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
+import AstroSelect from './AstroSelect';
 
 const ServicesModule = ({ isMobile }) => {
   const { showToast } = useNotifs();
@@ -159,23 +160,27 @@ const ServicesModule = ({ isMobile }) => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div className="form-group">
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>CATEGORÍA</label>
-                    <select className="form-input" value={newService.category} onChange={e => setNewService({...newService, category: e.target.value})} style={{ width: '100%' }}>
-                      <option value="Barbería">Barbería</option>
-                      <option value="Estilismo">Estilismo</option>
-                      <option value="Tratamientos">Tratamientos</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>ESTRATEGIA</label>
-                    <select className="form-input" value={newService.strategy_type} onChange={e => setNewService({...newService, strategy_type: e.target.value})} style={{ width: '100%' }}>
-                      <option value="MVP">MVP (Estrella)</option>
-                      <option value="Entrada">Comodín Entrada</option>
-                      <option value="Upsell">Comodín Upsell</option>
-                      <option value="Mantenimiento">Mantenimiento</option>
-                    </select>
-                  </div>
+                  <AstroSelect 
+                    label="CATEGORÍA"
+                    value={newService.category}
+                    onChange={val => setNewService({...newService, category: val})}
+                    options={[
+                      { label: 'Barbería', value: 'Barbería' },
+                      { label: 'Estilismo', value: 'Estilismo' },
+                      { label: 'Tratamientos', value: 'Tratamientos' }
+                    ]}
+                  />
+                  <AstroSelect 
+                    label="ESTRATEGIA"
+                    value={newService.strategy_type}
+                    onChange={val => setNewService({...newService, strategy_type: val})}
+                    options={[
+                      { label: 'MVP (Estrella)', value: 'MVP' },
+                      { label: 'Comodín Entrada', value: 'Entrada' },
+                      { label: 'Comodín Upsell', value: 'Upsell' },
+                      { label: 'Mantenimiento', value: 'Mantenimiento' }
+                    ]}
+                  />
                 </div>
 
                 <div className="form-group">
