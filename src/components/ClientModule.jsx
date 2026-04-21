@@ -318,13 +318,14 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
 
   const handlePhotoCaptured = async (image) => {
     try {
-      // Small optimization to avoid oversized Base64 payloads
+      showToast('Optimizando imagen...', 'info');
+      // Create a canvas to compress the image even further
       const img = new Image();
       img.src = image;
       await new Promise(resolve => img.onload = resolve);
       
       const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 1000; // Efficient size for CRM
+      const MAX_WIDTH = 800; // Efficient size for high-speed sync
       let width = img.width;
       let height = img.height;
       
@@ -337,14 +338,21 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
-      const optimizedImage = canvas.toDataURL('image/jpeg', 0.8); // 80% quality JPEG
+      
+      // Use 0.6 quality to ensure small payload while maintaining pro visual
+      const optimizedImage = canvas.toDataURL('image/jpeg', 0.6);
 
       const newGallery = [...gallery, optimizedImage];
-      setGallery(newGallery);
-      await onUpdate({ work_gallery: newGallery });
+      
+      // Critical: Update both local state and DB sequentially
+      const updatedClient = await onUpdate({ work_gallery: newGallery });
+      if (updatedClient) {
+        setGallery(newGallery);
+        showToast('Foto guardada en galería', 'success');
+      }
     } catch (e) {
-      console.error('Error optimizing/saving image:', e);
-      showToast('Error al procesar imagen', 'error');
+      console.error('CRITICAL SYNC ERROR:', e);
+      showToast('Error de sincronización con la nube', 'error');
     }
   };
 
