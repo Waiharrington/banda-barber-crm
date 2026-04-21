@@ -22,6 +22,7 @@ function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isAppLoading, setIsAppLoading] = useState(true);
+  const [isTabLoading, setIsTabLoading] = useState(false);
   
   // Multi-currency State
   const [currency, setCurrency] = useState('USD'); // Moneda de vista GLOBAL
@@ -109,6 +110,16 @@ function App() {
     } catch (error) { console.error('Error fetching data:', error); }
   };
 
+  const handleTabChange = (tabId) => {
+    if (tabId === activeTab) return;
+    setIsTabLoading(true);
+    // Short transition to maintain the premium feel
+    setTimeout(() => {
+      setActiveTab(tabId);
+      setIsTabLoading(false);
+    }, 600);
+  };
+
   const handleSeedData = async () => {
     if (!window.confirm('¿Quieres cargar datos de prueba para ver el CRM funcionando?')) return;
     try {
@@ -141,8 +152,8 @@ function App() {
 
   if (isMobile) {
     return (
-      <MobileLayout activeTab={activeTab} setActiveTab={setActiveTab} onOpenSale={() => setIsSaleModalOpen(true)}>
-        <AstroLoader visible={isAppLoading} />
+      <MobileLayout activeTab={activeTab} setActiveTab={handleTabChange} onOpenSale={() => setIsSaleModalOpen(true)}>
+        <AstroLoader visible={isAppLoading || isTabLoading} />
         <div key={activeTab} className="animate-fade-in" style={{ height: '100%' }}>
           {renderContent()}
         </div>
@@ -162,9 +173,9 @@ function App() {
 
   return (
     <div className="app-container" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)', position: 'relative' }}>
-      <AstroLoader visible={isAppLoading} />
+      <AstroLoader visible={isAppLoading || isTabLoading} />
       <ParticleBackground />
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar activeTab={activeTab} setActiveTab={handleTabChange} />
       <main className="main-content" style={{ 
         flex: 1, 
         marginLeft: isMobile ? '0' : '260px', 
@@ -173,7 +184,7 @@ function App() {
         backgroundColor: 'var(--bg-primary)'
       }}>
         <div key={activeTab} className="animate-fade-in" style={{ height: '100%' }}>
-          {renderContent() || <div>Cargando sistema...</div>}
+          {renderContent()}
         </div>
       </main>
       <SaleServiceModal 
