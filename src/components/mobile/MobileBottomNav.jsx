@@ -1,44 +1,66 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Home, 
   Users, 
   Package, 
   Wallet, 
+  MoreHorizontal,
+  X,
+  Calendar,
+  UserCircle,
   Scissors,
-  Plus
+  Star,
+  Settings
 } from 'lucide-react';
 
-const MobileBottomNav = ({ activeTab, setActiveTab, onOpenSale }) => {
-  const items = [
+const MobileBottomNav = ({ activeTab, setActiveTab }) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const mainItems = [
     { id: 'dashboard', label: 'Inicio', icon: Home },
     { id: 'clients', label: 'Clientes', icon: Users },
     { id: 'inventory', label: 'Stock', icon: Package },
     { id: 'finance', label: 'Caja', icon: Wallet },
-    { id: 'personnel', label: 'Equipo', icon: Scissors },
   ];
 
+  const secondaryItems = [
+    { id: 'scheduling', label: 'Agenda (Astro)', icon: Calendar },
+    { id: 'reception', label: 'Recepción (Padre)', icon: UserCircle },
+    { id: 'checkout', label: 'Caja (Pro)', icon: Wallet },
+    { id: 'barber', label: 'Panel Barber (Hijo)', icon: Scissors },
+    { id: 'personnel', label: 'Equipo', icon: Scissors },
+    { id: 'services', label: 'Servicios', icon: Star },
+    { id: 'admin', label: 'Administración', icon: Settings },
+  ];
+
+  const handleSelect = (id) => {
+    setActiveTab(id);
+    setIsMenuOpen(false);
+  };
+
   return (
-    <nav style={{
-      position: 'fixed',
-      bottom: '16px',
-      left: '16px',
-      right: '16px',
-      height: '70px',
-      backgroundColor: 'rgba(20, 20, 20, 0.85)',
-      backdropFilter: 'blur(15px)',
-      borderRadius: 'var(--radius-pill)',
-      display: 'flex',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-      padding: '0 10px',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-      zIndex: 1000
-    }}>
-      {items.map((item, index) => (
-        <React.Fragment key={item.id}>
+    <>
+      <nav style={{
+        position: 'fixed',
+        bottom: '16px',
+        left: '16px',
+        right: '16px',
+        height: '70px',
+        backgroundColor: 'rgba(20, 20, 20, 0.9)',
+        backdropFilter: 'blur(20px)',
+        borderRadius: '35px',
+        display: 'flex',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        padding: '0 10px',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+        zIndex: 1000
+      }}>
+        {mainItems.map((item) => (
           <button
-            onClick={() => setActiveTab(item.id)}
+            key={item.id}
+            onClick={() => handleSelect(item.id)}
             style={{
               background: 'none',
               border: 'none',
@@ -48,7 +70,7 @@ const MobileBottomNav = ({ activeTab, setActiveTab, onOpenSale }) => {
               gap: '4px',
               padding: '10px',
               color: activeTab === item.id ? 'var(--gold-primary)' : 'var(--text-muted)',
-              transition: 'var(--transition-fast)',
+              transition: 'all 0.2s',
               cursor: 'pointer'
             }}
           >
@@ -57,41 +79,87 @@ const MobileBottomNav = ({ activeTab, setActiveTab, onOpenSale }) => {
               {item.label}
             </span>
           </button>
-          
-          {/* Action button in the middle if needed, but user asked for 5 buttons in total menu. 
-              Let's make them 5 items + the floating button at top right or middle?
-              Actually, the reference has 4 + 1 home. 
-              If user wants 5 buttons, these 5 are perfect. 
-              I'll add the "Plus" as a separate floating button usually, 
-              but let's integrate it as a 6th central one or just keep it floating.
-          */}
-        </React.Fragment>
-      ))}
+        ))}
 
-      {/* Floating Action Button (Optional, but user reference had a plus) */}
-      <style>{`
-        .fab-mobile {
-          position: fixed;
-          bottom: 100px;
-          right: 20px;
-          width: 56px;
-          height: 56px;
-          background: var(--gold-gradient);
-          border-radius: 50%;
-          display: flex;
-          alignItems: center;
-          justify-content: center;
-          box-shadow: var(--gold-glow);
-          color: var(--bg-primary);
-          border: none;
-          z-index: 999;
-          transition: var(--transition-fast);
-        }
-        .fab-mobile:active {
-          transform: scale(0.9);
-        }
-      `}</style>
-    </nav>
+        <button
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          style={{
+            background: 'none',
+            border: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '10px',
+            color: isMenuOpen ? 'var(--gold-primary)' : 'var(--text-muted)',
+            transition: 'all 0.2s',
+            cursor: 'pointer'
+          }}
+        >
+          {isMenuOpen ? <X size={22} /> : <MoreHorizontal size={22} />}
+          <span style={{ fontSize: '10px', fontWeight: isMenuOpen ? '700' : '500' }}>Más</span>
+        </button>
+      </nav>
+
+      {/* Global "More" Menu Overlay */}
+      {isMenuOpen && (
+        <div 
+          onClick={() => setIsMenuOpen(false)}
+          className="animate-fade-in"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            backdropFilter: 'blur(10px)',
+            zIndex: 999,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            padding: '100px 16px 110px'
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="animate-slide-up"
+            style={{
+              backgroundColor: 'rgba(28,28,30,0.95)',
+              borderRadius: '28px',
+              padding: '24px',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 -10px 40px rgba(0,0,0,0.8)'
+            }}
+          >
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+              {secondaryItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => handleSelect(item.id)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '16px 8px',
+                    color: activeTab === item.id ? 'var(--gold-primary)' : 'white',
+                    borderRadius: '16px',
+                    backgroundColor: activeTab === item.id ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <item.icon size={24} />
+                  <span style={{ fontSize: '10px', textAlign: 'center', fontWeight: '700' }}>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

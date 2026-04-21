@@ -42,25 +42,26 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
     borderRight: '1px solid var(--border-color)',
     display: 'flex',
     flexDirection: 'column',
-    padding: '32px 20px',
+    padding: '20px 16px',
     position: 'fixed',
     left: 0,
-    top: 0
+    top: 0,
+    overflowY: 'auto'
   };
 
   return (
     <div className="sidebar" style={sidebarStyle}>
       {!isMobile && (
         <div className="logo-container" style={{
-          marginBottom: '50px',
+          marginBottom: '20px',
           display: 'flex',
           justifyContent: 'center'
         }}>
-          <img src={logo} alt="Astro Barber" style={{ width: '100%', height: 'auto', maxWidth: '180px' }} />
+          <img src={logo} alt="Astro Barber" style={{ width: '100%', height: 'auto', maxWidth: '140px' }} />
         </div>
       )}
 
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -71,18 +72,18 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                padding: '14px 16px',
+                gap: '10px',
+                padding: '10px 12px',
                 backgroundColor: isActive ? 'rgba(212, 175, 55, 0.08)' : 'transparent',
                 border: 'none',
-                borderRadius: '14px',
+                borderRadius: '12px',
                 color: isActive ? 'var(--gold-primary)' : 'var(--text-secondary)',
                 cursor: 'pointer',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 textAlign: 'left',
                 width: '100%',
                 fontWeight: isActive ? '700' : '500',
-                letterSpacing: isActive ? '0.2px' : '0'
+                letterSpacing: isActive ? '0.1px' : '0'
               }}
             >
               <div style={{
