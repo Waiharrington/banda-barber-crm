@@ -496,13 +496,6 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
                 />
               </div>
             )}
-            
-            {showCamera && (
-              <AstroCamera 
-                onCapture={handlePhotoCaptured} 
-                onClose={() => setShowCamera(false)} 
-              />
-            )}
           </div>
 
           <div className="glass-card">
@@ -530,6 +523,13 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
           </div>
         </div>
       </div>
+
+      {showCamera && (
+        <AstroCamera 
+          onCapture={handlePhotoCaptured} 
+          onClose={() => setShowCamera(false)} 
+        />
+      )}
     </div>
   );
 };
