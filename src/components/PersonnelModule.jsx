@@ -15,11 +15,19 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import AstroSelect from './AstroSelect';
+import AstroCamera from './AstroCamera';
+import AstroDialog from './AstroDialog';
+import { Camera } from 'lucide-react';
 
 const PersonnelModule = ({ isMobile }) => {
   const { showToast } = useNotifs();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Dialog & Camera State
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraTarget, setCameraTarget] = useState(null); // 'new' | {staffId}
+  const [dialog, setDialog] = useState({ isOpen: false, type: 'alert', title: '', message: '', onConfirm: null });
 
   useEffect(() => {
     fetchStaff();
@@ -37,18 +45,26 @@ const PersonnelModule = ({ isMobile }) => {
     }
   };
 
-  const handleDeleteStaff = async (id, name) => {
-    if (!window.confirm(`¿Estás seguro de eliminar a ${name}?`)) return;
-    try {
-      setLoading(true);
-      await dataService.deleteStaff(id);
-      await fetchStaff();
-      showToast(`${name} ha sido eliminado del equipo.`);
-    } catch (error) {
-      showToast('Error al eliminar personal.', 'error');
-    } finally {
-      setLoading(false);
-    }
+  const handleDeleteStaff = (id, name) => {
+    setDialog({
+      isOpen: true,
+      type: 'confirm',
+      title: 'Eliminar Personal',
+      message: `¿Estás seguro de eliminar a ${name}? Esta acción no se puede deshacer.`,
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          await dataService.deleteStaff(id);
+          await fetchStaff();
+          showToast(`${name} ha sido eliminado del equipo.`);
+        } catch (error) {
+          showToast('Error al eliminar personal.', 'error');
+        } finally {
+          setLoading(false);
+          setDialog({ ...dialog, isOpen: false });
+        }
+      }
+    });
   };
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -105,8 +121,31 @@ const PersonnelModule = ({ isMobile }) => {
               ]}
             />
             <input className="form-input" type="number" placeholder="% Comisión" value={newStaff.commission_pct} onChange={e => setNewStaff({...newStaff, commission_pct: Number(e.target.value)})} />
-            <input className="form-input" placeholder="URL Foto (opcional)" value={newStaff.image_url} onChange={e => setNewStaff({...newStaff, image_url: e.target.value})} />
-            <button className="btn-gold" onClick={handleCreateStaff}>Guardar Registro</button>
+            <div style={{ position: 'relative' }}>
+              <div 
+                onClick={() => { setCameraTarget('new'); setShowCamera(true); }}
+                style={{ 
+                  height: '48px', 
+                  backgroundColor: 'rgba(255,255,255,0.05)', 
+                  borderRadius: '12px', 
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  color: newStaff.image_url ? 'var(--gold-primary)' : 'var(--text-muted)',
+                  overflow: 'hidden'
+                }}
+              >
+                {newStaff.image_url ? (
+                  <img src={newStaff.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <><Camera size={18} /> <span>Foto de Perfil</span></>
+                )}
+              </div>
+            </div>
+            <button className="btn-gold" onClick={handleCreateStaff} style={{ height: '48px' }}>Guardar Registro</button>
           </div>
         </div>
       )}
@@ -156,28 +195,26 @@ const PersonnelModule = ({ isMobile }) => {
                     <span style={{ color: 'var(--gold-primary)', fontSize: '13px', fontWeight: '600' }}>{person.role.toUpperCase()}</span>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
                   <button className="action-btn" onClick={() => {
-                    const newName = window.prompt('Nuevo nombre:', person.name);
-                    const newRole = window.prompt('Nuevo rol (Barbero/Estilista/Asistente):', person.role);
-                    const newComm = window.prompt('Nueva comisión (%):', person.commission_pct);
-                    const newImg = window.prompt('Nueva URL de foto:', person.image_url || '');
-                    
-                    if (newName || newRole || newComm || newImg) {
-                      const updates = {};
-                      if (newName) updates.name = newName;
-                      if (newRole) updates.role = newRole;
-                      if (newComm) updates.commission_pct = Number(newComm);
-                      if (newImg !== null) updates.image_url = newImg;
-
-                      dataService.updateStaff(person.id, updates)
-                        .then(() => {
+                    setDialog({
+                      isOpen: true,
+                      type: 'prompt',
+                      title: 'Editar Nombre',
+                      inputValue: person.name,
+                      onConfirm: async (newName) => {
+                        if (newName) {
+                          await dataService.updateStaff(person.id, { name: newName });
                           fetchStaff();
-                          showToast('Personal actualizado con éxito');
-                        })
-                        .catch(() => showToast('Error al actualizar', 'error'));
-                    }
+                          showToast('Nombre actualizado');
+                        }
+                        setDialog({ ...dialog, isOpen: false });
+                      }
+                    });
                   }}><Edit2 size={16} /></button>
+                  <button className="action-btn" onClick={() => {
+                    setCameraTarget(person.id);
+                    setShowCamera(true);
+                  }}><Camera size={16} /></button>
                   <button className="action-btn" style={{ color: '#ff453a' }} onClick={() => handleDeleteStaff(person.id, person.name)}><Trash2 size={16} /></button>
                 </div>
               </div>
@@ -250,6 +287,32 @@ const PersonnelModule = ({ isMobile }) => {
           />
         </div>
       </div>
+
+      <AstroDialog 
+        isOpen={dialog.isOpen}
+        title={dialog.title}
+        message={dialog.message}
+        type={dialog.type}
+        inputValue={dialog.inputValue}
+        onConfirm={dialog.onConfirm}
+        onCancel={() => setDialog({ ...dialog, isOpen: false })}
+      />
+
+      {showCamera && (
+        <AstroCamera 
+          onClose={() => setShowCamera(false)}
+          onCapture={async (image) => {
+            if (cameraTarget === 'new') {
+              setNewStaff({ ...newStaff, image_url: image });
+            } else {
+              await dataService.updateStaff(cameraTarget, { image_url: image });
+              fetchStaff();
+              showToast('Foto actualizada');
+            }
+            setShowCamera(false);
+          }}
+        />
+      )}
     </div>
   );
 };
