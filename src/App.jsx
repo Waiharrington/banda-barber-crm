@@ -207,7 +207,7 @@ function App() {
       case 'services': return <div className="p-container"><ServicesModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
       case 'inventory': return <div className="p-container"><InventoryModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
       case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
-      case 'clients': return <div className="p-container"><ClientModule isMobile={isMobile} /></div>;
+      case 'clients': return <div className="p-container"><ClientModule isMobile={isMobile} clients={dbData.clients} onRefresh={fetchInitialData} /></div>;
       case 'personnel': return <div className="p-container"><PersonnelModule isMobile={isMobile} /></div>;
       default: return <div className="p-container"><DashboardModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
     }

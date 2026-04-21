@@ -18,12 +18,11 @@ import { dataService } from '../services/dataService';
 import AstroSelect from './AstroSelect';
 import AstroCamera from './AstroCamera';
 
-const ClientModule = () => {
+const ClientModule = ({ clients, onRefresh }) => {
   const { showToast } = useNotifs();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
-  const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newClient, setNewClient] = useState({ 
     name: '', 
@@ -33,23 +32,7 @@ const ClientModule = () => {
     scalp_type: 'Normal' 
   });
 
-  useEffect(() => {
-    fetchClients();
-  }, []);
-
   const [creating, setCreating] = useState(false);
-
-  const fetchClients = async () => {
-    try {
-      setLoading(true);
-      const data = await dataService.getClients();
-      setClients(data);
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDeleteClient = async (id, name) => {
     if (!window.confirm(`¿Estás seguro de eliminar a ${name}? Esta acción no se puede deshacer.`)) return;
@@ -264,10 +247,12 @@ const ClientModule = () => {
             try {
               const updated = await dataService.updateClient(selectedClient.id, updates);
               setSelectedClient(updated);
-              fetchClients();
+              await onRefresh();
               showToast('Datos actualizados');
+              return updated;
             } catch (e) {
               showToast('Error al actualizar', 'error');
+              return null;
             }
           }}
         />
@@ -292,6 +277,13 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [gallery, setGallery] = useState(client.work_gallery || []);
+
+  useEffect(() => {
+    if (client.work_gallery) {
+      setGallery(client.work_gallery);
+    }
+  }, [client.work_gallery]);
+
   const fileInputRef = useRef(null);
   const [editData, setEditData] = useState({ 
     name: client.name, 
