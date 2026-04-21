@@ -108,10 +108,9 @@ const PersonnelModule = ({ isMobile }) => {
       {showAddForm && (
         <div className="glass-card animate-slide-up" style={{ marginBottom: '32px', padding: '24px' }}>
           <h3 style={{ marginBottom: '20px' }}>Nuevo integrante del equipo</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-            <input className="form-input" placeholder="Nombre" value={newStaff.name} onChange={e => setNewStaff({...newStaff, name: e.target.value})} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', alignItems: 'center' }}>
+            <input className="form-input" placeholder="Nombre completo" value={newStaff.name} onChange={e => setNewStaff({...newStaff, name: e.target.value})} style={{ height: '48px' }} />
             <AstroSelect 
-              label="ROL"
               value={newStaff.role}
               onChange={val => setNewStaff({...newStaff, role: val})}
               options={[
@@ -119,33 +118,32 @@ const PersonnelModule = ({ isMobile }) => {
                 { label: 'Estilista', value: 'Estilista' },
                 { label: 'Asistente', value: 'Asistente' }
               ]}
+              placeholder="Seleccionar Rol..."
             />
-            <input className="form-input" type="number" placeholder="% Comisión" value={newStaff.commission_pct} onChange={e => setNewStaff({...newStaff, commission_pct: Number(e.target.value)})} />
-            <div style={{ position: 'relative' }}>
-              <div 
-                onClick={() => { setCameraTarget('new'); setShowCamera(true); }}
-                style={{ 
-                  height: '48px', 
-                  backgroundColor: 'rgba(255,255,255,0.05)', 
-                  borderRadius: '12px', 
-                  border: '1px solid var(--border-color)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '12px',
-                  cursor: 'pointer',
-                  color: newStaff.image_url ? 'var(--gold-primary)' : 'var(--text-muted)',
-                  overflow: 'hidden'
-                }}
-              >
-                {newStaff.image_url ? (
-                  <img src={newStaff.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <><Camera size={18} /> <span>Foto de Perfil</span></>
-                )}
-              </div>
+            <input className="form-input" type="number" placeholder="% Comision" value={newStaff.commission_pct} onChange={e => setNewStaff({...newStaff, commission_pct: Number(e.target.value)})} style={{ height: '48px' }} />
+            <div 
+              onClick={() => { setCameraTarget('new'); setShowCamera(true); }}
+              style={{ 
+                height: '48px', 
+                backgroundColor: 'rgba(255,255,255,0.05)', 
+                borderRadius: '12px', 
+                border: '1px solid var(--border-color)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                cursor: 'pointer',
+                color: newStaff.image_url ? 'var(--gold-primary)' : 'var(--text-muted)',
+                overflow: 'hidden'
+              }}
+            >
+              {newStaff.image_url ? (
+                <img src={newStaff.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <><Camera size={18} /> <span style={{ fontSize: '13px', fontWeight: '600' }}>Foto Perfil</span></>
+              )}
             </div>
-            <button className="btn-gold" onClick={handleCreateStaff} style={{ height: '48px' }}>Guardar Registro</button>
+            <button className="btn-gold" onClick={handleCreateStaff} style={{ height: '48px', width: '100%' }}>Guardar Registro</button>
           </div>
         </div>
       )}
