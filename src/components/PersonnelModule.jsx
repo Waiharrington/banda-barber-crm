@@ -10,7 +10,6 @@ import {
   Loader2,
   Droplets,
   Sparkles,
-  Sparkles,
   Settings,
   UserPlus as UserPlusIcon
 } from 'lucide-react';
