@@ -4,30 +4,39 @@ import {
   Scissors, 
   Trash2, 
   Edit2, 
-  TrendingUp, 
-  DollarSign, 
   UserPlus,
   Loader2,
   Droplets,
   Sparkles,
   Settings,
-  UserPlus as UserPlusIcon
+  Camera,
+  X,
+  User,
+  Check,
+  CreditCard,
+  Headset
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import AstroSelect from './AstroSelect';
 import AstroCamera from './AstroCamera';
-import AstroDialog from './AstroDialog';
-import { Camera, X } from 'lucide-react';
 
 const PersonnelModule = ({ isMobile }) => {
   const { showToast } = useNotifs();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Dialog & Camera State
+  // Form & Editing State
+  const [showForm, setShowForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    role: 'Barbero', 
+    image_url: '' 
+  });
+
+  // Camera State
   const [showCamera, setShowCamera] = useState(false);
-  const [cameraTarget, setCameraTarget] = useState(null); // 'new' | {staffId}
-  const [dialog, setDialog] = useState({ isOpen: false, type: 'alert', title: '', message: '', onConfirm: null });
 
   useEffect(() => {
     fetchStaff();
@@ -40,55 +49,87 @@ const PersonnelModule = ({ isMobile }) => {
       setStaff(data);
     } catch (error) {
       console.error('Error fetching staff:', error);
+      showToast('Error al cargar personal.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteStaff = (id, name) => {
-    setDialog({
-      isOpen: true,
-      type: 'confirm',
-      title: 'Eliminar Personal',
-      message: `¿Estás seguro de eliminar a ${name}? Esta acción no se puede deshacer.`,
-      onConfirm: async () => {
-        try {
-          setLoading(true);
-          await dataService.deleteStaff(id);
-          await fetchStaff();
-          showToast(`${name} ha sido eliminado del equipo.`);
-        } catch (error) {
-          showToast('Error al eliminar personal.', 'error');
-        } finally {
-          setLoading(false);
-          setDialog({ ...dialog, isOpen: false });
-        }
-      }
+  const handleEditClick = (person) => {
+    setFormData({
+      name: person.name,
+      role: person.role,
+      image_url: person.image_url || ''
     });
+    setEditingId(person.id);
+    setIsEditing(true);
+    setShowForm(true);
   };
 
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newStaff, setNewStaff] = useState({ name: '', role: 'Barbero', commission_pct: 40, image_url: '' });
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setIsEditing(false);
+    setEditingId(null);
+    setFormData({ name: '', role: 'Barbero', image_url: '' });
+  };
 
-  const handleCreateStaff = async () => {
-    if (!newStaff.name) return;
+  const handleSubmit = async () => {
+    if (!formData.name) {
+      showToast('Por favor ingresa un nombre.', 'error');
+      return;
+    }
     try {
       setLoading(true);
-      await dataService.addStaff(newStaff);
-      setNewStaff({ name: '', role: 'Barbero', commission_pct: 40, image_url: '' });
-      setShowAddForm(false);
+      const submissionData = {
+        name: formData.name,
+        role: formData.role,
+        image_url: formData.image_url,
+        commission_pct: 40 // Valor por defecto para compatibilidad
+      };
+
+      if (isEditing) {
+        await dataService.updateStaff(editingId, submissionData);
+        showToast('Perfil actualizado correctamente.');
+      } else {
+        await dataService.addStaff(submissionData);
+        showToast(`¡${formData.name} se ha unido al equipo!`);
+      }
+      handleCloseForm();
       await fetchStaff();
-      showToast(`¡${newStaff.name} se ha unido al equipo!`);
     } catch (e) {
-      showToast('Error al crear registro de personal.', 'error');
+      console.error('Error saving staff:', e);
+      showToast(e.message || 'Error al guardar registro.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDeleteStaff = async (id, name) => {
+    if (!window.confirm(`¿Estás seguro de eliminar a ${name}? Esta acción es irreversible.`)) return;
+    try {
+      setLoading(true);
+      await dataService.deleteStaff(id);
+      await fetchStaff();
+      showToast(`${name} ha sido eliminado del equipo.`);
+    } catch (error) {
+      showToast('Error al eliminar personal.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getRoleIcon = (role) => {
+    switch(role) {
+      case 'Barbero': return <Scissors size={18} />;
+      case 'Recepcionista': return <Headset size={18} />;
+      case 'Caja': return <CreditCard size={18} />;
+      case 'Asistente de Lavado': return <Droplets size={18} />;
+      default: return <User size={18} />;
+    }
+  };
 
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -96,244 +137,194 @@ const PersonnelModule = ({ isMobile }) => {
         marginBottom: '40px'
       }}>
         <div>
-          <h2 style={{ fontSize: '28px', fontWeight: '700', letterSpacing: '-0.5px' }}>Nuestro <span className="text-gold">Equipo</span></h2>
+          <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Nuestro <span className="text-gold">Equipo</span></h2>
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Gestión de talento y desempeño.</p>
         </div>
-        <button className="btn-gold" onClick={() => setShowAddForm(!showAddForm)}>
-          <UserPlus size={18} style={{ marginRight: '8px' }} />
-          {showAddForm ? 'Cancelar' : 'Contratar Artista'}
+        <button className="btn-gold" onClick={() => showForm ? handleCloseForm() : setShowForm(true)}>
+          {showForm ? <X size={18} style={{ marginRight: '8px' }} /> : <UserPlus size={18} style={{ marginRight: '8px' }} />}
+          {showForm ? 'Cancelar' : 'Contratar Artista'}
         </button>
       </div>
 
-      {showAddForm && (
-        <div className="glass-card animate-slide-up" style={{ marginBottom: '32px', padding: '24px' }}>
-          <h3 style={{ marginBottom: '20px' }}>Nuevo integrante del equipo</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', alignItems: 'center' }}>
-            <input className="form-input" placeholder="Nombre completo" value={newStaff.name} onChange={e => setNewStaff({...newStaff, name: e.target.value})} style={{ height: '48px' }} />
-            <AstroSelect 
-              value={newStaff.role}
-              onChange={val => setNewStaff({...newStaff, role: val})}
-              options={[
-                { label: 'Barbero', value: 'Barbero' },
-                { label: 'Estilista', value: 'Estilista' },
-                { label: 'Asistente', value: 'Asistente' }
-              ]}
-              placeholder="Seleccionar Rol..."
-            />
-            <input className="form-input" type="number" placeholder="% Comision" value={newStaff.commission_pct} onChange={e => setNewStaff({...newStaff, commission_pct: Number(e.target.value)})} style={{ height: '48px' }} />
-            <div style={{ position: 'relative' }}>
+      {showForm && (
+        <div className="glass-card animate-slide-up" style={{ 
+          marginBottom: '32px', 
+          padding: '32px', 
+          borderRadius: '28px', 
+          position: 'relative', 
+          zIndex: 999,
+          overflow: 'visible' 
+        }}>
+          <h3 style={{ marginBottom: '24px', fontSize: '22px', fontWeight: '800' }}>
+            {isEditing ? `Editando Perfil: ${formData.name}` : 'Nuevo integrante del equipo'}
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr', gap: '24px', alignItems: 'end' }}>
+            
+            {/* Photo Section */}
+            <div style={{ position: 'relative', width: '120px', margin: isMobile ? '0 auto 16px' : '0' }}>
               <div 
-                onClick={() => { setCameraTarget('new'); setShowCamera(true); }}
+                onClick={() => setShowCamera(true)}
                 style={{ 
-                  height: '48px', 
+                  width: '120px', 
+                  height: '120px', 
                   backgroundColor: 'rgba(255,255,255,0.05)', 
-                  borderRadius: '12px', 
-                  border: '1px solid var(--border-color)',
+                  borderRadius: '24px', 
+                  border: '2px dashed var(--border-color)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '12px',
                   cursor: 'pointer',
-                  color: newStaff.image_url ? 'var(--gold-primary)' : 'var(--text-muted)',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  transition: 'all 0.3s'
                 }}
               >
-                {newStaff.image_url ? (
-                  <img src={newStaff.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {formData.image_url ? (
+                  <img src={formData.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <><Camera size={18} /> <span style={{ fontSize: '13px', fontWeight: '600' }}>Foto Perfil</span></>
+                  <div style={{ textAlign: 'center' }}>
+                    <Camera size={32} color="var(--text-muted)" />
+                    <div style={{ fontSize: '10px', marginTop: '4px', color: 'var(--text-muted)', fontWeight: '800' }}>FOTO</div>
+                  </div>
                 )}
               </div>
-              {newStaff.image_url && (
+              {formData.image_url && (
                 <button 
-                  onClick={(e) => { e.stopPropagation(); setNewStaff({ ...newStaff, image_url: '' }); }}
-                  style={{ position: 'absolute', top: '-8px', right: '-8px', backgroundColor: '#ff453a', border: 'none', borderRadius: '50%', color: 'white', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', zIndex: 2 }}
+                  onClick={(e) => { e.stopPropagation(); setFormData({ ...formData, image_url: '' }); }}
+                  style={{ position: 'absolute', top: '-10px', right: '-10px', backgroundColor: '#ff453a', border: 'none', borderRadius: '50%', color: 'white', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 10 }}
                 >
-                  <X size={12} />
+                  <X size={14} />
                 </button>
               )}
             </div>
-            <button className="btn-gold" onClick={handleCreateStaff} style={{ height: '48px', width: '100%' }}>Guardar Registro</button>
+
+            {/* Inputs Section */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="form-group">
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>NOMBRE COMPLETO</label>
+                <input className="form-input" placeholder="Ej. Marco Silva" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ width: '100%', height: '50px' }} />
+              </div>
+              <AstroSelect 
+                label="ROL EN EL EQUIPO"
+                value={formData.role}
+                onChange={val => setFormData({...formData, role: val})}
+                options={[
+                  { label: 'Barbero', value: 'Barbero' },
+                  { label: 'Recepcionista', value: 'Recepcionista' },
+                  { label: 'Caja', value: 'Caja' },
+                  { label: 'Asistente de Lavado', value: 'Asistente de Lavado' }
+                ]}
+              />
+            </div>
+
+            {/* Actions */}
+            <button className="btn-gold" onClick={handleSubmit} style={{ height: '50px', width: '100%', borderRadius: '14px', fontSize: '15px', fontWeight: '800' }}>
+              {isEditing ? 'Guardar Cambios' : 'Confirmar Contratación'}
+            </button>
           </div>
         </div>
       )}
 
-
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
-          <Loader2 className="animate-spin" size={40} color="var(--gold-primary)" />
+          <Loader2 className="animate-spin" size={48} color="var(--gold-primary)" />
         </div>
       ) : staff.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: 'center', padding: '80px', borderStyle: 'dashed' }}>
-          <Scissors size={48} color="var(--bg-tertiary)" style={{ marginBottom: '20px' }} />
-          <p style={{ color: 'var(--text-muted)' }}>El equipo está vacío. ¡Comienza agregando a tu primer artista!</p>
+        <div className="glass-card" style={{ textAlign: 'center', padding: '80px', borderRadius: '32px' }}>
+          <User size={64} color="rgba(212, 175, 55, 0.1)" style={{ marginBottom: '24px' }} />
+          <h3 style={{ fontSize: '20px', color: 'var(--text-primary)' }}>El equipo está esperando</h3>
+          <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Comienza agregando a los artistas que harán brillar tu marca.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' }}>
           {staff.map(person => (
-            <div key={person.id} className="glass-card" style={{ 
+            <div key={person.id} className="glass-card animate-scale-in" style={{ 
               padding: '24px', 
-              transition: 'var(--transition-fast)',
-              border: '1px solid var(--border-color)',
-              position: 'relative'
+              borderRadius: '24px',
+              border: '1px solid rgba(255,255,255,0.05)',
+              position: 'relative',
+              overflow: 'hidden'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                <div style={{ 
+                  width: '80px', 
+                  height: '80px', 
+                  borderRadius: '20px', 
+                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  overflow: 'hidden',
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  border: '1px solid rgba(255,255,255,0.08)'
+                }}>
+                  {person.image_url ? (
+                    <img src={person.image_url} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '28px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.5 }}>
+                      {person.name.substring(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ fontSize: '20px', fontWeight: '850', color: 'white', marginBottom: '4px' }}>{person.name}</h4>
                   <div style={{ 
-                    width: '64px', 
-                    height: '64px', 
-                    borderRadius: '18px', 
-                    backgroundColor: 'var(--bg-tertiary)',
-                    overflow: 'hidden',
                     display: 'flex', 
                     alignItems: 'center', 
-                    justifyContent: 'center',
-                    border: '1px solid var(--border-color)',
-                    position: 'relative'
+                    gap: '6px', 
+                    color: 'var(--gold-primary)', 
+                    fontSize: '11px', 
+                    fontWeight: '900',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px',
+                    backgroundColor: 'rgba(212, 175, 55, 0.08)',
+                    padding: '4px 10px',
+                    borderRadius: '8px',
+                    width: 'fit-content'
                   }}>
-                    {person.image_url ? (
-                      <>
-                        <img src={person.image_url} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <button 
-                          onClick={async (e) => { 
-                            e.stopPropagation(); 
-                            if(window.confirm('¿Quitar foto de perfil?')) {
-                              await dataService.updateStaff(person.id, { image_url: '' });
-                              fetchStaff();
-                              showToast('Foto eliminada');
-                            }
-                          }}
-                          style={{ position: 'absolute', top: '2px', right: '2px', backgroundColor: 'rgba(255, 69, 58, 0.9)', border: 'none', borderRadius: '4px', color: 'white', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        >
-                          <X size={10} />
-                        </button>
-                      </>
-                    ) : (
-                      <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--gold-primary)' }}>
-                        {person.name.substring(0, 1).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <h4 style={{ fontSize: '20px', fontWeight: '700' }}>{person.name}</h4>
-                    <span style={{ color: 'var(--gold-primary)', fontSize: '13px', fontWeight: '600' }}>{person.role.toUpperCase()}</span>
+                    {getRoleIcon(person.role)}
+                    {person.role}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button className="action-btn" onClick={() => {
-                    setDialog({
-                      isOpen: true,
-                      type: 'prompt',
-                      title: 'Editar Nombre',
-                      inputValue: person.name,
-                      onConfirm: async (newName) => {
-                        if (newName) {
-                          await dataService.updateStaff(person.id, { name: newName });
-                          fetchStaff();
-                          showToast('Nombre actualizado');
-                        }
-                        setDialog({ ...dialog, isOpen: false });
-                      }
-                    });
-                  }}><Edit2 size={16} /></button>
-                  <button className="action-btn" onClick={() => {
-                    setCameraTarget(person.id);
-                    setShowCamera(true);
-                  }}><Camera size={16} /></button>
-                  <button className="action-btn" style={{ color: '#ff453a' }} onClick={() => handleDeleteStaff(person.id, person.name)}><Trash2 size={16} /></button>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <button className="action-btn" onClick={() => handleEditClick(person)} style={{ width: '38px', height: '38px' }}>
+                    <Edit2 size={18} />
+                  </button>
+                  <button className="action-btn" onClick={() => handleDeleteStaff(person.id, person.name)} style={{ width: '38px', height: '38px', color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.1)' }}>
+                    <Trash2 size={18} />
+                  </button>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Comisión</div>
-                  <div style={{ fontSize: '24px', fontWeight: '800' }}>{person.commission_pct}<span style={{ fontSize: '14px', color: 'var(--gold-primary)' }}>%</span></div>
+              <div style={{ 
+                marginTop: '20px', 
+                paddingTop: '16px', 
+                borderTop: '1px solid rgba(255,255,255,0.05)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: '800' }}>ESTADO</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#32d74b', fontSize: '12px', fontWeight: '900', marginTop: '2px' }}>
+                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#32d74b' }} />
+                      ACTIVO
+                    </div>
+                  </div>
                 </div>
-                <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '12px' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase' }}>Estado</div>
-                  <div style={{ fontSize: '16px', fontWeight: '700', color: '#32d74b', marginTop: '8px' }}>Activo</div>
-                </div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600' }}>ID: {person.id.substring(0, 8)}</div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Global Commissions Section (Pro Design) */}
-      <div className="glass-card animate-fade-in" style={{ 
-        marginTop: '40px', 
-        padding: isMobile ? '24px' : '32px',
-        borderRadius: '28px',
-        border: '1px solid var(--border-color)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-          <div style={{ 
-            width: '44px', 
-            height: '44px', 
-            backgroundColor: 'rgba(212, 175, 55, 0.1)', 
-            borderRadius: '14px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Settings size={22} color="var(--gold-primary)" />
-          </div>
-          <div>
-            <h3 style={{ fontSize: '20px', fontWeight: '850', letterSpacing: '-0.3px' }}>Lógica de Comisiones</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Configuración automática por categoría.</p>
-          </div>
-        </div>
-        
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', 
-          gap: '16px' 
-        }}>
-          <CommissionRule 
-            label="Lavado de Cabello" 
-            defaultPct={20} 
-            role="Lavacabezas" 
-            icon={<Droplets size={20} />} 
-            isMobile={isMobile}
-          />
-          <CommissionRule 
-            label="Corte / Barba" 
-            defaultPct={40} 
-            role="Barbero" 
-            icon={<Scissors size={20} />} 
-            isMobile={isMobile}
-          />
-          <CommissionRule 
-            label="Estilismo / Tintes" 
-            defaultPct={35} 
-            role="Estilista" 
-            icon={<Sparkles size={20} />} 
-            isMobile={isMobile}
-          />
-        </div>
-      </div>
-
-      <AstroDialog 
-        isOpen={dialog.isOpen}
-        title={dialog.title}
-        message={dialog.message}
-        type={dialog.type}
-        inputValue={dialog.inputValue}
-        onConfirm={dialog.onConfirm}
-        onCancel={() => setDialog({ ...dialog, isOpen: false })}
-      />
-
       {showCamera && (
         <AstroCamera 
           onClose={() => setShowCamera(false)}
-          onCapture={async (image) => {
-            if (cameraTarget === 'new') {
-              setNewStaff({ ...newStaff, image_url: image });
-            } else {
-              await dataService.updateStaff(cameraTarget, { image_url: image });
-              fetchStaff();
-              showToast('Foto actualizada');
-            }
+          onCapture={(image) => {
+            setFormData({ ...formData, image_url: image });
             setShowCamera(false);
           }}
         />
@@ -341,69 +332,5 @@ const PersonnelModule = ({ isMobile }) => {
     </div>
   );
 };
-
-const CommissionRule = ({ label, defaultPct, role, icon, isMobile }) => (
-  <div style={{ 
-    padding: '24px', 
-    backgroundColor: 'rgba(255,255,255,0.02)', 
-    borderRadius: '20px', 
-    border: '1px solid var(--border-color)',
-    display: 'flex',
-    flexDirection: isMobile ? 'row' : 'column',
-    alignItems: isMobile ? 'center' : 'flex-start',
-    justifyContent: 'space-between',
-    gap: isMobile ? '16px' : '24px',
-    transition: 'all 0.3s ease'
-  }}>
-    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-      <div style={{ 
-        width: '48px', 
-        height: '48px', 
-        backgroundColor: 'var(--bg-tertiary)', 
-        borderRadius: '14px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'var(--gold-primary)',
-        border: '1px solid var(--border-color)',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-      }}>
-        {icon}
-      </div>
-      <div>
-        <div style={{ fontWeight: '800', fontSize: '16px', letterSpacing: '-0.2px' }}>{label}</div>
-        <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', marginTop: '2px' }}>{role}</div>
-      </div>
-    </div>
-
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '10px',
-      backgroundColor: 'var(--bg-tertiary)',
-      padding: '10px 16px',
-      borderRadius: '14px',
-      border: '1px solid var(--border-color)',
-      boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)'
-    }}>
-      <input 
-        type="number" 
-        defaultValue={defaultPct} 
-        style={{ 
-          width: '50px', 
-          background: 'none',
-          border: 'none', 
-          color: 'var(--gold-primary)',
-          fontSize: '22px',
-          fontWeight: '900',
-          textAlign: 'right',
-          outline: 'none',
-          padding: 0
-        }} 
-      />
-      <span style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '15px' }}>%</span>
-    </div>
-  </div>
-);
 
 export default PersonnelModule;

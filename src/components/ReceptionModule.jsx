@@ -13,6 +13,8 @@ import {
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import AstroSelect from './AstroSelect';
+import NewClientModal from './NewClientModal';
+import ScheduleModal from './ScheduleModal';
 
 const ReceptionModule = ({ isMobile }) => {
   const { showToast, triggerConfetti } = useNotifs();
@@ -24,6 +26,10 @@ const ReceptionModule = ({ isMobile }) => {
   const [loading, setLoading] = useState(false);
   const [selectedServices, setSelectedServices] = useState([]);
   const [idSearch, setIdSearch] = useState('');
+  const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  
+  const [activeAppointments, setActiveAppointments] = useState([]);
   
   const [formData, setFormData] = useState({
     serviceId: '',
@@ -33,18 +39,23 @@ const ReceptionModule = ({ isMobile }) => {
 
   useEffect(() => {
     loadData();
+    // Auto-refresh every minute to update countdowns
+    const interval = setInterval(loadData, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
     try {
-      const [c, s, st] = await Promise.all([
+      const [c, s, st, active] = await Promise.all([
         dataService.getClients(),
         dataService.getServices(),
-        dataService.getStaff()
+        dataService.getStaff(),
+        dataService.getAppointmentsByState(['En Silla'])
       ]);
       setClients(c);
       setServices(s);
       setStaff(st);
+      setActiveAppointments(active);
     } catch (err) {
       console.error(err);
     }
@@ -72,21 +83,24 @@ const ReceptionModule = ({ isMobile }) => {
     setSelectedServices(selectedServices.filter(s => s.id !== serviceId));
   };
 
-  const handleCreateClient = async () => {
-    const name = window.prompt("Nombre del nuevo cliente:");
-    if (!name) return;
-    const phone = window.prompt("Teléfono:");
-    try {
-      const newC = await dataService.addClient({ name, phone });
-      setClients([...clients, newC]);
-      setSelectedClient(newC);
-      showToast(`Cliente ${name} creado con éxito`);
-    } catch (err) {
-      showToast("Error al crear cliente", "error");
-    }
+  const handleCreateClient = () => {
+    setIsNewClientModalOpen(true);
   };
 
-  const handleSubmit = async (statusOverride) => {
+  const handleNewClientSuccess = (newClient) => {
+    setClients([...clients, newClient]);
+    setSelectedClient(newClient);
+  };
+
+  const handleScheduleClick = () => {
+    if (!selectedClient || selectedServices.length === 0 || !formData.staffId) {
+      showToast("Selecciona cliente, servicio y barbero primero", "warning");
+      return;
+    }
+    setIsScheduleModalOpen(true);
+  };
+
+  const handleSubmit = async (statusOverride, scheduledAt = null) => {
     if (!selectedClient || selectedServices.length === 0 || !formData.staffId) {
       showToast("Selecciona cliente, al menos un servicio y barbero", "error");
       return;
@@ -103,22 +117,25 @@ const ReceptionModule = ({ isMobile }) => {
           service_id: service.id,
           staff_id: formData.staffId,
           status: statusOverride || formData.status,
-          total_price: service.price
+          total_price: service.price,
+          scheduled_at: scheduledAt
         })
       );
       
       await Promise.all(promises);
 
-      showToast(`¡Orden enviada! ${selectedServices.length} servicios en cola.`);
+      showToast(scheduledAt ? `¡Cita agendada para las ${new Date(scheduledAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}!` : `¡Orden enviada! ${selectedServices.length} servicios en cola.`);
       if (!statusOverride || statusOverride === 'En Silla') triggerConfetti();
       
       // Reset
       setSelectedClient(null);
       setSelectedServices([]);
       setFormData({ serviceId: '', staffId: '', status: 'En Silla' });
-    } catch (err) {
+      setIsScheduleModalOpen(false);
+      loadData();
+     } catch (error) {
       showToast("Error al procesar orden", "error");
-      console.error(err);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -212,7 +229,14 @@ const ReceptionModule = ({ isMobile }) => {
                   <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                     <div>
                       <div style={{ fontSize: '13px', fontWeight: '700' }}>{s.name}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--gold-primary)' }}>${s.price}</div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '800' }}>${s.price}</div>
+                        {s.included_items && s.included_items.length > 0 && (
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                            • {s.included_items.join(' • ')}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <button onClick={() => removeService(s.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px' }}>&times;</button>
                   </div>
@@ -224,32 +248,82 @@ const ReceptionModule = ({ isMobile }) => {
             )}
 
             <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>BARBERO DISPONIBLE</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px' }}>
-                {staff.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => setFormData({...formData, staffId: s.id})}
-                    style={{
-                      padding: '12px 8px',
-                      borderRadius: '16px',
-                      border: formData.staffId === s.id ? '1.5px solid var(--gold-primary)' : '1px solid var(--border-color)',
-                      backgroundColor: formData.staffId === s.id ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)',
-                      color: formData.staffId === s.id ? 'var(--gold-primary)' : 'white',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'all 0.3s'
-                    }}
-                  >
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Users size={16} />
-                    </div>
-                    <span style={{ fontSize: '11px', fontWeight: '800', textAlign: 'center' }}>{s.name.split(' ')[0]}</span>
-                  </button>
-                ))}
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px' }}>BARBEROS (DISPONIBILIDAD EN VIVO)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '12px' }}>
+                {staff.map(s => {
+                  const active = activeAppointments.find(a => a.staff_id === s.id);
+                  const isBusy = !!active;
+                  let timeLeft = 0;
+                  
+                  if (isBusy && active.started_at) {
+                    const startTime = new Date(active.started_at);
+                    const duration = active.services?.duration || 30;
+                    const endTime = new Date(startTime.getTime() + duration * 60000);
+                    timeLeft = Math.max(0, Math.ceil((endTime - new Date()) / 60000));
+                  }
+
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setFormData({...formData, staffId: s.id})}
+                      style={{
+                        padding: '16px 8px',
+                        borderRadius: '20px',
+                        border: formData.staffId === s.id ? '2px solid var(--gold-primary)' : isBusy ? '1px solid rgba(255,69,58,0.3)' : '1px solid var(--border-color)',
+                        backgroundColor: formData.staffId === s.id ? 'rgba(212,175,55,0.1)' : isBusy ? 'rgba(255,69,58,0.05)' : 'rgba(255,255,255,0.02)',
+                        color: formData.staffId === s.id ? 'var(--gold-primary)' : 'white',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.3s',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      {isBusy && (
+                        <div style={{ 
+                          position: 'absolute', 
+                          top: 0, 
+                          right: 0, 
+                          backgroundColor: '#ff453a', 
+                          color: 'white', 
+                          fontSize: '8px', 
+                          padding: '2px 6px', 
+                          fontWeight: '900',
+                          borderBottomLeftRadius: '8px'
+                        }}>
+                          BUSY
+                        </div>
+                      )}
+                      
+                      <div style={{ 
+                        width: '36px', 
+                        height: '36px', 
+                        borderRadius: '50%', 
+                        backgroundColor: isBusy ? 'rgba(255,69,58,0.1)' : 'rgba(255,255,255,0.05)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        color: isBusy ? '#ff453a' : 'inherit'
+                      }}>
+                        <Users size={18} />
+                      </div>
+                      
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '11px', fontWeight: '800' }}>{s.name.split(' ')[0]}</div>
+                        {isBusy ? (
+                          <div style={{ fontSize: '9px', color: '#ff453a', fontWeight: '700', marginTop: '2px' }}>
+                            {timeLeft > 0 ? `Libre: ${timeLeft}m` : 'Por terminar'}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '9px', color: '#32d74b', fontWeight: '700', marginTop: '2px' }}>Disponible</div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -280,16 +354,30 @@ const ReceptionModule = ({ isMobile }) => {
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
                   <button 
-                    disabled={loading}
+                    disabled={loading || activeAppointments.some(a => a.staff_id === formData.staffId)}
                     onClick={() => handleSubmit('En Silla')}
                     className="btn-gold" 
-                    style={{ height: '60px', borderRadius: '18px', fontSize: '16px' }}
+                    style={{ 
+                      height: '60px', 
+                      borderRadius: '18px', 
+                      fontSize: '16px',
+                      opacity: activeAppointments.some(a => a.staff_id === formData.staffId) ? 0.5 : 1,
+                      cursor: activeAppointments.some(a => a.staff_id === formData.staffId) ? 'not-allowed' : 'pointer'
+                    }}
                   >
-                    <Zap size={20} fill="currentColor" /> INICIAR AHORA
+                    <Zap size={20} fill="currentColor" /> 
+                    {activeAppointments.some(a => a.staff_id === formData.staffId) ? 'BARBERO OCUPADO' : 'INICIAR AHORA'}
                   </button>
+                  
+                  {activeAppointments.some(a => a.staff_id === formData.staffId) && (
+                    <p style={{ fontSize: '11px', color: '#ff453a', fontWeight: '700', marginTop: '-4px' }}>
+                      Usa "Agendar para después" para poner al cliente en cola.
+                    </p>
+                  )}
+
                   <button 
                     disabled={loading}
-                    onClick={() => handleSubmit('Agendado')}
+                    onClick={handleScheduleClick}
                     style={{ background: 'none', border: '1px solid var(--border-color)', color: 'white', height: '56px', borderRadius: '18px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
                   >
                     <Calendar size={18} /> AGENDAR PARA DESPUÉS
@@ -300,6 +388,21 @@ const ReceptionModule = ({ isMobile }) => {
           </div>
         </section>
       </div>
+
+      <NewClientModal 
+        isOpen={isNewClientModalOpen} 
+        onClose={() => setIsNewClientModalOpen(false)}
+        onSuccess={handleNewClientSuccess}
+      />
+
+      <ScheduleModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        client={selectedClient}
+        staff={staff.find(s => s.id === formData.staffId)}
+        service={selectedServices[0]}
+        onSchedule={(date) => handleSubmit('Agendado', date)}
+      />
 
       <style>{`
         .hover-item:hover {

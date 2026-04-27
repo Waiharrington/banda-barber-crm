@@ -13,7 +13,8 @@ const AstroDialog = ({
   onConfirm, 
   onCancel,
   confirmText = 'Aceptar',
-  cancelText = 'Cancelar'
+  cancelText = 'Cancelar',
+  customFooter = null
 }) => {
   const [val, setVal] = useState(inputValue);
 
@@ -69,41 +70,43 @@ const AstroDialog = ({
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: type === 'prompt' ? '0' : '8px' }}>
-          {(type === 'confirm' || type === 'prompt') && (
+        {customFooter ? (
+          customFooter
+        ) : (
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: type === 'prompt' ? '0' : '8px' }}>
+            {(type === 'confirm' || type === 'prompt') && (
+              <button 
+                onClick={onCancel}
+                style={{ 
+                  flex: 1,
+                  background: 'rgba(255, 255, 255, 0.05)', 
+                  border: '1px solid rgba(255, 255, 255, 0.1)', 
+                  color: 'white', 
+                  padding: '14px', 
+                  borderRadius: '14px', 
+                  fontWeight: '700', 
+                  cursor: 'pointer',
+                  transition: '0.2s'
+                }}
+              >
+                {cancelText}
+              </button>
+            )}
             <button 
-              onClick={onCancel}
+              onClick={() => onConfirm(type === 'prompt' ? val : true)}
+              className="btn-gold" 
               style={{ 
-                flex: 1,
-                background: 'rgba(255, 255, 255, 0.05)', 
-                border: '1px solid rgba(255, 255, 255, 0.1)', 
-                color: 'white', 
+                flex: 1.5,
                 padding: '14px', 
                 borderRadius: '14px', 
-                fontWeight: '700', 
-                cursor: 'pointer',
-                transition: '0.2s'
+                fontWeight: '850', 
+                fontSize: '15px'
               }}
-              onMouseOver={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
-              onMouseOut={(e) => e.target.style.background = 'rgba(255,255,255,0.05)'}
             >
-              {cancelText}
+              {confirmText}
             </button>
-          )}
-          <button 
-            onClick={() => onConfirm(type === 'prompt' ? val : true)}
-            className="btn-gold" 
-            style={{ 
-              flex: 1.5,
-              padding: '14px', 
-              borderRadius: '14px', 
-              fontWeight: '850', 
-              fontSize: '15px'
-            }}
-          >
-            {confirmText}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       <style>{`

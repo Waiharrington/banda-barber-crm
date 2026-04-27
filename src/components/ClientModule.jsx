@@ -12,7 +12,11 @@ import {
   ChevronRight,
   Filter,
   Columns as ColumnsIcon,
-  Loader2
+  Loader2,
+  X,
+  Trash2,
+  Download,
+  Check
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import AstroSelect from './AstroSelect';
@@ -48,7 +52,7 @@ const ClientModule = ({ clients, onRefresh }) => {
       setLoading(true);
       await dataService.deleteClient(id);
       if (selectedClient?.id === id) setSelectedClient(null);
-      await fetchClients();
+      await onRefresh();
       showToast(`${name} ha sido eliminado.`);
     } catch (error) {
       console.error('Error deleting client:', error);
@@ -71,7 +75,7 @@ const ClientModule = ({ clients, onRefresh }) => {
         scalp_type: 'Normal' 
       });
       setShowAddForm(false);
-      await fetchClients();
+      await onRefresh();
       showToast('¡Ficha de cliente creada con éxito!');
     } catch (error) {
       console.error('Error addClient:', error);
@@ -279,12 +283,18 @@ const ClientModule = ({ clients, onRefresh }) => {
 };
 
 const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
+  const { showToast } = useNotifs();
   const [showCollage, setShowCollage] = useState(false);
+  const [photoA, setPhotoA] = useState(null);
+  const [photoB, setPhotoB] = useState(null);
+  const [selectingFor, setSelectingFor] = useState(null); // 'A' or 'B'
+  const [sliderPos, setSliderPos] = useState(50);
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [gallery, setGallery] = useState(client.work_gallery || []);
+  const [selectedVisit, setSelectedVisit] = useState(null);
 
   useEffect(() => {
     if (client.work_gallery) {
@@ -315,6 +325,53 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
     };
     loadHistory();
   }, [client.id]);
+
+  const handleDownloadComparison = () => {
+    if (!photoA || !photoB) return;
+    
+    const canvas = document.createElement('canvas');
+    const imgA = new Image();
+    const imgB = new Image();
+    
+    imgA.src = photoA;
+    imgB.src = photoB;
+    
+    Promise.all([
+      new Promise(res => imgA.onload = res),
+      new Promise(res => imgB.onload = res)
+    ]).then(() => {
+      const width = 1200;
+      const height = 800;
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      
+      // Draw images side by side
+      ctx.drawImage(imgA, 0, 0, width/2, height);
+      ctx.drawImage(imgB, width/2, 0, width/2, height);
+      
+      // Add overlay labels
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(20, height - 60, 100, 40);
+      ctx.fillRect(width/2 + 20, height - 60, 120, 40);
+      
+      ctx.fillStyle = '#d4af37';
+      ctx.font = 'bold 20px Inter, sans-serif';
+      ctx.fillText('ANTES', 35, height - 33);
+      ctx.fillText('DESPUÉS', width/2 + 35, height - 33);
+      
+      // Add Branding
+      ctx.fillStyle = 'white';
+      ctx.font = '16px Inter, sans-serif';
+      ctx.fillText('ASTRO BARBER SHOP', width - 200, 30);
+      
+      const link = document.createElement('a');
+      link.download = `Comparativa_${client.name}.jpg`;
+      link.href = canvas.toDataURL('image/jpeg', 0.9);
+      link.click();
+      showToast('Descargando comparativa...');
+    });
+  };
 
   const handlePhotoCaptured = async (image) => {
     try {
@@ -483,16 +540,17 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
               <button 
                 onClick={() => setShowCollage(!showCollage)}
                 style={{ 
-                  background: 'rgba(212,175,55,0.1)', 
+                  background: showCollage ? 'var(--gold-primary)' : 'rgba(212,175,55,0.1)', 
                   border: '1px solid var(--gold-primary)', 
-                  color: 'var(--gold-primary)',
+                  color: showCollage ? 'black' : 'var(--gold-primary)',
                   padding: '6px 12px',
                   borderRadius: '6px',
                   fontSize: '12px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  fontWeight: '800'
                 }}
               >
                 <ColumnsIcon size={14} /> {showCollage ? 'Ver Galería' : 'Crear Comparativa'}
@@ -500,19 +558,108 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
             </div>
 
             {showCollage ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', backgroundColor: 'var(--bg-secondary)', padding: '12px', borderRadius: '12px' }}>
-                <div style={{ aspectRatio: '4/5', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px', position: 'relative', overflow: 'hidden' }}>
-                  {gallery[gallery.length - 2] && <img src={gallery[gallery.length - 2]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                  <span style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize: '10px' }}>ANTES</span>
+              <div className="animate-scale-in">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                  <div 
+                    onClick={() => setSelectingFor('A')}
+                    style={{ 
+                      aspectRatio: '1/1', 
+                      borderRadius: '16px', 
+                      overflow: 'hidden', 
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      border: selectingFor === 'A' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
+                      position: 'relative',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {photoA ? (
+                      <img src={photoA} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <ImageIcon size={32} color="rgba(255,255,255,0.05)" />
+                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)' }}>FOTO ANTES</span>
+                      </div>
+                    )}
+                    <div style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)' }}>ANTES</div>
+                  </div>
+
+                  <div 
+                    onClick={() => setSelectingFor('B')}
+                    style={{ 
+                      aspectRatio: '1/1', 
+                      borderRadius: '16px', 
+                      overflow: 'hidden', 
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      border: selectingFor === 'B' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
+                      position: 'relative',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {photoB ? (
+                      <img src={photoB} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <ImageIcon size={32} color="rgba(255,255,255,0.05)" />
+                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)' }}>FOTO DESPUÉS</span>
+                      </div>
+                    )}
+                    <div style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)' }}>DESPUÉS</div>
+                  </div>
                 </div>
-                <div style={{ aspectRatio: '4/5', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px', border: '2px dashed var(--gold-primary)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                  {gallery[gallery.length - 1] ? (
-                    <img src={gallery[gallery.length - 1]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <Plus size={24} color="var(--gold-primary)" />
-                  )}
-                  <span style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize: '10px' }}>DESPUÉS</span>
-                </div>
+
+                {photoA && photoB ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <BeforeAfterSlider 
+                      photoA={photoA} 
+                      photoB={photoB} 
+                      sliderPos={sliderPos} 
+                      setSliderPos={setSliderPos} 
+                    />
+                    <button 
+                      onClick={handleDownloadComparison}
+                      className="btn-gold" 
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                    >
+                      <Download size={18} /> Descargar Comparativa
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ padding: '12px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.02)', textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                    Selecciona dos fotos para generar el collage
+                  </div>
+                )}
+
+                {selectingFor && (
+                  <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+                    <div className="glass-card animate-scale-in" style={{ maxWidth: '600px', width: '100%', padding: '24px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
+                        <h4 style={{ fontWeight: '900' }}>Elegir Foto {selectingFor}</h4>
+                        <button onClick={() => setSelectingFor(null)} style={{ background: 'none', border: 'none', color: 'white' }}><X size={20} /></button>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
+                        {gallery.map((img, i) => (
+                          <div 
+                            key={i} 
+                            onClick={() => {
+                              if (selectingFor === 'A') setPhotoA(img);
+                              if (selectingFor === 'B') setPhotoB(img);
+                              setSelectingFor(null);
+                            }}
+                            style={{ 
+                              aspectRatio: '1/1', 
+                              borderRadius: '8px', 
+                              overflow: 'hidden', 
+                              cursor: 'pointer',
+                              border: (selectingFor === 'A' ? photoA === img : photoB === img) ? '3px solid var(--gold-primary)' : 'none'
+                            }}
+                          >
+                            <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
@@ -571,9 +718,17 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
                 history.map(h => (
                   <HistoryItem 
                     key={h.id} 
-                    date={new Date(h.created_at).toLocaleString('es-VE', { hour12: true })} 
-                    service={h.description.split(' - ')[0].replace('Servicio: ', '')} 
+                    date={new Date(h.created_at).toLocaleString('es-VE', { 
+                      day: 'numeric', 
+                      month: 'numeric', 
+                      year: 'numeric', 
+                      hour: '2-digit', 
+                      minute: '2-digit', 
+                      hour12: true 
+                    })} 
+                    service={h.service_name || h.description.split(' - ')[0].replace('Servicio: ', '')} 
                     price={h.amount} 
+                    onClick={() => setSelectedVisit(h)}
                   />
                 ))
               )}
@@ -588,25 +743,189 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
           onClose={() => setShowCamera(false)} 
         />
       )}
+
+      {selectedVisit && (
+        <VisitDetailModal 
+          visit={selectedVisit} 
+          onClose={() => setSelectedVisit(null)} 
+        />
+      )}
+    </div>
+  );
+};
+
+const VisitDetailModal = ({ visit, onClose }) => {
+  if (!visit) return null;
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+      <div className="glass-card animate-scale-in" style={{ maxWidth: '450px', width: '100%', borderRadius: '28px', padding: '32px', border: '1.5px solid rgba(212,175,55,0.3)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Detalle de <span className="text-gold">Visita</span></h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <DetailItem label="Fecha y Hora" value={new Date(visit.created_at).toLocaleString('es-VE', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })} />
+          <DetailItem label="Barbero" value={visit.barber_name || 'No especificado'} />
+          <DetailItem label="Servicio" value={visit.service_name} />
+          <DetailItem label="Precio" value={`$${visit.amount}`} />
+          
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Incluye en Servicio:</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {visit.included_items && visit.included_items.length > 0 ? (
+                visit.included_items.map((item, i) => (
+                  <span key={i} style={{ padding: '4px 10px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.05)', fontSize: '11px', fontWeight: '600' }}>{item}</span>
+                ))
+              ) : (
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Ninguno registrado</span>
+              )}
+            </div>
+          </div>
+
+          <div style={{ marginTop: '10px', padding: '16px', backgroundColor: 'rgba(212,175,55,0.05)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.1)' }}>
+            <label style={{ display: 'block', fontSize: '10px', fontWeight: '800', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>MÉTODO DE PAGO</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: '700', fontSize: '16px' }}>{visit.payment_method}</span>
+              <span style={{ fontSize: '12px', opacity: 0.7 }}>Estatus: {visit.status}</span>
+            </div>
+          </div>
+
+          {visit.payment_metadata?.products_sold && visit.payment_metadata.products_sold.length > 0 && (
+            <div style={{ marginTop: '10px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '10px' }}>Productos Vendidos:</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {visit.payment_metadata.products_sold.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '10px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '600' }}>{p.name} <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>x{p.quantity}</span></span>
+                    <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>${(p.price * p.quantity).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <button onClick={onClose} className="btn-gold" style={{ width: '100%', marginTop: '32px', height: '48px', borderRadius: '14px' }}>CERRAR</button>
+      </div>
     </div>
   );
 };
 
 const DetailItem = ({ label, value }) => (
   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-    <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{label}</span>
+    <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{label}</span>
     <span style={{ fontWeight: '600', fontSize: '14px' }}>{value}</span>
   </div>
 );
 
-const HistoryItem = ({ date, service, price }) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+const HistoryItem = ({ date, service, price, onClick }) => (
+  <div 
+    onClick={onClick}
+    style={{ 
+      display: 'flex', 
+      justifyContent: 'space-between', 
+      alignItems: 'center', 
+      padding: '16px', 
+      backgroundColor: 'var(--bg-tertiary)', 
+      borderRadius: '12px',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      border: '1px solid transparent'
+    }}
+    onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--gold-primary)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+    onMouseOut={(e) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}
+  >
     <div>
-      <div style={{ fontWeight: '600', fontSize: '14px' }}>{service}</div>
-      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{date}</div>
+      <div style={{ fontWeight: '700', fontSize: '15px', color: 'white' }}>{service}</div>
+      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{date}</div>
     </div>
-    <div style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>${price}</div>
+    <div style={{ textAlign: 'right' }}>
+      <div style={{ fontWeight: '800', color: 'var(--gold-primary)', fontSize: '16px' }}>${price}</div>
+      <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: '700' }}>VER DETALLE</div>
+    </div>
   </div>
 );
 
-export default ClientModule;
+ export default ClientModule;
+
+const BeforeAfterSlider = ({ photoA, photoB, sliderPos, setSliderPos }) => {
+  const containerRef = useRef(null);
+
+  const handleMove = (e) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+    const pos = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    setSliderPos(pos);
+  };
+
+  return (
+    <div 
+      ref={containerRef}
+      onMouseMove={handleMove}
+      onTouchMove={handleMove}
+      style={{ 
+        position: 'relative', 
+        width: '100%', 
+        aspectRatio: '4/3', 
+        borderRadius: '20px', 
+        overflow: 'hidden', 
+        cursor: 'ew-resize',
+        backgroundColor: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.05)',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
+      }}
+    >
+      {/* Photo B (After) - Background */}
+      <img src={photoB} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+      
+      {/* Photo A (Before) - Foreground with Clip */}
+      <div style={{ 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        width: '100%', 
+        height: '100%', 
+        overflow: 'hidden',
+        clipPath: `inset(0 ${100 - sliderPos}% 0 0)`
+      }}>
+        <img src={photoA} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+      </div>
+
+      {/* Slider Handle */}
+      <div style={{ 
+        position: 'absolute', 
+        top: 0, 
+        bottom: 0, 
+        left: `${sliderPos}%`, 
+        width: '2px', 
+        backgroundColor: 'white',
+        boxShadow: '0 0 10px rgba(0,0,0,0.5)',
+        zIndex: 10
+      }}>
+        <div style={{ 
+          position: 'absolute', 
+          top: '50%', 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)',
+          width: '36px',
+          height: '36px',
+          borderRadius: '50%',
+          backgroundColor: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
+          color: 'var(--gold-primary)'
+        }}>
+          <ColumnsIcon size={18} style={{ transform: 'rotate(90deg)' }} />
+        </div>
+      </div>
+
+      {/* Labels */}
+      <div style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '900', color: 'white', pointerEvents: 'none' }}>ANTES</div>
+      <div style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: 'rgba(212,175,55,0.8)', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '900', color: 'black', pointerEvents: 'none' }}>DESPUÉS</div>
+    </div>
+  );
+};

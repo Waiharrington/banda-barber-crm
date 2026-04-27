@@ -8,12 +8,17 @@ import {
   ChevronLeft, 
   ChevronRight,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Trash2,
+  XCircle,
+  Pencil
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import AstroSelect from './AstroSelect';
 import AstroTimePicker from './AstroTimePicker';
+import AstroDialog from './AstroDialog';
+import ScheduleModal from './ScheduleModal';
 
 const SchedulingModule = ({ isMobile }) => {
   const { showToast } = useNotifs();
@@ -24,6 +29,9 @@ const SchedulingModule = ({ isMobile }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [dialog, setDialog] = useState({ isOpen: false, appointmentId: null });
+  const [editingApp, setEditingApp] = useState(null);
 
   const [newApp, setNewApp] = useState({
     clientId: '',
@@ -76,28 +84,71 @@ const SchedulingModule = ({ isMobile }) => {
       showToast("Completa los datos de la cita", "error");
       return;
     }
+    setShowScheduleModal(true);
+  };
 
+  const handleEditAppointment = (app) => {
+    setEditingApp(app);
+    setNewApp({
+      clientId: app.client_id,
+      serviceId: app.service_id,
+      staffId: app.staff_id,
+      time: new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+    });
+    setShowAddModal(true);
+  };
+
+  const handleTimeSelected = async (isoTime) => {
     try {
       const service = services.find(s => s.id === newApp.serviceId);
-      // Combine selectedDate and newApp.time
-      const [hours, minutes] = newApp.time.split(':');
-      const appDateTime = new Date(selectedDate);
-      appDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      if (editingApp) {
+        await dataService.updateAppointment(editingApp.id, {
+          client_id: newApp.clientId,
+          service_id: newApp.serviceId,
+          staff_id: newApp.staffId,
+          total_price: service.price,
+          scheduled_at: isoTime
+        });
+        showToast("Cita actualizada");
+      } else {
+        await dataService.createAppointment({
+          client_id: newApp.clientId,
+          service_id: newApp.serviceId,
+          staff_id: newApp.staffId,
+          status: 'Agendado',
+          total_price: service.price,
+          scheduled_at: isoTime
+        });
+        showToast("Cita agendada correctamente");
+      }
 
-      await dataService.createAppointment({
-        client_id: newApp.clientId,
-        service_id: newApp.serviceId,
-        staff_id: newApp.staffId,
-        status: 'Agendado',
-        total_price: service.price,
-        created_at: appDateTime.toISOString() // Explicit date for scheduling
-      });
-
-      showToast("Cita agendada correctamente");
       setShowAddModal(false);
+      setShowScheduleModal(false);
+      setEditingApp(null);
       loadDailyAppointments();
     } catch (err) {
-      showToast("Error al agendar cita", "error");
+      showToast("Error al procesar cita", "error");
+    }
+  };
+
+  const handleManageAppointment = (id) => {
+    setDialog({ isOpen: true, appointmentId: id });
+  };
+
+  const processAction = async (action) => {
+    try {
+      if (action === 'cancel') {
+        await dataService.updateAppointmentStatus(dialog.appointmentId, 'Cancelada');
+        showToast("Cita marcada como cancelada");
+      } else if (action === 'delete') {
+        await dataService.deleteAppointment(dialog.appointmentId);
+        showToast("Cita eliminada permanentemente");
+      }
+      setDialog({ isOpen: false, appointmentId: null });
+      loadDailyAppointments();
+    } catch (err) {
+      showToast("Error al procesar acción", "error");
     }
   };
 
@@ -147,50 +198,158 @@ const SchedulingModule = ({ isMobile }) => {
         <button onClick={() => changeDate(1)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><ChevronRight /></button>
       </div>
 
-      {/* Agenda Board */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: isMobile ? '1fr' : `repeat(${staff.length || 1}, 1fr)`, 
-        gap: '20px',
-        overflowX: 'auto'
-      }}>
-        {staff.map(barber => (
-          <div key={barber.id} className="glass-card" style={{ minWidth: '260px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.03)', background: 'rgba(28,28,30,0.4)' }}>
-            <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--gold-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <User size={16} color="black" />
-              </div>
-              <span style={{ fontWeight: '900', fontSize: '14px', letterSpacing: '0.5px' }}>{barber.name}</span>
-            </div>
+      {/* Agenda Content */}
+      <div className="glass-card" style={{ padding: '0', overflow: 'hidden', borderRadius: '24px' }}>
+        <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '80px 1.5fr 1.5fr 1.5fr 100px 120px 60px', gap: '15px', alignItems: 'center' }}>
+          {!isMobile && (
+            <>
+              <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>HORA</div>
+              <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>BARBERO</div>
+              <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>SERVICIO</div>
+              <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>CLIENTE</div>
+              <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>VALOR</div>
+              <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px', textAlign: 'center' }}>ESTADO</div>
+              <div style={{ textAlign: 'right' }}></div>
+            </>
+          )}
+        </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {appointments.filter(a => a.staff_id === barber.id).length === 0 ? (
-                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px', fontStyle: 'italic' }}>Sin citas este día</div>
-              ) : (
-                appointments.filter(a => a.staff_id === barber.id).map(app => (
-                  <div key={app.id} style={{ 
-                    padding: '12px', 
-                    borderRadius: '16px', 
-                    background: 'rgba(255,255,255,0.03)',
-                    borderLeft: `4px solid ${app.status === 'Agendado' ? 'var(--gold-primary)' : '#4caf50'}`,
-                  }}>
-                    <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                      <Clock size={10} /> {new Date(app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                    <div style={{ fontWeight: '800', fontSize: '14px' }}>{app.clients?.name}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{app.services?.name}</div>
-                    <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
-                      <span style={{ fontSize: '9px', fontWeight: '900', padding: '2px 8px', borderRadius: '10px', backgroundColor: 'rgba(255,255,255,0.05)' }}>{app.status}</span>
-                    </div>
-                  </div>
-                ))
-              )}
+        <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
+          {loading ? (
+            <div style={{ padding: '100px', textAlign: 'center' }}>
+              <div className="animate-pulse" style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>Sincronizando Agenda...</div>
             </div>
-          </div>
-        ))}
+          ) : appointments.length === 0 ? (
+            <div style={{ padding: '100px', textAlign: 'center' }}>
+              <CalendarIcon size={48} color="rgba(255,255,255,0.05)" style={{ marginBottom: '16px' }} />
+              <div style={{ color: 'var(--text-muted)', fontSize: '14px', fontStyle: 'italic' }}>No hay citas registradas para este día</div>
+            </div>
+          ) : (
+            appointments
+              .sort((a, b) => new Date(a.scheduled_at || a.created_at) - new Date(b.scheduled_at || b.created_at))
+              .map(app => (
+              <div 
+                key={app.id} 
+                className="hover-item"
+                style={{ 
+                  padding: '16px 24px', 
+                  borderBottom: '1px solid rgba(255,255,255,0.03)',
+                  display: 'grid', 
+                  gridTemplateColumns: isMobile ? '1fr' : '80px 1.5fr 1.5fr 1.5fr 100px 120px 60px', 
+                  gap: '15px', 
+                  alignItems: 'center',
+                  transition: 'all 0.2s',
+                  backgroundColor: app.status === 'Cancelada' ? 'rgba(255,69,58,0.02)' : 'transparent'
+                }}
+              >
+                {/* Time */}
+                <div style={{ fontWeight: '900', fontSize: '13px', color: 'white' }}>
+                  {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                </div>
+
+                {/* Barber */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'black', fontWeight: '900' }}>
+                    {app.staff?.name?.charAt(0)}
+                  </div>
+                  <div style={{ fontWeight: '700', fontSize: '13px' }}>{app.staff?.name}</div>
+                </div>
+
+                {/* Service */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Scissors size={14} color="var(--text-muted)" />
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{app.services?.name}</div>
+                </div>
+
+                {/* Client */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <User size={14} color="var(--text-muted)" />
+                  <div style={{ fontWeight: '700', fontSize: '13px' }}>{app.clients?.name}</div>
+                </div>
+
+                {/* Value */}
+                <div style={{ fontWeight: '900', fontSize: '14px', color: 'var(--gold-primary)' }}>
+                  ${app.total_price || app.services?.price}
+                </div>
+
+                {/* Status */}
+                <div style={{ textAlign: 'center' }}>
+                  <span style={{ 
+                    fontSize: '9px', 
+                    fontWeight: '900', 
+                    padding: '4px 10px', 
+                    borderRadius: '20px', 
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    backgroundColor: app.status === 'Agendado' ? 'rgba(212,175,55,0.1)' : app.status === 'Cancelada' ? 'rgba(255,69,58,0.1)' : 'rgba(76,175,80,0.1)',
+                    color: app.status === 'Agendado' ? 'var(--gold-primary)' : app.status === 'Cancelada' ? '#ff453a' : '#4caf50',
+                    border: `1px solid ${app.status === 'Agendado' ? 'rgba(212,175,55,0.2)' : app.status === 'Cancelada' ? 'rgba(255,69,58,0.2)' : 'rgba(76,175,80,0.2)'}`
+                  }}>
+                    {app.status}
+                  </span>
+                </div>
+
+                {/* Actions */}
+                <div style={{ textAlign: 'right', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button 
+                    onClick={() => handleEditAppointment(app)}
+                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: '8px', transition: 'color 0.2s' }}
+                    className="hover-gold"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button 
+                    onClick={() => handleManageAppointment(app.id)}
+                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: '8px', transition: 'color 0.2s' }}
+                    className="hover-red"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
-      {/* Add Modal Placeholder Logic */}
+      {/* Action Dialog */}
+      <AstroDialog 
+        isOpen={dialog.isOpen}
+        title="Gestionar Cita"
+        message="¿Qué deseas hacer con esta cita seleccionada?"
+        onCancel={() => setDialog({ isOpen: false, appointmentId: null })}
+        customFooter={
+          <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '20px' }}>
+            <button 
+              onClick={() => processAction('cancel')}
+              style={{ flex: 1, padding: '14px', borderRadius: '14px', border: '1px solid #ff453a', background: 'rgba(255,69,58,0.1)', color: '#ff453a', fontWeight: '800', cursor: 'pointer', fontSize: '12px' }}
+            >
+              MARCAR CANCELADA
+            </button>
+            <button 
+              onClick={() => processAction('delete')}
+              style={{ flex: 1, padding: '14px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'white', fontWeight: '800', cursor: 'pointer', fontSize: '12px' }}
+            >
+              BORRAR PERMANENTE
+            </button>
+          </div>
+        }
+      />
+
+      {/* Schedule Modal */}
+      {showScheduleModal && (
+        <ScheduleModal 
+          isOpen={showScheduleModal}
+          onClose={() => setShowScheduleModal(false)}
+          onSchedule={handleTimeSelected}
+          defaultDate={selectedDate}
+          client={clients.find(c => c.id === newApp.clientId)}
+          service={services.find(s => s.id === newApp.serviceId)}
+          staff={staff.find(s => s.id === newApp.staffId)}
+        />
+      )}
+
+      {/* Add Modal */}
       {showAddModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div className="glass-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)' }}>
@@ -213,26 +372,35 @@ const SchedulingModule = ({ isMobile }) => {
                 options={services.map(s => ({ label: `${s.name} ($${s.price})`, value: s.id }))}
               />
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '16px' }}>
-                <AstroSelect 
-                  label="BARBERO"
-                  placeholder="Cualquiera"
-                  value={newApp.staffId}
-                  onChange={(val) => setNewApp({...newApp, staffId: val})}
-                  options={staff.map(s => ({ label: s.name, value: s.id }))}
-                />
+              <AstroSelect 
+                label="BARBERO"
+                placeholder="Cualquiera"
+                value={newApp.staffId}
+                onChange={(val) => setNewApp({...newApp, staffId: val})}
+                options={staff.map(s => ({ label: s.name, value: s.id }))}
+              />
                 
-                <AstroTimePicker 
-                  label="HORA"
-                  value={newApp.time}
-                  onChange={(val) => setNewApp({...newApp, time: val})}
-                />
+              {/* Time Selection Button */}
+              <div style={{ marginTop: '20px' }}>
+                <button 
+                  onClick={() => {
+                    if (!newApp.clientId || !newApp.serviceId || !newApp.staffId) {
+                      showToast("Primero selecciona cliente, servicio y barbero", "error");
+                      return;
+                    }
+                    setShowScheduleModal(true);
+                  }}
+                  className="btn-gold"
+                  style={{ width: '100%', height: '56px', borderRadius: '16px', fontSize: '15px' }}
+                >
+                  <Clock size={18} style={{ marginRight: '8px' }} />
+                  {editingApp ? 'CAMBIAR HORARIO' : 'SELECCIONAR HORARIO'}
+                </button>
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '40px' }}>
               <button onClick={() => setShowAddModal(false)} style={{ flex: 1, background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '14px', fontWeight: '700', cursor: 'pointer' }}>CANCELAR</button>
-              <button onClick={handleAddAppointment} className="btn-gold" style={{ flex: 1.5, height: '56px', borderRadius: '18px' }}>CONFIRMAR CITA</button>
             </div>
           </div>
         </div>

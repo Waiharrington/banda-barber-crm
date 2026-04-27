@@ -9,7 +9,8 @@ import {
   Loader2,
   TrendingDown,
   ChevronRight,
-  Zap
+  Zap,
+  Trash2
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -24,7 +25,17 @@ const InventoryModule = ({ isMobile }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
-  const [newItem, setNewItem] = useState({ name: '', stock: 0, price: 0, category: 'Producto', image_url: '' });
+  const [newItem, setNewItem] = useState({ 
+    name: '', 
+    stock: 0, 
+    price: 0, 
+    cost_price: 0,
+    category: 'Venta', 
+    image_url: '',
+    cost_price_dirty: false,
+    price_dirty: false,
+    stock_dirty: false
+  });
 
   useEffect(() => {
     fetchInventory();
@@ -52,18 +63,49 @@ const InventoryModule = ({ isMobile }) => {
     }
   };
 
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [editingItem, setEditingItem] = useState(null);
+  const [saving, setSaving] = useState(false);
   const handleAddItem = async () => {
-    if (!newItem.name) return;
+    if (!newItem.name || saving) return;
     try {
-      await dataService.addInventoryItem(newItem);
+      setSaving(true);
+      // Sanitize object: Only send database-columns
+      const { cost_price_dirty, price_dirty, stock_dirty, ...cleanItem } = newItem;
+      
+      // Ensure empty strings are treated as 0
+      const finalItem = {
+        ...cleanItem,
+        price: Number(cleanItem.price) || 0,
+        cost_price: Number(cleanItem.cost_price) || 0,
+        stock: Number(cleanItem.stock) || 0
+      };
+
+      await dataService.addInventoryItem(finalItem);
       setShowAddForm(false);
-      setNewItem({ name: '', stock: 0, price: 0, category: 'Producto', image_url: '' });
+      setNewItem({ name: '', stock: 0, price: 0, cost_price: 0, category: 'Venta', image_url: '', cost_price_dirty: false, price_dirty: false, stock_dirty: false });
       fetchInventory();
       showToast('Producto agregado al almacén');
     } catch (error) {
+      console.error(error);
       showToast('Error al agregar item de inventario', 'error');
+    } finally {
+      setSaving(false);
     }
   };
+
+  const handleDeleteItem = async (id, name) => {
+    if (!window.confirm(`¿Estás seguro de que quieres eliminar "${name}" del inventario?`)) return;
+    try {
+      await dataService.deleteInventoryItem(id);
+      fetchInventory();
+      showToast('Producto eliminado');
+    } catch (error) {
+      showToast('Error al eliminar producto', 'error');
+    }
+  };
+
+  const lowStockCount = inventory.filter(item => item.stock <= 5 && item.category !== 'Accesorios').length;
 
   const filteredInventory = inventory.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -112,7 +154,7 @@ const InventoryModule = ({ isMobile }) => {
                 { label: '✂️ Accesorios', value: 'Accesorios' }
               ]}
             />
-            <div>
+             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>IMAGEN DEL PRODUCTO</label>
               <div 
                 onClick={() => setShowCamera(true)}
@@ -142,8 +184,51 @@ const InventoryModule = ({ isMobile }) => {
                 )}
               </div>
             </div>
+
+            {/* Dynamic Price Fields */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO DE COSTO ($)</label>
+              <input 
+                type="number" 
+                placeholder="0.00" 
+                value={newItem.cost_price === 0 && !newItem.cost_price_dirty ? '' : newItem.cost_price} 
+                onChange={(e) => setNewItem({...newItem, cost_price: e.target.value === '' ? '' : Number(e.target.value), cost_price_dirty: true})} 
+                style={{ width: '100%', height: '48px' }} 
+              />
+            </div>
+
+            {(newItem.category === 'Venta' || newItem.category === 'Accesorios') && (
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO DE VENTA ($)</label>
+                <input 
+                  type="number" 
+                  placeholder="0.00" 
+                  value={newItem.price === 0 && !newItem.price_dirty ? '' : newItem.price} 
+                  onChange={(e) => setNewItem({...newItem, price: e.target.value === '' ? '' : Number(e.target.value), price_dirty: true})} 
+                  style={{ width: '100%', height: '48px' }} 
+                />
+              </div>
+            )}
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>STOCK INICIAL</label>
+              <input 
+                type="number" 
+                placeholder="0" 
+                value={newItem.stock === 0 && !newItem.stock_dirty ? '' : newItem.stock} 
+                onChange={(e) => setNewItem({...newItem, stock: e.target.value === '' ? '' : Number(e.target.value), stock_dirty: true})} 
+                style={{ width: '100%', height: '48px' }} 
+              />
+            </div>
             <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <button className="btn-gold" onClick={handleAddItem} style={{ width: '100%', height: '48px' }}>Registrar Stock</button>
+              <button 
+                className="btn-gold" 
+                onClick={handleAddItem} 
+                disabled={saving}
+                style={{ width: '100%', height: '48px', opacity: saving ? 0.6 : 1 }}
+              >
+                {saving ? <Loader2 className="animate-spin" /> : 'Registrar Stock'}
+              </button>
             </div>
           </div>
         </div>
@@ -173,7 +258,7 @@ const InventoryModule = ({ isMobile }) => {
             style={{ width: '100%', paddingLeft: '48px', height: '48px', backgroundColor: 'rgba(255,255,255,0.03)' }}
           />
         </div>
-        {!isMobile && (
+         {lowStockCount > 0 && (
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -186,9 +271,48 @@ const InventoryModule = ({ isMobile }) => {
             fontSize: '13px',
             fontWeight: '750'
           }}>
-            <AlertTriangle size={16} /> 2 Productos con Stock Bajo
+            <AlertTriangle size={16} /> {lowStockCount} {lowStockCount === 1 ? 'Producto' : 'Productos'} con Stock Bajo
           </div>
         )}
+
+        <div style={{ display: 'flex', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '4px' }}>
+          <button 
+            onClick={() => setViewMode('grid')}
+            style={{ 
+              padding: '8px 16px', 
+              border: 'none', 
+              borderRadius: '8px', 
+              backgroundColor: viewMode === 'grid' ? 'var(--gold-primary)' : 'transparent',
+              color: viewMode === 'grid' ? 'black' : 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '12px',
+              fontWeight: '800'
+            }}
+          >
+            <Package size={16} /> Cuadrícula
+          </button>
+          <button 
+            onClick={() => setViewMode('list')}
+            style={{ 
+              padding: '8px 16px', 
+              border: 'none', 
+              borderRadius: '8px', 
+              backgroundColor: viewMode === 'list' ? 'var(--gold-primary)' : 'transparent',
+              color: viewMode === 'list' ? 'black' : 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '12px',
+              fontWeight: '800'
+            }}
+          >
+            <Search size={16} style={{ transform: 'rotate(90deg)' }} /> Lista
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -200,10 +324,96 @@ const InventoryModule = ({ isMobile }) => {
           <Package size={64} color="rgba(255,255,255,0.05)" style={{ marginBottom: '24px' }} />
           <p style={{ color: 'var(--text-muted)', fontSize: '18px' }}>No hay productos que coincidan.</p>
         </div>
+      ) : viewMode === 'list' ? (
+        <div className="glass-card" style={{ borderRadius: '24px', overflow: 'hidden', padding: '0' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                  <th style={{ padding: '20px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)' }}>PRODUCTO</th>
+                  <th style={{ padding: '20px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)' }}>CATEGORÍA</th>
+                  <th style={{ padding: '20px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)' }}>STOCK</th>
+                  <th style={{ padding: '20px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)' }}>COSTO</th>
+                  <th style={{ padding: '20px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)' }}>VENTA</th>
+                  <th style={{ padding: '20px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textAlign: 'right' }}>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInventory.map(item => (
+                  <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} className="table-row-hover">
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                          {item.image_url ? (
+                            <img src={item.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <Package size={20} color="rgba(255,255,255,0.1)" />
+                          )}
+                        </div>
+                        <span style={{ fontWeight: '800', fontSize: '14px' }}>{item.name}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      <span style={{ fontSize: '10px', backgroundColor: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '6px', color: 'var(--text-secondary)', fontWeight: '800' }}>
+                        {item.category}
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ 
+                          fontWeight: '950', 
+                          fontSize: '15px',
+                          color: (item.stock <= 5 && item.category !== 'Accesorios') ? 'var(--gold-primary)' : 'white'
+                        }}>
+                          {item.stock}
+                        </span>
+                        {(item.stock <= 5 && item.category !== 'Accesorios') && <AlertTriangle size={12} color="var(--gold-primary)" />}
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--text-muted)' }}>
+                      ${item.cost_price?.toFixed(2)}
+                    </td>
+                    <td style={{ padding: '16px 20px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+                      ${item.price?.toFixed(2)}
+                    </td>
+                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button 
+                          onClick={() => handeAdjustStock(item.id, item.stock, -1)}
+                          className="action-btn" style={{ width: '32px', height: '32px' }}
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <button 
+                          onClick={() => handeAdjustStock(item.id, item.stock, 1)}
+                          className="action-btn" style={{ width: '32px', height: '32px' }}
+                        >
+                          <Plus size={14} />
+                        </button>
+                        <button 
+                          onClick={() => setEditingItem(item)}
+                          className="action-btn" style={{ width: '32px', height: '32px', backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)' }}
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteItem(item.id, item.name)}
+                          className="action-btn" style={{ width: '32px', height: '32px', backgroundColor: 'rgba(255,69,58,0.1)', color: '#ff453a' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
           {filteredInventory.map(item => {
-            const isLowStock = item.stock <= 5;
+            const isLowStock = item.stock <= 5 && item.category !== 'Accesorios';
             return (
               <div key={item.id} className="glass-card animate-scale-in" style={{ 
                 position: 'relative',
@@ -213,18 +423,36 @@ const InventoryModule = ({ isMobile }) => {
                 background: isLowStock ? 'linear-gradient(135deg, rgba(28,28,30,0.9), rgba(212, 175, 55, 0.05))' : 'var(--bg-secondary)'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
-                  <span style={{ 
-                    fontSize: '10px', 
-                    backgroundColor: 'rgba(255,255,255,0.05)', 
-                    padding: '4px 12px', 
-                    borderRadius: '20px',
-                    color: 'var(--text-secondary)',
-                    fontWeight: '800',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>
-                    {item.category}
-                  </span>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <button 
+                      onClick={() => setEditingItem(item)}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                      onMouseOver={(e) => e.currentTarget.style.color = 'var(--gold-primary)'}
+                      onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteItem(item.id, item.name)}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                      onMouseOver={(e) => e.currentTarget.style.color = '#ff453a'}
+                      onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <span style={{ 
+                      fontSize: '10px', 
+                      backgroundColor: 'rgba(255,255,255,0.05)', 
+                      padding: '4px 12px', 
+                      borderRadius: '20px',
+                      color: 'var(--text-secondary)',
+                      fontWeight: '800',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>
+                      {item.category}
+                    </span>
+                  </div>
                   {isLowStock && (
                     <span style={{ 
                       color: 'var(--gold-primary)', 
@@ -258,11 +486,36 @@ const InventoryModule = ({ isMobile }) => {
                       <Package size={24} color="rgba(255,255,255,0.1)" />
                     )}
                   </div>
-                  <div>
-                    <h4 style={{ fontSize: '18px', fontWeight: '850', marginBottom: '4px', letterSpacing: '-0.3px' }}>{item.name}</h4>
-                    <div style={{ fontSize: '20px', fontWeight: '950', color: 'var(--gold-primary)' }}>
-                      <span style={{ fontSize: '12px', verticalAlign: 'super', marginRight: '2px', opacity: 0.6 }}>$</span>
-                      {item.price.toFixed(2)}
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ fontSize: '18px', fontWeight: '850', marginBottom: '8px', letterSpacing: '-0.3px' }}>{item.name}</h4>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      {(item.category === 'Venta' || item.category === 'Accesorios') ? (
+                        <>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)' }}>VENTA</span>
+                            <div style={{ fontSize: '20px', fontWeight: '950', color: 'var(--gold-primary)' }}>
+                              <span style={{ fontSize: '12px', verticalAlign: 'super', marginRight: '2px' }}>$</span>
+                              {item.price?.toFixed(2) || '0.00'}
+                            </div>
+                          </div>
+                          <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255,255,255,0.1)' }}></div>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)' }}>COSTO</span>
+                            <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-secondary)' }}>
+                              <span style={{ fontSize: '10px', verticalAlign: 'super', marginRight: '2px' }}>$</span>
+                              {item.cost_price?.toFixed(2) || '0.00'}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)' }}>COSTO (USO INTERNO)</span>
+                          <div style={{ fontSize: '20px', fontWeight: '950', color: 'white' }}>
+                            <span style={{ fontSize: '12px', verticalAlign: 'super', marginRight: '2px' }}>$</span>
+                            {item.cost_price?.toFixed(2) || '0.00'}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -303,13 +556,113 @@ const InventoryModule = ({ isMobile }) => {
         </div>
       )}
 
+      {editingItem && (
+        <EditInventoryModal 
+          item={editingItem} 
+          onClose={() => setEditingItem(null)} 
+          onSave={async (updates) => {
+            try {
+              // Sanitize updates
+              const { cost_price_dirty, price_dirty, stock_dirty, ...cleanUpdates } = updates;
+              await dataService.updateInventoryItem(editingItem.id, cleanUpdates);
+              fetchInventory();
+              setEditingItem(null);
+              showToast('Producto actualizado');
+            } catch (error) {
+              showToast('Error al actualizar producto', 'error');
+            }
+          }}
+        />
+      )}
+
       <style>{`
         @keyframes pulse {
           0% { opacity: 0.6; transform: scale(0.95); }
           50% { opacity: 1; transform: scale(1); }
           100% { opacity: 0.6; transform: scale(0.95); }
         }
+        .table-row-hover:hover {
+          background-color: rgba(255,255,255,0.02) !important;
+        }
       `}</style>
+    </div>
+  );
+};
+
+const EditInventoryModal = ({ item, onClose, onSave }) => {
+  const [formData, setFormData] = useState({ ...item });
+  const [loading, setLoading] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+
+  const handleSave = async () => {
+    setLoading(true);
+    await onSave(formData);
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+      <div className="glass-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '28px', padding: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Editar <span className="text-gold">Producto</span></h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><Plus size={24} style={{ transform: 'rotate(45deg)' }} /></button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>NOMBRE</label>
+            <input type="text" className="astro-input" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ width: '100%' }} />
+          </div>
+
+          <AstroSelect 
+            label="CATEGORÍA"
+            value={formData.category}
+            onChange={(val) => setFormData({...formData, category: val})}
+            options={[
+              { label: '🛒 Para Venta', value: 'Venta' },
+              { label: '💈 Uso Interno', value: 'Uso Interno' },
+              { label: '✂️ Accesorios', value: 'Accesorios' }
+            ]}
+          />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO COSTO ($)</label>
+              <input type="number" className="astro-input" value={formData.cost_price} onChange={(e) => setFormData({...formData, cost_price: Number(e.target.value)})} style={{ width: '100%' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO VENTA ($)</label>
+              <input type="number" className="astro-input" value={formData.price} onChange={(e) => setFormData({...formData, price: Number(e.target.value)})} style={{ width: '100%' }} />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>FOTO DEL PRODUCTO</label>
+            <div 
+              onClick={() => setShowCamera(true)}
+              style={{ padding: '12px', border: '1px solid var(--border-color)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+            >
+              <Camera size={18} color="var(--gold-primary)" />
+              <span style={{ fontSize: '13px' }}>{formData.image_url ? 'Cambiar Foto' : 'Añadir Foto'}</span>
+              {formData.image_url && <img src={formData.image_url} style={{ width: '24px', height: '24px', borderRadius: '4px', marginLeft: 'auto' }} />}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
+          <button onClick={onClose} className="btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+          <button onClick={handleSave} className="btn-gold" style={{ flex: 2 }} disabled={loading}>
+            {loading ? <Loader2 className="animate-spin" /> : 'Guardar Cambios'}
+          </button>
+        </div>
+
+        {showCamera && (
+          <AstroCamera 
+            onCapture={(img) => { setFormData({...formData, image_url: img}); setShowCamera(false); }} 
+            onClose={() => setShowCamera(false)} 
+          />
+        )}
+      </div>
     </div>
   );
 };
