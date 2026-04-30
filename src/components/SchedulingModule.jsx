@@ -30,6 +30,8 @@ const SchedulingModule = ({ isMobile }) => {
   const [staff, setStaff] = useState([]);
   const [clients, setClients] = useState([]);
   const [services, setServices] = useState([]);
+  const [allExtras, setAllExtras] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -42,7 +44,9 @@ const SchedulingModule = ({ isMobile }) => {
     clientId: '',
     serviceId: '',
     staffId: '',
-    time: '10:00'
+    time: '10:00',
+    extras: [],
+    products: []
   });
 
   useEffect(() => {
@@ -56,14 +60,18 @@ const SchedulingModule = ({ isMobile }) => {
 
   const loadBaseData = async () => {
     try {
-      const [st, cl, sv] = await Promise.all([
+      const [st, cl, sv, ex, pr] = await Promise.all([
         dataService.getStaff(),
         dataService.getClients(),
-        dataService.getServices()
+        dataService.getServices(),
+        dataService.getExtras(),
+        dataService.getInventory()
       ]);
       setStaff(st);
       setClients(cl);
       setServices(sv);
+      setAllExtras(ex);
+      setAllProducts(pr.filter(p => p.category === 'Venta'));
     } catch (err) {
       console.error(err);
     }
@@ -126,7 +134,9 @@ const SchedulingModule = ({ isMobile }) => {
       clientId: app.client_id,
       serviceId: app.service_id,
       staffId: app.staff_id,
-      time: new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+      time: new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+      extras: app.appointment_extras?.map(e => e.service_extras?.id) || [],
+      products: app.appointment_products?.map(p => ({ id: p.inventory?.id, quantity: p.quantity })) || []
     });
     setShowAddModal(true);
   };
@@ -135,6 +145,8 @@ const SchedulingModule = ({ isMobile }) => {
     try {
       const service = services.find(s => s.id === newApp.serviceId);
       
+      let appointmentId = editingApp?.id;
+
       if (editingApp) {
         await dataService.updateAppointment(editingApp.id, {
           client_id: newApp.clientId,
@@ -143,9 +155,16 @@ const SchedulingModule = ({ isMobile }) => {
           total_price: service.price,
           scheduled_at: isoTime
         });
+        
+        // Limpiar extras y productos anteriores para re-insertar
+        await Promise.all([
+          dataService.supabase.from('appointment_extras').delete().eq('appointment_id', editingApp.id),
+          dataService.supabase.from('appointment_products').delete().eq('appointment_id', editingApp.id)
+        ]);
+        
         showToast("Cita actualizada");
       } else {
-        await dataService.createAppointment({
+        const created = await dataService.createAppointment({
           client_id: newApp.clientId,
           service_id: newApp.serviceId,
           staff_id: newApp.staffId,
@@ -153,8 +172,22 @@ const SchedulingModule = ({ isMobile }) => {
           total_price: service.price,
           scheduled_at: isoTime
         });
+        appointmentId = created.id;
         showToast("Cita agendada correctamente");
       }
+
+      // Insertar extras y productos
+      const extrasPromises = newApp.extras.map(exId => {
+        const ex = allExtras.find(e => e.id === exId);
+        return dataService.addExtraToAppointment(appointmentId, exId, ex.price);
+      });
+
+      const productsPromises = newApp.products.map(p => {
+        const prod = allProducts.find(pr => pr.id === p.id);
+        return dataService.addProductToAppointment(appointmentId, p.id, p.quantity, prod.price);
+      });
+
+      await Promise.all([...extrasPromises, ...productsPromises]);
 
       setShowAddModal(false);
       setShowScheduleModal(false);
@@ -376,8 +409,8 @@ const SchedulingModule = ({ isMobile }) => {
 
       {showAddModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div className="glass-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)' }}>
-            <h2 style={{ marginBottom: '24px', fontWeight: '900' }}>Nueva Cita</h2>
+          <div className="glass-card animate-scale-in" style={{ maxWidth: '550px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto', padding: '32px' }}>
+            <h2 style={{ marginBottom: '24px', fontWeight: '900' }}>{editingApp ? 'Editar Cita' : 'Nueva Cita'}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <AstroSelect label="CLIENTE" placeholder="Selecciona cliente" value={newApp.clientId} onChange={(val) => setNewApp({...newApp, clientId: val})} options={clients.map(c => ({ label: c.name, value: c.id }))} />
               <AstroSelect label="SERVICIO" placeholder="Selecciona servicio" value={newApp.serviceId} onChange={(val) => setNewApp({...newApp, serviceId: val})} options={services.map(s => ({ label: `${s.name} ($${s.price})`, value: s.id }))} />
@@ -389,7 +422,80 @@ const SchedulingModule = ({ isMobile }) => {
                 options={staff.map(s => ({ label: s.name, value: s.id }))} 
                 disabled={user?.role === 'Barbero' || user?.role?.startsWith('Barbero|')}
               />
-              <button onClick={() => { if (!newApp.clientId || !newApp.serviceId || !newApp.staffId) { showToast("Selecciona cliente, servicio y barbero", "error"); return; } setShowScheduleModal(true); }} className="btn-gold" style={{ width: '100%', height: '56px', borderRadius: '16px' }}><Clock size={18} style={{ marginRight: '8px' }} /> SELECCIONAR HORARIO</button>
+
+              {/* Extras Selection */}
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>EXTRAS</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {allExtras.map(ex => (
+                    <button 
+                      key={ex.id}
+                      onClick={() => {
+                        const exists = newApp.extras.includes(ex.id);
+                        setNewApp({
+                          ...newApp,
+                          extras: exists ? newApp.extras.filter(id => id !== ex.id) : [...newApp.extras, ex.id]
+                        });
+                      }}
+                      style={{
+                        padding: '8px 14px',
+                        borderRadius: '12px',
+                        border: '1px solid',
+                        borderColor: newApp.extras.includes(ex.id) ? 'var(--gold-primary)' : 'rgba(255,255,255,0.1)',
+                        background: newApp.extras.includes(ex.id) ? 'rgba(212,175,55,0.1)' : 'transparent',
+                        color: newApp.extras.includes(ex.id) ? 'var(--gold-primary)' : 'white',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        transition: '0.2s'
+                      }}
+                    >
+                      {ex.name} (+${ex.price})
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Products Selection */}
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>PRODUCTOS ADICIONALES</label>
+                <AstroSelect 
+                  placeholder="Añadir producto..." 
+                  onChange={(val) => {
+                    const prod = allProducts.find(p => p.id === val);
+                    const exists = newApp.products.find(p => p.id === val);
+                    if (exists) return;
+                    setNewApp({
+                      ...newApp,
+                      products: [...newApp.products, { id: val, quantity: 1 }]
+                    });
+                  }} 
+                  options={allProducts.map(p => ({ label: `${p.name} ($${p.price})`, value: p.id }))} 
+                />
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                  {newApp.products.map(p => {
+                    const product = allProducts.find(pr => pr.id === p.id);
+                    if (!product) return null;
+                    return (
+                      <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '10px 16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>{p.quantity}x</span>
+                          <span style={{ fontSize: '13px', fontWeight: '500' }}>{product.name}</span>
+                        </div>
+                        <button 
+                          onClick={() => setNewApp({ ...newApp, products: newApp.products.filter(item => item.id !== p.id) })} 
+                          style={{ color: '#ff453a', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button onClick={() => { if (!newApp.clientId || !newApp.serviceId || !newApp.staffId) { showToast("Selecciona cliente, servicio y barbero", "error"); return; } setShowScheduleModal(true); }} className="btn-gold" style={{ width: '100%', height: '56px', borderRadius: '16px', marginTop: '10px' }}><Clock size={18} style={{ marginRight: '8px' }} /> {editingApp ? 'CONFIRMAR CAMBIOS' : 'SELECCIONAR HORARIO'}</button>
               <button onClick={() => setShowAddModal(false)} style={{ width: '100%', background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '14px', padding: '14px', fontWeight: '700' }}>CANCELAR</button>
             </div>
           </div>

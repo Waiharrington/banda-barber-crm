@@ -375,7 +375,7 @@ export const dataService = {
       clients(name, phone, id_card, work_gallery), 
       services(name, price, included_items, commission_barber, commission_washer, commission_cashier, commission_receptionist),
       staff(*),
-      appointment_extras(id, price, service_extras(name)),
+      appointment_extras(id, price, service_extras(id, name)),
       appointment_products(id, quantity, price, inventory(id, name))
     `);
     if (states.length > 0) query = query.in('status', states);

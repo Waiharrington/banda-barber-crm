@@ -171,7 +171,7 @@ const CheckoutPOS = ({ isMobile, rates }) => {
       showToast("Selecciona un cliente para la venta directa", "warning");
       return;
     }
-    if (cart.length === 0) {
+    if (!selectedApp && cart.length === 0) {
       showToast("Agrega al menos un producto al carrito", "warning");
       return;
     }
