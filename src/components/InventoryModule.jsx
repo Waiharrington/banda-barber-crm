@@ -10,17 +10,21 @@ import {
   TrendingDown,
   ChevronRight,
   Zap,
-  Trash2
+  Trash2,
+  History
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 import AstroSelect from './AstroSelect';
 import AstroCamera from './AstroCamera';
 import { Camera } from 'lucide-react';
 
-const InventoryModule = ({ isMobile }) => {
+const InventoryModule = ({ isMobile, currency, rates }) => {
+  const { user } = useAuth();
   const { showToast } = useNotifs();
   const [inventory, setInventory] = useState([]);
+  const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -32,6 +36,7 @@ const InventoryModule = ({ isMobile }) => {
     cost_price: 0,
     category: 'Venta', 
     image_url: '',
+    staff_id: null,
     cost_price_dirty: false,
     price_dirty: false,
     stock_dirty: false
@@ -44,8 +49,12 @@ const InventoryModule = ({ isMobile }) => {
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      const data = await dataService.getInventory();
-      setInventory(data);
+      const [invData, staffData] = await Promise.all([
+        dataService.getInventory(),
+        dataService.getStaff()
+      ]);
+      setInventory(invData);
+      setStaff(staffData);
     } catch (error) {
       console.error('Error fetching inventory:', error);
     } finally {
@@ -57,6 +66,15 @@ const InventoryModule = ({ isMobile }) => {
     try {
       const newStock = Math.max(0, currentStock + amount);
       await dataService.updateStock(id, newStock);
+      
+      // Log movement
+      await dataService.logInventoryMovement({
+        product_id: id,
+        type: amount > 0 ? 'entry' : 'exit',
+        amount: Math.abs(amount),
+        reason: 'Ajuste Manual'
+      });
+
       fetchInventory();
     } catch (error) {
       showToast('Error al ajustar stock', 'error');
@@ -66,6 +84,9 @@ const InventoryModule = ({ isMobile }) => {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [editingItem, setEditingItem] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const handleAddItem = async () => {
     if (!newItem.name || saving) return;
     try {
@@ -81,7 +102,18 @@ const InventoryModule = ({ isMobile }) => {
         stock: Number(cleanItem.stock) || 0
       };
 
-      await dataService.addInventoryItem(finalItem);
+      const created = await dataService.addInventoryItem(finalItem);
+      
+      // Log initial movement if stock > 0
+      if (finalItem.stock > 0 && created?.id) {
+        await dataService.logInventoryMovement({
+          product_id: created.id,
+          type: 'entry',
+          amount: finalItem.stock,
+          reason: 'Carga Inicial'
+        });
+      }
+
       setShowAddForm(false);
       setNewItem({ name: '', stock: 0, price: 0, cost_price: 0, category: 'Venta', image_url: '', cost_price_dirty: false, price_dirty: false, stock_dirty: false });
       fetchInventory();
@@ -107,34 +139,60 @@ const InventoryModule = ({ isMobile }) => {
 
   const lowStockCount = inventory.filter(item => item.stock <= 5 && item.category !== 'Accesorios').length;
 
-  const filteredInventory = inventory.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredInventory = inventory.filter(item => {
+    const searchMatch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!searchMatch) return false;
+
+    // Filter for barbers: They see everything EXCEPT other barbers' tools
+    const isBarber = user?.role === 'Barbero' || user?.role?.startsWith('Barbero|');
+    if (isBarber) {
+      // If it's a tool, it MUST be mine or have no owner
+      if (item.category === 'Herramienta') {
+        return String(item.staff_id) === String(user.id);
+      }
+      // They also see general sales/internal items
+    }
+    return true;
+  });
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: isMobile ? '80px' : '0' }}>
-      <div style={{
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        justifyContent: 'space-between',
-        alignItems: isMobile ? 'flex-start' : 'center',
-        gap: isMobile ? '20px' : '0',
-        marginBottom: '40px'
+      <header style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-start', 
+        marginBottom: '40px' 
       }}>
         <div>
-          <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>
-            Control de <span className="text-gold">Stock</span>
-          </h2>
+          <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Control de <span className="text-gold">Stock</span></h2>
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Gestión de productos y suministros críticos.</p>
         </div>
-        <button 
-          className="btn-gold" 
-          onClick={() => setShowAddForm(!showAddForm)}
-          style={{ width: isMobile ? '100%' : 'auto' }}
-        >
-          <Plus size={18} /> {showAddForm ? 'Cancelar' : 'Nuevo Producto'}
-        </button>
-      </div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            className="btn-gold" 
+            onClick={async () => {
+              setShowHistoryModal(true);
+              setLoadingHistory(true);
+              try {
+                const data = await dataService.getInventoryMovements();
+                setHistory(data);
+              } catch (e) {
+                console.error(e);
+              } finally {
+                setLoadingHistory(false);
+              }
+            }} 
+            style={{ backgroundColor: 'rgba(212, 175, 55, 0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212, 175, 55, 0.2)' }}
+          >
+            <History size={18} style={{ marginRight: '8px' }} />
+            Ver Historial
+          </button>
+          <button className="btn-gold" onClick={() => setShowAddForm(true)}>
+            <Plus size={18} style={{ marginRight: '8px' }} />
+            Nuevo Producto
+          </button>
+        </div>
+      </header>
 
       {showAddForm && (
         <div className="glass-card animate-slide-up" style={{ marginBottom: '32px', borderRadius: '28px' }}>
@@ -151,9 +209,23 @@ const InventoryModule = ({ isMobile }) => {
               options={[
                 { label: '🛒 Para Venta', value: 'Venta' },
                 { label: '💈 Uso Interno', value: 'Uso Interno' },
-                { label: '✂️ Accesorios', value: 'Accesorios' }
+                { label: '✂️ Accesorios', value: 'Accesorios' },
+                { label: '🔧 Herramienta', value: 'Herramienta' }
               ]}
             />
+
+            {newItem.category === 'Herramienta' && (
+              <AstroSelect 
+                label="ASIGNAR A"
+                placeholder="Selecciona barbero"
+                value={newItem.staff_id}
+                onChange={(val) => setNewItem({...newItem, staff_id: val})}
+                options={[
+                  { label: '💈 Local / General', value: null },
+                  ...staff.map(s => ({ label: s.name, value: s.id }))
+                ]}
+              />
+            )}
              <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>IMAGEN DEL PRODUCTO</label>
               <div 
@@ -373,8 +445,13 @@ const InventoryModule = ({ isMobile }) => {
                     <td style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--text-muted)' }}>
                       ${item.cost_price?.toFixed(2)}
                     </td>
-                    <td style={{ padding: '16px 20px', fontWeight: '900', color: 'var(--gold-primary)' }}>
-                      ${item.price?.toFixed(2)}
+                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                      <div style={{ fontWeight: '900', color: 'var(--gold-primary)' }}>${item.price?.toFixed(2)}</div>
+                      {rates?.usd > 0 && (
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                          {Math.round(item.price * rates.usd).toLocaleString()} Bs.
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '16px 20px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -493,10 +570,15 @@ const InventoryModule = ({ isMobile }) => {
                         <>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)' }}>VENTA</span>
-                            <div style={{ fontSize: '20px', fontWeight: '950', color: 'var(--gold-primary)' }}>
+                            <div style={{ fontSize: '18px', fontWeight: '950', color: 'var(--gold-primary)' }}>
                               <span style={{ fontSize: '12px', verticalAlign: 'super', marginRight: '2px' }}>$</span>
                               {item.price?.toFixed(2) || '0.00'}
                             </div>
+                            {rates?.usd > 0 && (
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700', marginTop: '2px' }}>
+                                ≈ {Math.round(item.price * rates.usd).toLocaleString()} Bs.
+                              </div>
+                            )}
                           </div>
                           <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255,255,255,0.1)' }}></div>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -585,6 +667,69 @@ const InventoryModule = ({ isMobile }) => {
           background-color: rgba(255,255,255,0.02) !important;
         }
       `}</style>
+
+      {showHistoryModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div className="glass-card animate-scale-in" style={{ maxWidth: '800px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', padding: '24px 32px 0 32px' }}>
+              <div>
+                <h2 style={{ fontWeight: '900', fontSize: '24px' }}>Historial de Movimientos</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Registro detallado de entradas y salidas de almacén.</p>
+              </div>
+              <button onClick={() => setShowHistoryModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '32px', cursor: 'pointer' }}>&times;</button>
+            </div>
+
+            <div style={{ padding: '0 32px 32px 32px' }}>
+              {loadingHistory ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
+                  <Loader2 className="animate-spin" size={40} color="var(--gold-primary)" />
+                </div>
+              ) : history.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
+                  <History size={48} style={{ marginBottom: '16px', opacity: 0.1 }} />
+                  <p>No hay movimientos registrados aún.</p>
+                </div>
+              ) : (
+                <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                      <tr>
+                        <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>FECHA</th>
+                        <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>PRODUCTO</th>
+                        <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>TIPO</th>
+                        <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>CANT.</th>
+                        <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>MOTIVO</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {history.map(move => (
+                        <tr key={move.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                          <td style={{ padding: '16px', fontSize: '12px' }}>{new Date(move.created_at).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+                          <td style={{ padding: '16px', fontSize: '13px', fontWeight: '700' }}>{move.inventory?.name || 'Producto Eliminado'}</td>
+                          <td style={{ padding: '16px' }}>
+                            <span style={{ 
+                              padding: '4px 10px', 
+                              borderRadius: '8px', 
+                              fontSize: '10px', 
+                              fontWeight: '800',
+                              backgroundColor: move.type === 'entry' ? 'rgba(50,215,75,0.1)' : 'rgba(255,69,58,0.1)',
+                              color: move.type === 'entry' ? '#32d74b' : '#ff453a'
+                            }}>
+                              {move.type === 'entry' ? 'ENTRADA' : 'SALIDA'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '16px', fontSize: '14px', fontWeight: '900' }}>{move.type === 'entry' ? '+' : '-'}{move.amount}</td>
+                          <td style={{ padding: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>{move.reason}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -621,9 +766,23 @@ const EditInventoryModal = ({ item, onClose, onSave }) => {
             options={[
               { label: '🛒 Para Venta', value: 'Venta' },
               { label: '💈 Uso Interno', value: 'Uso Interno' },
-              { label: '✂️ Accesorios', value: 'Accesorios' }
+              { label: '✂️ Accesorios', value: 'Accesorios' },
+              { label: '🔧 Herramienta', value: 'Herramienta' }
             ]}
           />
+
+          {formData.category === 'Herramienta' && (
+            <AstroSelect 
+              label="ASIGNAR A"
+              placeholder="Selecciona barbero"
+              value={formData.staff_id}
+              onChange={(val) => setFormData({...formData, staff_id: val})}
+              options={[
+                { label: '💈 Local / General', value: null },
+                ...staff.map(s => ({ label: s.name, value: s.id }))
+              ]}
+            />
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>

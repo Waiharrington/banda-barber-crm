@@ -65,6 +65,8 @@ const QUOTES = [
   { text: "El negocio de la belleza es el negocio de la felicidad.", creator: "Emprendimiento" }
 ];
 
+import { useAuth } from '../context/AuthContext';
+
 const DashboardModule = ({ 
   isMobile, 
   onOpenSale, 
@@ -79,12 +81,18 @@ const DashboardModule = ({
   customRates,
   setCustomRates
 }) => {
+  const { user } = useAuth();
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [isEditingRates, setIsEditingRates] = useState(false);
   const [tempRates, setTempRates] = useState({ ...customRates });
   const { showToast } = useNotifs();
   const dailyGoal = parseFloat(localStorage.getItem('astro_daily_goal') || '500');
-  const [isStoreOpen] = useState(true); // Can be linked to schedule later
+  const [isStoreOpen] = useState(true); 
+
+  const isBarber = user?.role === 'Barbero' || user?.role?.includes('Barbero|');
+
+  // Filter stats for barber
+  const myStats = isBarber ? (dbData.staff.find(s => s.id === user.id)?.stats || { income: 0, appointments: 0 }) : stats;
 
   useEffect(() => {
     setQuoteIndex(Math.floor(Math.random() * QUOTES.length));
@@ -151,16 +159,18 @@ const DashboardModule = ({
             <Circle size={12} fill={isStoreOpen ? '#32d74b' : '#ff453a'} color="none" style={{ position: 'absolute', bottom: 0, right: 0, border: '2px solid var(--bg-primary)', borderRadius: '50%' }} />
           </div>
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: '900', letterSpacing: '-0.5px' }}>¡Hola, <span className="text-gold">Admin</span>!</h1>
+            <h1 style={{ fontSize: '24px', fontWeight: '900', letterSpacing: '-0.5px' }}>
+              ¡Hola, <span className="text-gold">{user?.name?.split(' ')[0] || 'Admin'}</span>!
+            </h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '13px' }}>
               <span style={{ color: isStoreOpen ? '#32d74b' : '#ff453a', fontWeight: '800' }}>● {isStoreOpen ? 'TIENDA ABIERTA' : 'CERRADO'}</span>
               <span style={{ opacity: 0.3 }}>|</span>
-              <span>{new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase()}</span>
+              <span>{isBarber ? 'PANEL BARBERO' : 'PANEL CONTROL'}</span>
             </div>
           </div>
 
-          {/* DUAL RATES WIDGET (RESTORED & IMPROVED) */}
-          {!isMobile && (
+          {/* DUAL RATES WIDGET (HIDDEN FOR BARBERS) */}
+          {!isMobile && !isBarber && (
             <div style={{ 
               display: 'flex', 
               alignItems: 'center',
@@ -353,87 +363,91 @@ const DashboardModule = ({
 
           {/* Business Stats (Astro Style) */}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
-            <StatCard title="Producción Hoy" value={`$${stats.income.toFixed(2)}`} icon={<TrendingUp size={18} color="var(--gold-primary)" />} color="var(--gold-primary)" trend="+12%" positive={true} />
-            <StatCard title="Servicios" value={stats.appointments} icon={<ScissorsIcon size={18} color="var(--gold-primary)" />} color="#4caf50" trend="Listo" positive={true} />
-            <StatCard title="En Inventario" value={dbData.services.length + dbData.clients.length} icon={<ShoppingBag size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />
+            <StatCard title="Tu Producción" value={`$${myStats.income.toFixed(2)}`} icon={<TrendingUp size={18} color="var(--gold-primary)" />} color="var(--gold-primary)" trend="+12%" positive={true} />
+            <StatCard title="Tus Servicios" value={myStats.appointments} icon={<ScissorsIcon size={18} color="var(--gold-primary)" />} color="#4caf50" trend="Activo" positive={true} />
+            {!isBarber && <StatCard title="En Inventario" value={dbData.services.length + dbData.clients.length} icon={<ShoppingBag size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
           </div>
 
-          {/* Goal Progress (Refined) */}
-          <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Target size={18} color="var(--gold-primary)" />
-                <span style={{ fontWeight: '900', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>Misión Diaria</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '14px', fontWeight: '800' }}>${stats.income.toFixed(0)} <span style={{ opacity: 0.3 }}>/</span> ${dailyGoal}</span>
-                <button onClick={handleEditGoal} className="action-btn" style={{ padding: '6px', borderRadius: '8px' }}><Edit3 size={14} /></button>
-              </div>
-            </div>
-            <div style={{ height: '10px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '5px', overflow: 'hidden' }}>
-              <div style={{ 
-                width: `${Math.min((stats.income / dailyGoal) * 100, 100)}%`, 
-                height: '100%', 
-                background: 'var(--gold-gradient)', 
-                boxShadow: 'var(--gold-glow)',
-                transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)' 
-              }} />
-            </div>
-          </div>
-        </div>
-
-        {/* Top Performers Ranking (Sidebar) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div className="glass-card" style={{ 
-            height: '100%', 
-            borderRadius: '28px', 
-            padding: '24px', 
-            background: 'rgba(28,28,30,0.6)',
-            border: '1px solid rgba(255,255,255,0.03)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Trophy size={20} color="var(--gold-primary)" />
-              </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '900' }}>Top <span className="text-gold">Artistas</span></h3>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {dbData.staff.length === 0 ? (
-                <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '40px 0' }}>Sin datos de personal.</p>
-              ) : dbData.staff.slice(0, 5).sort((a,b) => (b.stats?.income || 0) - (a.stats?.income || 0)).map((barber, index) => (
-                <div key={barber.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                  <div style={{ position: 'relative' }}>
-                    <div style={{ 
-                      width: '44px', 
-                      height: '44px', 
-                      borderRadius: '14px', 
-                      backgroundColor: 'var(--bg-tertiary)', 
-                      overflow: 'hidden',
-                      border: index === 0 ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)'
-                    }}>
-                      <img src={barber.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${barber.name}`} alt={barber.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
-                    {index === 0 && <Crown size={14} color="var(--gold-primary)" fill="var(--gold-primary)" style={{ position: 'absolute', top: '-6px', right: '-6px' }} />}
-                    {index === 1 && <Medal size={14} color="#C0C0C0" style={{ position: 'absolute', top: '-6px', right: '-6px' }} />}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '800', fontSize: '13px' }}>{barber.name.split(' ')[0]}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{barber.role}</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '14px' }}>${(barber.stats?.income || 0).toFixed(0)}</div>
-                    <div style={{ fontSize: '9px', fontWeight: '800', opacity: 0.4 }}>PRODUCCIÓN</div>
-                  </div>
+          {/* Goal Progress (HIDDEN FOR BARBERS) */}
+          {!isBarber && (
+            <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Target size={18} color="var(--gold-primary)" />
+                  <span style={{ fontWeight: '900', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>Misión Diaria</span>
                 </div>
-              ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '800' }}>${stats.income.toFixed(0)} <span style={{ opacity: 0.3 }}>/</span> ${dailyGoal}</span>
+                  <button onClick={handleEditGoal} className="action-btn" style={{ padding: '6px', borderRadius: '8px' }}><Edit3 size={14} /></button>
+                </div>
+              </div>
+              <div style={{ height: '10px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '5px', overflow: 'hidden' }}>
+                <div style={{ 
+                  width: `${Math.min((stats.income / dailyGoal) * 100, 100)}%`, 
+                  height: '100%', 
+                  background: 'var(--gold-gradient)', 
+                  boxShadow: 'var(--gold-glow)',
+                  transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)' 
+                }} />
+              </div>
             </div>
-            
-            <button style={{ width: '100%', marginTop: '24px', backgroundColor: 'rgba(255,255,255,0.03)', border: 'none', color: 'var(--text-secondary)', padding: '12px', borderRadius: '12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              Ver Todos los Miembros <ArrowRight size={14} />
-            </button>
-          </div>
+          )}
         </div>
+
+        {/* Top Performers Ranking (HIDDEN FOR BARBERS) */}
+        {!isBarber && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="glass-card" style={{ 
+              height: '100%', 
+              borderRadius: '28px', 
+              padding: '24px', 
+              background: 'rgba(28,28,30,0.6)',
+              border: '1px solid rgba(255,255,255,0.03)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Trophy size={20} color="var(--gold-primary)" />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: '900' }}>Top <span className="text-gold">Artistas</span></h3>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {dbData.staff.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '40px 0' }}>Sin datos de personal.</p>
+                ) : dbData.staff.slice(0, 5).sort((a,b) => (b.stats?.income || 0) - (a.stats?.income || 0)).map((barber, index) => (
+                  <div key={barber.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                    <div style={{ position: 'relative' }}>
+                      <div style={{ 
+                        width: '44px', 
+                        height: '44px', 
+                        borderRadius: '14px', 
+                        backgroundColor: 'var(--bg-tertiary)', 
+                        overflow: 'hidden',
+                        border: index === 0 ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)'
+                      }}>
+                        <img src={barber.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${barber.name}`} alt={barber.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                      {index === 0 && <Crown size={14} color="var(--gold-primary)" fill="var(--gold-primary)" style={{ position: 'absolute', top: '-6px', right: '-6px' }} />}
+                      {index === 1 && <Medal size={14} color="#C0C0C0" style={{ position: 'absolute', top: '-6px', right: '-6px' }} />}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '800', fontSize: '13px' }}>{barber.name.split(' ')[0]}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{barber.role}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '14px' }}>${(barber.stats?.income || 0).toFixed(0)}</div>
+                      <div style={{ fontSize: '9px', fontWeight: '800', opacity: 0.4 }}>PRODUCCIÓN</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <button style={{ width: '100%', marginTop: '24px', backgroundColor: 'rgba(255,255,255,0.03)', border: 'none', color: 'var(--text-secondary)', padding: '12px', borderRadius: '12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                Ver Todos los Miembros <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <style>{`

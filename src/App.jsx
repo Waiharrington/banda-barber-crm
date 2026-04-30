@@ -18,6 +18,7 @@ import FinanceModule from './components/FinanceModule';
 import ServicesModule from './components/ServicesModule';
 import InventoryModule from './components/InventoryModule';
 import SaleServiceModal from './components/SaleServiceModal';
+import HistoryModule from './components/HistoryModule';
 import { dataService } from './services/dataService';
 import logo from './assets/logo.png';
 
@@ -30,8 +31,11 @@ import ReceptionModule from './components/ReceptionModule';
 import CheckoutPOS from './components/CheckoutPOS';
 import BarberPanel from './components/BarberPanel';
 import SchedulingModule from './components/SchedulingModule';
+import { useAuth } from './context/AuthContext';
+import Login from './components/Login';
 
 function App() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('astro_active_tab') || 'dashboard');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -87,8 +91,9 @@ function App() {
     { id: 'clients', label: 'Clientes', icon: Users },
     { id: 'personnel', label: 'Personal', icon: Scissors },
     { id: 'services', label: 'Servicios', icon: Star },
-    { id: 'inventory', label: 'Inventario', icon: Package },
-    { id: 'finance', label: 'Caja Chica', icon: Wallet },
+    { id: 'inventory', label: 'Inventario', icon: Package, roles: ['Admin', 'Caja'] },
+    { id: 'finance', label: 'Caja Chica', icon: Wallet, roles: ['Admin', 'Caja'] },
+    { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente'] },
   ];
 
   useEffect(() => {
@@ -209,9 +214,12 @@ function App() {
       case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
       case 'clients': return <div className="p-container"><ClientModule isMobile={isMobile} clients={dbData.clients} onRefresh={fetchInitialData} /></div>;
       case 'personnel': return <div className="p-container"><PersonnelModule isMobile={isMobile} /></div>;
-      default: return <div className="p-container"><DashboardModule isMobile={isMobile} currency={currency} rates={rates} /></div>;
+      case 'history': return <div className="p-container"><HistoryModule isMobile={isMobile} rates={effectiveRates} /></div>;
+      default: return <div className="p-container"><DashboardModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
     }
   };
+
+  if (!user) return <Login />;
 
   if (isMobile) {
     return (
@@ -238,7 +246,16 @@ function App() {
     <div className="app-container" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)', position: 'relative' }}>
       <AstroLoader visible={isAppLoading || isTabLoading} />
       <ParticleBackground />
-      <Sidebar activeTab={activeTab} setActiveTab={handleTabChange} />
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={handleTabChange} 
+        rates={effectiveRates} 
+        bcvRates={rates}
+        isCustomRate={isCustomRate}
+        onToggleCustom={setIsCustomRate}
+        onUpdateCustom={setCustomRates}
+        customRates={customRates}
+      />
       <main className="main-content" style={{ 
         flex: 1, 
         marginLeft: isMobile ? '0' : '260px', 

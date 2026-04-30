@@ -156,15 +156,36 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh
                 icon={<User size={18} color="var(--gold-primary)" />}
               />
 
-              <AstroSelect 
-                label="Servicio Estrella"
-                value={selectedService}
-                onChange={val => handleServiceChange(val)}
-                options={services.map(s => ({ label: `${s.name} — $${s.price}`, value: s.id }))}
-                placeholder="Seleccionar servicio..."
-                icon={<Sparkles size={18} color="var(--gold-primary)" />}
-              />
-            </div>
+                <AstroSelect 
+                  label="Servicio Estrella"
+                  value={selectedService}
+                  onChange={val => handleServiceChange(val)}
+                  options={services.map(s => ({ 
+                    label: `${s.name} — $${s.price}${rates?.usd > 0 ? ` (${Math.round(s.price * rates.usd).toLocaleString()} Bs.)` : ''}`, 
+                    value: s.id 
+                  }))}
+                  placeholder="Seleccionar servicio..."
+                  icon={<Sparkles size={18} color="var(--gold-primary)" />}
+                />
+                
+                {selectedService && services.find(s => s.id === selectedService)?.description && (
+                  <div className="animate-fade-in" style={{ 
+                    marginTop: '-8px',
+                    padding: '12px 16px', 
+                    backgroundColor: 'rgba(212, 175, 55, 0.05)', 
+                    borderLeft: '3px solid var(--gold-primary)', 
+                    borderRadius: '8px',
+                    fontSize: '11px',
+                    lineHeight: '1.5',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', color: 'var(--gold-primary)', fontWeight: '800', textTransform: 'uppercase', fontSize: '9px' }}>
+                      <Sparkles size={12} /> Guion de Venta para Caja
+                    </div>
+                    {services.find(s => s.id === selectedService).description}
+                  </div>
+                )}
+              </div>
           </div>
 
           {/* Section: The Team */}
@@ -225,7 +246,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh
                     {currency === 'USD' ? '$' : '€'}{totalPrice}
                   </div>
                   <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-                    {(totalPrice * (rates?.[currency?.toLowerCase()] || rates?.usd || 1)).toFixed(2)} BS
+                    {Math.round(totalPrice * (rates?.[currency?.toLowerCase()] || rates?.usd || 1)).toLocaleString()} BS
                   </div>
                 </div>
               </div>

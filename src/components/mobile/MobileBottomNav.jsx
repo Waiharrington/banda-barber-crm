@@ -10,28 +10,55 @@ import {
   UserCircle,
   Scissors,
   Star,
+  Plus,
+  History,
   Settings
 } from 'lucide-react';
 
+import { useAuth } from '../../context/AuthContext';
+
 const MobileBottomNav = ({ activeTab, setActiveTab }) => {
+  const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const mainItems = [
-    { id: 'dashboard', label: 'Inicio', icon: Home },
-    { id: 'clients', label: 'Clientes', icon: Users },
-    { id: 'inventory', label: 'Stock', icon: Package },
-    { id: 'finance', label: 'Caja', icon: Wallet },
+  const allMainItems = [
+    { id: 'dashboard', label: 'Inicio', icon: Home, roles: ['Admin'] },
+    { id: 'clients', label: 'Clientes', icon: Users, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja'] },
+    { id: 'inventory', label: 'Stock', icon: Package, roles: ['Admin', 'Caja'] },
+    { id: 'finance', label: 'Caja', icon: Wallet, roles: ['Admin', 'Caja'] },
   ];
 
-  const secondaryItems = [
-    { id: 'scheduling', label: 'Agenda (Astro)', icon: Calendar },
-    { id: 'reception', label: 'Recepción (Padre)', icon: UserCircle },
-    { id: 'checkout', label: 'Caja (Pro)', icon: Wallet },
-    { id: 'barber', label: 'Panel Barber (Hijo)', icon: Scissors },
-    { id: 'personnel', label: 'Equipo', icon: Scissors },
-    { id: 'services', label: 'Servicios', icon: Star },
-    { id: 'admin', label: 'Administración', icon: Settings },
+  const allSecondaryItems = [
+    { id: 'scheduling', label: 'Agenda', icon: Calendar, roles: ['Admin', 'Barbero', 'Recepcionista'] },
+    { id: 'reception', label: 'Recepción', icon: UserCircle, roles: ['Admin', 'Recepcionista'] },
+    { id: 'checkout', label: 'Caja', icon: Wallet, roles: ['Admin', 'Caja'] },
+    { id: 'barber', label: 'Panel Barber', icon: Scissors, roles: ['Admin', 'Barbero'] },
+    { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente'] },
+    { id: 'personnel', label: 'Equipo', icon: Scissors, roles: ['Admin'] },
+    { id: 'services', label: 'Servicios', icon: Star, roles: ['Admin'] },
   ];
+
+  const filterByPerms = (items) => items.filter(item => {
+    const userRole = user?.role || '';
+    const [roleName, customPerms] = userRole.split('|');
+
+    if (roleName === 'Admin') return true;
+    
+    if (customPerms) {
+      const perms = customPerms.split(',');
+      return perms.includes(item.id);
+    }
+
+    if (roleName.startsWith('Custom:')) {
+      const perms = roleName.split(':')[1].split(',');
+      return perms.includes(item.id);
+    }
+
+    return item.roles.includes(roleName);
+  });
+
+  const mainItems = filterByPerms(allMainItems);
+  const secondaryItems = filterByPerms(allSecondaryItems);
 
   const handleSelect = (id) => {
     setActiveTab(id);

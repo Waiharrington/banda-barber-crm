@@ -16,7 +16,7 @@ import {
 import { dataService } from '../services/dataService';
 import AstroDialog from './AstroDialog';
 
-const FinanceModule = ({ isMobile }) => {
+const FinanceModule = ({ isMobile, currency, rates }) => {
   const { showToast } = useNotifs();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);

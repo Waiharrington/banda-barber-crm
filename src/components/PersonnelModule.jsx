@@ -14,14 +14,24 @@ import {
   User,
   Check,
   CreditCard,
-  Headset
+  Headset,
+  Phone,
+  MapPin,
+  Key,
+  Lock,
+  Mail,
+  MoreHorizontal,
+  ChevronRight
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import AstroSelect from './AstroSelect';
 import AstroCamera from './AstroCamera';
 
+import { useAuth } from '../context/AuthContext';
+
 const PersonnelModule = ({ isMobile }) => {
   const { showToast } = useNotifs();
+  const { user, refreshUser } = useAuth();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,11 +42,38 @@ const PersonnelModule = ({ isMobile }) => {
   const [formData, setFormData] = useState({ 
     name: '', 
     role: 'Barbero', 
-    image_url: '' 
+    image_url: '',
+    phone: '',
+    address: '',
+    username: '',
+    password: '',
+    permissions: ['scheduling', 'barber', 'clients']
   });
 
   // Camera State
   const [showCamera, setShowCamera] = useState(false);
+
+  const availableModules = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'scheduling', label: 'Agenda (Astro)' },
+    { id: 'reception', label: 'Recepción (Padre)' },
+    { id: 'checkout', label: 'Caja (Pro)' },
+    { id: 'barber', label: 'Panel Barber (Hijo)' },
+    { id: 'clients', label: 'Clientes' },
+    { id: 'personnel', label: 'Personal' },
+    { id: 'services', label: 'Servicios' },
+    { id: 'inventory', label: 'Inventario' },
+    { id: 'finance', label: 'Caja Chica' },
+    { id: 'history', label: 'Historial' },
+  ];
+
+  const rolePresets = {
+    'Admin': availableModules.map(m => m.id),
+    'Barbero': ['scheduling', 'barber', 'clients', 'history'],
+    'Recepcionista': ['reception', 'scheduling', 'clients', 'history'],
+    'Caja': ['checkout', 'finance', 'inventory', 'clients', 'history'],
+    'Asistente de Lavado': ['barber', 'history']
+  };
 
   useEffect(() => {
     fetchStaff();
@@ -56,10 +93,26 @@ const PersonnelModule = ({ isMobile }) => {
   };
 
   const handleEditClick = (person) => {
+    let roleName = person.role || 'Barbero';
+    let perms = rolePresets[roleName] || [];
+    
+    if (person.role?.includes('|')) {
+      [roleName, perms] = person.role.split('|');
+      perms = perms.split(',');
+    } else if (person.role?.startsWith('Custom:')) {
+      perms = person.role.split(':')[1].split(',');
+      roleName = 'Personalizado';
+    }
+
     setFormData({
       name: person.name,
-      role: person.role,
-      image_url: person.image_url || ''
+      role: roleName,
+      image_url: person.image_url || '',
+      phone: person.phone || '',
+      address: person.address || '',
+      username: person.username || '',
+      password: person.password || '',
+      permissions: perms
     });
     setEditingId(person.id);
     setIsEditing(true);
@@ -70,7 +123,16 @@ const PersonnelModule = ({ isMobile }) => {
     setShowForm(false);
     setIsEditing(false);
     setEditingId(null);
-    setFormData({ name: '', role: 'Barbero', image_url: '' });
+    setFormData({ 
+      name: '', 
+      role: 'Barbero', 
+      image_url: '',
+      phone: '',
+      address: '',
+      username: '',
+      password: '',
+      permissions: rolePresets['Barbero']
+    });
   };
 
   const handleSubmit = async () => {
@@ -80,15 +142,26 @@ const PersonnelModule = ({ isMobile }) => {
     }
     try {
       setLoading(true);
+      
+      // Construct role string: RoleName|perm1,perm2...
+      const finalRole = `${formData.role}|${formData.permissions.join(',')}`;
+
       const submissionData = {
         name: formData.name,
-        role: formData.role,
+        role: finalRole,
         image_url: formData.image_url,
-        commission_pct: 40 // Valor por defecto para compatibilidad
+        phone: formData.phone,
+        address: formData.address,
+        username: formData.username,
+        password: formData.password,
+        commission_pct: 40 
       };
 
       if (isEditing) {
         await dataService.updateStaff(editingId, submissionData);
+        if (editingId === user?.id) {
+          await refreshUser();
+        }
         showToast('Perfil actualizado correctamente.');
       } else {
         await dataService.addStaff(submissionData);
@@ -158,10 +231,10 @@ const PersonnelModule = ({ isMobile }) => {
           <h3 style={{ marginBottom: '24px', fontSize: '22px', fontWeight: '800' }}>
             {isEditing ? `Editando Perfil: ${formData.name}` : 'Nuevo integrante del equipo'}
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr 1fr', gap: '24px', alignItems: 'end' }}>
-            
+          
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px' }}>
             {/* Photo Section */}
-            <div style={{ position: 'relative', width: '120px', margin: isMobile ? '0 auto 16px' : '0' }}>
+            <div style={{ position: 'relative', width: '120px' }}>
               <div 
                 onClick={() => setShowCamera(true)}
                 style={{ 
@@ -197,29 +270,125 @@ const PersonnelModule = ({ isMobile }) => {
               )}
             </div>
 
-            {/* Inputs Section */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div className="form-group">
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>NOMBRE COMPLETO</label>
-                <input className="form-input" placeholder="Ej. Marco Silva" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ width: '100%', height: '50px' }} />
+            {/* Fields Section */}
+            <div style={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Basic Info */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>NOMBRE COMPLETO</label>
+                  <div style={{ position: 'relative' }}>
+                    <User size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                    <input className="form-input" placeholder="Ej. Marco Silva" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                  </div>
+                </div>
+                <AstroSelect 
+                  label="ROL EN EL EQUIPO"
+                  value={formData.role}
+                  onChange={val => {
+                    setFormData({
+                      ...formData, 
+                      role: val,
+                      permissions: rolePresets[val] || formData.permissions
+                    });
+                  }}
+                  options={[
+                    { label: 'Barbero', value: 'Barbero' },
+                    { label: 'Recepcionista', value: 'Recepcionista' },
+                    { label: 'Caja', value: 'Caja' },
+                    { label: 'Asistente de Lavado', value: 'Asistente de Lavado' },
+                    { label: 'Admin', value: 'Admin' }
+                  ]}
+                />
               </div>
-              <AstroSelect 
-                label="ROL EN EL EQUIPO"
-                value={formData.role}
-                onChange={val => setFormData({...formData, role: val})}
-                options={[
-                  { label: 'Barbero', value: 'Barbero' },
-                  { label: 'Recepcionista', value: 'Recepcionista' },
-                  { label: 'Caja', value: 'Caja' },
-                  { label: 'Asistente de Lavado', value: 'Asistente de Lavado' }
-                ]}
-              />
-            </div>
 
-            {/* Actions */}
-            <button className="btn-gold" onClick={handleSubmit} style={{ height: '50px', width: '100%', borderRadius: '14px', fontSize: '15px', fontWeight: '800' }}>
-              {isEditing ? 'Guardar Cambios' : 'Confirmar Contratación'}
-            </button>
+              {/* Permissions Section */}
+              <div style={{ padding: '24px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <Key size={18} color="var(--gold-primary)" />
+                  <label style={{ fontSize: '12px', fontWeight: '900', color: 'white', letterSpacing: '1px' }}>MÓDULOS ACCESIBLES</label>
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: '12px' }}>
+                  {availableModules.map(mod => (
+                    <div 
+                      key={mod.id} 
+                      onClick={() => {
+                        const newPerms = formData.permissions.includes(mod.id)
+                          ? formData.permissions.filter(p => p !== mod.id)
+                          : [...formData.permissions, mod.id];
+                        setFormData({ ...formData, permissions: newPerms });
+                      }}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '10px', 
+                        padding: '12px', 
+                        borderRadius: '12px', 
+                        backgroundColor: formData.permissions.includes(mod.id) ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${formData.permissions.includes(mod.id) ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <div style={{ 
+                        width: '18px', 
+                        height: '18px', 
+                        borderRadius: '4px', 
+                        border: '1px solid var(--gold-primary)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        backgroundColor: formData.permissions.includes(mod.id) ? 'var(--gold-primary)' : 'transparent'
+                      }}>
+                        {formData.permissions.includes(mod.id) && <Check size={14} color="black" strokeWidth={3} />}
+                      </div>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: formData.permissions.includes(mod.id) ? 'white' : 'var(--text-secondary)' }}>{mod.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Contact Info */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>TELÉFONO</label>
+                  <div style={{ position: 'relative' }}>
+                    <Phone size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                    <input className="form-input" placeholder="+58 412..." value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>DIRECCIÓN DE HABITACIÓN</label>
+                  <div style={{ position: 'relative' }}>
+                    <MapPin size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                    <input className="form-input" placeholder="Av. Principal, Edif..." value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Login Credentials */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', padding: '20px', backgroundColor: 'rgba(212,175,55,0.03)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.1)' }}>
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>USUARIO DE ACCESO</label>
+                  <div style={{ position: 'relative' }}>
+                    <Key size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                    <input className="form-input" placeholder="usuario.barbero" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.2)' }} />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>CONTRASEÑA</label>
+                  <div style={{ position: 'relative' }}>
+                    <Lock size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                    <input className="form-input" type="password" placeholder="••••••••" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.2)' }} />
+                  </div>
+                </div>
+              </div>
+
+              <button className="btn-gold" onClick={handleSubmit} style={{ height: '56px', width: '100%', borderRadius: '16px', fontSize: '16px', fontWeight: '800', marginTop: '10px' }}>
+                <Check size={20} style={{ marginRight: '10px' }} />
+                {isEditing ? 'Actualizar Perfil de Artista' : 'Confirmar y Contratar Artista'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -235,85 +404,155 @@ const PersonnelModule = ({ isMobile }) => {
           <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Comienza agregando a los artistas que harán brillar tu marca.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* List Header */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: isMobile ? '1fr auto' : '80px 1.5fr 1fr 1.5fr 1fr auto', 
+            gap: '20px', 
+            padding: '0 24px',
+            color: 'var(--text-muted)',
+            fontSize: '11px',
+            fontWeight: '900',
+            letterSpacing: '1px',
+            textTransform: 'uppercase'
+          }}>
+            {!isMobile && (
+              <>
+                <div>ARTISTA</div>
+                <div>NOMBRE / ROL</div>
+                <div>TELÉFONO</div>
+                <div>DIRECCIÓN</div>
+                <div>ACCESO</div>
+                <div style={{ textAlign: 'right' }}>ACCIONES</div>
+              </>
+            )}
+          </div>
+
           {staff.map(person => (
-            <div key={person.id} className="glass-card animate-scale-in" style={{ 
-              padding: '24px', 
-              borderRadius: '24px',
+            <div key={person.id} className="glass-card animate-slide-up" style={{ 
+              padding: '16px 24px', 
+              borderRadius: '20px',
               border: '1px solid rgba(255,255,255,0.05)',
-              position: 'relative',
-              overflow: 'hidden'
+              display: 'grid',
+              gridTemplateColumns: isMobile ? 'auto 1fr auto' : '80px 1.5fr 1fr 1.5fr 1fr auto',
+              alignItems: 'center',
+              gap: '20px',
+              transition: 'all 0.3s'
             }}>
-              <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                <div style={{ 
-                  width: '80px', 
-                  height: '80px', 
-                  borderRadius: '20px', 
-                  backgroundColor: 'rgba(255,255,255,0.02)',
-                  overflow: 'hidden',
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  border: '1px solid rgba(255,255,255,0.08)'
-                }}>
-                  {person.image_url ? (
-                    <img src={person.image_url} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <span style={{ fontSize: '28px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.5 }}>
-                      {person.name.substring(0, 1).toUpperCase()}
+              {/* Photo Column */}
+              <div style={{ 
+                width: '56px', 
+                height: '56px', 
+                borderRadius: '14px', 
+                backgroundColor: 'rgba(255,255,255,0.02)',
+                overflow: 'hidden',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                border: '1px solid rgba(255,255,255,0.08)'
+              }}>
+                {person.image_url ? (
+                  <img src={person.image_url} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.5 }}>
+                    {person.name.substring(0, 1).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              
+              {/* Name/Role Column */}
+              <div>
+                <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{person.name}</h4>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '700', marginTop: '2px' }}>
+                  {getRoleIcon(person.role?.split('|')[0])}
+                  {person.role?.split('|')[0]}
+                  {person.role?.includes('|') && (
+                    <span style={{ 
+                      padding: '2px 6px', 
+                      backgroundColor: 'rgba(212,175,55,0.1)', 
+                      borderRadius: '4px', 
+                      fontSize: '9px',
+                      marginLeft: '4px',
+                      border: '1px solid rgba(212,175,55,0.2)'
+                    }}>
+                      PERSONALIZADO
                     </span>
                   )}
                 </div>
-                
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ fontSize: '20px', fontWeight: '850', color: 'white', marginBottom: '4px' }}>{person.name}</h4>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '6px', 
-                    color: 'var(--gold-primary)', 
-                    fontSize: '11px', 
-                    fontWeight: '900',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                    backgroundColor: 'rgba(212, 175, 55, 0.08)',
-                    padding: '4px 10px',
-                    borderRadius: '8px',
-                    width: 'fit-content'
-                  }}>
-                    {getRoleIcon(person.role)}
-                    {person.role}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <button className="action-btn" onClick={() => handleEditClick(person)} style={{ width: '38px', height: '38px' }}>
-                    <Edit2 size={18} />
-                  </button>
-                  <button className="action-btn" onClick={() => handleDeleteStaff(person.id, person.name)} style={{ width: '38px', height: '38px', color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.1)' }}>
-                    <Trash2 size={18} />
-                  </button>
-                </div>
               </div>
 
-              <div style={{ 
-                marginTop: '20px', 
-                paddingTop: '16px', 
-                borderTop: '1px solid rgba(255,255,255,0.05)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: '800' }}>ESTADO</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#32d74b', fontSize: '12px', fontWeight: '900', marginTop: '2px' }}>
-                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#32d74b' }} />
-                      ACTIVO
+              {/* Phone Column */}
+              {!isMobile && (
+                <div style={{ color: person.phone ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '14px' }}>
+                  {person.phone ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Phone size={14} color="var(--gold-primary)" />
+                      {person.phone}
                     </div>
-                  </div>
+                  ) : 'Sin teléfono'}
                 </div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600' }}>ID: {person.id.substring(0, 8)}</div>
+              )}
+
+              {/* Address Column */}
+              {!isMobile && (
+                <div style={{ color: person.address ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '13px' }}>
+                  {person.address ? (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                      <MapPin size={14} color="var(--gold-primary)" style={{ marginTop: '2px' }} />
+                      <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {person.address}
+                      </span>
+                    </div>
+                  ) : 'Sin dirección'}
+                </div>
+              )}
+
+              {/* Access Column */}
+              {!isMobile && (
+                <div>
+                  {person.username ? (
+                    <div style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      padding: '4px 10px', 
+                      backgroundColor: 'rgba(50, 215, 75, 0.08)', 
+                      color: '#32d74b', 
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontWeight: '800'
+                    }}>
+                      <Key size={12} />
+                      {person.username}
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      padding: '4px 10px', 
+                      backgroundColor: 'rgba(255, 69, 58, 0.08)', 
+                      color: '#ff453a', 
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontWeight: '800'
+                    }}>
+                      <Lock size={12} />
+                      SIN ACCESO
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Actions Column */}
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                <button className="action-btn" onClick={() => handleEditClick(person)} title="Editar Artista">
+                  <Edit2 size={18} />
+                </button>
+                <button className="action-btn" onClick={() => handleDeleteStaff(person.id, person.name)} style={{ color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.05)' }} title="Dar de baja">
+                  <Trash2 size={18} />
+                </button>
               </div>
             </div>
           ))}

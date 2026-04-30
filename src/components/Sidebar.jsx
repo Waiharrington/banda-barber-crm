@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   BarChart3, 
   Users, 
@@ -6,57 +5,158 @@ import {
   Scissors, 
   Package, 
   Wallet, 
-  Settings,
   Star,
-  Calendar
+  Calendar,
+  History,
+  LogOut,
+  Pencil,
+  RefreshCcw,
+  Save
 } from 'lucide-react';
-
 import logo from '../assets/logo.png';
+import { useAuth } from '../context/AuthContext';
+import { useState } from 'react';
 
-const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'scheduling', label: 'Agenda (Astro)', icon: Calendar },
-    { id: 'reception', label: 'Recepción (Padre)', icon: UserCircle },
-    { id: 'checkout', label: 'Caja (Pro)', icon: Wallet },
-    { id: 'barber', label: 'Panel Barber (Hijo)', icon: Scissors },
-    { id: 'clients', label: 'Clientes', icon: Users },
-    { id: 'personnel', label: 'Personal', icon: Scissors },
-    { id: 'services', label: 'Servicios', icon: Star },
-    { id: 'inventory', label: 'Inventario', icon: Package },
-    { id: 'finance', label: 'Caja Chica', icon: Wallet },
+const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomRate, onToggleCustom, onUpdateCustom, customRates }) => {
+  const { user, logout } = useAuth();
+  const [isEditingRate, setIsEditingRate] = useState(false);
+  const [tempRate, setTempRate] = useState(rates?.usd || 0);
+
+  const handleSaveRate = () => {
+    onUpdateCustom({ ...customRates, usd: Number(tempRate) });
+    onToggleCustom(true);
+    localStorage.setItem('astro_is_custom_rate', 'true');
+    localStorage.setItem('astro_custom_rates', JSON.stringify({ ...customRates, usd: Number(tempRate) }));
+    setIsEditingRate(false);
+  };
+
+  const handleResetRate = () => {
+    onToggleCustom(false);
+    localStorage.setItem('astro_is_custom_rate', 'false');
+    setIsEditingRate(false);
+  };
+
+  const allMenuItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['Admin'] },
+    { id: 'scheduling', label: 'Agenda', icon: Calendar, roles: ['Admin', 'Barbero', 'Recepcionista'] },
+    { id: 'reception', label: 'Recepción', icon: UserCircle, roles: ['Admin', 'Recepcionista'] },
+    { id: 'checkout', label: 'Caja', icon: Wallet, roles: ['Admin', 'Caja'] },
+    { id: 'barber', label: 'Panel Barber', icon: Scissors, roles: ['Admin', 'Barbero'] },
+    { id: 'clients', label: 'Clientes', icon: Users, roles: ['Admin', 'Recepcionista', 'Barbero', 'Caja'] },
+    { id: 'personnel', label: 'Personal', icon: Scissors, roles: ['Admin'] },
+    { id: 'services', label: 'Servicios', icon: Star, roles: ['Admin'] },
+    { id: 'inventory', label: 'Inventario', icon: Package, roles: ['Admin', 'Caja'] },
+    { id: 'finance', label: 'Caja Chica', icon: Wallet, roles: ['Admin', 'Caja'] },
+    { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente'] },
   ];
 
+  const menuItems = allMenuItems.filter(item => {
+    const userRole = user?.role || '';
+    const [roleName, customPerms] = userRole.split('|');
+
+    if (roleName === 'Admin') return true;
+    
+    if (customPerms) {
+      const perms = customPerms.split(',');
+      return perms.includes(item.id);
+    }
+
+    if (roleName.startsWith('Custom:')) {
+      const perms = roleName.split(':')[1].split(',');
+      return perms.includes(item.id);
+    }
+
+    return item.roles.includes(roleName);
+  });
+
   const sidebarStyle = isMobile ? {
-    width: '100%',
-    height: 'auto',
-    backgroundColor: 'transparent',
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '0'
+    width: '100%', height: 'auto', backgroundColor: 'transparent', display: 'flex', flexDirection: 'column', padding: '0'
   } : {
-    width: '260px',
-    height: '100vh',
-    backgroundColor: 'var(--bg-secondary)',
-    borderRight: '1px solid var(--border-color)',
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '20px 16px',
-    position: 'fixed',
-    left: 0,
-    top: 0,
-    overflowY: 'auto'
+    width: '260px', height: '100vh', backgroundColor: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)',
+    display: 'flex', flexDirection: 'column', padding: '20px 16px', position: 'fixed', left: 0, top: 0, overflowY: 'auto'
   };
 
   return (
     <div className="sidebar" style={sidebarStyle}>
       {!isMobile && (
-        <div className="logo-container" style={{
-          marginBottom: '20px',
-          display: 'flex',
-          justifyContent: 'center'
-        }}>
+        <div className="logo-container" style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
           <img src={logo} alt="Astro Barber" style={{ width: '100%', height: 'auto', maxWidth: '140px' }} />
+          
+          {/* Global Rate Badge */}
+          {rates?.usd > 0 && (
+            <div style={{ 
+              backgroundColor: isCustomRate ? 'rgba(50, 215, 75, 0.05)' : 'rgba(212, 175, 55, 0.05)', 
+              border: isCustomRate ? '1px solid rgba(50, 215, 75, 0.2)' : '1px solid rgba(212, 175, 55, 0.2)', 
+              borderRadius: '12px', 
+              padding: '8px 12px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              width: '100%',
+              position: 'relative',
+              transition: 'all 0.3s'
+            }}>
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isEditingRate ? '10px' : '2px' }}>
+                <span style={{ fontSize: '9px', fontWeight: '900', color: isCustomRate ? '#32d74b' : 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  {isCustomRate ? 'Tasa Personalizada' : 'Tasa del Día'}
+                </span>
+                {!isEditingRate && (
+                  <button 
+                    onClick={() => {
+                      setTempRate(rates.usd);
+                      setIsEditingRate(true);
+                    }}
+                    style={{ background: 'transparent', border: 'none', padding: '2px', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center' }}
+                  >
+                    <Pencil size={10} />
+                  </button>
+                )}
+              </div>
+
+              {isEditingRate ? (
+                <div style={{ width: '100%', display: 'flex', gap: '8px' }}>
+                  <input 
+                    type="number"
+                    value={tempRate}
+                    onChange={(e) => setTempRate(e.target.value)}
+                    autoFocus
+                    style={{ 
+                      width: '60%', 
+                      backgroundColor: 'rgba(0,0,0,0.3)', 
+                      border: '1px solid rgba(212,175,55,0.3)', 
+                      borderRadius: '8px', 
+                      padding: '6px 10px', 
+                      color: 'white', 
+                      fontSize: '14px', 
+                      fontWeight: '800',
+                      outline: 'none'
+                    }}
+                  />
+                  <button 
+                    onClick={handleSaveRate}
+                    title="Guardar Tasa"
+                    style={{ flex: 1, backgroundColor: 'var(--gold-primary)', color: 'black', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s active:scale-95' }}
+                  >
+                    <Save size={16} />
+                  </button>
+                  {isCustomRate && (
+                    <button 
+                      onClick={handleResetRate}
+                      title="Volver a tasa BCV"
+                      style={{ backgroundColor: 'rgba(255,69,58,0.2)', color: '#ff453a', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <RefreshCcw size={16} />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>1$ = {rates.usd.toLocaleString()} Bs.</span>
+                  {isCustomRate && <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#32d74b', boxShadow: '0 0 8px #32d74b' }} title="Tasa manual activa" />}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -66,41 +166,20 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
           const isActive = activeTab === item.id;
           return (
             <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              key={item.id} onClick={() => setActiveTab(item.id)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '10px 12px',
-                backgroundColor: isActive ? 'rgba(212, 175, 55, 0.08)' : 'transparent',
-                border: 'none',
-                borderRadius: '12px',
-                color: isActive ? 'var(--gold-primary)' : 'var(--text-secondary)',
-                cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                textAlign: 'left',
-                width: '100%',
-                fontWeight: isActive ? '700' : '500',
-                letterSpacing: isActive ? '0.1px' : '0'
+                display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
+                backgroundColor: isActive ? 'rgba(212, 175, 55, 0.08)' : 'transparent', border: 'none', borderRadius: '12px',
+                color: isActive ? 'var(--gold-primary)' : 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                textAlign: 'left', width: '100%', fontWeight: isActive ? '700' : '500'
               }}
             >
-              <div style={{
-                color: isActive ? 'var(--gold-primary)' : 'var(--text-muted)',
-                transition: 'color 0.2s'
-              }}>
+              <div style={{ color: isActive ? 'var(--gold-primary)' : 'var(--text-muted)' }}>
                 <Icon size={20} />
               </div>
               <span style={{ fontSize: '15px' }}>{item.label}</span>
               {isActive && (
-                <div style={{
-                  marginLeft: 'auto',
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--gold-primary)',
-                  boxShadow: '0 0 10px var(--gold-primary)'
-                }} />
+                <div style={{ marginLeft: 'auto', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--gold-primary)', boxShadow: '0 0 10px var(--gold-primary)' }} />
               )}
             </button>
           );
@@ -108,19 +187,22 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile }) => {
       </nav>
 
       {!isMobile && (
-        <div className="user-profile" style={{
-          marginTop: 'auto',
-          padding: '16px',
-          borderTop: '1px solid var(--border-color)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <UserCircle size={32} color="var(--text-secondary)" />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '14px', fontWeight: '600' }}>Admin Barbero</span>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Mánager</span>
+        <div style={{ marginTop: 'auto' }}>
+          <div className="user-profile" style={{ padding: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <UserCircle size={20} color="var(--gold-primary)" />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <span style={{ fontSize: '14px', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{user?.role?.split('|')[0]}</span>
+            </div>
           </div>
+          <button 
+            onClick={logout}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: 'rgba(255, 69, 58, 0.05)', border: 'none', borderRadius: '12px', color: '#ff453a', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}
+          >
+            <LogOut size={18} /> Cerrar Sesión
+          </button>
         </div>
       )}
     </div>

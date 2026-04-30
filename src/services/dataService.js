@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 
 export const dataService = {
+  supabase,
   // Clients
   async getClients() {
     const { data, error } = await supabase
@@ -94,18 +95,8 @@ export const dataService = {
     if (error) throw error;
   },
 
-  async updateStaff(id, updates) {
-    const { data, error } = await supabase
-      .from('staff')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  },
-
   // Services
+
   async getServices() {
     const { data, error } = await supabase
       .from('services')
@@ -144,15 +135,62 @@ export const dataService = {
     if (error) throw error;
   },
 
-  async updateService(id, updates) {
-    const { data, error } = await supabase
-      .from('services')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+  // Extras
+  async getExtras() {
+    const { data, error } = await supabase.from('service_extras').select('*').order('name');
     if (error) throw error;
     return data;
+  },
+
+  async addExtra(extra) {
+    const { data, error } = await supabase.from('service_extras').insert([extra]).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateExtra(id, updates) {
+    const { data, error } = await supabase.from('service_extras').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteExtra(id) {
+    const { error } = await supabase.from('service_extras').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async addExtraToAppointment(appointmentId, extraId, price) {
+    const { data, error } = await supabase.from('appointment_extras').insert([{ appointment_id: appointmentId, extra_id: extraId, price }]).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getAppointmentExtras(appointmentId) {
+    const { data, error } = await supabase.from('appointment_extras').select('*, service_extras(*)').eq('appointment_id', appointmentId);
+    if (error) throw error;
+    return data;
+  },
+
+  async removeExtraFromAppointment(id) {
+    const { error } = await supabase.from('appointment_extras').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async addProductToAppointment(appointmentId, productId, quantity, price) {
+    const { data, error } = await supabase.from('appointment_products').insert([{ appointment_id: appointmentId, product_id: productId, quantity, price }]).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getAppointmentProducts(appointmentId) {
+    const { data, error } = await supabase.from('appointment_products').select('*, inventory(*)').eq('appointment_id', appointmentId);
+    if (error) throw error;
+    return data;
+  },
+
+  async removeProductFromAppointment(id) {
+    const { error } = await supabase.from('appointment_products').delete().eq('id', id);
+    if (error) throw error;
   },
 
   // Service Checklist Items
@@ -250,6 +288,25 @@ export const dataService = {
     });
   },
 
+  async getStaffHistory(staffId) {
+    const { data, error } = await supabase
+      .from('appointment_staff')
+      .select(`
+        *,
+        appointments (
+          *,
+          clients(name, phone, id_card, work_gallery),
+          services(name, price, included_items, commission_barber, commission_washer, commission_cashier, commission_receptionist),
+          appointment_extras(id, price, service_extras(name)),
+          appointment_products(id, quantity, price, inventory(id, name))
+        )
+      `)
+      .eq('staff_id', staffId);
+    
+    if (error) throw error;
+    return data;
+  },
+
   async addTransaction(transaction) {
     const { data, error } = await supabase
       .from('transactions')
@@ -290,22 +347,36 @@ export const dataService = {
     if (error) throw error;
     return data;
   },
-
-  async deleteInventoryItem(id) {
-    const { error } = await supabase
-      .from('inventory')
-      .delete()
-      .eq('id', id);
+  
+  // Inventory Movements
+  async logInventoryMovement(movement) {
+    const { data, error } = await supabase
+      .from('inventory_movements')
+      .insert([movement])
+      .select()
+      .single();
     if (error) throw error;
+    return data;
+  },
+
+  async getInventoryMovements() {
+    const { data, error } = await supabase
+      .from('inventory_movements')
+      .select('*, inventory(name)')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
   },
 
   // Appointments (Operational States)
   async getAppointmentsByState(states = []) {
     let query = supabase.from('appointments').select(`
       *, 
-      clients(name, phone, id_card), 
+      clients(name, phone, id_card, work_gallery), 
       services(name, price, included_items, commission_barber, commission_washer, commission_cashier, commission_receptionist),
-      staff(*)
+      staff(*),
+      appointment_extras(id, price, service_extras(name)),
+      appointment_products(id, quantity, price, inventory(id, name))
     `);
     if (states.length > 0) query = query.in('status', states);
     const { data, error } = await query.order('created_at', { ascending: true });
@@ -341,9 +412,6 @@ export const dataService = {
 
   async updateAppointmentStatus(id, newStatus) {
     const updates = { status: newStatus };
-    if (newStatus === 'Completado') {
-      updates.completed_at = new Date().toISOString();
-    }
     const { data, error } = await supabase
       .from('appointments')
       .update(updates)
@@ -363,46 +431,111 @@ export const dataService = {
     return true;
   },
 
+  async deleteAppointmentExtra(id) {
+    const { error } = await supabase
+      .from('appointment_extras')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    return true;
+  },
+
+  async deleteAppointmentProduct(id) {
+    const { error } = await supabase
+      .from('appointment_products')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    return true;
+  },
+
+  async getBarberDailyStats(staffId) {
+    const today = new Date().toISOString().split('T')[0];
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(`
+        id,
+        status,
+        total_price,
+        services(price),
+        appointment_extras(price),
+        appointment_products(quantity, price)
+      `)
+      .eq('staff_id', staffId)
+      .gte('created_at', today)
+      .in('status', ['En Silla', 'Por Pagar', 'Completado']);
+    
+    if (error) throw error;
+
+    let totalUsd = 0;
+    let serviceCount = data.length;
+
+    data.forEach(app => {
+      const sPrice = app.services?.price || 0;
+      const ePrice = app.appointment_extras?.reduce((sum, e) => sum + (e.price || 0), 0) || 0;
+      const pPrice = app.appointment_products?.reduce((sum, p) => sum + ((p.price || 0) * (p.quantity || 1)), 0) || 0;
+      totalUsd += (sPrice + ePrice + pPrice);
+    });
+
+    return { productionUsd: totalUsd, services: serviceCount };
+  },
+
   // Final Checkout Logic
   async processFinalPayment(paymentRecord) {
-    // 1. Mark appointment as completed
-    await this.updateAppointmentStatus(paymentRecord.appointmentId, 'Completado');
+    // 1. Mark appointment as completed (if exists)
+    if (paymentRecord.appointmentId) {
+      await this.updateAppointmentStatus(paymentRecord.appointmentId, 'Completado');
+    }
 
     // 2. Register commissioners (Staff involved)
-    if (paymentRecord.staffInvolved) {
-      const staffRecords = paymentRecord.staffInvolved.map(s => ({
-        appointment_id: paymentRecord.appointmentId,
-        staff_id: s.staffId,
-        commission_earned: s.commissionEarned,
-        tip_amount: s.tip || 0
-      }));
-      await supabase.from('appointment_staff').insert(staffRecords);
+    if (paymentRecord.staffInvolved && paymentRecord.staffInvolved.length > 0) {
+      const staffRecords = paymentRecord.staffInvolved
+        .filter(s => s.staffId) // Only if there is a staff member
+        .map(s => ({
+          appointment_id: paymentRecord.appointmentId || null,
+          staff_id: s.staffId,
+          commission_earned: s.commissionEarned || 0,
+          tip_amount: s.tip || 0
+        }));
+      if (staffRecords.length > 0) {
+        await supabase.from('appointment_staff').insert(staffRecords);
+      }
     }
 
     // 3. Register Sold Products and Stock reduction
     if (paymentRecord.products && paymentRecord.products.length > 0) {
       for (const p of paymentRecord.products) {
-        // Reduced stock logic should be handle in real usage
         const { data: inv } = await supabase.from('inventory').select('stock').eq('id', p.id).single();
-        if (inv) await this.updateStock(p.id, inv.stock - (p.quantity || 1));
+        if (inv) {
+          await this.updateStock(p.id, inv.stock - (p.quantity || 1));
+          // Log movement
+          await supabase.from('inventory_movements').insert([{
+            product_id: p.id,
+            type: 'exit',
+            amount: p.quantity || 1,
+            reason: `Venta - Cliente: ${paymentRecord.clientName}`
+          }]);
+        }
       }
     }
 
-    // 4. Create Financial Transaction (CONGELED SNAPSHOT)
+    // 4. Create Financial Transaction
     await this.addTransaction({
-      description: `VENTA FINAL - Cliente: ${paymentRecord.clientName} - Servi: ${paymentRecord.serviceName}`,
-      amount: paymentRecord.totalUsd,
+      description: paymentRecord.appointmentId 
+        ? `VENTA FINAL - Cliente: ${paymentRecord.clientName} - Servi: ${paymentRecord.serviceName}`
+        : `VENTA DIRECTA PRODUCTOS - Cliente: ${paymentRecord.clientName}`,
+      amount: Number(paymentRecord.totalUsd),
       type: 'income',
       category: 'Ventas Pro',
-      exchange_rate: paymentRecord.fixedRate,
+      exchange_rate: Number(paymentRecord.fixedRate),
       currency: 'USD',
       metadata: { 
-        appointment_id: paymentRecord.appointmentId,
-        client_id: (await supabase.from('appointments').select('client_id').eq('id', paymentRecord.appointmentId).single()).data?.client_id,
+        appointment_id: paymentRecord.appointmentId || null,
+        client_id: paymentRecord.clientId || null,
         mixed_payment: paymentRecord.isMixed,
-        cash_usd: paymentRecord.cashUsd,
-        transfer_bs: paymentRecord.transferBs,
-        tips_total: paymentRecord.totalTips,
+        cash_usd: Number(paymentRecord.cashUsd),
+        transfer_bs: Number(paymentRecord.transferBs),
+        tips_total: Number(paymentRecord.totalTips),
         method_usd: paymentRecord.methodUsd,
         method_bs: paymentRecord.methodBs,
         products_sold: paymentRecord.products || []
@@ -422,7 +555,7 @@ export const dataService = {
       const eurRes = await fetch('https://ve.dolarapi.com/v1/euros/oficial');
       if (!eurRes.ok) throw new Error('EUR rate not available');
       const eurData = await eurRes.json();
-
+      
       return {
         usd: usdData.promedio,
         eur: eurData.promedio,

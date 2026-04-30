@@ -35,8 +35,8 @@ const ScheduleModal = ({ isOpen, onClose, client, service, staff, onSchedule, de
 
       // 2. Generate slots from 8:00 AM to 8:00 PM
       const slots = [];
-      const startHour = 8;
-      const endHour = 20;
+      const startHour = 0;
+      const endHour = 24;
       const now = new Date();
       const isToday = selectedDate.toDateString() === now.toDateString();
       const currentHour = now.getHours();

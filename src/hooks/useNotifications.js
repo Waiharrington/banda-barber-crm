@@ -45,7 +45,6 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // --- EFFECTS ---
   const triggerConfetti = useCallback(() => {
     const colors = ['#d4af37', '#f9d976', '#ffffff', '#c0c0c0'];
     const count = 40;
@@ -66,11 +65,44 @@ export const useNotifications = () => {
     }
   }, []);
 
+  const triggerRocket = useCallback(() => {
+    // 1. Create Rocket
+    const container = document.createElement('div');
+    container.className = 'rocket-container';
+    container.innerHTML = `
+      <div class="rocket-body">
+        🚀
+        <div class="rocket-trail"></div>
+      </div>
+    `;
+    document.body.appendChild(container);
+
+    // 2. Spawn Smoke/Fire Particles
+    const spawnSmoke = () => {
+      for(let i=0; i<15; i++) {
+        setTimeout(() => {
+          const s = document.createElement('div');
+          s.className = 'rocket-smoke';
+          s.style.left = (50 + (Math.random() * 10 - 5)) + '%';
+          s.style.backgroundColor = i % 2 === 0 ? 'var(--gold-primary)' : '#ff4500';
+          document.body.appendChild(s);
+          setTimeout(() => s.remove(), 1500);
+        }, i * 50);
+      }
+    };
+    
+    spawnSmoke();
+
+    // 3. Cleanup
+    setTimeout(() => container.remove(), 3000);
+  }, []);
+
   return {
     toasts,
     showToast,
     requestPushPermission,
     sendPushNotification,
-    triggerConfetti
+    triggerConfetti,
+    triggerRocket
   };
 };

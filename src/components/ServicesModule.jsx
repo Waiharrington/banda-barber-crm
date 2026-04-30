@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Plus, Search, Edit2, Trash2, Clock, Scissors, 
   Sparkles, Droplets, Zap, Check, X, Loader2,
-  Settings, DollarSign, LayoutList, Star, Crown
+  Settings, DollarSign, LayoutList, Star, Crown,
+  LayoutGrid, Table, Eye, Info
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -36,24 +37,28 @@ const AstroSelect = ({ label, value, onChange, options }) => (
   </div>
 );
 
-const ServicesModule = () => {
+const ServicesModule = ({ isMobile, currency, rates }) => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('grid');
   const [isExtrasModalOpen, setIsExtrasModalOpen] = useState(false);
+  const [isBillableExtrasModalOpen, setIsBillableExtrasModalOpen] = useState(false);
   const [baseItems, setBaseItems] = useState([]);
+  const [billableExtras, setBillableExtras] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
+  const [editingExtra, setEditingExtra] = useState(null);
   const [newItemName, setNewItemName] = useState('');
-  const [newItemCost, setNewItemCost] = useState('0.50');
+  const [newItemCost, setNewItemCost] = useState('0.00');
+  const [newExtraName, setNewExtraName] = useState('');
+  const [newExtraPrice, setNewExtraPrice] = useState('2.00');
+  const [newExtraCost, setNewExtraCost] = useState('0.50');
   const [showAddItemInput, setShowAddItemInput] = useState(false);
   const { showToast } = useNotifs();
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
     fetchServices();
     fetchBaseItems();
-    return () => window.removeEventListener('resize', handleResize);
+    fetchBillableExtras();
   }, []);
 
   const fetchServices = async () => {
@@ -72,7 +77,16 @@ const ServicesModule = () => {
       const items = await dataService.getChecklistItems();
       setBaseItems(items || []);
     } catch (e) {
-      showToast('Error al cargar extras.', 'error');
+      showToast('Error al cargar ítems incluidos.', 'error');
+    }
+  };
+
+  const fetchBillableExtras = async () => {
+    try {
+      const data = await dataService.getExtras();
+      setBillableExtras(data || []);
+    } catch (e) {
+      showToast('Error al cargar extras cobrables.', 'error');
     }
   };
 
@@ -94,22 +108,61 @@ const ServicesModule = () => {
     try {
       await dataService.updateChecklistItem(id, { name, base_cost: Number(base_cost) });
       await fetchBaseItems();
+      showToast('Ítem del checklist actualizado.');
+    } catch (e) {
+      showToast('Error al actualizar ítem.', 'error');
+    }
+  };
+
+  const handleDeleteMasterItem = async (e, id, name) => {
+    e.stopPropagation();
+    if (!window.confirm(`¿Eliminar "${name}" del checklist maestro?`)) return;
+    try {
+      await dataService.deleteChecklistItem(id);
+      await fetchBaseItems();
+      showToast('Ítem eliminado.');
+    } catch (e) {
+      showToast('Error al eliminar ítem.', 'error');
+    }
+  };
+
+  const handleAddBillableExtra = async () => {
+    if (!newExtraName) return;
+    try {
+      await dataService.addExtra({
+        name: newExtraName,
+        price: Number(newExtraPrice),
+        cost: Number(newExtraCost)
+      });
+      setNewExtraName('');
+      setNewExtraPrice('2.00');
+      setNewExtraCost('0.50');
+      await fetchBillableExtras();
+      showToast('Servicio adicional (Extra) creado.');
+    } catch (e) {
+      showToast('Error al crear extra.', 'error');
+    }
+  };
+
+  const handleUpdateBillableExtra = async (id, updates) => {
+    try {
+      await dataService.updateExtra(id, updates);
+      await fetchBillableExtras();
       showToast('Extra actualizado.');
     } catch (e) {
       showToast('Error al actualizar extra.', 'error');
     }
   };
 
-  const handleDeleteMasterItem = async (e, id, name) => {
+  const handleDeleteBillableExtra = async (e, id, name) => {
     e.stopPropagation();
-    if (window.confirm(`¿Seguro que quieres borrar "${name}" de la lista maestra?`)) {
-      try {
-        await dataService.deleteChecklistItem(id);
-        await fetchBaseItems();
-        showToast('Extra eliminado.');
-      } catch (e) {
-        showToast('Error al eliminar extra.', 'error');
-      }
+    if (!window.confirm(`¿Eliminar el extra "${name}"?`)) return;
+    try {
+      await dataService.deleteExtra(id);
+      await fetchBillableExtras();
+      showToast('Extra eliminado.');
+    } catch (e) {
+      showToast('Error al eliminar extra.', 'error');
     }
   };
 
@@ -145,16 +198,21 @@ const ServicesModule = () => {
   });
 
   const handleEditClick = (service) => {
+    setIsEditing(true);
     setNewService({
-      ...service,
-      variable_cost: service.variable_cost || 0.50,
+      id: service.id,
+      name: service.name,
+      price: service.price,
+      category: service.category,
+      strategy_type: service.strategy_type || 'MVP',
+      duration: service.duration || 30,
+      description: service.description || '',
       included_items: service.included_items || [],
       commission_barber: service.commission_barber || 40,
       commission_washer: service.commission_washer || 10,
       commission_cashier: service.commission_cashier || 0,
       commission_receptionist: service.commission_receptionist || 0
     });
-    setIsEditing(true);
     setShowAddForm(true);
   };
 
@@ -177,6 +235,7 @@ const ServicesModule = () => {
         duration: 30,
         insumo_cost: 0,
         variable_cost: 0.50,
+        description: '',
         included_items: [],
         commission_barber: 40,
         commission_washer: 10,
@@ -225,40 +284,94 @@ const ServicesModule = () => {
         marginBottom: '40px'
       }}>
         <div>
-          <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>
-            Catálogo de <span className="text-gold">Experiencias</span>
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Define los servicios y el valor de tu arte.</p>
+          <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Gestión de <span className="text-gold">Servicios</span></h2>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Define tu oferta y servicios adicionales.</p>
         </div>
-        <button 
-          className="btn-gold" 
-          onClick={() => {
-            if (showAddForm) {
-              setShowAddForm(false);
-              setIsEditing(false);
-              setNewService({ 
-                name: '', 
-                price: '', 
-                category: 'Barbería',
-                strategy_type: 'MVP',
-                duration: 30,
-                insumo_cost: 0,
-                variable_cost: 0.50,
-                included_items: [],
-                commission_barber: 40,
-                commission_washer: 10,
-                commission_cashier: 0,
-                commission_receptionist: 0
-              });
-            } else {
-              setShowAddForm(true);
-            }
-          }} 
-          style={{ height: '48px', padding: '0 24px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
-          {showAddForm ? <X size={18} /> : <Plus size={18} />}
-          {showAddForm ? 'Cancelar' : 'Agregar Servicio'}
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* View Toggles */}
+          {!isMobile && (
+            <div style={{ 
+              display: 'flex', 
+              backgroundColor: 'rgba(255,255,255,0.03)', 
+              borderRadius: '12px', 
+              padding: '4px',
+              border: '1px solid rgba(255,255,255,0.05)',
+              marginRight: '12px'
+            }}>
+              <button 
+                onClick={() => setViewMode('grid')}
+                style={{ 
+                  padding: '8px 12px', 
+                  borderRadius: '8px', 
+                  border: 'none', 
+                  backgroundColor: viewMode === 'grid' ? 'rgba(212,175,55,0.1)' : 'transparent',
+                  color: viewMode === 'grid' ? 'var(--gold-primary)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '12px',
+                  fontWeight: '700'
+                }}
+              >
+                <LayoutGrid size={16} /> Tarjetas
+              </button>
+              <button 
+                onClick={() => setViewMode('table')}
+                style={{ 
+                  padding: '8px 12px', 
+                  borderRadius: '8px', 
+                  border: 'none', 
+                  backgroundColor: viewMode === 'table' ? 'rgba(212,175,55,0.1)' : 'transparent',
+                  color: viewMode === 'table' ? 'var(--gold-primary)' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '12px',
+                  fontWeight: '700'
+                }}
+              >
+                <Table size={16} /> Tabla
+              </button>
+            </div>
+          )}
+
+          <button className="btn-gold" onClick={() => setIsBillableExtrasModalOpen(true)} style={{ backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212,175,55,0.2)' }}>
+            <Sparkles size={18} style={{ marginRight: '8px' }} />
+            Gestionar Extras
+          </button>
+          <button 
+            className="btn-gold" 
+            onClick={() => {
+              if (showAddForm) {
+                setShowAddForm(false);
+                setIsEditing(false);
+                setNewService({ 
+                  name: '', 
+                  price: '', 
+                  category: 'Barbería',
+                  strategy_type: 'MVP',
+                  duration: 30,
+                  insumo_cost: 0,
+                  variable_cost: 0.50,
+                  description: '',
+                  included_items: [],
+                  commission_barber: 40,
+                  commission_washer: 10,
+                  commission_cashier: 0,
+                  commission_receptionist: 0
+                });
+              } else {
+                setShowAddForm(true);
+              }
+            }} 
+            style={{ height: '48px', padding: '0 24px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            {showAddForm ? <X size={18} /> : <Plus size={18} />}
+            {showAddForm ? 'Cancelar' : 'Nuevo Servicio'}
+          </button>
+        </div>
       </div>
 
            {showAddForm && (
@@ -278,14 +391,32 @@ const ServicesModule = () => {
                     <input className="form-input" placeholder="Ej. Corte Astro MVP" value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})} style={{ width: '100%' }} />
                   </div>
 
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>DESCRIPCIÓN (GUION DE VENTA)</label>
+                    <textarea 
+                      className="form-input" 
+                      placeholder="Ej. Un corte moderno con acabado a navaja, incluye lavado con masaje capilar y bebida de cortesía..." 
+                      value={newService.description} 
+                      onChange={e => setNewService({...newService, description: e.target.value})} 
+                      style={{ width: '100%', height: '80px', paddingTop: '12px', resize: 'none', fontSize: '13px', lineHeight: '1.5' }} 
+                    />
+                  </div>
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div className="form-group">
                       <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>PRECIO ($)</label>
-                      <input className="form-input" type="number" placeholder="25" value={newService.price} onChange={e => setNewService({...newService, price: Number(e.target.value)})} style={{ width: '100%' }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <input className="form-input" type="number" placeholder="25" value={newService.price === 0 ? '' : newService.price} onChange={e => setNewService({...newService, price: e.target.value === '' ? '' : Number(e.target.value)})} style={{ flex: 1 }} />
+                        {rates?.usd > 0 && (
+                          <div style={{ padding: '0 16px', height: '48px', backgroundColor: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', color: 'var(--gold-primary)', fontSize: '13px', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                            {Math.round((Number(newService.price) || 0) * rates.usd).toLocaleString()} Bs.
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="form-group">
                       <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>DURACIÓN (MIN)</label>
-                      <input className="form-input" type="number" placeholder="45" value={newService.duration} onChange={e => setNewService({...newService, duration: Number(e.target.value)})} style={{ width: '100%' }} />
+                      <input className="form-input" type="number" placeholder="45" value={newService.duration === 0 ? '' : newService.duration} onChange={e => setNewService({...newService, duration: e.target.value === '' ? '' : Number(e.target.value)})} style={{ width: '100%' }} />
                     </div>
                   </div>
 
@@ -308,48 +439,14 @@ const ServicesModule = () => {
                         { label: 'MVP (Estrella)', value: 'MVP' },
                         { label: 'Comodín Entrada', value: 'Entrada' },
                         { label: 'Comodín Upsell', value: 'Upsell' },
-                        { label: 'Mantenimiento', value: 'Mantenimiento' }
+                        { label: 'Mantenimiento', value: 'Mantenimiento' },
+                        { label: 'Rápido', value: 'Rápido' },
+                        { label: 'Promo', value: 'Promo' }
                       ]}
                     />
                   </div>
                 </div>
 
-                {/* Costs & Calculations */}
-                <div style={{ padding: '20px', borderRadius: '20px', backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div className="form-group">
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>GASTOS OPERATIVOS ($)</label>
-                      <input 
-                        className="form-input" 
-                        type="number" 
-                        step="0.01"
-                        placeholder="0.50"
-                        value={newService.variable_cost} 
-                        onChange={e => setNewService({...newService, variable_cost: Number(e.target.value)})} 
-                        style={{ width: '100%', color: '#64d2ff', fontWeight: '800' }} 
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>TOTAL INSUMOS ($)</label>
-                      <div style={{ 
-                        backgroundColor: 'rgba(255,159,10,0.1)', 
-                        padding: '10px', 
-                        borderRadius: '12px', 
-                        border: '1px solid rgba(255,159,10,0.3)',
-                        color: '#ff9f0a',
-                        fontWeight: '900',
-                        fontSize: '18px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        height: '46px'
-                      }}>
-                        <DollarSign size={18} /> {newService.insumo_cost}
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Commissions Distribution */}
                 <div style={{ padding: '20px', borderRadius: '20px', backgroundColor: 'rgba(212,175,55,0.03)', border: '1px solid rgba(212,175,55,0.1)' }}>
@@ -359,11 +456,11 @@ const ServicesModule = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div className="form-group">
                       <label style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>BARBERO</label>
-                      <input className="form-input" type="number" value={newService.commission_barber} onChange={e => setNewService({...newService, commission_barber: Number(e.target.value)})} style={{ width: '100%', fontSize: '13px' }} />
+                      <input className="form-input" type="number" value={newService.commission_barber === 0 ? '' : newService.commission_barber} onChange={e => setNewService({...newService, commission_barber: e.target.value === '' ? '' : Number(e.target.value)})} style={{ width: '100%', fontSize: '13px' }} />
                     </div>
                     <div className="form-group">
                       <label style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>ASISTENTE LAVADO</label>
-                      <input className="form-input" type="number" value={newService.commission_washer} onChange={e => setNewService({...newService, commission_washer: Number(e.target.value)})} style={{ width: '100%', fontSize: '13px' }} />
+                      <input className="form-input" type="number" value={newService.commission_washer === 0 ? '' : newService.commission_washer} onChange={e => setNewService({...newService, commission_washer: e.target.value === '' ? '' : Number(e.target.value)})} style={{ width: '100%', fontSize: '13px' }} />
                     </div>
                     <div className="form-group">
                       <label style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>CAJA</label>
@@ -374,6 +471,35 @@ const ServicesModule = () => {
                       <input className="form-input" type="number" value={newService.commission_receptionist} onChange={e => setNewService({...newService, commission_receptionist: Number(e.target.value)})} style={{ width: '100%', fontSize: '13px', opacity: 0.5 }} />
                     </div>
                   </div>
+                  
+                  {/* Business Net Margin Indicator */}
+                  {(newService.price > 0) && (
+                    <div style={{ 
+                      marginTop: '20px', 
+                      padding: '16px', 
+                      borderRadius: '16px', 
+                      background: 'rgba(50, 215, 75, 0.05)', 
+                      border: '1px solid rgba(50, 215, 75, 0.2)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '10px', fontWeight: '800', color: '#32d74b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Margen Real Astro</div>
+                        <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>
+                          ${((Number(newService.price) || 0) - ((Number(newService.price) || 0) * ( (Number(newService.commission_barber) || 0) + (Number(newService.commission_washer) || 0) + (Number(newService.commission_cashier) || 0) + (Number(newService.commission_receptionist) || 0) ) / 100)).toFixed(2)}
+                        </div>
+                      </div>
+                      {rates?.usd > 0 && (
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
+                          <div style={{ fontSize: '14px', fontWeight: '800', color: '#32d74b' }}>
+                            {Math.round(((Number(newService.price) || 0) - ((Number(newService.price) || 0) * ( (Number(newService.commission_barber) || 0) + (Number(newService.commission_washer) || 0) + (Number(newService.commission_cashier) || 0) + (Number(newService.commission_receptionist) || 0) ) / 100)) * rates.usd).toLocaleString()} Bs.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -381,7 +507,7 @@ const ServicesModule = () => {
               <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>
-                    <LayoutList size={16} /> CHECKLIST: QUÉ INCLUYE
+                    <LayoutList size={16} /> CHECKLIST (INCLUIDO)
                   </label>
                   <button 
                     onClick={() => setIsExtrasModalOpen(true)}
@@ -401,7 +527,7 @@ const ServicesModule = () => {
                       letterSpacing: '0.5px'
                     }}
                   >
-                    <Settings size={12} /> Modificar Extras
+                    <Settings size={12} /> Gestionar Items
                   </button>
                 </div>
 
@@ -446,7 +572,6 @@ const ServicesModule = () => {
                         </div>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: '700' }}>{item.name}</div>
-                          <div style={{ fontSize: '10px', color: 'var(--gold-primary)' }}>+${item.base_cost}</div>
                         </div>
                       </button>
                     </div>
@@ -465,8 +590,8 @@ const ServicesModule = () => {
 
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
-          <Loader2 className="animate-spin" size={48} color="var(--gold-primary)" />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
+          <Loader2 className="animate-spin" color="var(--gold-primary)" size={40} />
         </div>
       ) : services.length === 0 ? (
         <div className="glass-card" style={{ textAlign: 'center', padding: '80px', borderRadius: '32px' }}>
@@ -475,94 +600,126 @@ const ServicesModule = () => {
           <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Comienza agregando los servicios que definirán tu marca.</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {services.map(service => (
-            <div key={service.id} className="glass-card animate-scale-in" style={{ 
-              borderRadius: '20px',
-              padding: '16px 24px',
-              border: '1px solid rgba(255,255,255,0.05)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '24px'
-            }}>
-              {/* Left: Category Badge & Icon */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: '200px' }}>
-                <div style={{ 
-                  width: '44px', 
-                  height: '44px', 
-                  borderRadius: '12px', 
-                  backgroundColor: 'rgba(212, 175, 55, 0.1)', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center' 
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          {viewMode === 'grid' || isMobile ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {services.map(service => (
+                <div key={service.id} className="glass-card animate-slide-up" style={{ 
+                  borderRadius: '20px',
+                  padding: '16px 24px',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '24px'
                 }}>
-                  {getCategoryIcon(service.category)}
-                </div>
-                <div>
-                  <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{service.category}</div>
-                  <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', margin: '2px 0' }}>{service.name}</h4>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                    <Clock size={12} /> {service.duration || 30} min
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: '200px' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(212, 175, 55, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {getCategoryIcon(service.category)}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{service.category}</div>
+                      <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', margin: '2px 0' }}>{service.name}</h4>
+                      {service.description && (
+                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: '4px 0', maxWidth: '250px', lineHeight: '1.4', fontStyle: 'italic' }}>{service.description}</p>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        <Clock size={12} /> {service.duration || 30} min
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {(service.included_items || []).map((item, idx) => (
+                      <span key={idx} style={{ fontSize: '10px', padding: '4px 10px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+                    {service.strategy_type && (
+                      <div style={{ padding: '4px 12px', borderRadius: '20px', border: '1px solid rgba(212, 175, 55, 0.3)', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212, 175, 55, 0.05)' }}>
+                        {service.strategy_type}
+                      </div>
+                    )}
+                    
+                    <div style={{ textAlign: 'right', minWidth: '100px' }}>
+                      <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)' }}>PRECIO</div>
+                      <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>${service.price}</div>
+                      {rates?.usd > 0 && (
+                        <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '700' }}>
+                          ≈ {Math.round(service.price * rates.usd).toLocaleString()} Bs.
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="action-btn" onClick={() => handleEditClick(service)} style={{ width: '36px', height: '36px' }}>
+                        <Edit2 size={16} />
+                      </button>
+                      <button onClick={() => handleDeleteService(service.id, service.name)} className="action-btn" style={{ width: '36px', height: '36px', color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.1)' }}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Middle: Included Items Summary */}
-              <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {(service.included_items || []).map((item, idx) => (
-                  <span key={idx} style={{ 
-                    fontSize: '10px', 
-                    padding: '4px 10px', 
-                    borderRadius: '8px', 
-                    backgroundColor: 'rgba(255,255,255,0.03)', 
-                    color: 'var(--text-muted)',
-                    border: '1px solid rgba(255,255,255,0.05)'
-                  }}>
-                    {item}
-                  </span>
-                ))}
-              </div>
-
-              {/* Right: Strategy & Price & Actions */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-                {service.strategy_type && (
-                  <div style={{ 
-                    padding: '4px 12px', 
-                    borderRadius: '20px', 
-                    border: '1px solid rgba(212, 175, 55, 0.3)', 
-                    fontSize: '10px', 
-                    fontWeight: '900', 
-                    color: 'var(--gold-primary)',
-                    backgroundColor: 'rgba(212, 175, 55, 0.05)'
-                  }}>
-                    {service.strategy_type}
-                  </div>
-                )}
-                
-                <div style={{ textAlign: 'right', minWidth: '80px' }}>
-                  <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)' }}>PRECIO</div>
-                  <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>${service.price}</div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button 
-                    className="action-btn" 
-                    onClick={() => handleEditClick(service)}
-                    style={{ width: '36px', height: '36px' }}
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteService(service.id, service.name)}
-                    className="action-btn" 
-                    style={{ width: '36px', height: '36px', color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.1)' }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
+          ) : (
+            <div className="glass-card animate-fade-in" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.03)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Servicio</th>
+                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Categoría</th>
+                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Duración</th>
+                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Precio</th>
+                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Comisiones (%)</th>
+                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {services.map((service) => (
+                    <tr key={service.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background-color 0.2s' }} className="table-row-hover">
+                      <td style={{ padding: '16px 24px' }}>
+                        <div style={{ fontWeight: '700', color: 'white', marginBottom: '4px' }}>{service.name}</div>
+                        {service.description && <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{service.description}</div>}
+                      </td>
+                      <td style={{ padding: '16px 24px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.05)', padding: '4px 10px', borderRadius: '8px' }}>
+                          {service.category}
+                        </span>
+                      </td>
+                      <td style={{ padding: '16px 24px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        {service.duration} min
+                      </td>
+                      <td style={{ padding: '16px 24px' }}>
+                        <div style={{ fontWeight: '800', color: 'white' }}>${service.price}</div>
+                        {rates?.usd > 0 && <div style={{ fontSize: '11px', color: 'var(--gold-primary)' }}>{Math.round(service.price * rates.usd).toLocaleString()} Bs.</div>}
+                      </td>
+                      <td style={{ padding: '16px 24px' }}>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <span title="Barbero" style={{ fontSize: '10px', color: '#32d74b' }}>B: {service.commission_barber}%</span>
+                          <span title="Lavado" style={{ fontSize: '10px', color: 'var(--gold-primary)' }}>L: {service.commission_washer}%</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          <button className="action-btn" onClick={() => handleEditClick(service)} style={{ width: '32px', height: '32px' }}>
+                            <Edit2 size={14} />
+                          </button>
+                          <button onClick={() => handleDeleteService(service.id, service.name)} className="action-btn" style={{ width: '32px', height: '32px', color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.1)' }}>
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -668,6 +825,88 @@ const ServicesModule = () => {
                 </div>
                 <button onClick={handleAddMasterChecklistItem} className="btn-gold" style={{ width: '40px', height: '40px', borderRadius: '10px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Plus size={20} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Billable Extras Management Modal */}
+      {isBillableExtrasModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div className="glass-card animate-scale-in" style={{ width: '100%', maxWidth: '500px', padding: '32px', borderRadius: '32px', border: '1px solid rgba(212,175,55,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div>
+                <h3 style={{ fontSize: '20px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Sparkles size={24} color="var(--gold-primary)" /> Servicios Adicionales (Extras)
+                </h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>Servicios con costo extra que se añaden en caja.</p>
+              </div>
+              <button onClick={() => setIsBillableExtrasModalOpen(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '8px', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {billableExtras.map(extra => (
+                  <div key={extra.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <input 
+                        className="form-input"
+                        value={editingExtra?.id === extra.id ? editingExtra.name : extra.name}
+                        onChange={e => setEditingExtra({ ...(editingExtra || extra), id: extra.id, name: e.target.value })}
+                        onFocus={() => setEditingExtra(extra)}
+                        style={{ background: 'transparent', border: 'none', padding: 0, height: 'auto', fontSize: '14px', fontWeight: '700', width: '100%' }}
+                      />
+                      <div style={{ fontSize: '11px', color: 'var(--gold-primary)', marginTop: '4px', fontWeight: '800' }}>PRECIO EN CAJA</div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                      <div style={{ position: 'relative', width: '80px' }}>
+                        <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '800' }}>$</span>
+                        <input 
+                          className="form-input"
+                          type="number"
+                          step="0.01"
+                          value={editingExtra?.id === extra.id ? editingExtra.price : extra.price}
+                          onChange={e => setEditingExtra({ ...(editingExtra || extra), id: extra.id, price: e.target.value })}
+                          onFocus={() => setEditingExtra(extra)}
+                          style={{ height: '36px', paddingLeft: '22px', fontSize: '13px', fontWeight: '800', textAlign: 'right', background: 'rgba(0,0,0,0.2)', border: editingExtra?.id === extra.id ? '1px solid var(--gold-primary)' : '1px solid transparent', width: '100%' }}
+                        />
+                      </div>
+                      
+                      {editingExtra?.id === extra.id ? (
+                        <button onClick={() => { handleUpdateBillableExtra(extra.id, { name: editingExtra.name, price: Number(editingExtra.price) }); setEditingExtra(null); }} className="action-btn" style={{ backgroundColor: '#32d74b', color: 'black', flexShrink: 0 }}>
+                          <Check size={16} strokeWidth={3} />
+                        </button>
+                      ) : (
+                        <button onClick={(e) => handleDeleteBillableExtra(e, extra.id, extra.name)} className="action-btn" style={{ backgroundColor: 'rgba(255,69,58,0.1)', color: '#ff453a', flexShrink: 0 }}>
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '0.5px' }}>NOMBRE DEL EXTRA</label>
+                  <input className="form-input" placeholder="Ej. Mascarilla..." value={newExtraName} onChange={e => setNewExtraName(e.target.value)} style={{ height: '44px', fontSize: '13px', width: '100%' }} />
+                </div>
+                <div style={{ width: '90px', flexShrink: 0 }}>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '0.5px' }}>PRECIO</label>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '12px', fontWeight: '800' }}>$</span>
+                    <input className="form-input" type="number" step="0.01" value={newExtraPrice} onChange={e => setNewExtraPrice(e.target.value)} style={{ height: '44px', paddingLeft: '24px', fontSize: '13px', fontWeight: '800', width: '100%' }} />
+                  </div>
+                </div>
+                <button onClick={handleAddBillableExtra} className="btn-gold" style={{ height: '44px', width: '44px', borderRadius: '12px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Plus size={24} />
                 </button>
               </div>
             </div>

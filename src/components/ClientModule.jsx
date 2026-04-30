@@ -16,13 +16,16 @@ import {
   X,
   Trash2,
   Download,
-  Check
+  Check,
+  LayoutGrid,
+  Table as TableIcon
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
+import { supabase } from '../lib/supabase';
 import AstroSelect from './AstroSelect';
 import AstroCamera from './AstroCamera';
 
-const ClientModule = ({ clients, onRefresh }) => {
+const ClientModule = ({ isMobile, clients, onRefresh }) => {
   const { showToast } = useNotifs();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
@@ -35,6 +38,7 @@ const ClientModule = ({ clients, onRefresh }) => {
     hair_type: 'Normal', 
     scalp_type: 'Normal' 
   });
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
 
   const [creating, setCreating] = useState(false);
 
@@ -99,9 +103,58 @@ const ClientModule = ({ clients, onRefresh }) => {
               <h2 style={{ fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px' }}>Archivo de <span className="text-gold">Clientes</span></h2>
               <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Fichas técnicas y galería de evolución.</p>
             </div>
-            <button className="btn-gold" onClick={() => setShowAddForm(!showAddForm)} style={{ borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Plus size={18} /> {showAddForm ? 'Cancelar' : 'Nuevo Cliente'}
-            </button>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              {/* View Toggles */}
+              <div style={{ 
+                display: 'flex', 
+                backgroundColor: 'rgba(255,255,255,0.03)', 
+                borderRadius: '12px', 
+                padding: '4px',
+                border: '1px solid rgba(255,255,255,0.05)',
+                marginRight: '12px'
+              }}>
+                <button 
+                  onClick={() => setViewMode('grid')}
+                  style={{ 
+                    padding: '8px 12px', 
+                    borderRadius: '8px', 
+                    border: 'none', 
+                    backgroundColor: viewMode === 'grid' ? 'rgba(212,175,55,0.1)' : 'transparent',
+                    color: viewMode === 'grid' ? 'var(--gold-primary)' : 'var(--text-muted)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '12px',
+                    fontWeight: '700'
+                  }}
+                >
+                  <LayoutGrid size={16} /> Tarjetas
+                </button>
+                <button 
+                  onClick={() => setViewMode('table')}
+                  style={{ 
+                    padding: '8px 12px', 
+                    borderRadius: '8px', 
+                    border: 'none', 
+                    backgroundColor: viewMode === 'table' ? 'rgba(212,175,55,0.1)' : 'transparent',
+                    color: viewMode === 'table' ? 'var(--gold-primary)' : 'var(--text-muted)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '12px',
+                    fontWeight: '700'
+                  }}
+                >
+                  <TableIcon size={16} /> Tabla
+                </button>
+              </div>
+
+              <button className="btn-gold" onClick={() => setShowAddForm(!showAddForm)} style={{ borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Plus size={18} /> {showAddForm ? 'Cancelar' : 'Nuevo Cliente'}
+              </button>
+            </div>
           </div>
 
           {showAddForm && (
@@ -178,7 +231,6 @@ const ClientModule = ({ clients, onRefresh }) => {
               }}
             />
           </div>
-
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
               <Loader2 className="animate-spin" size={40} color="var(--gold-primary)" />
@@ -188,7 +240,7 @@ const ClientModule = ({ clients, onRefresh }) => {
               <User size={48} color="var(--bg-tertiary)" style={{ marginBottom: '20px' }} />
               <p style={{ color: 'var(--text-muted)' }}>Archivo vacío. Agrega a tu primer cliente.</p>
             </div>
-          ) : (
+          ) : viewMode === 'grid' || isMobile ? (
             <div style={{ display: 'grid', gap: '16px' }}>
               {clients.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.phone?.includes(searchTerm)).map(client => (
                 <div 
@@ -197,7 +249,7 @@ const ClientModule = ({ clients, onRefresh }) => {
                   onClick={() => setSelectedClient(client)}
                   style={{ 
                     display: 'grid', 
-                    gridTemplateColumns: 'minmax(200px, 1.5fr) 1fr 1fr 1fr auto',
+                    gridTemplateColumns: 'minmax(200px, 1.5fr) 120px 1fr 1fr 1fr auto',
                     alignItems: 'center',
                     cursor: 'pointer',
                     padding: '20px 24px',
@@ -222,6 +274,9 @@ const ClientModule = ({ clients, onRefresh }) => {
                     </div>
                     <span style={{ fontWeight: '700', fontSize: '16px' }}>{client.name}</span>
                   </div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: '800', opacity: 0.8 }}>
+                    V-{client.id_card || '00.000.000'}
+                  </div>
                   <div style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '500' }}>
                     <Phone size={14} /> {client.phone}
                   </div>
@@ -244,6 +299,54 @@ const ClientModule = ({ clients, onRefresh }) => {
                   <ChevronRight size={20} color="var(--text-muted)" />
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="glass-card animate-fade-in" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.03)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cliente</th>
+                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cédula / ID</th>
+                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Teléfono</th>
+                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Registrado</th>
+                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Visitas</th>
+                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {clients
+                    .filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.phone?.includes(searchTerm) || c.id_card?.includes(searchTerm))
+                    .map((client) => (
+                      <tr 
+                        key={client.id} 
+                        onClick={() => setSelectedClient(client)}
+                        style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background-color 0.2s', cursor: 'pointer' }} 
+                        className="table-row-hover"
+                      >
+                        <td style={{ padding: '16px 24px' }}>
+                          <div style={{ fontWeight: '700', color: 'white' }}>{client.name}</div>
+                        </td>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '700' }}>
+                          V-{client.id_card || '00.000.000'}
+                        </td>
+                        <td style={{ padding: '16px 24px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+                          {client.phone}
+                        </td>
+                        <td style={{ padding: '16px 24px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                          {client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td style={{ padding: '16px 24px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.05)', padding: '4px 10px', borderRadius: '8px' }}>
+                            {client.total_visits || 0} Visitas
+                          </span>
+                        </td>
+                        <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                          <ChevronRight size={18} color="var(--text-muted)" />
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
             </div>
           )}
         </>
@@ -295,6 +398,8 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
   const [showCamera, setShowCamera] = useState(false);
   const [gallery, setGallery] = useState(client.work_gallery || []);
   const [selectedVisit, setSelectedVisit] = useState(null);
+  const [pendingPhoto, setPendingPhoto] = useState(null);
+  const [photoMeta, setPhotoMeta] = useState({ type: 'Normal', serviceId: null });
 
   useEffect(() => {
     if (client.work_gallery) {
@@ -375,41 +480,64 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
 
   const handlePhotoCaptured = async (image) => {
     try {
-      showToast('Optimizando imagen...', 'info');
-      // Create a canvas to compress the image even further
+      // Small but pro optimization
       const img = new Image();
       img.src = image;
-      await new Promise(resolve => img.onload = resolve);
-      
+      await new Promise(r => img.onload = r);
       const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 800; // Efficient size for high-speed sync
+      const MAX_WIDTH = 800;
       let width = img.width;
       let height = img.height;
-      
       if (width > MAX_WIDTH) {
         height = (MAX_WIDTH / width) * height;
         width = MAX_WIDTH;
       }
-      
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
-      
-      // Use 0.6 quality to ensure small payload while maintaining pro visual
       const optimizedImage = canvas.toDataURL('image/jpeg', 0.6);
 
-      const newGallery = [...gallery, optimizedImage];
+      setPendingPhoto(optimizedImage);
+      setShowCamera(false);
+    } catch (e) {
+      console.error(e);
+      showToast('Error al procesar imagen', 'error');
+    }
+  };
+
+  const confirmSavePhoto = async () => {
+    try {
+      showToast('Guardando en la nube...', 'info');
       
-      // Critical: Update both local state and DB sequentially
+      const photoObj = {
+        url: pendingPhoto,
+        type: photoMeta.type,
+        date: new Date().toISOString(),
+        service_id: photoMeta.serviceId,
+        service_name: photoMeta.serviceId ? history.find(h => h.id === photoMeta.serviceId)?.services?.name : 'Subida manual'
+      };
+
+      // Fetch latest gallery from DB to avoid overwriting barber's photos
+      const { data: latestClient } = await supabase
+        .from('clients')
+        .select('work_gallery')
+        .eq('id', client.id)
+        .single();
+      
+      const currentLatestGallery = Array.isArray(latestClient?.work_gallery) ? latestClient.work_gallery : [];
+      const newGallery = [photoObj, ...currentLatestGallery];
+      
       const updatedClient = await onUpdate({ work_gallery: newGallery });
       if (updatedClient) {
         setGallery(newGallery);
+        setPendingPhoto(null);
+        setPhotoMeta({ type: 'Normal', serviceId: null });
         showToast('Foto guardada en galería', 'success');
       }
     } catch (e) {
-      console.error('CRITICAL SYNC ERROR:', e);
-      showToast('Error de sincronización con la nube', 'error');
+      console.error(e);
+      showToast('Error al sincronizar con la nube', 'error');
     }
   };
 
@@ -637,12 +765,14 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
                         <button onClick={() => setSelectingFor(null)} style={{ background: 'none', border: 'none', color: 'white' }}><X size={20} /></button>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
-                        {gallery.map((img, i) => (
+                        {gallery
+                          .filter(img => selectingFor === 'A' ? img.type === 'Antes' : img.type === 'Después')
+                          .map((img, i) => (
                           <div 
                             key={i} 
                             onClick={() => {
-                              if (selectingFor === 'A') setPhotoA(img);
-                              if (selectingFor === 'B') setPhotoB(img);
+                              if (selectingFor === 'A') setPhotoA(img.url);
+                              if (selectingFor === 'B') setPhotoB(img.url);
                               setSelectingFor(null);
                             }}
                             style={{ 
@@ -650,10 +780,10 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
                               borderRadius: '8px', 
                               overflow: 'hidden', 
                               cursor: 'pointer',
-                              border: (selectingFor === 'A' ? photoA === img : photoB === img) ? '3px solid var(--gold-primary)' : 'none'
+                              border: (selectingFor === 'A' ? photoA === img.url : photoB === img.url) ? '3px solid var(--gold-primary)' : 'none'
                             }}
                           >
-                            <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </div>
                         ))}
                       </div>
@@ -665,7 +795,10 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
                 {gallery.map((img, i) => (
                   <div key={i} style={{ aspectRatio: '1/1', backgroundColor: 'var(--bg-tertiary)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }} className="group">
-                    <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={img.url || img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', padding: '8px', fontSize: '9px', fontWeight: '800', color: 'var(--gold-primary)' }}>
+                      {img.type || 'FOTO'}
+                    </div>
                     <button 
                       onClick={(e) => { e.stopPropagation(); handlePhotoDelete(i); }}
                       style={{ 
@@ -749,6 +882,49 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
           visit={selectedVisit} 
           onClose={() => setSelectedVisit(null)} 
         />
+      )}
+
+      {pendingPhoto && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div className="glass-card animate-scale-in" style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '24px', border: '1.5px solid rgba(212,175,55,0.3)' }}>
+            <h3 style={{ marginBottom: '20px', fontWeight: '900' }}>Configurar <span className="text-gold">Foto</span></h3>
+            
+            <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', marginBottom: '20px' }}>
+              <img src={pendingPhoto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <AstroSelect 
+                label="TIPO DE FOTO"
+                value={photoMeta.type}
+                onChange={(val) => setPhotoMeta({ ...photoMeta, type: val })}
+                options={[
+                  { label: 'Normal / General', value: 'Normal' },
+                  { label: 'Antes (Before)', value: 'Antes' },
+                  { label: 'Después (After)', value: 'Después' }
+                ]}
+              />
+
+              <AstroSelect 
+                label="ASOCIAR A VISITA (OPCIONAL)"
+                value={photoMeta.serviceId}
+                onChange={(val) => setPhotoMeta({ ...photoMeta, serviceId: val })}
+                options={[
+                  { label: 'Ninguna', value: null },
+                  ...history.map(h => ({ 
+                    label: `${new Date(h.created_at).toLocaleDateString()} - ${h.services?.name || h.description.split(' - ')[0].replace('Servicio: ', '')}`, 
+                    value: h.id 
+                  }))
+                ]}
+              />
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                <button onClick={() => setPendingPhoto(null)} style={{ flex: 1, padding: '14px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)', background: 'none', color: 'white', fontWeight: '700' }}>CANCELAR</button>
+                <button onClick={confirmSavePhoto} className="btn-gold" style={{ flex: 1, height: '48px', borderRadius: '14px' }}>GUARDAR FOTO</button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

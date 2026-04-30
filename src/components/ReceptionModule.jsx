@@ -8,16 +8,21 @@ import {
   Zap,
   CheckCircle2,
   Clock,
-  ArrowRight
+  ArrowRight,
+  ShoppingBag,
+  Sparkles,
+  X,
+  Package
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import AstroSelect from './AstroSelect';
 import NewClientModal from './NewClientModal';
 import ScheduleModal from './ScheduleModal';
+import { supabase } from '../lib/supabase';
 
 const ReceptionModule = ({ isMobile }) => {
-  const { showToast, triggerConfetti } = useNotifs();
+  const { showToast, triggerConfetti, triggerRocket } = useNotifs();
   const [clients, setClients] = useState([]);
   const [services, setServices] = useState([]);
   const [staff, setStaff] = useState([]);
@@ -25,11 +30,21 @@ const ReceptionModule = ({ isMobile }) => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedServices, setSelectedServices] = useState([]);
+  const [allExtras, setAllExtras] = useState([]);
+  const [selectedExtras, setSelectedExtras] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [selectedProducts, setSelectedProducts] = useState([]);
   const [idSearch, setIdSearch] = useState('');
+  
+  // Modals
   const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
+  const [isExtraModalOpen, setIsExtraModalOpen] = useState(false);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   
   const [activeAppointments, setActiveAppointments] = useState([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   
   const [formData, setFormData] = useState({
     serviceId: '',
@@ -46,18 +61,40 @@ const ReceptionModule = ({ isMobile }) => {
 
   const loadData = async () => {
     try {
-      const [c, s, st, active] = await Promise.all([
+      const [c, s, st, active, ext, inv, allApps] = await Promise.all([
         dataService.getClients(),
         dataService.getServices(),
         dataService.getStaff(),
-        dataService.getAppointmentsByState(['En Silla'])
+        dataService.getAppointmentsByState(['En Silla']),
+        dataService.getExtras(),
+        dataService.getInventory(),
+        dataService.getAppointmentsByState(['Agendado'])
       ]);
       setClients(c);
       setServices(s);
       setStaff(st);
       setActiveAppointments(active);
+      setAllExtras(ext || []);
+      setInventory(inv.filter(i => i.is_for_sale !== false));
+      
+      const today = new Date().toISOString().split('T')[0];
+      setUpcomingAppointments(allApps.filter(a => a.scheduled_at?.startsWith(today) || a.created_at?.startsWith(today)));
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleStartAppointment = async (id) => {
+    try {
+      setLoading(true);
+      await dataService.updateAppointmentStatus(id, 'En Silla');
+      showToast("¡Servicio iniciado! El cliente ya está en silla.");
+      triggerRocket();
+      loadData();
+    } catch (error) {
+      showToast("Error al iniciar servicio", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -72,15 +109,16 @@ const ReceptionModule = ({ isMobile }) => {
     }
   };
 
-  const addService = (serviceId) => {
+  const toggleService = (serviceId) => {
     const service = services.find(s => s.id === serviceId);
-    if (service && !selectedServices.find(s => s.id === serviceId)) {
+    if (!service) return;
+    
+    const exists = selectedServices.find(s => s.id === serviceId);
+    if (exists) {
+      setSelectedServices(selectedServices.filter(s => s.id !== serviceId));
+    } else {
       setSelectedServices([...selectedServices, service]);
     }
-  };
-
-  const removeService = (serviceId) => {
-    setSelectedServices(selectedServices.filter(s => s.id !== serviceId));
   };
 
   const handleCreateClient = () => {
@@ -99,10 +137,35 @@ const ReceptionModule = ({ isMobile }) => {
     }
     setIsScheduleModalOpen(true);
   };
+  
+  const toggleExtra = (extra) => {
+    const exists = selectedExtras.find(e => e.id === extra.id);
+    if (exists) {
+      setSelectedExtras(selectedExtras.filter(e => e.id !== extra.id));
+    } else {
+      setSelectedExtras([...selectedExtras, extra]);
+    }
+  };
+  
+  const toggleProduct = (product) => {
+    const exists = selectedProducts.find(p => p.id === product.id);
+    if (exists) {
+      setSelectedProducts(selectedProducts.filter(p => p.id !== product.id));
+    } else {
+      setSelectedProducts([...selectedProducts, { ...product, quantity: 1 }]);
+    }
+  };
 
   const handleSubmit = async (statusOverride, scheduledAt = null) => {
-    if (!selectedClient || selectedServices.length === 0 || !formData.staffId) {
-      showToast("Selecciona cliente, al menos un servicio y barbero", "error");
+    const isProductOnly = selectedServices.length === 0 && selectedProducts.length > 0;
+    
+    if (!selectedClient) {
+      showToast("Selecciona un cliente primero", "error");
+      return;
+    }
+
+    if (!isProductOnly && (selectedServices.length === 0 || !formData.staffId)) {
+      showToast("Selecciona servicio y barbero", "error");
       return;
     }
 
@@ -111,25 +174,59 @@ const ReceptionModule = ({ isMobile }) => {
       
       // We process multiple services as individual appointments/lines for now 
       // but linked to the same event. In a complex DB we'd have a Transaction table.
-      const promises = selectedServices.map(service => 
-        dataService.createAppointment({
-          client_id: selectedClient.id,
-          service_id: service.id,
-          staff_id: formData.staffId,
-          status: statusOverride || formData.status,
-          total_price: service.price,
-          scheduled_at: scheduledAt
-        })
-      );
+      let appointments = [];
       
-      await Promise.all(promises);
+      if (isProductOnly) {
+        // Create a shell appointment for the products to live in
+        const { data: directSale, error: dsError } = await supabase
+          .from('appointments')
+          .insert([{
+            client_id: selectedClient.id,
+            status: 'Por Pagar',
+            total_price: selectedProducts.reduce((acc, p) => acc + (p.price * p.quantity), 0)
+          }])
+          .select()
+          .single();
+        
+        if (dsError) throw dsError;
+        appointments = [directSale];
+      } else {
+        const promises = selectedServices.map(service => 
+          dataService.createAppointment({
+            client_id: selectedClient.id,
+            service_id: service.id,
+            staff_id: formData.staffId,
+            status: statusOverride || formData.status,
+            total_price: service.price,
+            scheduled_at: scheduledAt
+          })
+        );
+        appointments = await Promise.all(promises);
+      }
+      
+      // If there are extras/products, link them to the first appointment
+      if (appointments.length > 0) {
+        const mainAppId = appointments[0].id;
+        
+        const extraPromises = selectedExtras.map(extra => 
+          dataService.addExtraToAppointment(mainAppId, extra.id, extra.price)
+        );
+        
+        const productPromises = selectedProducts.map(prod => 
+          dataService.addProductToAppointment(mainAppId, prod.id, prod.quantity, prod.price)
+        );
+        
+        await Promise.all([...extraPromises, ...productPromises]);
+      }
 
-      showToast(scheduledAt ? `¡Cita agendada para las ${new Date(scheduledAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}!` : `¡Orden enviada! ${selectedServices.length} servicios en cola.`);
-      if (!statusOverride || statusOverride === 'En Silla') triggerConfetti();
+      showToast(isProductOnly ? "Venta enviada a caja" : (scheduledAt ? `¡Cita agendada para las ${new Date(scheduledAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}!` : `¡Orden enviada! ${selectedServices.length} servicios en cola.`));
+      if (!statusOverride || statusOverride === 'En Silla') triggerRocket();
       
       // Reset
       setSelectedClient(null);
       setSelectedServices([]);
+      setSelectedExtras([]);
+      setSelectedProducts([]);
       setFormData({ serviceId: '', staffId: '', status: 'En Silla' });
       setIsScheduleModalOpen(false);
       loadData();
@@ -209,40 +306,65 @@ const ReceptionModule = ({ isMobile }) => {
           </div>
 
           <div className="glass-card" style={{ borderRadius: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
               <Scissors size={20} color="var(--gold-primary)" />
-              <span style={{ fontWeight: '800', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>2. Detalle del Servicio</span>
+              <span style={{ fontWeight: '800', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>2. Detalle de la Orden</span>
             </div>
             
-            <AstroSelect 
-              label="AÑADIR SERVICIO / UPSELL"
-              placeholder="Selecciona servicio"
-              value="" // Static selector that adds to list
-              onChange={val => addService(val)}
-              options={services.map(s => ({ label: `${s.name} ($${s.price})`, value: s.id }))}
-              style={{ marginBottom: '16px' }}
-            />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '24px' }}>
+              <button 
+                onClick={() => setIsServiceModalOpen(true)}
+                style={{ background: 'rgba(212,175,55,0.05)', border: '1px dashed rgba(212,175,55,0.3)', padding: '12px', borderRadius: '16px', color: 'var(--gold-primary)', fontWeight: '800', fontSize: '11px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}
+              >
+                <Scissors size={18} /> + SERVICIO
+              </button>
+              <button 
+                onClick={() => setIsExtraModalOpen(true)}
+                style={{ background: 'rgba(212,175,55,0.05)', border: '1px dashed rgba(212,175,55,0.3)', padding: '12px', borderRadius: '16px', color: 'var(--gold-primary)', fontWeight: '800', fontSize: '11px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}
+              >
+                <Sparkles size={18} /> + EXTRA
+              </button>
+              <button 
+                onClick={() => setIsProductModalOpen(true)}
+                style={{ background: 'rgba(212,175,55,0.05)', border: '1px dashed rgba(212,175,55,0.3)', padding: '12px', borderRadius: '16px', color: 'var(--gold-primary)', fontWeight: '800', fontSize: '11px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}
+              >
+                <ShoppingBag size={18} /> + PRODUCTO
+              </button>
+            </div>
 
-            {selectedServices.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
-                {selectedServices.map(s => (
-                  <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: '700' }}>{s.name}</div>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '800' }}>${s.price}</div>
-                        {s.included_items && s.included_items.length > 0 && (
-                          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                            • {s.included_items.join(' • ')}
-                          </div>
-                        )}
+            {(selectedServices.length > 0 || selectedExtras.length > 0 || selectedProducts.length > 0) && (
+              <div style={{ backgroundColor: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '20px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {selectedServices.map(s => (
+                    <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span style={{ color: 'white', fontWeight: '700' }}>{s.name}</span>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>${s.price}</span>
+                        <button onClick={() => removeService(s.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '14px' }}>&times;</button>
                       </div>
                     </div>
-                    <button onClick={() => removeService(s.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px' }}>&times;</button>
-                  </div>
-                ))}
-                <div style={{ textAlign: 'right', padding: '10px', fontWeight: '800', color: 'var(--gold-primary)' }}>
-                  TOTAL: ${selectedServices.reduce((acc, s) => acc + s.price, 0)}
+                  ))}
+                  {selectedExtras.map(e => (
+                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>+ {e.name}</span>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>${e.price}</span>
+                        <button onClick={() => toggleExtra(e)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '14px' }}>&times;</button>
+                      </div>
+                    </div>
+                  ))}
+                  {selectedProducts.map(p => (
+                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span style={{ color: '#32d74b' }}>📦 {p.name}</span>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>${p.price}</span>
+                        <button onClick={() => toggleProduct(p)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '14px' }}>&times;</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'right', fontWeight: '900', color: 'var(--gold-primary)', fontSize: '18px' }}>
+                  TOTAL: ${selectedServices.reduce((acc, s) => acc + s.price, 0) + selectedExtras.reduce((acc, e) => acc + e.price, 0) + selectedProducts.reduce((acc, p) => acc + (p.price * p.quantity), 0)}
                 </div>
               </div>
             )}
@@ -265,7 +387,13 @@ const ReceptionModule = ({ isMobile }) => {
                   return (
                     <button
                       key={s.id}
-                      onClick={() => setFormData({...formData, staffId: s.id})}
+                      onClick={() => {
+                        if (formData.staffId === s.id) {
+                          setFormData({...formData, staffId: ''});
+                        } else {
+                          setFormData({...formData, staffId: s.id});
+                        }
+                      }}
                       style={{
                         padding: '16px 8px',
                         borderRadius: '20px',
@@ -326,6 +454,45 @@ const ReceptionModule = ({ isMobile }) => {
                 })}
               </div>
             </div>
+
+            {/* Upcoming Appointments List */}
+            {upcomingAppointments.length > 0 && (
+              <div style={{ marginTop: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                  <Calendar size={16} color="var(--gold-primary)" />
+                  <span style={{ fontWeight: '800', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase' }}>Citas Agendadas Hoy</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {upcomingAppointments.map(app => (
+                    <div 
+                      key={app.id} 
+                      style={{ 
+                        padding: '16px', 
+                        borderRadius: '16px', 
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.03)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: '800', fontSize: '14px' }}>{app.clients?.name}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {app.staff?.name}
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => handleStartAppointment(app.id)}
+                        style={{ padding: '8px 12px', borderRadius: '10px', background: 'var(--gold-primary)', color: 'black', border: 'none', fontSize: '10px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                      >
+                        <Zap size={12} /> INICIAR
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
@@ -338,50 +505,99 @@ const ReceptionModule = ({ isMobile }) => {
                 <h3 style={{ color: 'var(--text-muted)' }}>Identifica al cliente</h3>
                 <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.2)', marginTop: '8px' }}>Ingresa la Cédula para cargar su ficha técnica.</p>
               </>
-            ) : selectedServices.length === 0 ? (
+            ) : selectedServices.length === 0 && selectedProducts.length === 0 ? (
               <>
                 <Scissors size={48} color="rgba(212,175,55,0.2)" style={{ marginBottom: '20px' }} />
-                <h3 style={{ color: 'var(--text-secondary)' }}>Añade los servicios</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>Busca el MVP y añade los Upsells correspondientes.</p>
+                <h3 style={{ color: 'var(--text-secondary)' }}>Añade productos o servicios</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>Selecciona lo que el cliente desea adquirir.</p>
               </>
             ) : (
-              <div className="animate-slide-up">
+              <div className="animate-slide-up" style={{ width: '100%' }}>
                 <CheckCircle2 size={56} color="var(--gold-primary)" style={{ marginBottom: '24px' }} />
                 <h3 style={{ fontSize: '24px', marginBottom: '8px' }}>Todo Listo</h3>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>
-                  {selectedClient.name} se atenderá con {staff.find(s => s.id === formData.staffId)?.name || '...'}
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '14px' }}>
+                  Confirmación para <span style={{ color: 'white', fontWeight: '800' }}>{selectedClient.name}</span>
                 </p>
+
+                {/* Detailed Summary for Confirmation */}
+                <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '20px', padding: '20px', marginBottom: '32px', textAlign: 'left', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px', marginBottom: '12px', textTransform: 'uppercase' }}>Resumen de Atención</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {selectedServices.map(s => (
+                      <div key={s.id}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <Scissors size={14} color="var(--gold-primary)" />
+                          <span style={{ fontSize: '13px', fontWeight: '700' }}>{s.name}</span>
+                        </div>
+                        {s.included_items && s.included_items.length > 0 && (
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '24px', marginTop: '2px' }}>
+                            Incluye: {s.included_items.join(' • ')}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {selectedExtras.map(e => (
+                      <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Sparkles size={14} color="var(--gold-primary)" />
+                        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{e.name} (Extra)</span>
+                      </div>
+                    ))}
+                    {selectedProducts.map(p => (
+                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <ShoppingBag size={14} color="#32d74b" />
+                        <span style={{ fontSize: '13px', color: '#32d74b' }}>{p.name}</span>
+                      </div>
+                    ))}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <Users size={14} color="var(--text-muted)" />
+                      <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Barbero: <span style={{ color: 'white', fontWeight: '700' }}>{staff.find(s => s.id === formData.staffId)?.name || 'No seleccionado'}</span></span>
+                    </div>
+                  </div>
+                </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
-                  <button 
-                    disabled={loading || activeAppointments.some(a => a.staff_id === formData.staffId)}
-                    onClick={() => handleSubmit('En Silla')}
-                    className="btn-gold" 
-                    style={{ 
-                      height: '60px', 
-                      borderRadius: '18px', 
-                      fontSize: '16px',
-                      opacity: activeAppointments.some(a => a.staff_id === formData.staffId) ? 0.5 : 1,
-                      cursor: activeAppointments.some(a => a.staff_id === formData.staffId) ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    <Zap size={20} fill="currentColor" /> 
-                    {activeAppointments.some(a => a.staff_id === formData.staffId) ? 'BARBERO OCUPADO' : 'INICIAR AHORA'}
-                  </button>
-                  
-                  {activeAppointments.some(a => a.staff_id === formData.staffId) && (
-                    <p style={{ fontSize: '11px', color: '#ff453a', fontWeight: '700', marginTop: '-4px' }}>
-                      Usa "Agendar para después" para poner al cliente en cola.
-                    </p>
-                  )}
+                  {selectedServices.length > 0 ? (
+                    <>
+                      <button 
+                        disabled={loading || (formData.staffId && activeAppointments.some(a => a.staff_id === formData.staffId))}
+                        onClick={() => handleSubmit('En Silla')}
+                        className="btn-gold" 
+                        style={{ 
+                          height: '60px', 
+                          borderRadius: '18px', 
+                          fontSize: '16px',
+                          opacity: (formData.staffId && activeAppointments.some(a => a.staff_id === formData.staffId)) ? 0.5 : 1,
+                          cursor: (formData.staffId && activeAppointments.some(a => a.staff_id === formData.staffId)) ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        <Zap size={20} fill="currentColor" /> 
+                        {activeAppointments.some(a => a.staff_id === formData.staffId) ? 'BARBERO OCUPADO' : 'INICIAR AHORA'}
+                      </button>
+                      
+                      {activeAppointments.some(a => a.staff_id === formData.staffId) && (
+                        <p style={{ fontSize: '11px', color: '#ff453a', fontWeight: '700', marginTop: '-4px' }}>
+                          Usa "Agendar para después" para poner al cliente en cola.
+                        </p>
+                      )}
 
-                  <button 
-                    disabled={loading}
-                    onClick={handleScheduleClick}
-                    style={{ background: 'none', border: '1px solid var(--border-color)', color: 'white', height: '56px', borderRadius: '18px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
-                  >
-                    <Calendar size={18} /> AGENDAR PARA DESPUÉS
-                  </button>
+                      <button 
+                        disabled={loading}
+                        onClick={handleScheduleClick}
+                        style={{ background: 'none', border: '1px solid var(--border-color)', color: 'white', height: '56px', borderRadius: '18px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                      >
+                        <Calendar size={18} /> AGENDAR PARA DESPUÉS
+                      </button>
+                    </>
+                  ) : (
+                    <button 
+                      disabled={loading}
+                      onClick={() => handleSubmit('Por Pagar')}
+                      className="btn-gold" 
+                      style={{ height: '60px', borderRadius: '18px', fontSize: '16px', backgroundColor: '#32d74b', color: 'black', border: 'none' }}
+                    >
+                      <ShoppingBag size={20} /> ENVIAR A CAJA (PRODUCTOS)
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -404,12 +620,123 @@ const ReceptionModule = ({ isMobile }) => {
         onSchedule={(date) => handleSubmit('Agendado', date)}
       />
 
+      {/* Selection Modals */}
+      <SelectionModal 
+        isOpen={isServiceModalOpen}
+        onClose={() => setIsServiceModalOpen(false)}
+        title="Seleccionar Servicios"
+        icon={<Scissors size={24} color="var(--gold-primary)" />}
+        items={services}
+        selectedItems={selectedServices}
+        onToggle={(s) => toggleService(s.id)}
+      />
+
+      <SelectionModal 
+        isOpen={isExtraModalOpen}
+        onClose={() => setIsExtraModalOpen(false)}
+        title="Añadir Extras"
+        icon={<Sparkles size={24} color="var(--gold-primary)" />}
+        items={allExtras}
+        selectedItems={selectedExtras}
+        onToggle={toggleExtra}
+      />
+
+      <SelectionModal 
+        isOpen={isProductModalOpen}
+        onClose={() => setIsProductModalOpen(false)}
+        title="Venta de Productos"
+        icon={<ShoppingBag size={24} color="var(--gold-primary)" />}
+        items={inventory}
+        selectedItems={selectedProducts}
+        onToggle={toggleProduct}
+      />
+
       <style>{`
         .hover-item:hover {
           background-color: rgba(212,175,55,0.1) !important;
           transform: translateX(5px);
         }
       `}</style>
+    </div>
+  );
+};
+
+const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, onToggle }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div className="glass-card animate-scale-in" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', borderRadius: '32px', border: '1px solid rgba(212,175,55,0.2)', padding: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {icon}
+            <h3 style={{ fontSize: '20px', fontWeight: '800' }}>{title}</h3>
+          </div>
+          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <div style={{ overflowY: 'auto', flex: 1, paddingRight: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {items.map(item => {
+              const isSelected = selectedItems.find(si => si.id === item.id);
+              return (
+                <button 
+                  key={item.id}
+                  onClick={() => onToggle(item)}
+                  style={{
+                    padding: '20px',
+                    borderRadius: '24px',
+                    border: isSelected ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
+                    background: isSelected ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '20px',
+                    width: '100%'
+                  }}
+                >
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} style={{ width: '80px', height: '80px', borderRadius: '16px', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '80px', height: '80px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Package size={32} color="rgba(255,255,255,0.2)" />
+                    </div>
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ fontSize: '16px', fontWeight: '800', color: isSelected ? 'var(--gold-primary)' : 'white' }}>{item.name}</div>
+                      <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--gold-primary)' }}>${item.price}</div>
+                    </div>
+                    {item.included_items && item.included_items.length > 0 && (
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: '1.5' }}>
+                        <span style={{ color: 'var(--gold-primary)', fontWeight: '800', fontSize: '9px', textTransform: 'uppercase', marginRight: '6px' }}>Incluye:</span>
+                        {item.included_items.join(' • ')}
+                      </div>
+                    )}
+                  </div>
+                  {isSelected && (
+                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <CheckCircle2 size={16} color="black" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <button 
+          onClick={onClose}
+          className="btn-gold"
+          style={{ marginTop: '24px', height: '54px', borderRadius: '16px' }}
+        >
+          LISTO
+        </button>
+      </div>
     </div>
   );
 };

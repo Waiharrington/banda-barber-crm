@@ -10,7 +10,8 @@ const AstroSelect = ({
   onChange, 
   placeholder = "Seleccionar...", 
   label = "",
-  style = {}
+  style = {},
+  disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
@@ -33,18 +34,18 @@ const AstroSelect = ({
   };
 
   return (
-    <div className="form-group" style={{ position: 'relative', width: '100%', ...style }} ref={containerRef}>
+    <div className="form-group" style={{ position: 'relative', width: '100%', ...style, opacity: disabled ? 0.6 : 1, pointerEvents: disabled ? 'none' : 'auto' }} ref={containerRef}>
       {label && <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</label>}
       
       <div 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
         style={{
           background: 'rgba(255, 255, 255, 0.05)',
           border: isOpen ? '1px solid var(--gold-primary)' : '1px solid rgba(255, 255, 255, 0.1)',
           padding: '12px 16px',
           borderRadius: '12px',
           color: selectedOption ? 'white' : 'var(--text-muted)',
-          cursor: 'pointer',
+          cursor: disabled ? 'not-allowed' : 'pointer',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',

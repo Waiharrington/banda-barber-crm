@@ -334,6 +334,61 @@ input:focus, select:focus, textarea:focus {
 @keyframes fall {
   to { transform: translateY(100vh) rotate(720deg); }
 }
+
+/* --- Rocket Launch Animation --- */
+.rocket-container {
+  position: fixed;
+  bottom: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.rocket-body {
+  font-size: 50px;
+  filter: drop-shadow(0 0 20px var(--gold-primary));
+  animation: launchRocket 2.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.rocket-trail {
+  width: 4px;
+  height: 60px;
+  background: linear-gradient(to bottom, var(--gold-primary), transparent);
+  box-shadow: 0 0 20px var(--gold-primary);
+  margin-top: -10px;
+  opacity: 0.8;
+  border-radius: 4px;
+}
+
+@keyframes launchRocket {
+  0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+  20% { transform: translateY(-50px) scale(1.1) rotate(2deg); }
+  40% { transform: translateY(-150px) scale(1.2) rotate(-2deg); }
+  100% { transform: translateY(-120vh) scale(1.5) rotate(0deg); opacity: 0; }
+}
+
+.rocket-smoke {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  background: rgba(212, 175, 55, 0.3);
+  border-radius: 50%;
+  filter: blur(8px);
+  animation: smokeRise 1.5s ease-out forwards;
+  z-index: 9999;
+}
+
+@keyframes smokeRise {
+  from { transform: translate(-50%, 0) scale(1); opacity: 0.6; }
+  to { transform: translate(-50%, -100px) scale(5); opacity: 0; }
+}
 /* --- Astro Loader --- */
 .astro-loader-container {
   position: fixed;

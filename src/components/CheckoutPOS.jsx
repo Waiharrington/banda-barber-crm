@@ -19,16 +19,24 @@ import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import AstroSelect from './AstroSelect';
 import AstroDialog from './AstroDialog';
+import NewClientModal from './NewClientModal';
+import { UserPlus } from 'lucide-react';
 
 const CheckoutPOS = ({ isMobile, rates }) => {
-  const { showToast, triggerConfetti } = useNotifs();
+  const { showToast, triggerConfetti, triggerRocket } = useNotifs();
   const [pendingServices, setPendingServices] = useState([]);
   const [inventory, setInventory] = useState([]);
+  const [allExtras, setAllExtras] = useState([]);
+  const [allClients, setAllClients] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Selection State
   const [selectedApp, setSelectedApp] = useState(null);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [isDirectSale, setIsDirectSale] = useState(false);
   const [idSearch, setIdSearch] = useState('');
+  const [directSaleIdSearch, setDirectSaleIdSearch] = useState('');
+  const [showNewClientModal, setShowNewClientModal] = useState(false);
   
   // Checkout Multi-State
   const [fixedRate, setFixedRate] = useState(rates?.usd || 0);
@@ -39,6 +47,11 @@ const CheckoutPOS = ({ isMobile, rates }) => {
   const [methodUsd, setMethodUsd] = useState('Efectivo');
   const [methodBs, setMethodBs] = useState('Pago Móvil');
 
+  // Modal State
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showExtraModal, setShowExtraModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
   // Dialog State
   const [dialog, setDialog] = useState({ isOpen: false, type: 'alert', title: '', message: '', onConfirm: null });
 
@@ -47,12 +60,28 @@ const CheckoutPOS = ({ isMobile, rates }) => {
     if (rates?.usd) setFixedRate(rates.usd);
   }, [rates]);
 
+  useEffect(() => {
+    if (selectedApp) {
+      const products = selectedApp.appointment_products?.map(ap => ({
+        id: ap.inventory?.id,
+        name: ap.inventory?.name,
+        price: ap.price,
+        quantity: ap.quantity
+      })) || [];
+      setCart(products);
+    } else if (!isDirectSale) {
+      setCart([]);
+    }
+  }, [selectedApp, isDirectSale]);
+
   const loadData = async () => {
     try {
       setLoading(true);
-      const [apps, inv] = await Promise.all([
+      const [apps, inv, ext, cls] = await Promise.all([
         dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']),
-        dataService.getInventory()
+        dataService.getInventory(),
+        dataService.getExtras(),
+        dataService.getClients()
       ]);
       
       const today = new Date().toISOString().split('T')[0];
@@ -63,6 +92,8 @@ const CheckoutPOS = ({ isMobile, rates }) => {
 
       setPendingServices(filtered);
       setInventory(inv.filter(i => i.stock > 0 && i.category === 'Venta'));
+      setAllExtras(ext || []);
+      setAllClients(cls || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -85,7 +116,8 @@ const CheckoutPOS = ({ isMobile, rates }) => {
 
   const servicePrice = selectedApp?.services?.price || 0;
   const productsTotal = cart.reduce((acc, p) => acc + (p.price * p.quantity), 0);
-  const totalUsd = servicePrice + productsTotal + Number(tip);
+  const extrasTotal = selectedApp?.appointment_extras?.reduce((acc, e) => acc + (e.price || 0), 0) || 0;
+  const totalUsd = servicePrice + productsTotal + extrasTotal + Number(tip);
   const totalBs = (totalUsd * fixedRate).toFixed(2);
   
   const remainingBs = Math.max(0, (totalUsd - Number(cashUsd)) * fixedRate).toFixed(2);
@@ -100,23 +132,65 @@ const CheckoutPOS = ({ isMobile, rates }) => {
     showToast(`${product.name} añadido`);
   };
 
-  const handleProcessCheckout = async () => {
+  const handleAddExtra = async (extra) => {
     if (!selectedApp) return;
+    try {
+      setLoading(true);
+      await dataService.addExtraToAppointment(selectedApp.id, extra.id, extra.price);
+      showToast(`${extra.name} añadido a la cuenta.`);
+      await loadData();
+      // Sync local selectedApp
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
+      const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
+      setSelectedApp(updatedSelected);
+    } catch (e) {
+      showToast("Error al añadir extra", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveExtra = async (extraId) => {
+    try {
+      setLoading(true);
+      await dataService.removeExtraFromAppointment(extraId);
+      showToast("Extra eliminado.");
+      await loadData();
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
+      const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
+      setSelectedApp(updatedSelected);
+    } catch (e) {
+      showToast("Error al eliminar extra", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProcessCheckout = async () => {
+    if (!selectedApp && !selectedClient) {
+      showToast("Selecciona un cliente para la venta directa", "warning");
+      return;
+    }
+    if (cart.length === 0) {
+      showToast("Agrega al menos un producto al carrito", "warning");
+      return;
+    }
 
     try {
       setLoading(true);
       
         const paymentData = {
-          appointmentId: selectedApp.id,
-          clientName: selectedApp.clients.name,
-          serviceName: selectedApp.services.name,
+          appointmentId: selectedApp?.id || null,
+          clientId: selectedApp?.client_id || selectedClient?.id,
+          clientName: selectedApp?.clients?.name || selectedClient?.name,
+          serviceName: selectedApp?.services?.name || 'Venta de Productos',
           totalUsd: totalUsd,
           fixedRate: fixedRate,
           isMixed: paymentMode === 'mixed',
           cashUsd: Number(cashUsd),
           transferBs: Number(remainingBs),
           totalTips: Number(tip),
-          staffInvolved: [
+          staffInvolved: selectedApp ? [
             { 
               staffId: selectedApp.staff_id, 
               commissionEarned: (() => {
@@ -134,7 +208,7 @@ const CheckoutPOS = ({ isMobile, rates }) => {
               })(), 
               tip: Number(tip)
             }
-          ],
+          ] : [],
           products: cart,
           methodUsd: methodUsd,
           methodBs: methodBs
@@ -142,16 +216,19 @@ const CheckoutPOS = ({ isMobile, rates }) => {
 
       await dataService.processFinalPayment(paymentData);
       
-      triggerConfetti();
+      triggerRocket();
       showToast("¡Venta completada con éxito!", "success");
       
       // Clear state
       setSelectedApp(null);
+      setSelectedClient(null);
+      setIsDirectSale(false);
       setCart([]);
       setTip(0);
       setCashUsd(0);
       loadData();
     } catch (err) {
+      console.error("Error en checkout:", err);
       showToast("Error al procesar pago", "error");
     } finally {
       setLoading(false);
@@ -159,17 +236,29 @@ const CheckoutPOS = ({ isMobile, rates }) => {
   };
 
   const handleManualSale = () => {
-    setDialog({
-      isOpen: true,
-      type: 'confirm',
-      title: 'Nueva Venta Directa',
-      message: '¿Deseas iniciar una venta manual sin cita previa?',
-      onConfirm: () => {
-        // Implementation for direct sale if needed
-        setDialog({ ...dialog, isOpen: false });
-        showToast("Selecciona los productos y servicios abajo.");
-      }
-    });
+    setIsDirectSale(true);
+    setSelectedApp(null);
+    setSelectedClient(null);
+    setDirectSaleIdSearch('');
+    setCart([]);
+    showToast("Venta Directa activada. Ingresa la cédula del cliente.");
+  };
+
+  const handleDirectSaleIdSearch = () => {
+    const client = allClients.find(c => c.id_card === directSaleIdSearch);
+    if (client) {
+      setSelectedClient(client);
+      showToast(`Cliente enlazado: ${client.name}`);
+    } else {
+      showToast("Cédula no encontrada. ¿Es un cliente nuevo?", "warning");
+    }
+  };
+
+  const handleNewClientSuccess = (newClient) => {
+    setAllClients([...allClients, newClient]);
+    setSelectedClient(newClient);
+    setShowNewClientModal(false);
+    showToast(`¡Cliente ${newClient.name} registrado y enlazado!`);
   };
 
   if (!rates?.usd && !loading) {
@@ -193,16 +282,25 @@ const CheckoutPOS = ({ isMobile, rates }) => {
         {/* Left: Pending Queue */}
         <section>
           <div className="glass-card" style={{ marginBottom: '32px', borderRadius: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <History size={20} color="var(--gold-primary)" />
-              <span style={{ fontWeight: '800', fontSize: '13px', letterSpacing: '1px', textTransform: 'uppercase' }}>Sincronizar por Cédula</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <History size={20} color="var(--gold-primary)" />
+                <span style={{ fontWeight: '800', fontSize: '13px', letterSpacing: '1px', textTransform: 'uppercase' }}>Cola de Cobro</span>
+              </div>
+              <button 
+                className="btn-gold" 
+                onClick={handleManualSale}
+                style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '10px' }}
+              >
+                <Plus size={14} /> VENTA DIRECTA
+              </button>
             </div>
 
             <div style={{ position: 'relative', marginBottom: '24px' }}>
               <Search style={{ position: 'absolute', left: '16px', top: '14px' }} size={18} color="var(--gold-primary)" />
               <input 
                 type="text" 
-                placeholder="Ingresa Cédula / ID del cliente..." 
+                placeholder="Buscar por Cédula o Nombre..." 
                 value={idSearch}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -263,9 +361,9 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                     </div>
                     <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Scissors size={12} /> {app.services.name} • <span style={{ fontWeight: '600' }}>{app.staff?.name.split(' ')[0]}</span>
+                        <Scissors size={12} /> {app.services?.name || 'Venta de Productos'} • <span style={{ fontWeight: '600' }}>{app.staff?.name?.split(' ')[0] || 'Caja'}</span>
                       </div>
-                      <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>${app.services.price}</span>
+                      <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>${app.services?.price || app.total_price || 0}</span>
                     </div>
                     <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
                       ID: {app.clients.id_card || 'Sin Cédula'}
@@ -302,7 +400,10 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                         </div>
                       </div>
                       <button 
-                        onClick={() => handleStartAppointment(app.id)}
+                        onClick={() => {
+                          handleStartAppointment(app.id);
+                          triggerRocket();
+                        }}
                         style={{ padding: '8px 12px', borderRadius: '10px', background: 'var(--gold-primary)', color: 'black', border: 'none', fontSize: '10px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
                       >
                         <Zap size={12} /> INICIAR
@@ -314,40 +415,36 @@ const CheckoutPOS = ({ isMobile, rates }) => {
             </div>
           </div>
 
-          {selectedApp && (
-            <div className="glass-card animate-slide-up" style={{ borderRadius: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-                <ShoppingBag size={20} color="var(--gold-primary)" />
-                <span style={{ fontWeight: '800', fontSize: '13px', letterSpacing: '1px', textTransform: 'uppercase' }}>Upselling: Productos</span>
-              </div>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                {inventory.map(item => (
-                  <button 
-                    key={item.id} 
-                    onClick={() => handleAddToCart(item)}
-                    style={{ 
-                      padding: '12px', 
-                      borderRadius: '16px', 
-                      border: '1px solid rgba(255,255,255,0.05)', 
-                      textAlign: 'left',
-                      background: 'rgba(255,255,255,0.01)',
-                      cursor: 'pointer'
-                    }}
-                    className="hover-item"
-                  >
-                    <div style={{ fontWeight: '700', fontSize: '12px', marginBottom: '4px' }}>{item.name}</div>
-                    <div style={{ color: 'var(--gold-primary)', fontWeight: '800', fontSize: '14px' }}>${item.price}</div>
-                  </button>
-                ))}
-              </div>
+          {(selectedApp || isDirectSale) && (
+            <div className="glass-card animate-slide-up" style={{ borderRadius: '24px', display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={() => setShowProductModal(true)}
+                style={{ flex: 1, padding: '24px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.05)', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}
+                className="hover-item"
+              >
+                <div style={{ background: 'var(--gold-primary)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black' }}>
+                  <ShoppingBag size={24} />
+                </div>
+                <div style={{ fontWeight: '900', fontSize: '14px', letterSpacing: '1px' }}>VENDER PRODUCTOS</div>
+              </button>
+
+              <button 
+                onClick={() => setShowExtraModal(true)}
+                style={{ flex: 1, padding: '24px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}
+                className="hover-item"
+              >
+                <div style={{ background: 'rgba(255,255,255,0.1)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                  <Zap size={24} />
+                </div>
+                <div style={{ fontWeight: '900', fontSize: '14px', letterSpacing: '1px' }}>AÑADIR EXTRAS</div>
+              </button>
             </div>
           )}
         </section>
 
         {/* Right: Checkout Calculator */}
         <section>
-          {!selectedApp ? (
+          {(!selectedApp && !isDirectSale) ? (
             <div className="glass-card" style={{ height: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', borderRadius: '24px', color: 'var(--text-muted)' }}>
               <CreditCard size={48} style={{ marginBottom: '20px', opacity: 0.2 }} />
               <h3>Selecciona un cliente de la lista para cobrar</h3>
@@ -356,9 +453,45 @@ const CheckoutPOS = ({ isMobile, rates }) => {
             <div className="glass-card animate-scale-in" style={{ borderRadius: '32px', padding: '32px', border: '1.5px solid rgba(212,175,55,0.3)', background: 'linear-gradient(135deg, var(--bg-secondary) 0%, rgba(28,28,30,1) 100%)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
                 <div>
-                  <h3 style={{ fontSize: '24px', fontWeight: '900' }}>Resumen de Cobro</h3>
+                  <h3 style={{ fontSize: '24px', fontWeight: '900' }}>{selectedApp ? 'Resumen de Cobro' : 'Venta Directa'}</h3>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-                    {selectedApp.clients.name} • {selectedApp.services.name} • <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>{selectedApp.staff?.name}</span>
+                    {selectedApp ? (
+                      <>{selectedApp.clients.name} • {selectedApp.services?.name || 'Venta Directa'} • <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>{selectedApp.staff?.name || 'Caja'}</span></>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                        {selectedClient ? (
+                          <div className="animate-scale-in" style={{ padding: '12px 16px', background: 'rgba(212,175,55,0.1)', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ fontWeight: '800', fontSize: '16px' }}>{selectedClient.name}</div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>V-{selectedClient.id_card}</div>
+                            </div>
+                            <button onClick={() => setSelectedClient(null)} style={{ background: 'none', border: 'none', color: '#ff453a', fontWeight: '800', cursor: 'pointer', fontSize: '11px' }}>CAMBIAR</button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <div style={{ position: 'relative', flex: 1 }}>
+                              <Search style={{ position: 'absolute', left: '12px', top: '12px' }} size={16} color="var(--text-muted)" />
+                              <input 
+                                type="text" 
+                                placeholder="Cédula del cliente..." 
+                                value={directSaleIdSearch}
+                                onChange={(e) => setDirectSaleIdSearch(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleDirectSaleIdSearch()}
+                                style={{ width: '100%', paddingLeft: '40px', height: '40px', fontSize: '13px' }}
+                              />
+                            </div>
+                            <button onClick={handleDirectSaleIdSearch} className="btn-gold" style={{ padding: '0 12px', height: '40px' }}>ENLAZAR</button>
+                            <button 
+                              onClick={() => setShowNewClientModal(true)} 
+                              style={{ padding: '0 12px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                            >
+                              <UserPlus size={16} />
+                            </button>
+                          </div>
+                        )}
+                        <span style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '700' }}>{!selectedClient ? 'Busca por cédula o crea un cliente nuevo' : 'Cliente listo. Añade los productos abajo.'}</span>
+                      </div>
+                    )}
                   </p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -374,17 +507,19 @@ const CheckoutPOS = ({ isMobile, rates }) => {
 
               {/* Price Breakdown */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px', padding: '24px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Servicio: {selectedApp.services.name}</span>
-                    {selectedApp.services.included_items && selectedApp.services.included_items.length > 0 && (
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        Incluye: {selectedApp.services.included_items.join(' • ')}
-                      </span>
-                    )}
+                {selectedApp && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Servicio: {selectedApp.services?.name}</span>
+                      {selectedApp.services?.included_items && selectedApp.services.included_items.length > 0 && (
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                          Incluye: {selectedApp.services.included_items.join(' • ')}
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontWeight: '700' }}>${servicePrice}</span>
                   </div>
-                  <span style={{ fontWeight: '700' }}>${servicePrice}</span>
-                </div>
+                )}
                 
                 {cart.map(p => (
                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
@@ -393,6 +528,16 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                       {p.name} (x{p.quantity})
                     </span>
                     <span>${(p.price * p.quantity).toFixed(2)}</span>
+                  </div>
+                ))}
+
+                {selectedApp?.appointment_extras?.map(extra => (
+                  <div key={extra.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'var(--gold-primary)' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button onClick={() => handleRemoveExtra(extra.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '10px' }}>[X]</button>
+                      {extra.service_extras?.name}
+                    </span>
+                    <span style={{ fontWeight: '700' }}>${extra.price}</span>
                   </div>
                 ))}
 
@@ -530,6 +675,63 @@ const CheckoutPOS = ({ isMobile, rates }) => {
         type={dialog.type}
         onConfirm={dialog.onConfirm}
         onCancel={() => setDialog({ ...dialog, isOpen: false })}
+      />
+
+      {/* Product Selection Modal */}
+      {showProductModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div className="glass-card animate-scale-in" style={{ maxWidth: '600px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontWeight: '900' }}>Seleccionar Productos</h2>
+              <button onClick={() => {setShowProductModal(false); setSearchTerm('');}} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+            </div>
+            <div style={{ position: 'relative', marginBottom: '24px' }}>
+              <Search style={{ position: 'absolute', left: '16px', top: '14px' }} size={18} color="var(--gold-primary)" />
+              <input type="text" placeholder="Buscar producto..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '14px 48px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'white' }} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
+              {inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase())).map(item => (
+                <button key={item.id} onClick={() => handleAddToCart(item)} style={{ padding: '16px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', textAlign: 'center', cursor: 'pointer' }} className="hover-item">
+                  {item.image_url && <img src={item.image_url} style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '12px', marginBottom: '10px' }} alt="" />}
+                  <div style={{ fontWeight: '800', fontSize: '13px', marginBottom: '4px', color: 'white' }}>{item.name}</div>
+                  <div style={{ color: 'var(--gold-primary)', fontWeight: '900' }}>
+                    <div>${item.price}</div>
+                    {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ {Math.round(item.price * rates.usd).toLocaleString()} Bs.</div>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Extras Selection Modal */}
+      {showExtraModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div className="glass-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontWeight: '900' }}>Servicios Extras</h2>
+              <button onClick={() => setShowExtraModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '10px' }}>
+              {allExtras.map(extra => (
+                <button key={extra.id} onClick={() => handleAddExtra(extra)} style={{ padding: '20px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.2)', background: 'rgba(212,175,55,0.02)', textAlign: 'left', cursor: 'pointer' }} className="hover-item">
+                  <div style={{ fontWeight: '800', fontSize: '14px', marginBottom: '4px', color: 'white' }}>{extra.name}</div>
+                  <div style={{ color: 'var(--gold-primary)', fontWeight: '900' }}>
+                    <div>${extra.price}</div>
+                    {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ {Math.round(extra.price * rates.usd).toLocaleString()} Bs.</div>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <NewClientModal 
+        isOpen={showNewClientModal}
+        onClose={() => setShowNewClientModal(false)}
+        onSuccess={handleNewClientSuccess}
       />
 
       <style>{`
