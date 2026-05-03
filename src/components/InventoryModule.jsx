@@ -564,7 +564,22 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                     )}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <h4 style={{ fontSize: '18px', fontWeight: '850', marginBottom: '8px', letterSpacing: '-0.3px' }}>{item.name}</h4>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <h4 style={{ fontSize: '18px', fontWeight: '850', letterSpacing: '-0.3px', margin: 0 }}>{item.name}</h4>
+                      {item.category === 'Herramienta' && item.staff_id && (
+                        <div style={{ 
+                          fontSize: '10px', 
+                          fontWeight: '800', 
+                          padding: '4px 8px', 
+                          backgroundColor: 'rgba(212,175,55,0.1)', 
+                          color: 'var(--gold-primary)', 
+                          borderRadius: '8px',
+                          border: '1px solid rgba(212,175,55,0.2)'
+                        }}>
+                          ASIGNADA A {staff.find(s => s.id === item.staff_id)?.name.split(' ')[0].toUpperCase() || 'DESCONOCIDO'}
+                        </div>
+                      )}
+                    </div>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                       {(item.category === 'Venta' || item.category === 'Accesorios') ? (
                         <>

@@ -26,10 +26,11 @@ import {
 import { dataService } from '../services/dataService';
 import AstroSelect from './AstroSelect';
 import AstroCamera from './AstroCamera';
+import StaffProfileModal from './StaffProfileModal';
 
 import { useAuth } from '../context/AuthContext';
 
-const PersonnelModule = ({ isMobile }) => {
+const PersonnelModule = ({ isMobile, inventory = [] }) => {
   const { showToast } = useNotifs();
   const { user, refreshUser } = useAuth();
   const [staff, setStaff] = useState([]);
@@ -37,6 +38,7 @@ const PersonnelModule = ({ isMobile }) => {
 
   // Form & Editing State
   const [showForm, setShowForm] = useState(false);
+  const [profileModalData, setProfileModalData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ 
@@ -47,7 +49,8 @@ const PersonnelModule = ({ isMobile }) => {
     address: '',
     username: '',
     password: '',
-    permissions: ['scheduling', 'barber', 'clients']
+    permissions: ['scheduling', 'barber', 'clients'],
+    washing_rate: 0
   });
 
   // Camera State
@@ -112,7 +115,8 @@ const PersonnelModule = ({ isMobile }) => {
       address: person.address || '',
       username: person.username || '',
       password: person.password || '',
-      permissions: perms
+      permissions: perms,
+      washing_rate: person.washing_rate || 0
     });
     setEditingId(person.id);
     setIsEditing(true);
@@ -131,7 +135,8 @@ const PersonnelModule = ({ isMobile }) => {
       address: '',
       username: '',
       password: '',
-      permissions: rolePresets['Barbero']
+      permissions: rolePresets['Barbero'],
+      washing_rate: 0
     });
   };
 
@@ -154,7 +159,8 @@ const PersonnelModule = ({ isMobile }) => {
         address: formData.address,
         username: formData.username,
         password: formData.password,
-        commission_pct: 40 
+        commission_pct: 40,
+        washing_rate: formData.washing_rate || 0
       };
 
       if (isEditing) {
@@ -299,6 +305,23 @@ const PersonnelModule = ({ isMobile }) => {
                     { label: 'Admin', value: 'Admin' }
                   ]}
                 />
+                {formData.role === 'Asistente de Lavado' && (
+                  <div className="form-group animate-slide-right">
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>TARIFA POR LAVADO ($)</label>
+                    <div style={{ position: 'relative' }}>
+                      <Droplets size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                      <input 
+                        className="form-input" 
+                        type="number" 
+                        step="0.01" 
+                        placeholder="Ej. 2.00" 
+                        value={formData.washing_rate} 
+                        onChange={e => setFormData({...formData, washing_rate: e.target.value})} 
+                        style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.3)' }} 
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Permissions Section */}
@@ -547,6 +570,9 @@ const PersonnelModule = ({ isMobile }) => {
 
               {/* Actions Column */}
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                <button className="action-btn" onClick={() => setProfileModalData(person)} title="Ver Perfil" style={{ color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)' }}>
+                  <User size={18} />
+                </button>
                 <button className="action-btn" onClick={() => handleEditClick(person)} title="Editar Artista">
                   <Edit2 size={18} />
                 </button>
@@ -568,6 +594,14 @@ const PersonnelModule = ({ isMobile }) => {
           }}
         />
       )}
+
+      <StaffProfileModal 
+        isOpen={!!profileModalData}
+        onClose={() => setProfileModalData(null)}
+        staffMember={profileModalData}
+        inventory={inventory}
+        onUpdate={fetchStaff}
+      />
     </div>
   );
 };

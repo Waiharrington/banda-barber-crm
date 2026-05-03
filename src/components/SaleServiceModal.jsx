@@ -1,17 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { useNotifs } from '../context/NotificationContext';
-import { X, User, Star, Scissors, CreditCard, Loader2, Plus, Sparkles } from 'lucide-react';
+import { 
+  X, 
+  User, 
+  Search, 
+  Plus, 
+  Sparkles, 
+  Scissors, 
+  CreditCard, 
+  Loader2, 
+  UserPlus,
+  ArrowRight,
+  Clock,
+  Zap,
+  Package,
+  PlusCircle,
+  MinusCircle,
+  ChevronDown
+} from 'lucide-react';
 import { dataService } from '../services/dataService';
 import AstroSelect from './AstroSelect';
+import NewClientModal from './NewClientModal';
 
-const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh, rates, currency }) => {
-  const [selectedClient, setSelectedClient] = useState('');
-  const [selectedService, setSelectedService] = useState('');
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [involvedStaff, setInvolvedStaff] = useState([{ staffId: '', commissionEarned: 0 }]);
+const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, inventory, onRefresh, rates, currency }) => {
+  const { showToast, triggerConfetti, triggerRocket, sendPushNotification } = useNotifs();
   const [loading, setLoading] = useState(false);
-  const { showToast, triggerConfetti, sendPushNotification } = useNotifs();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // Selection Flow
+  const [step, setStep] = useState(1); // 1: Client, 2: Order Details
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [idSearch, setIdSearch] = useState('');
+  const [showNewClientModal, setShowNewClientModal] = useState(false);
+  
+  // Form Data
+  const [selectedService, setSelectedService] = useState(null);
+  const [involvedStaff, setInvolvedStaff] = useState([{ staffId: '', role: 'Barbero' }]);
+  const [selectedExtras, setSelectedExtras] = useState([]);
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [totalPrice, setTotalPrice] = useState(0);
+
+  // Search States for Step 2
+  const [extraSearch, setExtraSearch] = useState('');
+  const [productSearch, setProductSearch] = useState('');
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -19,101 +50,164 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Reset on open
+  useEffect(() => {
+    if (isOpen) {
+      setStep(1);
+      setSelectedClient(null);
+      setIdSearch('');
+      setSelectedService(null);
+      setInvolvedStaff([{ staffId: '', role: 'Barbero' }]);
+      setSelectedExtras([]);
+      setSelectedProducts([]);
+      setTotalPrice(0);
+      setExtraSearch('');
+      setProductSearch('');
+    }
+  }, [isOpen]);
+
+  // Total Price Calculation
+  useEffect(() => {
+    let total = 0;
+    if (selectedService) total += selectedService.price;
+    selectedExtras.forEach(e => total += e.price);
+    selectedProducts.forEach(p => total += (p.price * p.quantity));
+    setTotalPrice(total);
+  }, [selectedService, selectedExtras, selectedProducts]);
+
   if (!isOpen) return null;
 
+  const handleIdSearch = () => {
+    const cleanId = idSearch.trim().replace(/\./g, '');
+    const client = clients.find(c => c.id_card?.replace(/\./g, '') === cleanId || c.phone?.includes(cleanId));
+    if (client) {
+      setSelectedClient(client);
+      setStep(2);
+      showToast(`Cliente encontrado: ${client.name}`);
+    } else {
+      showToast("No se encontró el cliente. ¿Es nuevo?", "warning");
+    }
+  };
+
+  const handleSelectClientFromList = (client) => {
+    setSelectedClient(client);
+    setStep(2);
+  };
+
+  const toggleExtra = (extra) => {
+    const exists = selectedExtras.find(e => e.id === extra.id);
+    if (exists) {
+      setSelectedExtras(selectedExtras.filter(e => e.id !== extra.id));
+    } else {
+      setSelectedExtras([...selectedExtras, extra]);
+      showToast(`${extra.name} añadido`);
+    }
+  };
+
+  const updateProductQuantity = (product, delta) => {
+    const exists = selectedProducts.find(p => p.id === product.id);
+    if (exists) {
+      const newQty = exists.quantity + delta;
+      if (newQty <= 0) {
+        setSelectedProducts(selectedProducts.filter(p => p.id !== product.id));
+      } else {
+        setSelectedProducts(selectedProducts.map(p => p.id === product.id ? { ...p, quantity: newQty } : p));
+      }
+    } else if (delta > 0) {
+      setSelectedProducts([...selectedProducts, { ...product, quantity: 1 }]);
+      showToast(`${product.name} añadido`);
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!selectedClient || !selectedService || involvedStaff.length === 0) {
-      showToast('Por favor completa todos los campos.', 'error');
+    if (!selectedClient || (!selectedService && selectedProducts.length === 0)) {
+      showToast('Selecciona al menos un servicio o producto.', 'error');
+      return;
+    }
+
+    if (selectedService && involvedStaff.some(s => !s.staffId)) {
+      showToast('Por favor selecciona un barbero.', 'error');
       return;
     }
 
     try {
       setLoading(true);
-      const serviceObj = services.find(s => s.id === selectedService);
       
-      await dataService.registerServiceSale({
-        clientId: selectedClient,
-        serviceId: selectedService,
-        serviceName: serviceObj?.name,
-        totalPrice: totalPrice,
-        exchangeRate: currency === 'EUR' ? rates.eur : rates.usd,
-        currency: currency
-      }, involvedStaff);
+      // Create Appointment
+      const appointmentData = {
+        client_id: selectedClient.id,
+        service_id: selectedService?.id || null,
+        staff_id: involvedStaff[0].staffId || null,
+        status: 'Por Pagar',
+        total_price: totalPrice,
+        scheduled_at: new Date().toISOString()
+      };
+
+      const newApp = await dataService.createAppointment(appointmentData);
+
+      // Add Extras
+      const extraPromises = selectedExtras.map(extra => 
+        dataService.addExtraToAppointment(newApp.id, extra.id, extra.price)
+      );
+      
+      // Add Products
+      const productPromises = selectedProducts.map(prod => 
+        dataService.addProductToAppointment(newApp.id, prod.id, prod.quantity, prod.price)
+      );
+      
+      await Promise.all([...extraPromises, ...productPromises]);
 
       if (onRefresh) onRefresh();
       
-      // Astro Experience Triggers
-      triggerConfetti();
-      showToast(`¡Venta de ${serviceObj?.name} exitosa!`);
-      sendPushNotification('🚀 ¡Nueva Venta!', `${serviceObj?.name} por ${currency === 'USD' ? '$' : '€'}${totalPrice}`);
+      triggerRocket();
+      showToast(`¡Operación registrada! ${selectedClient.name} enviado a caja.`);
+      sendPushNotification('🚀 Operación Astro', `${selectedClient.name} — ${selectedService?.name || 'Venta'}`);
       
       onClose();
     } catch (error) {
-      console.error('Error registering sale:', error);
-      showToast('Error técnico al registrar venta.', 'error');
+      console.error('Error registering quick operation:', error);
+      showToast('Error técnico al registrar operación.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddStaff = () => {
-    setInvolvedStaff([...involvedStaff, { staffId: '', commissionEarned: 0 }]);
-  };
-
-  const handleRemoveStaff = (index) => {
-    const newStaff = [...involvedStaff];
-    newStaff.splice(index, 1);
-    setInvolvedStaff(newStaff);
-  };
-
-  const handleStaffChange = (index, staffId) => {
-    const person = staff.find(s => s.id === staffId);
-    const newStaff = [...involvedStaff];
-    newStaff[index] = { 
-      ...newStaff[index], 
-      staffId, 
-      commissionEarned: (totalPrice * (person?.commission || 0)) / 100 
-    };
-    setInvolvedStaff(newStaff);
-  };
-
-  const handleServiceChange = (serviceId) => {
-    const service = services.find(s => s.id === parseInt(serviceId));
-    setSelectedService(serviceId);
-    setTotalPrice(service?.price || 0);
-  };
+  const filteredExtras = extras.filter(e => e.name.toLowerCase().includes(extraSearch.toLowerCase()));
+  const filteredProducts = inventory.filter(p => 
+    p.category === 'Venta' && 
+    p.name.toLowerCase().includes(productSearch.toLowerCase())
+  );
 
   const modalContainerStyle = isMobile ? {
     position: 'fixed',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom: 0, left: 0, right: 0,
     backgroundColor: '#161616',
     borderTopLeftRadius: '32px',
     borderTopRightRadius: '32px',
     padding: '32px 24px 44px 24px',
     zIndex: 1100,
-    boxShadow: '0 -20px 40px rgba(0,0,0,0.4)',
-    maxHeight: '90vh',
-    overflowY: 'auto'
+    maxHeight: '95vh',
+    display: 'flex',
+    flexDirection: 'column'
   } : {
-    width: '500px',
-    maxWidth: '90vw',
+    width: '600px',
+    maxWidth: '95vw',
+    maxHeight: '90vh',
     backgroundColor: '#161616',
-    borderRadius: '28px',
-    padding: '32px',
+    borderRadius: '32px',
+    padding: '40px',
     position: 'relative',
     zIndex: 1100,
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+    border: '1px solid rgba(255,255,255,0.05)',
+    display: 'flex',
+    flexDirection: 'column'
   };
 
   return (
     <div className="modal-overlay animate-fade-in" style={{
       position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
+      top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(0,0,0,0.85)',
       display: 'flex',
       alignItems: isMobile ? 'flex-end' : 'center',
@@ -122,145 +216,223 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, onRefresh
       backdropFilter: 'blur(10px)'
     }}>
       <div className={isMobile ? 'animate-slide-up' : 'animate-scale-in'} style={modalContainerStyle}>
-        {/* iOS Grabber for Mobile */}
-        {isMobile && (
-          <div style={{
-            width: '40px',
-            height: '4px',
-            backgroundColor: 'rgba(255,255,255,0.15)',
-            borderRadius: '2px',
-            margin: '-12px auto 24px auto'
-          }} />
-        )}
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+        
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexShrink: 0 }}>
           <div>
-            <h2 style={{ fontSize: '24px', fontWeight: '900', letterSpacing: '-0.5px' }}>Nueva <span className="text-gold">Venta</span></h2>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Registra el servicio en tiempo real.</p>
+            <h2 style={{ fontSize: '24px', fontWeight: '900', letterSpacing: '-0.5px' }}>
+              Operación <span className="text-gold">Rápida</span>
+            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: step === 1 ? 'var(--gold-primary)' : 'rgba(255,255,255,0.2)' }} />
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: step === 2 ? 'var(--gold-primary)' : 'rgba(255,255,255,0.2)' }} />
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginLeft: '4px' }}>Paso {step} de 2</span>
+            </div>
           </div>
           <button onClick={onClose} className="action-btn" style={{ background: 'rgba(255,255,255,0.05)' }}>
             <X size={20} />
           </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Section: Who & What */}
-          <div className="glass-card" style={{ padding: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <AstroSelect 
-                label="Cliente"
-                value={selectedClient}
-                onChange={val => setSelectedClient(val)}
-                options={clients.map(c => ({ label: c.name, value: c.id }))}
-                placeholder="Seleccionar cliente..."
-                icon={<User size={18} color="var(--gold-primary)" />}
-              />
+        {/* Content Area - Scrollable */}
+        <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px', marginBottom: '24px' }} className="astro-scrollbar">
+          
+          {step === 1 && (
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ position: 'relative' }}>
+                <Search style={{ position: 'absolute', left: '16px', top: '16px' }} size={20} color="var(--gold-primary)" />
+                <input 
+                  type="text" 
+                  placeholder="Busca por Cédula o Nombre..." 
+                  value={idSearch}
+                  onChange={(e) => setIdSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleIdSearch()}
+                  autoFocus
+                  style={{ width: '100%', paddingLeft: '52px', height: '52px', fontSize: '16px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(212,175,55,0.2)' }}
+                />
+              </div>
 
+              {idSearch.length >= 2 && (
+                <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                  {clients.filter(c => c.name.toLowerCase().includes(idSearch.toLowerCase()) || c.id_card?.includes(idSearch)).slice(0, 5).map(c => (
+                    <div key={c.id} onClick={() => handleSelectClientFromList(c)} style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.03)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} className="client-search-item">
+                      <div>
+                        <div style={{ fontWeight: '800', fontSize: '14px' }}>{c.name}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>V-{c.id_card}</div>
+                      </div>
+                      <ArrowRight size={14} color="var(--gold-primary)" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button onClick={() => setShowNewClientModal(true)} style={{ width: '100%', height: '52px', borderRadius: '16px', border: '1.5px dashed rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.05)', color: 'var(--gold-primary)', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                <UserPlus size={18} /> Registrar Nuevo Cliente
+              </button>
+            </div>
+          )}
+
+          {step === 2 && selectedClient && (
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+              {/* Selected Client Summary */}
+              <div style={{ padding: '16px 20px', background: 'rgba(212,175,55,0.05)', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><User color="black" size={18} /></div>
+                  <div>
+                    <div style={{ fontWeight: '900', fontSize: '14px' }}>{selectedClient.name}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>V-{selectedClient.id_card}</div>
+                  </div>
+                </div>
+                <button onClick={() => setStep(1)} style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', fontSize: '10px', fontWeight: '800', cursor: 'pointer' }}>CAMBIAR</button>
+              </div>
+
+              {/* Service & Staff */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
                 <AstroSelect 
-                  label="Servicio Estrella"
-                  value={selectedService}
-                  onChange={val => handleServiceChange(val)}
-                  options={services.map(s => ({ 
-                    label: `${s.name} — $${s.price}${rates?.usd > 0 ? ` (${Math.round(s.price * rates.usd).toLocaleString()} Bs.)` : ''}`, 
-                    value: s.id 
-                  }))}
-                  placeholder="Seleccionar servicio..."
+                  label="Servicio"
+                  value={selectedService?.id || ''}
+                  onChange={val => setSelectedService(services.find(s => s.id == val))}
+                  options={services.map(s => ({ label: `${s.name} — $${s.price}`, value: s.id }))}
                   icon={<Sparkles size={18} color="var(--gold-primary)" />}
                 />
-                
-                {selectedService && services.find(s => s.id === selectedService)?.description && (
-                  <div className="animate-fade-in" style={{ 
-                    marginTop: '-8px',
-                    padding: '12px 16px', 
-                    backgroundColor: 'rgba(212, 175, 55, 0.05)', 
-                    borderLeft: '3px solid var(--gold-primary)', 
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    lineHeight: '1.5',
-                    color: 'var(--text-secondary)'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', color: 'var(--gold-primary)', fontWeight: '800', textTransform: 'uppercase', fontSize: '9px' }}>
-                      <Sparkles size={12} /> Guion de Venta para Caja
-                    </div>
-                    {services.find(s => s.id === selectedService).description}
+                <AstroSelect 
+                  label="Atendido por"
+                  value={involvedStaff[0].staffId}
+                  onChange={val => setInvolvedStaff([{ ...involvedStaff[0], staffId: val }])}
+                  options={staff.map(s => ({ label: s.name, value: s.id }))}
+                  icon={<Scissors size={18} color="var(--gold-primary)" />}
+                />
+              </div>
+
+              {/* Searchable Extras */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Añadir Extras</label>
+                <div style={{ position: 'relative', marginBottom: '12px' }}>
+                  <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} size={14} color="var(--text-muted)" />
+                  <input 
+                    type="text" 
+                    placeholder="Escribe para buscar extra..." 
+                    value={extraSearch}
+                    onChange={(e) => setExtraSearch(e.target.value)}
+                    style={{ width: '100%', paddingLeft: '36px', height: '40px', fontSize: '13px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {filteredExtras.slice(0, 8).map(e => (
+                    <button 
+                      key={e.id}
+                      onClick={() => toggleExtra(e)}
+                      style={{ 
+                        padding: '8px 12px', borderRadius: '10px', fontSize: '11px', fontWeight: '700', 
+                        backgroundColor: selectedExtras.find(se => se.id === e.id) ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.03)',
+                        border: selectedExtras.find(se => se.id === e.id) ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
+                        color: selectedExtras.find(se => se.id === e.id) ? 'var(--gold-primary)' : 'white',
+                        cursor: 'pointer', transition: 'all 0.2s'
+                      }}
+                    >
+                      {e.name} (+${e.price})
+                    </button>
+                  ))}
+                  {filteredExtras.length === 0 && <div style={{ fontSize: '12px', color: 'var(--text-muted)', opacity: 0.5 }}>No se encontraron extras.</div>}
+                </div>
+              </div>
+
+              {/* Searchable Products */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Venta de Productos</label>
+                <div style={{ position: 'relative', marginBottom: '12px' }}>
+                  <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} size={14} color="var(--text-muted)" />
+                  <input 
+                    type="text" 
+                    placeholder="Escribe para buscar producto..." 
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    style={{ width: '100%', paddingLeft: '36px', height: '40px', fontSize: '13px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '10px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {filteredProducts.slice(0, 5).map(p => {
+                    const selected = selectedProducts.find(sp => sp.id === p.id);
+                    return (
+                      <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <Package size={14} color="var(--gold-primary)" />
+                          <div>
+                            <div style={{ fontSize: '13px', fontWeight: '700' }}>{p.name}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>${p.price}</div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          {selected ? (
+                            <>
+                              <button onClick={() => updateProductQuantity(p, -1)} style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer' }}><MinusCircle size={18} /></button>
+                              <span style={{ fontWeight: '800', fontSize: '13px', minWidth: '12px', textAlign: 'center' }}>{selected.quantity}</span>
+                              <button onClick={() => updateProductQuantity(p, 1)} style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer' }}><PlusCircle size={18} /></button>
+                            </>
+                          ) : (
+                            <button onClick={() => updateProductQuantity(p, 1)} style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(212,175,55,0.2)', background: 'none', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>AÑADIR</button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {filteredProducts.length === 0 && <div style={{ fontSize: '12px', color: 'var(--text-muted)', opacity: 0.5 }}>No se encontraron productos.</div>}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer - Fixed */}
+        {step === 2 && (
+          <div style={{ 
+            paddingTop: '20px', 
+            borderTop: '1px solid rgba(255,255,255,0.05)',
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            flexShrink: 0
+          }}>
+            <div>
+              <div style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800', textTransform: 'uppercase', marginBottom: '2px' }}>Total Estimado</div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ fontSize: '24px', fontWeight: '950', color: 'white' }}>${totalPrice}</div>
+                {rates?.usd > 0 && (
+                  <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
+                    ≈ {Math.round(totalPrice * rates.usd).toLocaleString()} BS
                   </div>
                 )}
               </div>
-          </div>
-
-          {/* Section: The Team */}
-          <div>
-            <label style={{ display: 'block', marginBottom: '12px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Personal Asignado</label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {involvedStaff.map((item, index) => (
-                <div key={index} className="animate-fade-in" style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-                  <div style={{ flex: 1 }}>
-                    <AstroSelect 
-                      value={item.staffId}
-                      onChange={val => handleStaffChange(index, val)}
-                      options={staff.map(s => ({ label: s.name, value: s.id }))}
-                      placeholder="¿Quién atendió?"
-                      icon={<Scissors size={18} color="var(--gold-primary)" />}
-                    />
-                  </div>
-                  <button onClick={() => handleRemoveStaff(index)} className="action-btn" style={{ color: '#ff4d4d', height: '48px', width: '48px', borderRadius: '12px', border: '1px solid rgba(255,77,77,0.2)' }}>
-                    <X size={18} />
-                  </button>
-                </div>
-              ))}
-              <button 
-                onClick={handleAddStaff}
-                style={{ 
-                  background: 'rgba(212, 175, 55, 0.05)', 
-                  border: '1.5px dashed rgba(212, 175, 55, 0.2)', 
-                  color: 'var(--gold-primary)', 
-                  padding: '14px', 
-                  borderRadius: '16px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '700',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px'
-                }}
-              >
-                <Plus size={18} /> Añadir Barbero / Lavado
-              </button>
             </div>
+            <button 
+              className="btn-gold" 
+              onClick={handleSubmit}
+              disabled={loading || (!selectedService && selectedProducts.length === 0)}
+              style={{ height: '52px', padding: '0 24px', borderRadius: '14px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              {loading ? <Loader2 className="animate-spin" /> : <><Zap size={16} fill="black" /> ENVIAR A CAJA</>}
+            </button>
           </div>
+        )}
 
-          {/* Checkout Footer with Dual Pricing */}
-          <div style={{ 
-            marginTop: '12px', 
-            padding: '20px 24px', 
-            backgroundColor: 'rgba(212, 175, 55, 0.08)', 
-            borderRadius: '24px',
-            border: '1px solid rgba(212, 175, 55, 0.1)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px' }}>RESUMEN DE COBRO</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <div style={{ fontSize: '28px', fontWeight: '950', color: 'white', letterSpacing: '-1px' }}>
-                    {currency === 'USD' ? '$' : '€'}{totalPrice}
-                  </div>
-                  <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-                    {Math.round(totalPrice * (rates?.[currency?.toLowerCase()] || rates?.usd || 1)).toLocaleString()} BS
-                  </div>
-                </div>
-              </div>
-              <button 
-                className="btn-gold" 
-                onClick={handleSubmit}
-                disabled={loading}
-                style={{ height: '56px', padding: '0 32px', borderRadius: '16px', fontSize: '15px' }}
-              >
-                {loading ? <Loader2 className="animate-spin" /> : 'Confirmar'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <NewClientModal 
+          isOpen={showNewClientModal} 
+          onClose={() => setShowNewClientModal(false)} 
+          onSuccess={(newC) => {
+            setSelectedClient(newC);
+            setStep(2);
+            setShowNewClientModal(false);
+          }}
+        />
+
+        <style>{`
+          .client-search-item:hover {
+            background-color: rgba(212,175,55,0.05) !important;
+          }
+          .astro-scrollbar::-webkit-scrollbar { width: 4px; }
+          .astro-scrollbar::-webkit-scrollbar-track { background: transparent; }
+          .astro-scrollbar::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.2); borderRadius: 10px; }
+        `}</style>
       </div>
     </div>
   );

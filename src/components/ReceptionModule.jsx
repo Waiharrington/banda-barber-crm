@@ -75,7 +75,10 @@ const ReceptionModule = ({ isMobile }) => {
       setStaff(st);
       setActiveAppointments(active);
       setAllExtras(ext || []);
-      setInventory(inv.filter(i => i.is_for_sale !== false));
+      setInventory(inv.filter(i => 
+        i.is_for_sale !== false && 
+        i.category === 'Venta'
+      ));
       
       const today = new Date().toISOString().split('T')[0];
       setUpcomingAppointments(allApps.filter(a => a.scheduled_at?.startsWith(today) || a.created_at?.startsWith(today)));

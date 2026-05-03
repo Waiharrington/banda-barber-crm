@@ -15,7 +15,7 @@ import { dataService } from '../services/dataService';
 import { useAuth } from '../context/AuthContext';
 import { useNotifs } from '../context/NotificationContext';
 
-const HistoryModule = ({ isMobile, rates }) => {
+const HistoryModule = ({ isMobile, rates, onNavigate }) => {
   const { user } = useAuth();
   const { showToast } = useNotifs();
   const [history, setHistory] = useState([]);
@@ -37,29 +37,35 @@ const HistoryModule = ({ isMobile, rates }) => {
       if (isAdmin) {
         data = await dataService.getAppointmentsByState(['Completado']);
       } else {
-        // Para barberos, traer directamente de la tabla appointments para asegurar sincronía con la agenda
-        const query = dataService.supabase
-          .from('appointments')
+        // Fetch from appointment_staff to include all services where the user participated
+        const { data: staffData, error } = await dataService.supabase
+          .from('appointment_staff')
           .select(`
             *,
-            clients(name, phone, id_card, work_gallery),
-            services(name, price, included_items, commission_barber, commission_washer, commission_cashier, commission_receptionist),
-            appointment_staff(*),
-            appointment_extras(id, price, service_extras(name)),
-            appointment_products(id, quantity, price, inventory(id, name))
+            appointments!inner (
+              *,
+              clients(id, name, phone, id_card, work_gallery),
+              services(name, price, included_items, commission_barber, commission_washer, commission_cashier, commission_receptionist),
+              appointment_extras(id, price, service_extras(name)),
+              appointment_products(id, quantity, price, inventory(id, name))
+            )
           `)
           .eq('staff_id', user.id)
-          .eq('status', 'Completado')
-          .eq('appointment_staff.staff_id', user.id);
+          .eq('appointments.status', 'Completado');
 
-        const { data: staffData, error } = await query;
         if (error) throw error;
 
-        data = staffData.map(item => ({
-          ...item,
-          commission_earned: item.appointment_staff?.[0]?.commission_earned || 0,
-          tip_amount: item.appointment_staff?.[0]?.tip_amount || 0
-        }));
+        data = staffData.map(record => {
+          const item = record.appointments;
+          if (!item) return null;
+
+          return {
+            ...item,
+            commission_earned: Number(record.commission_earned || 0),
+            tip_amount: Number(record.tip_amount || 0),
+            isStaffView: true
+          };
+        }).filter(Boolean);
       }
       // Sort by date (newest first)
       data.sort((a, b) => {
@@ -92,7 +98,16 @@ const HistoryModule = ({ isMobile, rates }) => {
     return true;
   });
 
-  const totalIncome = filteredHistory.reduce((acc, item) => acc + (isAdmin ? (item.total_price || 0) : (item.commission_earned || 0) + (item.tip_amount || 0)), 0);
+  const totalIncome = filteredHistory.reduce((acc, item) => {
+    if (!isAdmin) return acc + (item.commission_earned || 0) + (item.tip_amount || 0);
+    
+    // Admin: Sum everything including tips from appointment_staff
+    const serviceBase = Number(item.services?.price || 0);
+    const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+    const products = item.appointment_products?.reduce((sum, p) => sum + (Number(p.price || 0) * (p.quantity || 1)), 0) || 0;
+    const tips = item.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
+    return acc + serviceBase + extras + products + tips;
+  }, 0);
 
   return (
     <div className="animate-fade-in" style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '40px' }}>
@@ -197,7 +212,16 @@ const HistoryModule = ({ isMobile, rates }) => {
                           {new Date(item.created_at).toLocaleDateString()}
                         </td>
                         <td style={{ padding: '18px 24px' }}>
-                          <div style={{ fontSize: '15px', fontWeight: '700', color: 'white' }}>{item.clients?.name}</div>
+                          <div 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onNavigate('clients', { clientId: item.clients?.id });
+                            }}
+                            className="client-link"
+                            style={{ fontSize: '15px', fontWeight: '700', color: 'white', cursor: 'pointer', display: 'inline-block', transition: '0.2s' }}
+                          >
+                            {item.clients?.name}
+                          </div>
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.clients?.id_card}</div>
                         </td>
                         <td style={{ padding: '18px 24px' }}>
@@ -205,13 +229,15 @@ const HistoryModule = ({ isMobile, rates }) => {
                         </td>
                         <td style={{ padding: '18px 24px', textAlign: 'right' }}>
                           <div style={{ fontSize: '16px', fontWeight: '900', color: 'white' }}>
-                            ${isAdmin ? item.total_price?.toFixed(2) : ((item.commission_earned || 0) + (item.tip_amount || 0)).toFixed(2)}
+                            ${(() => {
+                              if (!isAdmin) return ((item.commission_earned || 0) + (item.tip_amount || 0)).toFixed(2);
+                              const serviceBase = Number(item.services?.price || 0);
+                              const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+                              const products = item.appointment_products?.reduce((sum, p) => sum + (Number(p.price || 0) * (p.quantity || 1)), 0) || 0;
+                              const tips = item.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
+                              return (serviceBase + extras + products + tips).toFixed(2);
+                            })()}
                           </div>
-                          {rates?.usd > 0 && (
-                            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                              ≈ {Math.round( (isAdmin ? item.total_price : ((item.commission_earned || 0) + (item.tip_amount || 0))) * rates.usd).toLocaleString()} Bs.
-                            </div>
-                          )}
                         </td>
                         <td style={{ padding: '18px 24px', textAlign: 'right' }}>
                           <div style={{ color: isSelected ? 'var(--gold-primary)' : 'var(--text-muted)', transition: 'all 0.3s', transform: isSelected ? 'rotate(180deg)' : 'rotate(0)' }}>
@@ -223,12 +249,18 @@ const HistoryModule = ({ isMobile, rates }) => {
                         <tr style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
                           <td colSpan="5" style={{ padding: '0' }}>
                             <div className="animate-slide-down" style={{ padding: '32px 48px' }}>
-                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '40px' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1.2fr', gap: '40px' }}>
                                 {/* Client Section */}
                                 <div>
                                   <SectionHeader icon={<User size={14} />} title="Detalles del Cliente" />
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    <DetailItem label="Nombre" value={item.clients?.name} />
+                                    <div 
+                                      onClick={() => onNavigate('clients', { clientId: item.clients?.id })}
+                                      className="client-link"
+                                      style={{ cursor: 'pointer', transition: '0.2s' }}
+                                    >
+                                      <DetailItem label="Nombre" value={item.clients?.name} />
+                                    </div>
                                     <DetailItem label="Cédula" value={item.clients?.id_card} />
                                     <DetailItem label="Teléfono" value={item.clients?.phone || 'No registrado'} />
                                   </div>
@@ -238,7 +270,11 @@ const HistoryModule = ({ isMobile, rates }) => {
                                 <div>
                                   <SectionHeader icon={<Package size={14} />} title="Servicio y Extras" />
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    <DetailItem label="Servicio Base" value={item.services?.name} subValue={`$${item.services?.price}`} />
+                                    <DetailItem 
+                                      label="Servicio Base" 
+                                      value={item.services?.name} 
+                                      subValue={user.role !== 'Asistente de Lavado' ? `$${item.services?.price}` : null} 
+                                    />
                                     <div>
                                       <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Extras / Productos</span>
                                       {item.appointment_extras?.map(ex => (
@@ -262,17 +298,46 @@ const HistoryModule = ({ isMobile, rates }) => {
                                 <div>
                                   <SectionHeader icon={<TrendingUp size={14} />} title="Liquidación" />
                                   <div className="glass-card" style={{ padding: '20px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(212,175,55,0.1)', marginBottom: '24px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                                      <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Monto de Venta</span>
+                                    {user.role !== 'Asistente de Lavado' && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Monto de Venta (Serv + Ext + Prod)</span>
                                       <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '14px', fontWeight: '900' }}>${item.total_price?.toFixed(2)}</div>
-                                        {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{Math.round(item.total_price * rates.usd).toLocaleString()} Bs.</div>}
+                                        <div style={{ fontSize: '16px', fontWeight: '900', color: 'white' }}>
+                                          ${(() => {
+                                            const serviceBase = Number(item.services?.price || 0);
+                                            const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+                                            const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
+                                            return (serviceBase + extras + products).toFixed(2);
+                                          })()}
+                                        </div>
                                       </div>
                                     </div>
-                                    {!isAdmin && (
+                                    )}
+                                    
+                                    {isAdmin ? (
+                                      <div style={{ marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
+                                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', display: 'block' }}>Desglose de Propinas y Comisiones</span>
+                                        {item.appointment_staff?.length > 0 ? item.appointment_staff.map((st, sidx) => (
+                                          <div key={sidx} style={{ marginBottom: '12px', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                              <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{st.staff?.name}</span>
+                                              <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>+${Number(st.commission_earned || 0).toFixed(2)} Comisión</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
+                                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Propina:</span>
+                                              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600' }}>${Number(st.tip_amount || 0).toFixed(2)}</span>
+                                            </div>
+                                          </div>
+                                        )) : (
+                                          <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>No hay personal registrado en esta venta.</div>
+                                        )}
+                                      </div>
+                                    ) : (
                                       <>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                                          <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Tu Comisión</span>
+                                          <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                            {user.role === 'Asistente de Lavado' ? 'Tu Tarifa de Lavado' : 'Tu Comisión'}
+                                          </span>
                                           <span style={{ fontSize: '14px', fontWeight: '700' }}>${item.commission_earned?.toFixed(2)}</span>
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
@@ -319,6 +384,10 @@ const HistoryModule = ({ isMobile, rates }) => {
       <style>{`
         .history-table-row:hover {
           background-color: rgba(255,255,255,0.03) !important;
+        }
+        .client-link:hover {
+          color: var(--gold-primary) !important;
+          transform: translateX(4px);
         }
       `}</style>
     </div>

@@ -16,7 +16,7 @@ const AstroSelect = ({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
-  const selectedOption = options.find(opt => opt.value === value);
+  const selectedOption = options.find(opt => opt.value == value);
 
   useEffect(() => {
     const handleClickOutside = (event) => {

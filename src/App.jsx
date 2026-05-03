@@ -21,6 +21,7 @@ import SaleServiceModal from './components/SaleServiceModal';
 import HistoryModule from './components/HistoryModule';
 import { dataService } from './services/dataService';
 import logo from './assets/logo.png';
+import StaffProfileModal from './components/StaffProfileModal';
 
 // Mobile Components
 import MobileLayout from './components/mobile/MobileLayout';
@@ -41,6 +42,8 @@ function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isTabLoading, setIsTabLoading] = useState(false);
+  const [tabParams, setTabParams] = useState({});
+  const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
   
   // Multi-currency State
   const [currency, setCurrency] = useState('USD'); 
@@ -72,7 +75,7 @@ function App() {
   
   // Global Data State
   const [stats, setStats] = useState({ income: 0, clients: 0, expenses: 0, appointments: 0 });
-  const [dbData, setDbData] = useState({ clients: [], services: [], staff: [] });
+  const [dbData, setDbData] = useState({ clients: [], services: [], staff: [], extras: [], inventory: [] });
   const [chartData, setChartData] = useState({
     labels: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
     datasets: [{
@@ -87,6 +90,7 @@ function App() {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'my-profile', label: 'Mi Perfil', icon: UserCircle },
     { id: 'reception', label: 'Recepción (Padre)', icon: UserCircle },
     { id: 'clients', label: 'Clientes', icon: Users },
     { id: 'personnel', label: 'Personal', icon: Scissors },
@@ -120,13 +124,61 @@ function App() {
 
   const fetchInitialData = async () => {
     try {
-      const [c, s, st, t] = await Promise.all([
+      const [c, s, st, t, ext, inv, apps] = await Promise.all([
         dataService.getClients(),
         dataService.getServices(),
         dataService.getStaff(),
-        dataService.getTransactions()
+        dataService.getTransactions(),
+        dataService.getExtras(),
+        dataService.getInventory(),
+        dataService.getAppointmentsByState(['Completado'])
       ]);
-      setDbData({ clients: c, services: s, staff: st });
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
+
+      const staffWithStats = st.map(barber => {
+        // Historical Appts logic (services and extras)
+        const barberApps = apps.filter(a => a.staff_id === barber.id);
+        
+        const monthlyApptsProd = barberApps
+          .filter(a => (a.created_at >= thirtyDaysAgoISO) || (a.scheduled_at && a.scheduled_at >= thirtyDaysAgoISO))
+          .reduce((acc, a) => acc + Number(a.total_price || 0), 0);
+          
+        const todayDate = new Date().toISOString().split('T')[0];
+        const todayApptsProd = barberApps
+          .filter(a => a.created_at.startsWith(todayDate) || (a.scheduled_at && a.scheduled_at.startsWith(todayDate)))
+          .reduce((acc, a) => acc + Number(a.total_price || 0), 0);
+          
+        const todayCount = barberApps.filter(a => a.created_at.startsWith(todayDate) || (a.scheduled_at && a.scheduled_at.startsWith(todayDate))).length;
+
+        // Direct Sales without appointment link (new POS logic)
+        const directMonthlyProd = t
+          .filter(tr => tr.type === 'income' && tr.created_at >= thirtyDaysAgoISO && !tr.metadata?.appointment_id && tr.metadata?.staffInvolved?.some(si => si.staffId === barber.id))
+          .reduce((acc, tr) => acc + Number(tr.amount), 0);
+
+        const directTodayProd = t
+          .filter(tr => tr.type === 'income' && tr.created_at.startsWith(todayDate) && !tr.metadata?.appointment_id && tr.metadata?.staffInvolved?.some(si => si.staffId === barber.id))
+          .reduce((acc, tr) => acc + Number(tr.amount), 0);
+
+        return { 
+          ...barber, 
+          stats: { 
+            ...barber.stats, 
+            monthlyIncome: monthlyApptsProd + directMonthlyProd,
+            income: todayApptsProd + directTodayProd,
+            appointments: todayCount 
+          } 
+        };
+      });
+
+      setDbData({ 
+        clients: c, 
+        services: s, 
+        staff: staffWithStats, 
+        extras: ext || [], 
+        inventory: inv?.filter(i => i.is_for_sale !== false) || [] 
+      });
       const today = new Date().toISOString().split('T')[0];
       const todayTransactions = t.filter(trans => trans.created_at.startsWith(today));
       setStats({
@@ -149,7 +201,13 @@ function App() {
     } catch (error) { console.error('Error fetching data:', error); }
   };
 
-  const handleTabChange = (tabId) => {
+  const handleTabChange = (tabId, params = {}) => {
+    if (tabId === 'my-profile') {
+      setIsMyProfileOpen(true);
+      if (isMobile) setIsSidebarOpen(false);
+      return;
+    }
+    setTabParams(params);
     if (tabId === activeTab) return;
     setIsTabLoading(true);
     // Short transition to maintain the premium feel
@@ -157,6 +215,7 @@ function App() {
       setActiveTab(tabId);
       localStorage.setItem('astro_active_tab', tabId);
       setIsTabLoading(false);
+      if (isMobile) setIsSidebarOpen(false);
     }, 600);
   };
 
@@ -182,6 +241,7 @@ function App() {
             chartData={chartData} 
             dbData={dbData} 
             rates={effectiveRates} 
+            onNavigate={handleTabChange}
           />
         ) : (
           <DashboardModule 
@@ -203,19 +263,20 @@ function App() {
               setCustomRates(val);
               localStorage.setItem('astro_custom_rates', JSON.stringify(val));
             }}
+            onNavigate={handleTabChange}
           />
         );
       case 'reception': return <div className="p-container"><ReceptionModule isMobile={isMobile} /></div>;
-      case 'checkout': return <div className="p-container"><CheckoutPOS isMobile={isMobile} rates={effectiveRates} /></div>;
+      case 'checkout': return <div className="p-container"><CheckoutPOS isMobile={isMobile} rates={effectiveRates} onOpenSale={() => setIsSaleModalOpen(true)} /></div>;
       case 'barber': return <div className="p-container"><BarberPanel isMobile={isMobile} /></div>;
       case 'scheduling': return <div className="p-container"><SchedulingModule isMobile={isMobile} /></div>;
       case 'services': return <div className="p-container"><ServicesModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
       case 'inventory': return <div className="p-container"><InventoryModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
       case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
-      case 'clients': return <div className="p-container"><ClientModule isMobile={isMobile} clients={dbData.clients} onRefresh={fetchInitialData} /></div>;
-      case 'personnel': return <div className="p-container"><PersonnelModule isMobile={isMobile} /></div>;
-      case 'history': return <div className="p-container"><HistoryModule isMobile={isMobile} rates={effectiveRates} /></div>;
-      default: return <div className="p-container"><DashboardModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
+      case 'clients': return <div className="p-container"><ClientModule isMobile={isMobile} clients={dbData.clients} onRefresh={fetchInitialData} initialClientId={tabParams.clientId} /></div>;
+      case 'personnel': return <div className="p-container"><PersonnelModule isMobile={isMobile} inventory={dbData.inventory || []} /></div>;
+      case 'history': return <div className="p-container"><HistoryModule isMobile={isMobile} rates={effectiveRates} onNavigate={handleTabChange} /></div>;
+      default: return <div className="p-container"><DashboardModule isMobile={isMobile} currency={currency} rates={effectiveRates} onNavigate={handleTabChange} /></div>;
     }
   };
 
@@ -234,9 +295,18 @@ function App() {
           clients={dbData.clients}
           services={dbData.services}
           staff={dbData.staff}
+          extras={dbData.extras || []}
+          inventory={dbData.inventory || []}
           onRefresh={fetchInitialData}
           rates={rates}
           currency={currency}
+        />
+        <StaffProfileModal 
+          isOpen={isMyProfileOpen} 
+          onClose={() => setIsMyProfileOpen(false)} 
+          staffMember={dbData.staff.find(s => s.id === user?.id)} 
+          inventory={dbData.inventory || []}
+          onUpdate={fetchInitialData} 
         />
       </MobileLayout>
     );
@@ -248,7 +318,7 @@ function App() {
       <ParticleBackground />
       <Sidebar 
         activeTab={activeTab} 
-        setActiveTab={handleTabChange} 
+        setActiveTab={(id) => handleTabChange(id, {})} 
         rates={effectiveRates} 
         bcvRates={rates}
         isCustomRate={isCustomRate}
@@ -273,9 +343,18 @@ function App() {
         clients={dbData.clients}
         services={dbData.services}
         staff={dbData.staff}
+        extras={dbData.extras || []}
+        inventory={dbData.inventory || []}
         onRefresh={fetchInitialData}
         rates={rates}
         currency={currency}
+      />
+      <StaffProfileModal 
+        isOpen={isMyProfileOpen} 
+        onClose={() => setIsMyProfileOpen(false)} 
+        staffMember={dbData.staff.find(s => s.id === user?.id)} 
+        inventory={dbData.inventory || []}
+        onUpdate={fetchInitialData} 
       />
     </div>
   );

@@ -87,6 +87,90 @@ export const dataService = {
     return data;
   },
 
+  async getStaffProfileStats(staffId) {
+    const { data: staffRecords, error } = await supabase
+      .from('appointment_staff')
+      .select(`
+        commission_earned,
+        product_commission,
+        tip_amount,
+        appointments!inner (
+          id,
+          status,
+          total_price,
+          started_at,
+          completed_at,
+          services (name, price)
+        )
+      `)
+      .eq('staff_id', staffId)
+      .eq('appointments.status', 'Completado');
+
+    if (error) {
+      console.error('Error fetching staff stats:', error);
+      throw error;
+    }
+
+    let totalServiceComm = 0;
+    let totalProductComm = 0;
+    let totalTips = 0;
+    let totalDurationMs = 0;
+    let durationCount = 0;
+    const serviceCounts = {};
+
+    staffRecords?.forEach(record => {
+      const app = record.appointments;
+      if (!app) return;
+
+      totalServiceComm += Number(record.commission_earned || 0);
+      totalProductComm += Number(record.product_commission || 0);
+      totalTips += Number(record.tip_amount || 0);
+
+      // Services
+      const sName = app.services?.name;
+      if (sName) {
+        serviceCounts[sName] = (serviceCounts[sName] || 0) + 1;
+      }
+
+      // Duration
+      if (app.started_at && app.completed_at) {
+        const start = new Date(app.started_at).getTime();
+        const end = new Date(app.completed_at).getTime();
+        if (end > start) {
+          totalDurationMs += (end - start);
+          durationCount++;
+        }
+      }
+    });
+
+    const topServices = Object.entries(serviceCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([name, count]) => ({ name, count }));
+
+    const avgDurationMin = durationCount > 0 ? Math.round(totalDurationMs / durationCount / 60000) : 0;
+
+    return {
+      totalAppointments: staffRecords?.length || 0,
+      totalServiceComm,
+      totalProductComm,
+      totalTips,
+      topServices,
+      avgDurationMin
+    };
+  },
+
+  async updateStaffTools(id, toolsArray) {
+    const { data, error } = await supabase
+      .from('staff')
+      .update({ tools: toolsArray })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   async deleteStaff(id) {
     const { error } = await supabase
       .from('staff')
@@ -281,8 +365,9 @@ export const dataService = {
         service_name: app.services?.name,
         service_price: app.services?.price,
         included_items: app.services?.included_items || [],
-        payment_method: relatedTx?.description?.split(' - ')[2] || relatedTx?.metadata?.method_usd || relatedTx?.metadata?.method_bs || 'No registrado',
+        payment_method: relatedTx?.metadata?.method_usd || relatedTx?.metadata?.method_bs || relatedTx?.description?.split(' - ')[2] || 'No registrado',
         payment_metadata: relatedTx?.metadata || {},
+        exchange_rate: relatedTx?.exchange_rate,
         description: `Servicio: ${app.services?.name} - Barbero: ${app.staff?.name}`
       };
     });
@@ -337,6 +422,25 @@ export const dataService = {
     return data;
   },
 
+  async updateInventoryItem(id, updates) {
+    const { data, error } = await supabase
+      .from('inventory')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteInventoryItem(id) {
+    const { error } = await supabase
+      .from('inventory')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+
   async updateStock(id, newStock) {
     const { data, error } = await supabase
       .from('inventory')
@@ -372,11 +476,12 @@ export const dataService = {
   async getAppointmentsByState(states = []) {
     let query = supabase.from('appointments').select(`
       *, 
-      clients(name, phone, id_card, work_gallery), 
+      clients(id, name, phone, id_card, work_gallery), 
       services(name, price, included_items, commission_barber, commission_washer, commission_cashier, commission_receptionist),
       staff(*),
       appointment_extras(id, price, service_extras(id, name)),
-      appointment_products(id, quantity, price, inventory(id, name))
+      appointment_products(id, quantity, price, inventory(id, name)),
+      appointment_staff(*, staff(name, role))
     `);
     if (states.length > 0) query = query.in('status', states);
     const { data, error } = await query.order('created_at', { ascending: true });
@@ -412,6 +517,9 @@ export const dataService = {
 
   async updateAppointmentStatus(id, newStatus) {
     const updates = { status: newStatus };
+    if (newStatus === 'En Silla') updates.started_at = new Date().toISOString();
+    if (newStatus === 'Completado' || newStatus === 'Por Pagar') updates.completed_at = new Date().toISOString();
+
     const { data, error } = await supabase
       .from('appointments')
       .update(updates)
@@ -495,10 +603,15 @@ export const dataService = {
           appointment_id: paymentRecord.appointmentId || null,
           staff_id: s.staffId,
           commission_earned: s.commissionEarned || 0,
+          product_commission: s.productCommissionEarned || 0,
           tip_amount: s.tip || 0
         }));
       if (staffRecords.length > 0) {
-        await supabase.from('appointment_staff').insert(staffRecords);
+        const { error: staffError } = await supabase.from('appointment_staff').insert(staffRecords);
+        if (staffError) {
+          console.error("Error inserting appointment_staff:", staffError);
+          // Don't throw here to avoid blocking the whole process if it's just a commission log error
+        }
       }
     }
 
@@ -538,7 +651,9 @@ export const dataService = {
         tips_total: Number(paymentRecord.totalTips),
         method_usd: paymentRecord.methodUsd,
         method_bs: paymentRecord.methodBs,
-        products_sold: paymentRecord.products || []
+        products_sold: paymentRecord.products || [],
+        extras: paymentRecord.extras || [],
+        staffInvolved: paymentRecord.staffInvolved || []
       }
     });
 

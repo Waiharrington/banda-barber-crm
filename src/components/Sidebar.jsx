@@ -38,6 +38,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
 
   const allMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['Admin'] },
+    { id: 'my-profile', label: 'Mi Perfil', icon: UserCircle, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente'] },
     { id: 'scheduling', label: 'Agenda', icon: Calendar, roles: ['Admin', 'Barbero', 'Recepcionista'] },
     { id: 'reception', label: 'Recepción', icon: UserCircle, roles: ['Admin', 'Recepcionista'] },
     { id: 'checkout', label: 'Caja', icon: Wallet, roles: ['Admin', 'Caja'] },
@@ -55,6 +56,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
     const [roleName, customPerms] = userRole.split('|');
 
     if (roleName === 'Admin') return true;
+    if (item.id === 'my-profile') return true; // Everyone can see their own profile
     
     if (customPerms) {
       const perms = customPerms.split(',');

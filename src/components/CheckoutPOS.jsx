@@ -13,7 +13,8 @@ import {
   TrendingUp,
   User,
   Scissors,
-  Zap
+  Zap,
+  Droplets
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -28,6 +29,7 @@ const CheckoutPOS = ({ isMobile, rates }) => {
   const [inventory, setInventory] = useState([]);
   const [allExtras, setAllExtras] = useState([]);
   const [allClients, setAllClients] = useState([]);
+  const [allStaff, setAllStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Selection State
@@ -40,12 +42,14 @@ const CheckoutPOS = ({ isMobile, rates }) => {
   
   // Checkout Multi-State
   const [fixedRate, setFixedRate] = useState(rates?.usd || 0);
-  const [tip, setTip] = useState(0);
+  const [tips, setTips] = useState([]); // Array of { id, staffId, amount }
   const [cart, setCart] = useState([]); // Sold products
   const [paymentMode, setPaymentMode] = useState('full_usd'); // or 'mixed'
   const [cashUsd, setCashUsd] = useState(0);
   const [methodUsd, setMethodUsd] = useState('Efectivo');
   const [methodBs, setMethodBs] = useState('Pago Móvil');
+  const [didWash, setDidWash] = useState(false);
+  const [selectedWasherId, setSelectedWasherId] = useState('');
 
   // Modal State
   const [showProductModal, setShowProductModal] = useState(false);
@@ -69,19 +73,35 @@ const CheckoutPOS = ({ isMobile, rates }) => {
         quantity: ap.quantity
       })) || [];
       setCart(products);
+
+      // Auto-load primary staff for tip
+      setTips([{ id: Date.now().toString(), staffId: selectedApp.staff_id, amount: 0 }]);
+      
+      // Auto-detect washing
+      const hasWashing = selectedApp.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || 
+                        selectedApp.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'));
+      setDidWash(hasWashing);
+      
+      // Select first assistant as default if possible
+      const assistant = allStaff.find(s => s.role?.includes('Asistente de Lavado'));
+      if (assistant) setSelectedWasherId(assistant.id);
     } else if (!isDirectSale) {
       setCart([]);
+      setTips([]);
+      setDidWash(false);
+      setSelectedWasherId('');
     }
-  }, [selectedApp, isDirectSale]);
+  }, [selectedApp, isDirectSale, allStaff]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [apps, inv, ext, cls] = await Promise.all([
+      const [apps, inv, ext, cls, staff] = await Promise.all([
         dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']),
         dataService.getInventory(),
         dataService.getExtras(),
-        dataService.getClients()
+        dataService.getClients(),
+        dataService.getStaff()
       ]);
       
       const today = new Date().toISOString().split('T')[0];
@@ -94,6 +114,7 @@ const CheckoutPOS = ({ isMobile, rates }) => {
       setInventory(inv.filter(i => i.stock > 0 && i.category === 'Venta'));
       setAllExtras(ext || []);
       setAllClients(cls || []);
+      setAllStaff(staff || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -117,7 +138,8 @@ const CheckoutPOS = ({ isMobile, rates }) => {
   const servicePrice = selectedApp?.services?.price || 0;
   const productsTotal = cart.reduce((acc, p) => acc + (p.price * p.quantity), 0);
   const extrasTotal = selectedApp?.appointment_extras?.reduce((acc, e) => acc + (e.price || 0), 0) || 0;
-  const totalUsd = servicePrice + productsTotal + extrasTotal + Number(tip);
+  const totalTips = tips.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+  const totalUsd = servicePrice + productsTotal + extrasTotal + totalTips;
   const totalBs = (totalUsd * fixedRate).toFixed(2);
   
   const remainingBs = Math.max(0, (totalUsd - Number(cashUsd)) * fixedRate).toFixed(2);
@@ -139,7 +161,6 @@ const CheckoutPOS = ({ isMobile, rates }) => {
       await dataService.addExtraToAppointment(selectedApp.id, extra.id, extra.price);
       showToast(`${extra.name} añadido a la cuenta.`);
       await loadData();
-      // Sync local selectedApp
       const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
       const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
       setSelectedApp(updatedSelected);
@@ -179,52 +200,91 @@ const CheckoutPOS = ({ isMobile, rates }) => {
     try {
       setLoading(true);
       
-        const paymentData = {
-          appointmentId: selectedApp?.id || null,
-          clientId: selectedApp?.client_id || selectedClient?.id,
-          clientName: selectedApp?.clients?.name || selectedClient?.name,
-          serviceName: selectedApp?.services?.name || 'Venta de Productos',
-          totalUsd: totalUsd,
-          fixedRate: fixedRate,
-          isMixed: paymentMode === 'mixed',
-          cashUsd: Number(cashUsd),
-          transferBs: Number(remainingBs),
-          totalTips: Number(tip),
-          staffInvolved: selectedApp ? [
-            { 
-              staffId: selectedApp.staff_id, 
-              commissionEarned: (() => {
-                const role = selectedApp.staff?.role;
-                const price = selectedApp.services?.price || 0;
-                let pct = 40;
-                
-                if (role === 'Barbero') pct = selectedApp.services?.commission_barber ?? 40;
-                else if (role === 'Asistente de Lavado') pct = selectedApp.services?.commission_washer ?? 10;
-                else if (role === 'Caja') pct = selectedApp.services?.commission_cashier ?? 0;
-                else if (role === 'Recepcionista') pct = selectedApp.services?.commission_receptionist ?? 0;
-                else pct = selectedApp.staff?.commission_pct ?? 40;
-                
-                return price * (pct / 100);
-              })(), 
-              tip: Number(tip)
+      const paymentData = {
+        appointmentId: selectedApp?.id || null,
+        clientId: selectedApp?.client_id || selectedClient?.id,
+        clientName: selectedApp?.clients?.name || selectedClient?.name,
+        serviceName: selectedApp?.services?.name || 'Venta de Productos',
+        totalUsd: totalUsd,
+        fixedRate: fixedRate,
+        isMixed: paymentMode === 'mixed',
+        cashUsd: Number(cashUsd),
+        transferBs: Number(remainingBs),
+        totalTips: totalTips,
+        staffInvolved: (() => {
+          const involved = [];
+          const washer = allStaff.find(s => s.id === selectedWasherId);
+          const washRate = washer ? Number(washer.washing_rate || 0) : 0;
+          
+          if (selectedApp && selectedApp.staff_id) {
+            const role = selectedApp.staff?.role;
+            let price = selectedApp.services?.price || 0;
+            const extrasTotal = selectedApp.appointment_extras?.reduce((acc, e) => acc + (e.price || 0), 0) || 0;
+            let grossBase = price + extrasTotal;
+
+            if (didWash && selectedWasherId) {
+              grossBase -= washRate;
             }
-          ] : [],
-          products: cart,
-          methodUsd: methodUsd,
-          methodBs: methodBs
-        };
+
+            let pct = 40;
+            if (role === 'Barbero') pct = selectedApp.services?.commission_barber ?? 40;
+            else if (role === 'Asistente de Lavado') pct = selectedApp.services?.commission_washer ?? 10;
+            else if (role === 'Caja') pct = selectedApp.services?.commission_cashier ?? 0;
+            else if (role === 'Recepcionista') pct = selectedApp.services?.commission_receptionist ?? 0;
+            else pct = selectedApp.staff?.commission_pct ?? 40;
+
+            involved.push({
+              staffId: selectedApp.staff_id,
+              commissionEarned: grossBase * (pct / 100),
+              productCommissionEarned: cart.reduce((acc, p) => acc + (p.price * p.quantity * 0.10), 0),
+              tip: tips.filter(t => t.staffId === selectedApp.staff_id).reduce((acc, t) => acc + Number(t.amount || 0), 0)
+            });
+          }
+
+          if (didWash && selectedWasherId) {
+            const existing = involved.find(i => i.staffId === selectedWasherId);
+            if (existing) {
+              existing.commissionEarned += washRate;
+            } else {
+              involved.push({
+                staffId: selectedWasherId,
+                commissionEarned: washRate,
+                productCommissionEarned: 0,
+                tip: tips.filter(t => t.staffId === selectedWasherId).reduce((acc, t) => acc + Number(t.amount || 0), 0)
+              });
+            }
+          }
+
+          tips.forEach(t => {
+            if (!t.staffId) return;
+            const existing = involved.find(i => i.staffId === t.staffId);
+            if (!existing) {
+              involved.push({
+                staffId: t.staffId,
+                commissionEarned: 0,
+                productCommissionEarned: 0,
+                tip: tips.filter(tip => tip.staffId === t.staffId).reduce((acc, tip) => acc + Number(tip.amount || 0), 0)
+              });
+            }
+          });
+
+          return involved;
+        })(),
+        products: cart,
+        methodUsd: methodUsd,
+        methodBs: methodBs
+      };
 
       await dataService.processFinalPayment(paymentData);
       
       triggerRocket();
       showToast("¡Venta completada con éxito!", "success");
       
-      // Clear state
       setSelectedApp(null);
       setSelectedClient(null);
       setIsDirectSale(false);
       setCart([]);
-      setTip(0);
+      setTips([]);
       setCashUsd(0);
       loadData();
     } catch (err) {
@@ -279,7 +339,6 @@ const CheckoutPOS = ({ isMobile, rates }) => {
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1.5fr', gap: '32px', alignItems: 'start' }}>
         
-        {/* Left: Pending Queue */}
         <section>
           <div className="glass-card" style={{ marginBottom: '32px', borderRadius: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
@@ -306,14 +365,12 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                   const val = e.target.value;
                   setIdSearch(val);
                   
-                  // 1. Search in Active (En Silla)
                   const activeMatch = pendingServices.find(app => app.status !== 'Agendado' && app.clients?.id_card === val);
                   if (activeMatch) {
                     setSelectedApp(activeMatch);
                     return;
                   }
 
-                  // 2. Search in Scheduled (Agendado Hoy)
                   const scheduledMatch = pendingServices.find(app => app.status === 'Agendado' && app.clients?.id_card === val);
                   if (scheduledMatch) {
                     setDialog({
@@ -365,15 +422,11 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                       </div>
                       <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>${app.services?.price || app.total_price || 0}</span>
                     </div>
-                    <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                      ID: {app.clients.id_card || 'Sin Cédula'}
-                    </div>
                   </div>
                 ))
               )}
             </div>
 
-            {/* Upcoming Appointments Section */}
             <div style={{ marginTop: '24px' }}>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>PRÓXIMAS CITAS (AGENDA HOY)</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -442,7 +495,6 @@ const CheckoutPOS = ({ isMobile, rates }) => {
           )}
         </section>
 
-        {/* Right: Checkout Calculator */}
         <section>
           {(!selectedApp && !isDirectSale) ? (
             <div className="glass-card" style={{ height: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', borderRadius: '24px', color: 'var(--text-muted)' }}>
@@ -454,11 +506,11 @@ const CheckoutPOS = ({ isMobile, rates }) => {
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
                 <div>
                   <h3 style={{ fontSize: '24px', fontWeight: '900' }}>{selectedApp ? 'Resumen de Cobro' : 'Venta Directa'}</h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
                     {selectedApp ? (
                       <>{selectedApp.clients.name} • {selectedApp.services?.name || 'Venta Directa'} • <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>{selectedApp.staff?.name || 'Caja'}</span></>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                      <>
                         {selectedClient ? (
                           <div className="animate-scale-in" style={{ padding: '12px 16px', background: 'rgba(212,175,55,0.1)', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
@@ -489,10 +541,9 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                             </button>
                           </div>
                         )}
-                        <span style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '700' }}>{!selectedClient ? 'Busca por cédula o crea un cliente nuevo' : 'Cliente listo. Añade los productos abajo.'}</span>
-                      </div>
+                      </>
                     )}
-                  </p>
+                  </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '900' }}>TASA MANUAL ($)</label>
@@ -505,26 +556,18 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                 </div>
               </div>
 
-              {/* Price Breakdown */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px', padding: '24px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
                 {selectedApp && (
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Servicio: {selectedApp.services?.name}</span>
-                      {selectedApp.services?.included_items && selectedApp.services.included_items.length > 0 && (
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                          Incluye: {selectedApp.services.included_items.join(' • ')}
-                        </span>
-                      )}
-                    </div>
+                    <span>Servicio: {selectedApp.services?.name}</span>
                     <span style={{ fontWeight: '700' }}>${servicePrice}</span>
                   </div>
                 )}
                 
                 {cart.map(p => (
-                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <button onClick={() => setCart(cart.filter(item => item.id !== p.id))} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '10px' }}>[X]</button>
+                      <button onClick={() => setCart(cart.filter(item => item.id !== p.id))} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}>[X]</button>
                       {p.name} (x{p.quantity})
                     </span>
                     <span>${(p.price * p.quantity).toFixed(2)}</span>
@@ -532,25 +575,119 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                 ))}
 
                 {selectedApp?.appointment_extras?.map(extra => (
-                  <div key={extra.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: 'var(--gold-primary)' }}>
+                  <div key={extra.id} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--gold-primary)' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <button onClick={() => handleRemoveExtra(extra.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '10px' }}>[X]</button>
+                      <button onClick={() => handleRemoveExtra(extra.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}>[X]</button>
                       {extra.service_extras?.name}
                     </span>
                     <span style={{ fontWeight: '700' }}>${extra.price}</span>
                   </div>
                 ))}
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
-                  <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <TrendingUp size={14} color="var(--gold-primary)" /> PROPINA
-                  </span>
-                  <input 
-                    type="number" 
-                    value={tip} 
-                    onChange={(e) => setTip(e.target.value)}
-                    style={{ width: '80px', textAlign: 'right', background: 'rgba(212,175,55,0.1)', border: 'none', borderRadius: '8px', color: 'var(--gold-primary)', fontWeight: '800' }} 
-                  />
+                {/* Washing Section */}
+                {(selectedApp?.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || 
+                  selectedApp?.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'))) && (
+                  <div className="glass-card animate-slide-up" style={{ padding: '24px', borderRadius: '24px', marginBottom: '24px', border: '1px solid rgba(10,132,255,0.1)', background: 'rgba(10,132,255,0.02)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(10,132,255,0.1)', color: '#0a84ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Droplets size={20} />
+                        </div>
+                        <div>
+                          <h4 style={{ fontSize: '15px', fontWeight: '800', color: 'white' }}>¿Se realizó el lavado?</h4>
+                          <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Afecta la comisión del barbero y asistente.</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setDidWash(!didWash)}
+                        style={{ 
+                          padding: '8px 24px', 
+                          borderRadius: '12px', 
+                          border: 'none', 
+                          backgroundColor: didWash ? '#0a84ff' : 'rgba(255,255,255,0.05)',
+                          color: didWash ? 'white' : 'var(--text-muted)',
+                          fontWeight: '900',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          transition: '0.3s'
+                        }}
+                      >
+                        {didWash ? 'SÍ' : 'NO'}
+                      </button>
+                    </div>
+
+                    {didWash && (
+                      <div className="animate-fade-in">
+                        <select 
+                          value={selectedWasherId}
+                          onChange={e => setSelectedWasherId(e.target.value)}
+                          style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
+                        >
+                          <option value="">Seleccionar Asistente de Lavado</option>
+                          {allStaff
+                            .filter(s => s.role?.includes('Asistente de Lavado'))
+                            .map(s => <option key={s.id} value={s.id}>{s.name} (${s.washing_rate || 0}/wash)</option>)
+                          }
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Dynamic Tips Section */}
+                <div style={{ paddingTop: '10px', borderTop: '1px dashed rgba(255,255,255,0.1)', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                      <TrendingUp size={14} color="var(--gold-primary)" /> PROPINAS
+                    </span>
+                    <button 
+                      onClick={() => setTips([...tips, { id: Date.now().toString(), staffId: allStaff[0]?.id || '', amount: 0 }])}
+                      style={{ background: 'rgba(212,175,55,0.1)', border: 'none', color: 'var(--gold-primary)', borderRadius: '8px', padding: '4px 8px', fontSize: '10px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Plus size={12} /> AGREGAR PROPINA
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {tips.map((t, idx) => (
+                      <div key={t.id} style={{ display: 'flex', gap: '8px', alignItems: 'center' }} className="animate-fade-in">
+                        <select 
+                          value={t.staffId} 
+                          onChange={(e) => {
+                            const newTips = [...tips];
+                            newTips[idx].staffId = e.target.value;
+                            setTips(newTips);
+                          }}
+                          style={{ flex: 1, height: '36px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 8px' }}
+                        >
+                          <option value="" disabled>Seleccionar Integrante</option>
+                          {allStaff.map(s => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                        <div style={{ position: 'relative', width: '80px' }}>
+                          <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', opacity: 0.5 }}>$</span>
+                          <input 
+                            type="number" 
+                            placeholder="0"
+                            value={t.amount || ''} 
+                            onChange={(e) => {
+                              const newTips = [...tips];
+                              newTips[idx].amount = parseFloat(e.target.value) || 0;
+                              setTips(newTips);
+                            }}
+                            style={{ width: '100%', height: '36px', textAlign: 'right', background: 'rgba(212,175,55,0.1)', border: 'none', borderRadius: '10px', color: 'var(--gold-primary)', fontWeight: '800', paddingRight: '12px' }} 
+                          />
+                        </div>
+                        <button 
+                          onClick={() => setTips(tips.filter(item => item.id !== t.id))}
+                          style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', padding: '4px' }}
+                        >
+                          <Minus size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '16px' }}>
@@ -562,7 +699,6 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                 </div>
               </div>
 
-              {/* Payment Method */}
               <div style={{ marginBottom: '32px' }}>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
                   <button 

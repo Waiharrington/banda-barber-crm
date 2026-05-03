@@ -79,7 +79,8 @@ const DashboardModule = ({
   isCustomRate,
   setIsCustomRate,
   customRates,
-  setCustomRates
+  setCustomRates,
+  onNavigate
 }) => {
   const { user } = useAuth();
   const [quoteIndex, setQuoteIndex] = useState(0);
@@ -98,254 +99,167 @@ const DashboardModule = ({
     setQuoteIndex(Math.floor(Math.random() * QUOTES.length));
   }, []);
 
-  const shuffleQuote = () => {
-    let newIndex;
-    do {
-      newIndex = Math.floor(Math.random() * QUOTES.length);
-    } while (newIndex === quoteIndex && QUOTES.length > 1);
-    setQuoteIndex(newIndex);
-  };
-
   const handleEditGoal = () => {
-    const newGoal = window.prompt('Define la Meta del Día ($):', dailyGoal);
+    const newGoal = prompt("Establecer nueva meta diaria ($):", dailyGoal);
     if (newGoal && !isNaN(newGoal)) {
       localStorage.setItem('astro_daily_goal', newGoal);
-      showToast(`Meta diaria actualizada a $${newGoal}`);
-      window.location.reload(); 
-    }
-  };
-
-  const currentQuote = QUOTES[quoteIndex];
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#1a1a1a',
-        borderColor: '#d4af37',
-        borderWidth: 1,
-        titleColor: '#d4af37',
-        padding: 12,
-        cornerRadius: 12
-      }
-    },
-    scales: {
-      y: { display: false },
-      x: { 
-        grid: { display: false },
-        ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10, weight: '700' } }
-      }
+      window.location.reload();
     }
   };
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: isMobile ? '100px' : '0' }}>
-      {/* Header Elite */}
-      <div style={{
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        justifyContent: 'space-between',
-        alignItems: isMobile ? 'flex-start' : 'center',
-        gap: '20px',
-        marginBottom: '40px'
+    <div style={{ paddingBottom: isMobile ? '100px' : '40px' }}>
+      {/* Top Header Section */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '40px',
+        flexWrap: 'wrap',
+        gap: '20px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div style={{ position: 'relative' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--gold-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--gold-glow)' }}>
-              <User size={24} color="black" />
+            <div style={{ 
+              width: '64px', 
+              height: '64px', 
+              borderRadius: '20px', 
+              backgroundColor: 'var(--gold-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: 'var(--gold-glow)'
+            }}>
+              <User color="black" size={32} />
             </div>
-            <Circle size={12} fill={isStoreOpen ? '#32d74b' : '#ff453a'} color="none" style={{ position: 'absolute', bottom: 0, right: 0, border: '2px solid var(--bg-primary)', borderRadius: '50%' }} />
+            <div style={{ 
+              position: 'absolute', 
+              bottom: '-2px', 
+              right: '-2px', 
+              width: '18px', 
+              height: '18px', 
+              borderRadius: '50%', 
+              backgroundColor: isStoreOpen ? '#4caf50' : '#ff4d4d',
+              border: '3px solid var(--bg-primary)'
+            }} />
           </div>
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: '900', letterSpacing: '-0.5px' }}>
-              ¡Hola, <span className="text-gold">{user?.name?.split(' ')[0] || 'Admin'}</span>!
+            <h1 style={{ fontSize: '28px', fontWeight: '950', letterSpacing: '-1px' }}>
+              ¡Hola, <span className="text-gold">{user?.name?.split(' ')[0] || 'Astro'}</span>!
             </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '13px' }}>
-              <span style={{ color: isStoreOpen ? '#32d74b' : '#ff453a', fontWeight: '800' }}>● {isStoreOpen ? 'TIENDA ABIERTA' : 'CERRADO'}</span>
-              <span style={{ opacity: 0.3 }}>|</span>
-              <span>{isBarber ? 'PANEL BARBERO' : 'PANEL CONTROL'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+              <span style={{ fontSize: '12px', fontWeight: '800', color: isStoreOpen ? '#4caf50' : '#ff4d4d', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                ● TIENDA ABIERTA
+              </span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>|</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700' }}>PANEL CONTROL</span>
             </div>
           </div>
-
-          {/* DUAL RATES WIDGET (HIDDEN FOR BARBERS) */}
-          {!isMobile && !isBarber && (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              gap: '12px',
-              padding: '8px 12px', 
-              backgroundColor: 'rgba(255,255,255,0.02)', 
-              borderRadius: '24px',
-              border: '1px solid rgba(212,175,55,0.05)',
-              marginLeft: '20px',
-              backdropFilter: 'blur(10px)'
-            }}>
-              {/* Mode Switcher */}
-              <div 
-                onClick={() => setIsCustomRate(!isCustomRate)}
-                style={{
-                  display: 'flex',
-                  backgroundColor: 'rgba(0,0,0,0.3)',
-                  padding: '4px',
-                  borderRadius: '20px',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  width: '70px',
-                  height: '28px'
-                }}
-              >
-                <div style={{
-                  position: 'absolute',
-                  left: isCustomRate ? '36px' : '4px',
-                  width: '30px',
-                  height: '20px',
-                  backgroundColor: isCustomRate ? 'var(--gold-primary)' : 'rgba(255,255,255,0.1)',
-                  borderRadius: '16px',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: isCustomRate ? '0 0 10px var(--gold-primary)' : 'none'
-                }} />
-                <div style={{ flex: 1, textAlign: 'center', fontSize: '8px', fontWeight: '900', zIndex: 2, color: !isCustomRate ? 'black' : 'white', lineHeight: '20px' }}>BCV</div>
-                <div style={{ flex: 1, textAlign: 'center', fontSize: '8px', fontWeight: '900', zIndex: 2, color: isCustomRate ? 'black' : 'white', lineHeight: '20px' }}>MAN</div>
-              </div>
-
-              {/* Rate Values */}
-              <div style={{ display: 'flex', gap: '16px', padding: '0 8px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '8px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px' }}>USD</span>
-                  <span style={{ fontSize: '13px', fontWeight: '900', color: isCustomRate ? 'var(--gold-primary)' : 'white' }}>{rates.usd.toFixed(2)}</span>
-                </div>
-                <div style={{ width: '1px', backgroundColor: 'rgba(255,255,255,0.05)', height: '20px', alignSelf: 'center' }} />
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '8px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px' }}>EUR</span>
-                  <span style={{ fontSize: '13px', fontWeight: '900', color: isCustomRate ? 'var(--gold-primary)' : 'white' }}>{rates.eur.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {/* Edit Button */}
-              <button 
-                onClick={() => {
-                  setTempRates({ ...customRates });
-                  setIsEditingRates(true);
-                }}
-                className="edit-rates-btn"
-                style={{
-                  background: 'rgba(212,175,55,0.1)',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '28px',
-                  height: '28px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  color: 'var(--gold-primary)',
-                  transition: 'all 0.3s'
-                }}
-              >
-                <Edit3 size={14} />
-              </button>
-            </div>
-          )}
         </div>
-        
-        <div style={{ display: 'flex', gap: '12px', width: isMobile ? '100%' : 'auto' }}>
-          {dbData.staff.length === 0 && (
-            <button key="seed" onClick={handleSeedData} className="action-btn" style={{ flex: 1 }}><Rocket size={18} /> Demo</button>
-          )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="glass-card" style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '16px', borderRadius: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ 
+                padding: '4px 8px', 
+                backgroundColor: isCustomRate ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', 
+                borderRadius: '6px',
+                fontSize: '10px',
+                fontWeight: '900',
+                color: isCustomRate ? 'black' : 'var(--text-muted)'
+              }}>
+                {isCustomRate ? 'MAN' : 'BCV'}
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '9px', fontWeight: '800', opacity: 0.5 }}>USD</div>
+                <div style={{ fontSize: '14px', fontWeight: '900', color: 'white' }}>{rates.usd.toFixed(2)}</div>
+              </div>
+            </div>
+            <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255,255,255,0.1)' }} />
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '9px', fontWeight: '800', opacity: 0.5 }}>EUR</div>
+              <div style={{ fontSize: '14px', fontWeight: '900', color: 'white' }}>{rates.eur.toFixed(2)}</div>
+            </div>
+            <button 
+              onClick={() => setIsEditingRates(true)}
+              className="edit-rates-btn"
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                color: 'var(--gold-primary)', 
+                cursor: 'pointer',
+                padding: '4px',
+                transition: '0.2s'
+              }}
+            >
+              <Edit3 size={16} />
+            </button>
+          </div>
+          
           <button 
-            key="sale"
             className="btn-gold" 
             onClick={onOpenSale}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: isMobile ? 3 : 'none', height: '48px', borderRadius: '14px' }}
+            style={{ 
+              height: '52px', 
+              padding: '0 24px', 
+              borderRadius: '16px', 
+              fontWeight: '900',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              fontSize: '15px'
+            }}
           >
-            <Plus size={18} /> Nueva Operación Astro
+            <Plus size={20} /> Nueva Operación Astro
           </button>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px' }}>
-        {/* Main Section */}
-        <div style={{ gridColumn: isMobile ? 'span 1' : 'span 2', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '32px' }}>
+        
+        {/* Left Column: Vision & Stats */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
           
-          {/* Decorative Quote Section (RESTORED MAGIC) */}
-          <div className="glass-card animate-slide-up" style={{ 
-            marginBottom: '24px', 
-            padding: '0', 
-            borderRadius: '32px',
-            background: 'linear-gradient(135deg, rgba(28,28,30,0.95), rgba(212,175,55,0.05))',
-            border: '1px solid rgba(255,255,255,0.03)',
-            position: 'relative',
-            overflow: 'visible',
+          {/* Main Hero Card */}
+          <div className="glass-card" style={{ 
+            minHeight: '340px', 
+            borderRadius: '32px', 
+            padding: '48px', 
+            position: 'relative', 
+            overflow: 'hidden',
             display: 'flex',
-            flexDirection: isMobile ? 'column' : 'row',
-            alignItems: 'center',
-            minHeight: '220px'
+            flexDirection: 'column',
+            justifyContent: 'center'
           }}>
-            <div style={{ 
-              flex: 1, 
-              padding: isMobile ? '40px 24px' : '32px 48px', 
-              textAlign: isMobile ? 'center' : 'left',
-              zIndex: 2 
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
-                <div style={{ width: '30px', height: '1px', backgroundColor: 'var(--gold-primary)' }} />
-                <span style={{ color: 'var(--gold-primary)', fontSize: '10px', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>Pensamiento Astro</span>
-                <button 
-                  onClick={shuffleQuote}
-                  style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', padding: '4px', opacity: 0.6, display: 'flex', alignItems: 'center', transition: 'all 0.3s' }}
-                  className="refresh-btn"
-                >
-                  <Sparkles size={12} />
-                </button>
+            <div style={{ position: 'relative', zIndex: 2, maxWidth: '60%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <div style={{ width: '20px', height: '2px', backgroundColor: 'var(--gold-primary)' }} />
+                <span style={{ fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '2px', textTransform: 'uppercase' }}>Pensamiento Astro</span>
+                <Sparkles size={14} color="var(--gold-primary)" className="animate-pulse" />
               </div>
-              <h2 key={quoteIndex} className="animate-fade-in" style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '900', letterSpacing: '-1px', marginBottom: '16px', lineHeight: 1.1 }}>
-                {currentQuote.text.includes('<br />') ? currentQuote.text : (
-                  <>
-                    {currentQuote.text.split(' ').slice(0, Math.ceil(currentQuote.text.split(' ').length / 2)).join(' ')} <br />
-                    <span className="text-gold">{currentQuote.text.split(' ').slice(Math.ceil(currentQuote.text.split(' ').length / 2)).join(' ')}</span>
-                  </>
-                )}
+              <h2 style={{ fontSize: isMobile ? '32px' : '42px', fontWeight: '950', lineHeight: '1.1', marginBottom: '24px', letterSpacing: '-1.5px' }}>
+                {QUOTES[quoteIndex].text}
               </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic', opacity: 0.7 }}>— {currentQuote.creator}</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '16px', fontWeight: '600' }}>
+                — {QUOTES[quoteIndex].creator}
+              </p>
             </div>
 
-            <div style={{ 
-              flex: isMobile ? 'none' : '0.8', 
-              position: 'relative', 
-              height: isMobile ? '200px' : '240px',
-              width: isMobile ? '100%' : 'auto',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginTop: isMobile ? '0' : '0'
-            }}>
-              <div style={{
-                position: 'absolute',
-                width: '180px',
-                height: '180px',
-                background: 'radial-gradient(circle, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.05) 40%, transparent 70%)',
-                filter: 'blur(30px)',
+            {/* Visual Elements */}
+            <div style={{ position: 'absolute', right: '-20px', bottom: '-40px', width: '380px', height: '420px' }}>
+              <div className="chair-shadow" style={{ 
+                position: 'absolute', 
+                bottom: '80px', 
+                left: '50%', 
+                transform: 'translateX(-50%)', 
+                width: '180px', 
+                height: '40px', 
+                background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, transparent 70%)',
                 zIndex: 1,
-                animation: 'pulse-gold 4s infinite ease-in-out'
-              }} />
-
-              <div style={{
-                position: 'absolute',
-                bottom: '10px',
-                width: '100px',
-                height: '12px',
-                background: 'rgba(0,0,0,0.6)',
-                filter: 'blur(10px)',
-                borderRadius: '50%',
-                zIndex: 2,
-                transform: 'scaleX(1.5)',
                 animation: 'shadow-scale 4s infinite ease-in-out'
               }} />
-              
               <img 
-                src="/barber-chair.png" 
+                src="https://zntofmpxxicpjsizclqf.supabase.co/storage/v1/object/public/system-assets/gold_chair_pro.png" 
                 alt="Astro Chair" 
                 className="chair-float"
                 style={{ 
@@ -361,14 +275,14 @@ const DashboardModule = ({
             </div>
           </div>
 
-          {/* Business Stats (Astro Style) */}
+          {/* Business Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
             <StatCard title="Tu Producción" value={`$${myStats.income.toFixed(2)}`} icon={<TrendingUp size={18} color="var(--gold-primary)" />} color="var(--gold-primary)" trend="+12%" positive={true} />
             <StatCard title="Tus Servicios" value={myStats.appointments} icon={<ScissorsIcon size={18} color="var(--gold-primary)" />} color="#4caf50" trend="Activo" positive={true} />
             {!isBarber && <StatCard title="En Inventario" value={dbData.services.length + dbData.clients.length} icon={<ShoppingBag size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
           </div>
 
-          {/* Goal Progress (HIDDEN FOR BARBERS) */}
+          {/* Goal Progress */}
           {!isBarber && (
             <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -394,109 +308,41 @@ const DashboardModule = ({
           )}
         </div>
 
-        {/* Top Performers Ranking (HIDDEN FOR BARBERS) */}
+        {/* Right Column: Rankings */}
         {!isBarber && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div className="glass-card" style={{ 
-              height: '100%', 
-              borderRadius: '28px', 
-              padding: '24px', 
-              background: 'rgba(28,28,30,0.6)',
-              border: '1px solid rgba(255,255,255,0.03)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Trophy size={20} color="var(--gold-primary)" />
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: '900' }}>Top <span className="text-gold">Artistas</span></h3>
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <PodiumSection 
+              title="Top Artistas" 
+              icon={<Trophy size={20} color="var(--gold-primary)" />}
+              data={dbData.staff.sort((a,b) => (b.stats?.monthlyIncome || 0) - (a.stats?.monthlyIncome || 0)).slice(0, 3)}
+              labelKey="name"
+              scoreKey={(item) => `$${(item.stats?.monthlyIncome || 0).toFixed(0)}`}
+              scoreLabel="ÚLTIMOS 30 DÍAS"
+            />
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {dbData.staff.length === 0 ? (
-                  <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '40px 0' }}>Sin datos de personal.</p>
-                ) : dbData.staff.slice(0, 5).sort((a,b) => (b.stats?.income || 0) - (a.stats?.income || 0)).map((barber, index) => (
-                  <div key={barber.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                    <div style={{ position: 'relative' }}>
-                      <div style={{ 
-                        width: '44px', 
-                        height: '44px', 
-                        borderRadius: '14px', 
-                        backgroundColor: 'var(--bg-tertiary)', 
-                        overflow: 'hidden',
-                        border: index === 0 ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)'
-                      }}>
-                        <img src={barber.image_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${barber.name}`} alt={barber.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </div>
-                      {index === 0 && <Crown size={14} color="var(--gold-primary)" fill="var(--gold-primary)" style={{ position: 'absolute', top: '-6px', right: '-6px' }} />}
-                      {index === 1 && <Medal size={14} color="#C0C0C0" style={{ position: 'absolute', top: '-6px', right: '-6px' }} />}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: '800', fontSize: '13px' }}>{barber.name.split(' ')[0]}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{barber.role}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '14px' }}>${(barber.stats?.income || 0).toFixed(0)}</div>
-                      <div style={{ fontSize: '9px', fontWeight: '800', opacity: 0.4 }}>PRODUCCIÓN</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <button style={{ width: '100%', marginTop: '24px', backgroundColor: 'rgba(255,255,255,0.03)', border: 'none', color: 'var(--text-secondary)', padding: '12px', borderRadius: '12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                Ver Todos los Miembros <ArrowRight size={14} />
-              </button>
-            </div>
+            <PodiumSection 
+              title="Top Clientes" 
+              icon={<Users size={20} color="var(--gold-primary)" />}
+              data={dbData.clients.sort((a,b) => (b.total_visits || 0) - (a.total_visits || 0)).slice(0, 3)}
+              labelKey="name"
+              scoreKey={(item) => `${item.total_visits || 0}`}
+              scoreLabel="VISITAS"
+              isClient
+              onNavigate={onNavigate}
+            />
           </div>
         )}
       </div>
 
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-25px) rotate(5deg); }
-        }
-        @keyframes shadow-scale {
-          0%, 100% { transform: scaleX(1.5); opacity: 0.6; }
-          50% { transform: scaleX(1.1); opacity: 0.2; }
-        }
-        @keyframes pulse-gold {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(1.15); opacity: 0.7; }
-        }
-        .refresh-btn:hover, .edit-rates-btn:hover {
-          opacity: 1 !important;
-          transform: rotate(15deg) scale(1.1);
-        }
-        .chair-float {
-          transition: all 0.5s ease;
-        }
-        .chair-float:hover {
-          filter: drop-shadow(0 40px 70px rgba(212,175,55,0.4)) brightness(1.2) !important;
-        }
-      `}</style>
-
-      {/* Manual Rates Edit Modal */}
+      {/* Manual Rate Edit Modal */}
       {isEditingRates && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.85)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px'
+        <div className="modal-overlay animate-fade-in" style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, backdropFilter: 'blur(10px)'
         }}>
-          <div className="glass-card animate-slide-up" style={{
-            width: '100%',
-            maxWidth: '400px',
-            padding: '32px',
-            borderRadius: '28px',
-            border: '1px solid rgba(212,175,55,0.2)',
-            background: 'linear-gradient(135deg, rgba(30,30,35,1), rgba(20,20,25,1))'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+          <div className="glass-card animate-scale-in" style={{ width: '400px', padding: '40px', borderRadius: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Edit3 color="var(--gold-primary)" size={20} />
               </div>
@@ -554,6 +400,25 @@ const DashboardModule = ({
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-25px) rotate(5deg); }
+        }
+        @keyframes shadow-scale {
+          0%, 100% { transform: scaleX(1.5); opacity: 0.6; }
+          50% { transform: scaleX(1.1); opacity: 0.2; }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(30px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .refresh-btn:hover, .edit-rates-btn:hover {
+          opacity: 1 !important;
+          transform: rotate(15deg) scale(1.1);
+        }
+      `}</style>
     </div>
   );
 };
@@ -581,5 +446,113 @@ const StatCard = ({ title, value, icon, color, trend, positive }) => (
     <div style={{ fontSize: '24px', fontWeight: '900', marginTop: '4px' }}>{value}</div>
   </div>
 );
+
+const PodiumSection = ({ title, icon, data, labelKey, scoreKey, scoreLabel, isClient, onNavigate }) => {
+  // Sort into 2nd, 1st, 3rd for visual podium order
+  const podiumOrder = [data[1], data[0], data[2]].filter(Boolean);
+
+  return (
+    <div className="glass-card" style={{ padding: '24px', borderRadius: '28px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '40px' }}>
+        <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {icon}
+        </div>
+        <h3 style={{ fontSize: '18px', fontWeight: '900' }}>{title.split(' ')[0]} <span className="text-gold">{title.split(' ')[1]}</span></h3>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '12px', minHeight: '180px' }}>
+        {podiumOrder.map((item, idx) => {
+          const originalIdx = data.indexOf(item);
+          const isFirst = originalIdx === 0;
+          const isSecond = originalIdx === 1;
+          const isThird = originalIdx === 2;
+
+          return (
+            <div key={item.id} style={{ 
+              flex: 1, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              animation: `slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards`,
+              animationDelay: `${idx * 0.1}s`
+            }}>
+              <div style={{ position: 'relative', marginBottom: '12px' }}>
+                <div style={{ 
+                  width: isFirst ? '70px' : '56px', 
+                  height: isFirst ? '70px' : '56px', 
+                  borderRadius: '20px', 
+                  backgroundColor: 'var(--bg-tertiary)',
+                  border: isFirst ? '3px solid var(--gold-primary)' : '2px solid rgba(255,255,255,0.1)',
+                  overflow: 'hidden',
+                  boxShadow: isFirst ? 'var(--gold-glow)' : 'none',
+                  display: isClient ? 'none' : 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item[labelKey]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <User size={isFirst ? 32 : 24} color="var(--gold-primary)" opacity={0.5} />
+                  )}
+                </div>
+                {isFirst && <Crown size={20} color="var(--gold-primary)" fill="var(--gold-primary)" style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)' }} />}
+                <div style={{ 
+                  position: 'absolute', 
+                  bottom: '-8px', 
+                  left: '50%', 
+                  transform: 'translateX(-50%)',
+                  width: '24px', 
+                  height: '24px', 
+                  borderRadius: '50%', 
+                  backgroundColor: isFirst ? 'var(--gold-primary)' : isSecond ? '#C0C0C0' : '#CD7F32',
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  fontSize: '12px', 
+                  fontWeight: '900', 
+                  color: 'black'
+                }}>
+                  {originalIdx + 1}
+                </div>
+              </div>
+
+              <div 
+                style={{ textAlign: 'center', marginTop: '12px', cursor: isClient ? 'pointer' : 'default' }}
+                onClick={() => isClient && onNavigate && onNavigate('clients', { clientId: item.id })}
+              >
+                <div style={{ 
+                  fontWeight: '900', 
+                  fontSize: isFirst ? '14px' : '12px', 
+                  whiteSpace: 'nowrap', 
+                  maxWidth: '80px', 
+                  overflow: 'hidden', 
+                  textOverflow: 'ellipsis',
+                  color: isClient ? 'var(--gold-primary)' : 'white',
+                  textDecoration: isClient ? 'underline' : 'none',
+                  textUnderlineOffset: '4px'
+                }}>
+                  {item[labelKey].split(' ')[0]}
+                </div>
+                <div style={{ color: 'var(--gold-primary)', fontWeight: '950', fontSize: '15px' }}>{scoreKey(item)}</div>
+                <div style={{ fontSize: '8px', fontWeight: '800', opacity: 0.4, letterSpacing: '0.5px' }}>{scoreLabel}</div>
+              {/* Visual Podium Base */}
+              <div style={{ 
+                width: '100%', 
+                height: isFirst ? '60px' : isSecond ? '40px' : '25px', 
+                background: 'linear-gradient(to top, rgba(212, 175, 55, 0.3), rgba(212, 175, 55, 0.1))',
+                borderRadius: '8px 8px 0 0',
+                marginTop: '10px',
+                border: '1px solid rgba(212, 175, 55, 0.3)',
+                borderBottom: 'none',
+                boxShadow: isFirst ? '0 -10px 20px rgba(212, 175, 55, 0.1)' : 'none'
+              }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 export default DashboardModule;
