@@ -259,7 +259,7 @@ const DashboardModule = ({
                 animation: 'shadow-scale 4s infinite ease-in-out'
               }} />
               <img 
-                src="https://zntofmpxxicpjsizclqf.supabase.co/storage/v1/object/public/system-assets/gold_chair_pro.png" 
+                src="/src/assets/gold_chair.png" 
                 alt="Astro Chair" 
                 className="chair-float"
                 style={{ 
