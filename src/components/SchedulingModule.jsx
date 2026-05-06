@@ -13,7 +13,8 @@ import {
   XCircle,
   Pencil,
   Filter,
-  List
+  List,
+  Search
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -39,6 +40,7 @@ const SchedulingModule = ({ isMobile }) => {
   const [dialog, setDialog] = useState({ isOpen: false, appointmentId: null });
   const [editingApp, setEditingApp] = useState(null);
   const [filterType, setFilterType] = useState('day'); // 'day', 'week', 'fortnight', 'month'
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [newApp, setNewApp] = useState({
     clientId: '',
@@ -317,6 +319,34 @@ const SchedulingModule = ({ isMobile }) => {
                 setSelectedDate(d);
               }} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '10px', width: '36px', height: '36px', color: 'white', cursor: 'pointer' }}><ChevronRight size={18} /></button>
             </div>
+          
+          </div>
+
+          <div className="glass-card" style={{ padding: '16px 24px', marginBottom: '20px', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <Search size={18} color="var(--text-muted)" />
+            <input 
+              type="text" 
+              placeholder="Buscar por nombre, cédula o teléfono..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ 
+                flex: 1, 
+                background: 'none', 
+                border: 'none', 
+                color: 'white', 
+                fontSize: '15px', 
+                fontWeight: '700',
+                outline: 'none'
+              }}
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '24px', height: '24px', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <XCircle size={14} />
+              </button>
+            )}
           </div>
 
           <div className="glass-card" style={{ padding: '0', overflow: 'hidden', borderRadius: '24px' }}>
@@ -324,14 +354,31 @@ const SchedulingModule = ({ isMobile }) => {
               <div style={{ padding: '100px', textAlign: 'center' }}>
                 <div className="animate-pulse" style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>Cargando agenda...</div>
               </div>
-            ) : appointments.length === 0 ? (
+            ) : appointments.filter(app => {
+                if (!searchTerm) return true;
+                const term = searchTerm.toLowerCase();
+                return (
+                  (app.clients?.name || '').toLowerCase().includes(term) ||
+                  (app.clients?.id_card || '').toLowerCase().includes(term) ||
+                  (app.clients?.phone || '').toLowerCase().includes(term)
+                );
+              }).length === 0 ? (
               <div style={{ padding: '100px', textAlign: 'center' }}>
-                <CalendarIcon size={48} color="rgba(255,255,255,0.05)" style={{ marginBottom: '16px' }} />
-                <div style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No hay citas para este periodo</div>
+                <Search size={48} color="rgba(255,255,255,0.05)" style={{ marginBottom: '16px' }} />
+                <div style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No se encontraron citas que coincidan con la búsqueda</div>
               </div>
             ) : (
               <div style={{ maxHeight: '700px', overflowY: 'auto' }}>
                 {appointments
+                  .filter(app => {
+                    if (!searchTerm) return true;
+                    const term = searchTerm.toLowerCase();
+                    return (
+                      (app.clients?.name || '').toLowerCase().includes(term) ||
+                      (app.clients?.id_card || '').toLowerCase().includes(term) ||
+                      (app.clients?.phone || '').toLowerCase().includes(term)
+                    );
+                  })
                   .sort((a, b) => new Date(a.scheduled_at || a.created_at) - new Date(b.scheduled_at || b.created_at))
                   .map(app => (
                   <div key={app.id} className="hover-item" style={{ 
@@ -419,7 +466,10 @@ const SchedulingModule = ({ isMobile }) => {
                 placeholder="Selecciona barbero" 
                 value={newApp.staffId} 
                 onChange={(val) => setNewApp({...newApp, staffId: val})} 
-                options={staff.map(s => ({ label: s.name, value: s.id }))} 
+                options={staff
+                  .filter(s => s.role?.toLowerCase().includes('barbero'))
+                  .map(s => ({ label: s.name, value: s.id }))
+                } 
                 disabled={user?.role === 'Barbero' || user?.role?.startsWith('Barbero|')}
               />
 

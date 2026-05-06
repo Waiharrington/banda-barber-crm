@@ -9,7 +9,8 @@ import {
   Package, 
   Wallet, 
   Settings,
-  Calendar
+  Calendar,
+  Edit3
 } from 'lucide-react';
 import DashboardModule from './components/DashboardModule';
 import ClientModule from './components/ClientModule';
@@ -34,6 +35,7 @@ import BarberPanel from './components/BarberPanel';
 import SchedulingModule from './components/SchedulingModule';
 import { useAuth } from './context/AuthContext';
 import Login from './components/Login';
+import TopBar from './components/TopBar';
 
 function App() {
   const { user } = useAuth();
@@ -44,6 +46,8 @@ function App() {
   const [isTabLoading, setIsTabLoading] = useState(false);
   const [tabParams, setTabParams] = useState({});
   const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
+  const [isEditingRates, setIsEditingRates] = useState(false);
+  const [tempRates, setTempRates] = useState({});
   
   // Multi-currency State
   const [currency, setCurrency] = useState('USD'); 
@@ -72,11 +76,23 @@ function App() {
 
   const handleRefresh = () => setRefreshKey(prev => prev + 1);
 
-  // Auto-Sync BCV Rates on Mount
+  // Auto-Sync BCV and Global Rates on Mount
   useEffect(() => {
     const syncRates = async () => {
-      const data = await dataService.getExchangeRates();
-      if (data) setRates(data);
+      const [bcvData, globalRates] = await Promise.all([
+        dataService.getExchangeRates(),
+        dataService.getGlobalRates()
+      ]);
+      
+      if (bcvData) setRates(bcvData);
+      if (globalRates) {
+        setCustomRates(prev => ({ 
+          ...prev, 
+          shop: globalRates.shop, 
+          usdt: globalRates.usdt,
+          bcv: bcvData?.usd || prev.bcv
+        }));
+      }
     };
     syncRates();
   }, []);
@@ -135,14 +151,15 @@ function App() {
 
   const fetchInitialData = async () => {
     try {
-      const [c, s, st, t, ext, inv, apps] = await Promise.all([
+      const [c, s, st, t, ext, inv, apps, todayApps] = await Promise.all([
         dataService.getClients(),
         dataService.getServices(),
         dataService.getStaff(),
         dataService.getTransactions(),
         dataService.getExtras(),
         dataService.getInventory(),
-        dataService.getAppointmentsByState(['Completado'])
+        dataService.getAppointmentsByState(['Completado']),
+        dataService.getTodayAppointments()
       ]);
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -188,7 +205,9 @@ function App() {
         services: s, 
         staff: staffWithStats, 
         extras: ext || [], 
-        inventory: inv?.filter(i => i.is_for_sale !== false) || [] 
+        inventory: inv?.filter(i => i.is_for_sale !== false) || [],
+        appointments: apps,
+        todayAppointments: todayApps
       });
       const today = new Date().toISOString().split('T')[0];
       const todayTransactions = t.filter(trans => trans.created_at.startsWith(today));
@@ -339,7 +358,11 @@ function App() {
         bcvRates={rates}
         isCustomRate={isCustomRate}
         onToggleCustom={setIsCustomRate}
-        onUpdateCustom={setCustomRates}
+        onUpdateCustom={async (newRates) => {
+          setCustomRates(newRates);
+          localStorage.setItem('astro_custom_rates', JSON.stringify(newRates));
+          await dataService.updateGlobalRates({ shop: newRates.shop, usdt: newRates.usdt });
+        }}
         customRates={customRates}
       />
       <main className="main-content" style={{ 
@@ -350,9 +373,98 @@ function App() {
         backgroundColor: 'var(--bg-primary)'
       }}>
         <div key={activeTab} className="animate-fade-in" style={{ height: '100%' }}>
+          <TopBar 
+            rates={effectiveRates} 
+            onOpenSale={() => handleTabChange('recepcion')}
+            onEditRates={() => {
+              setTempRates(customRates);
+              setIsEditingRates(true);
+            }}
+          />
           {renderContent()}
         </div>
       </main>
+      
+      {/* Global Rate Edit Modal */}
+      {isEditingRates && (
+        <div className="modal-overlay animate-fade-in" style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 2000, backdropFilter: 'blur(10px)'
+        }}>
+          <div className="glass-card animate-scale-in" style={{ width: '400px', padding: '40px', borderRadius: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Edit3 color="var(--gold-primary)" size={20} />
+              </div>
+              <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Tasas <span className="text-gold">Astro</span></h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
+              <div style={{ padding: '16px', borderRadius: '16px', backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>TASA BCV (OFICIAL)</span>
+                  <span style={{ fontSize: '14px', fontWeight: '900' }}>{rates.usd.toFixed(2)} Bs.</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>BRECHA CAMBIARIA</span>
+                  <span style={{ fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)' }}>{effectiveRates.gap.toFixed(2)}%</span>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '8px' }}>TASA USDT (PROMEDIO)</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="number" 
+                    value={tempRates.usdt === 0 ? '' : tempRates.usdt}
+                    onChange={(e) => setTempRates({ ...tempRates, usdt: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                    style={{ width: '100%', height: '52px', paddingLeft: '54px', fontSize: '18px', fontWeight: '900', color: 'white' }}
+                  />
+                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: '900', color: 'var(--gold-primary)', fontSize: '14px' }}>Bs.</span>
+                </div>
+              </div>
+
+              <div style={{ padding: '20px', borderRadius: '24px', backgroundColor: 'rgba(212,175,55,0.05)', border: '2px solid var(--gold-primary)' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '1.5px', marginBottom: '12px', textTransform: 'uppercase' }}>Tasa de la Barbería (ACTIVA)</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="number" 
+                    value={tempRates.shop === 0 ? '' : tempRates.shop}
+                    onChange={(e) => setTempRates({ ...tempRates, shop: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                    style={{ width: '100%', height: '60px', paddingLeft: '54px', fontSize: '24px', fontWeight: '950', color: 'var(--gold-primary)', background: 'transparent', border: 'none' }}
+                  />
+                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', fontWeight: '950', color: 'var(--gold-primary)' }}>Bs.</span>
+                </div>
+                <p style={{ fontSize: '10px', color: 'rgba(212,175,55,0.6)', marginTop: '8px', fontWeight: '700' }}>* Esta tasa se usará para todos los cobros y cálculos de hoy.</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={() => setIsEditingRates(false)}
+                className="action-btn"
+                style={{ flex: 1, height: '48px', opacity: 0.5 }}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={async () => {
+                  setCustomRates(tempRates);
+                  setIsCustomRate(true);
+                  setIsEditingRates(false);
+                  localStorage.setItem('astro_custom_rates', JSON.stringify(tempRates));
+                  await dataService.updateGlobalRates({ shop: tempRates.shop, usdt: tempRates.usdt });
+                }}
+                className="btn-gold"
+                style={{ flex: 1, height: '48px' }}
+              >
+                Activar Tasa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <SaleServiceModal 
         isOpen={isSaleModalOpen} 
         onClose={() => setIsSaleModalOpen(false)} 

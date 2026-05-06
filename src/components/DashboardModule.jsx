@@ -96,9 +96,35 @@ const DashboardModule = ({
   const [isStoreOpen] = useState(true); 
 
   const isBarber = user?.role === 'Barbero' || user?.role?.includes('Barbero|');
+  const isAssistant = user?.role?.includes('Asistente de Lavado');
 
-  // Filter stats for barber
-  const myStats = isBarber ? (dbData.staff.find(s => s.id === user.id)?.stats || { income: 0, appointments: 0 }) : stats;
+  // Filter stats for barber or assistant
+  const myStats = (isBarber || isAssistant && dbData?.staff) 
+    ? (dbData.staff.find(s => s.id === user.id)?.stats || { income: 0, appointments: 0 }) 
+    : stats;
+
+  // Assistant specific: Calculate earnings per barber (Weekly)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
+  const washingByBarber = (isAssistant && dbData?.appointments) ? (dbData.appointments || [])
+    .filter(a => a.created_at >= sevenDaysAgoISO && a.appointment_staff?.some(as => as.staff_id === user.id))
+    .reduce((acc, a) => {
+      const barberName = a.staff?.name || 'Otro';
+      const myRecord = a.appointment_staff?.find(as => as.staff_id === user.id);
+      const amount = Number(myRecord?.commission_earned || 0);
+      
+      const existing = acc.find(item => item.name === barberName);
+      if (existing) {
+        existing.total += amount;
+        existing.count += 1;
+      } else {
+        acc.push({ name: barberName, total: amount, count: 1 });
+      }
+      return acc;
+    }, [])
+    .sort((a, b) => b.total - a.total) : [];
 
   useEffect(() => {
     setQuoteIndex(Math.floor(Math.random() * QUOTES.length));
@@ -115,139 +141,6 @@ const DashboardModule = ({
 
   return (
     <div style={{ paddingBottom: isMobile ? '100px' : '40px' }}>
-      {/* Top Header Section */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: '40px',
-        flexWrap: 'wrap',
-        gap: '20px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ position: 'relative' }}>
-            <div style={{ 
-              width: '64px', 
-              height: '64px', 
-              borderRadius: '20px', 
-              backgroundColor: 'var(--gold-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: 'var(--gold-glow)'
-            }}>
-              <User color="black" size={32} />
-            </div>
-            <div style={{ 
-              position: 'absolute', 
-              bottom: '-2px', 
-              right: '-2px', 
-              width: '18px', 
-              height: '18px', 
-              borderRadius: '50%', 
-              backgroundColor: isStoreOpen ? '#4caf50' : '#ff4d4d',
-              border: '3px solid var(--bg-primary)'
-            }} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: '28px', fontWeight: '950', letterSpacing: '-1px' }}>
-              ¡Hola, <span className="text-gold">{user?.name?.split(' ')[0] || 'Astro'}</span>!
-            </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-              <span style={{ fontSize: '12px', fontWeight: '800', color: isStoreOpen ? '#4caf50' : '#ff4d4d', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                ● TIENDA ABIERTA
-              </span>
-              <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>|</span>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700' }}>PANEL CONTROL</span>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="glass-card" style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '24px', borderRadius: '18px', border: '1px solid rgba(212,175,55,0.1)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ 
-                padding: '4px 8px', 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: '6px',
-                fontSize: '9px',
-                fontWeight: '900',
-                color: 'var(--text-muted)'
-              }}>
-                BCV
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>{rates.bcv.toFixed(2)}</div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ 
-                padding: '4px 8px', 
-                backgroundColor: 'rgba(255,255,255,0.05)', 
-                borderRadius: '6px',
-                fontSize: '9px',
-                fontWeight: '900',
-                color: 'var(--text-muted)'
-              }}>
-                USDT
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>{rates.usdt.toFixed(2)}</div>
-              </div>
-              <div style={{ 
-                fontSize: '10px', 
-                fontWeight: '800', 
-                color: rates.gap > 10 ? '#ff4d4d' : '#4caf50',
-                backgroundColor: rates.gap > 10 ? 'rgba(255,77,77,0.1)' : 'rgba(76,175,80,0.1)',
-                padding: '2px 6px',
-                borderRadius: '4px'
-              }}>
-                {rates.gap.toFixed(1)}%
-              </div>
-            </div>
-
-            <div style={{ width: '1px', height: '30px', backgroundColor: 'rgba(255,255,255,0.1)' }} />
-            
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '0.5px' }}>TASA BARBERÍA</div>
-              <div style={{ fontSize: '18px', fontWeight: '950', color: 'var(--gold-primary)' }}>{rates.usd.toFixed(2)}</div>
-            </div>
-
-            <button 
-              onClick={() => setIsEditingRates(true)}
-              className="edit-rates-btn"
-              style={{ 
-                background: 'none', 
-                border: 'none', 
-                color: 'var(--gold-primary)', 
-                cursor: 'pointer',
-                padding: '4px',
-                transition: '0.2s'
-              }}
-            >
-              <Edit3 size={16} />
-            </button>
-          </div>
-          
-          <button 
-            className="btn-gold" 
-            onClick={onOpenSale}
-            style={{ 
-              height: '52px', 
-              padding: '0 24px', 
-              borderRadius: '16px', 
-              fontWeight: '900',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              fontSize: '15px'
-            }}
-          >
-            <Plus size={20} /> Nueva Operación Astro
-          </button>
-        </div>
-      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '32px' }}>
         
@@ -323,12 +216,13 @@ const DashboardModule = ({
           {/* Business Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
             <StatCard title="Tu Producción" value={`$${myStats.income.toFixed(2)}`} icon={<TrendingUp size={18} color="var(--gold-primary)" />} color="var(--gold-primary)" trend="+12%" positive={true} />
-            <StatCard title="Tus Servicios" value={myStats.appointments} icon={<ScissorsIcon size={18} color="var(--gold-primary)" />} color="#4caf50" trend="Activo" positive={true} />
-            {!isBarber && <StatCard title="En Inventario" value={dbData.services.length + dbData.clients.length} icon={<ShoppingBag size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
+            {!isAssistant && <StatCard title="Tus Servicios" value={myStats.appointments} icon={<ScissorsIcon size={18} color="var(--gold-primary)" />} color="#4caf50" trend="Activo" positive={true} />}
+            {!isBarber && !isAssistant && <StatCard title="En Inventario" value={dbData.services.length + dbData.clients.length} icon={<ShoppingBag size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
+            {isAssistant && <StatCard title="Lavados Realizados" value={myStats.appointments} icon={<Sparkles size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
           </div>
 
-          {/* Goals Grid */}
-          {!isBarber && (
+          {/* Goals Grid - Only for Admins */}
+          {(user?.role === 'Admin' || user?.role?.includes('Admin|')) && (
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
               {[
                 { title: 'Misión Diaria', current: stats.income, goal: goals.daily, icon: <Target size={18} />, label: 'HOY' },
@@ -376,7 +270,7 @@ const DashboardModule = ({
         </div>
 
         {/* Right Column: Rankings */}
-        {!isBarber && (
+        {!isBarber && !isAssistant && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             <PodiumSection 
               title="Top Barbers" 
@@ -404,6 +298,110 @@ const DashboardModule = ({
               isClient
               onNavigate={onNavigate}
             />
+          </div>
+        )}
+
+        {isAssistant && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <div className="glass-card" style={{ padding: '24px', borderRadius: '28px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <TrendingUp size={20} color="var(--gold-primary)" />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: '900' }}>Producción Semanal por <span className="text-gold">Barbero</span></h3>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {washingByBarber.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    <Circle size={40} style={{ opacity: 0.1, marginBottom: '12px' }} />
+                    <p style={{ fontSize: '14px' }}>Aún no hay lavados registrados hoy.</p>
+                  </div>
+                ) : (
+                  washingByBarber.map((item, idx) => {
+                    const maxVal = washingByBarber[0].total || 1;
+                    const percentage = (item.total / maxVal) * 100;
+                    
+                    return (
+                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: '800', fontSize: '14px', color: 'white' }}>{item.name}</span>
+                          <span style={{ fontWeight: '900', fontSize: '14px', color: 'var(--gold-primary)' }}>${item.total.toFixed(2)}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ flex: 1, height: '8px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{ 
+                              width: `${percentage}%`, 
+                              height: '100%', 
+                              background: 'var(--gold-gradient)', 
+                              boxShadow: 'var(--gold-glow)',
+                              borderRadius: '4px',
+                              transition: 'width 1s ease-out'
+                            }} />
+                          </div>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', width: '60px' }}>{item.count} lavados</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="glass-card" style={{ padding: '24px', borderRadius: '28px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Clock size={20} color="var(--gold-primary)" />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: '900' }}>Agenda del <span className="text-gold">Día</span></h3>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '300px' }} className="astro-scrollbar">
+                {(!dbData.todayAppointments || dbData.todayAppointments.length === 0) ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    <p style={{ fontSize: '14px' }}>No hay citas agendadas para hoy.</p>
+                  </div>
+                ) : (
+                  dbData.todayAppointments.map((app, idx) => (
+                    <div key={idx} className="glass-card" style={{ 
+                      padding: '16px', 
+                      borderRadius: '16px', 
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontWeight: '800', fontSize: '14px', color: 'white' }}>{app.clients?.name || 'Cliente'}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '700' }}>{app.staff?.name?.split(' ')[0]}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>•</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{app.services?.name}</span>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>
+                          {app.scheduled_at ? new Date(app.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'S/H'}
+                        </div>
+                        <div style={{ 
+                          fontSize: '9px', 
+                          fontWeight: '900', 
+                          padding: '2px 6px', 
+                          borderRadius: '4px',
+                          marginTop: '4px',
+                          backgroundColor: app.status === 'En Silla' ? 'rgba(76,175,80,0.1)' : 'rgba(212,175,55,0.1)',
+                          color: app.status === 'En Silla' ? '#4caf50' : 'var(--gold-primary)',
+                          display: 'inline-block'
+                        }}>
+                          {app.status}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -459,84 +457,6 @@ const DashboardModule = ({
             <div style={{ display: 'flex', gap: '12px' }}>
               <button className="btn-secondary" onClick={() => setIsEditingGoals(false)} style={{ flex: 1 }}>Cancelar</button>
               <button className="btn-gold" onClick={() => handleSaveGoals(goals)} style={{ flex: 2 }}>Guardar Metas</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Manual Rate Edit Modal */}
-      {isEditingRates && (
-        <div className="modal-overlay animate-fade-in" style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000, backdropFilter: 'blur(10px)'
-        }}>
-          <div className="glass-card animate-scale-in" style={{ width: '400px', padding: '40px', borderRadius: '32px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Edit3 color="var(--gold-primary)" size={20} />
-              </div>
-              <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Tasas <span className="text-gold">Astro</span></h3>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
-              <div style={{ padding: '16px', borderRadius: '16px', backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>TASA BCV (OFICIAL)</span>
-                  <span style={{ fontSize: '14px', fontWeight: '900' }}>{rates.bcv} Bs.</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>BRECHA CAMBIARIA</span>
-                  <span style={{ fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)' }}>{rates.gap.toFixed(2)}%</span>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '8px' }}>TASA USDT (PROMEDIO)</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type="number" 
-                    value={tempRates.usdt === 0 ? '' : tempRates.usdt}
-                    onChange={(e) => setTempRates({ ...tempRates, usdt: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                    style={{ width: '100%', height: '52px', paddingLeft: '54px', fontSize: '18px', fontWeight: '900', color: 'white' }}
-                  />
-                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: '900', color: 'var(--gold-primary)', fontSize: '14px' }}>Bs.</span>
-                </div>
-              </div>
-
-              <div style={{ padding: '20px', borderRadius: '24px', backgroundColor: 'rgba(212,175,55,0.05)', border: '2px solid var(--gold-primary)' }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '1.5px', marginBottom: '12px', textTransform: 'uppercase' }}>Tasa de la Barbería (ACTIVA)</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type="number" 
-                    value={tempRates.shop === 0 ? '' : tempRates.shop}
-                    onChange={(e) => setTempRates({ ...tempRates, shop: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                    style={{ width: '100%', height: '60px', paddingLeft: '54px', fontSize: '24px', fontWeight: '950', color: 'var(--gold-primary)', background: 'transparent', border: 'none' }}
-                  />
-                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', fontWeight: '950', color: 'var(--gold-primary)' }}>Bs.</span>
-                </div>
-                <p style={{ fontSize: '10px', color: 'rgba(212,175,55,0.6)', marginTop: '8px', fontWeight: '700' }}>* Esta tasa se usará para todos los cobros y cálculos de hoy.</p>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button 
-                onClick={() => setIsEditingRates(false)}
-                className="action-btn"
-                style={{ flex: 1, height: '48px', opacity: 0.5 }}
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={() => {
-                  setCustomRates(tempRates);
-                  setIsCustomRate(true);
-                  setIsEditingRates(false);
-                  showToast('Tasa personalizada activada');
-                }}
-                className="btn-gold"
-                style={{ flex: 1, height: '48px' }}
-              >
-                Activar Tasa
-              </button>
             </div>
           </div>
         </div>

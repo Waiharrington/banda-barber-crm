@@ -515,6 +515,21 @@ export const dataService = {
     return data;
   },
 
+  async getTodayAppointments() {
+    const today = new Date().toISOString().split('T')[0];
+    const { data, error } = await supabase.from('appointments').select(`
+      *, 
+      clients(id, name, phone), 
+      services(name, price),
+      staff(name)
+    `)
+    .gte('created_at', today)
+    .order('created_at', { ascending: true });
+    
+    if (error) throw error;
+    return data;
+  },
+
   async createAppointment(appointment) {
     const { data, error } = await supabase
       .from('appointments')
@@ -701,6 +716,47 @@ export const dataService = {
       console.error('Error fetching BCV rates:', error);
       return { usd: 36.5, updated_at: null, error: true };
     }
+  },
+
+  // Global App Settings (Synchronized Rates)
+  async getGlobalRates() {
+    try {
+      const { data, error } = await supabase
+        .from('service_extras')
+        .select('*')
+        .eq('name', 'SYSTEM_CONFIG_RATES')
+        .limit(1);
+      
+      if (error || !data || data.length === 0) {
+        // Create default if not exists
+        const defaultRates = { name: 'SYSTEM_CONFIG_RATES', price: 58.00, cost: 58.50 };
+        const { data: newData, error: insertError } = await supabase.from('service_extras').insert([defaultRates]).select();
+        if (insertError) throw insertError;
+        return { shop: newData[0].price, usdt: newData[0].cost };
+      }
+      
+      return { shop: data[0].price, usdt: data[0].cost };
+    } catch (err) {
+      console.error('Error getting global rates:', err);
+      return { shop: 58.00, usdt: 58.50 };
+    }
+  },
+
+  async updateGlobalRates(rates) {
+    const { data, error } = await supabase
+      .from('service_extras')
+      .update({ price: rates.shop, cost: rates.usdt })
+      .eq('name', 'SYSTEM_CONFIG_RATES')
+      .select();
+    
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      // If for some reason it was deleted, recreate it
+      const defaultRates = { name: 'SYSTEM_CONFIG_RATES', price: rates.shop, cost: rates.usdt };
+      await supabase.from('service_extras').insert([defaultRates]);
+      return { shop: rates.shop, usdt: rates.usdt };
+    }
+    return { shop: data[0].price, usdt: data[0].cost };
   },
 
   async resetDatabase() {
