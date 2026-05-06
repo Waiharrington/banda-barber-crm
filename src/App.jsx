@@ -47,17 +47,28 @@ function App() {
   
   // Multi-currency State
   const [currency, setCurrency] = useState('USD'); 
-  const [rates, setRates] = useState({ usd: 0, eur: 0, updated_at: null });
+  const [rates, setRates] = useState({ usd: 0, updated_at: null });
   
   // Custom Rates State (Persisted)
-  const [isCustomRate, setIsCustomRate] = useState(() => localStorage.getItem('astro_is_custom_rate') === 'true');
+  const [isCustomRate, setIsCustomRate] = useState(true); // Always custom now as shop rate is manual
   const [customRates, setCustomRates] = useState(() => {
     const saved = localStorage.getItem('astro_custom_rates');
-    return saved ? JSON.parse(saved) : { usd: 40, eur: 45 };
+    return saved ? JSON.parse(saved) : { bcv: 49.04, usdt: 58.50, shop: 58.00 };
   });
 
-  // Effective Rates Logic
-  const effectiveRates = isCustomRate ? { ...customRates, updated_at: 'Manual' } : rates;
+  // Calculate Exchange Gap
+  const bcvVal = rates.usd || customRates.bcv || 49.04;
+  const usdtVal = customRates.usdt || 58.50;
+  const exchangeGap = ((usdtVal - bcvVal) / bcvVal) * 100;
+
+  // Effective Rates Logic - Use the SHOP rate for all calculations
+  const effectiveRates = { 
+    usd: customRates.shop || 58.00, 
+    bcv: bcvVal,
+    usdt: usdtVal,
+    gap: exchangeGap,
+    updated_at: 'Manual' 
+  };
 
   const handleRefresh = () => setRefreshKey(prev => prev + 1);
 

@@ -164,28 +164,56 @@ const DashboardModule = ({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="glass-card" style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '16px', borderRadius: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="glass-card" style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '24px', borderRadius: '18px', border: '1px solid rgba(212,175,55,0.1)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ 
                 padding: '4px 8px', 
-                backgroundColor: isCustomRate ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', 
+                backgroundColor: 'rgba(255,255,255,0.05)', 
                 borderRadius: '6px',
-                fontSize: '10px',
+                fontSize: '9px',
                 fontWeight: '900',
-                color: isCustomRate ? 'black' : 'var(--text-muted)'
+                color: 'var(--text-muted)'
               }}>
-                {isCustomRate ? 'MAN' : 'BCV'}
+                BCV
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '9px', fontWeight: '800', opacity: 0.5 }}>USD</div>
-                <div style={{ fontSize: '14px', fontWeight: '900', color: 'white' }}>{rates.usd.toFixed(2)}</div>
+                <div style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>{rates.bcv.toFixed(2)}</div>
               </div>
             </div>
-            <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255,255,255,0.1)' }} />
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '9px', fontWeight: '800', opacity: 0.5 }}>EUR</div>
-              <div style={{ fontSize: '14px', fontWeight: '900', color: 'white' }}>{rates.eur.toFixed(2)}</div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ 
+                padding: '4px 8px', 
+                backgroundColor: 'rgba(255,255,255,0.05)', 
+                borderRadius: '6px',
+                fontSize: '9px',
+                fontWeight: '900',
+                color: 'var(--text-muted)'
+              }}>
+                USDT
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>{rates.usdt.toFixed(2)}</div>
+              </div>
+              <div style={{ 
+                fontSize: '10px', 
+                fontWeight: '800', 
+                color: rates.gap > 10 ? '#ff4d4d' : '#4caf50',
+                backgroundColor: rates.gap > 10 ? 'rgba(255,77,77,0.1)' : 'rgba(76,175,80,0.1)',
+                padding: '2px 6px',
+                borderRadius: '4px'
+              }}>
+                {rates.gap.toFixed(1)}%
+              </div>
             </div>
+
+            <div style={{ width: '1px', height: '30px', backgroundColor: 'rgba(255,255,255,0.1)' }} />
+            
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '0.5px' }}>TASA BARBERÍA</div>
+              <div style={{ fontSize: '18px', fontWeight: '950', color: 'var(--gold-primary)' }}>{rates.usd.toFixed(2)}</div>
+            </div>
+
             <button 
               onClick={() => setIsEditingRates(true)}
               className="edit-rates-btn"
@@ -450,29 +478,42 @@ const DashboardModule = ({
               <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Tasas <span className="text-gold">Astro</span></h3>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '8px' }}>TASA USD / BS</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type="number" 
-                    value={tempRates.usd}
-                    onChange={(e) => setTempRates({ ...tempRates, usd: parseFloat(e.target.value) || 0 })}
-                    style={{ width: '100%', height: '52px', paddingLeft: '44px', fontSize: '18px', fontWeight: '900', color: 'var(--gold-primary)' }}
-                  />
-                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: '900', color: 'rgba(255,255,255,0.2)' }}>$</span>
+              <div style={{ padding: '16px', borderRadius: '16px', backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>TASA BCV (OFICIAL)</span>
+                  <span style={{ fontSize: '14px', fontWeight: '900' }}>{rates.bcv} Bs.</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>BRECHA CAMBIARIA</span>
+                  <span style={{ fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)' }}>{rates.gap.toFixed(2)}%</span>
                 </div>
               </div>
+
               <div>
-                <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '8px' }}>TASA EUR / BS</label>
+                <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '8px' }}>TASA USDT (PROMEDIO)</label>
                 <div style={{ position: 'relative' }}>
                   <input 
                     type="number" 
-                    value={tempRates.eur}
-                    onChange={(e) => setTempRates({ ...tempRates, eur: parseFloat(e.target.value) || 0 })}
-                    style={{ width: '100%', height: '52px', paddingLeft: '44px', fontSize: '18px', fontWeight: '900', color: 'var(--gold-primary)' }}
+                    value={tempRates.usdt}
+                    onChange={(e) => setTempRates({ ...tempRates, usdt: parseFloat(e.target.value) || 0 })}
+                    style={{ width: '100%', height: '52px', paddingLeft: '44px', fontSize: '18px', fontWeight: '900', color: 'white' }}
                   />
-                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: '900', color: 'rgba(255,255,255,0.2)' }}>€</span>
+                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: '900', color: 'var(--gold-primary)' }}>$</span>
                 </div>
+              </div>
+
+              <div style={{ padding: '20px', borderRadius: '24px', backgroundColor: 'rgba(212,175,55,0.05)', border: '2px solid var(--gold-primary)' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '1.5px', marginBottom: '12px', textTransform: 'uppercase' }}>Tasa de la Barbería (ACTIVA)</label>
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="number" 
+                    value={tempRates.shop}
+                    onChange={(e) => setTempRates({ ...tempRates, shop: parseFloat(e.target.value) || 0 })}
+                    style={{ width: '100%', height: '60px', paddingLeft: '44px', fontSize: '24px', fontWeight: '950', color: 'var(--gold-primary)', background: 'transparent', border: 'none' }}
+                  />
+                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '20px', fontWeight: '950', color: 'var(--gold-primary)' }}>$</span>
+                </div>
+                <p style={{ fontSize: '10px', color: 'rgba(212,175,55,0.6)', marginTop: '8px', fontWeight: '700' }}>* Esta tasa se usará para todos los cobros y cálculos de hoy.</p>
               </div>
             </div>
 

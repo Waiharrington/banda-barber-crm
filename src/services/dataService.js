@@ -693,18 +693,13 @@ export const dataService = {
       if (!usdRes.ok) throw new Error('USD rate not available');
       const usdData = await usdRes.json();
       
-      const eurRes = await fetch('https://ve.dolarapi.com/v1/euros/oficial');
-      if (!eurRes.ok) throw new Error('EUR rate not available');
-      const eurData = await eurRes.json();
-      
       return {
         usd: usdData.promedio,
-        eur: eurData.promedio,
         updated_at: new Date().toISOString()
       };
     } catch (error) {
       console.error('Error fetching BCV rates:', error);
-      return { usd: 36.5, eur: 39.5, updated_at: null, error: true };
+      return { usd: 36.5, updated_at: null, error: true };
     }
   },
 

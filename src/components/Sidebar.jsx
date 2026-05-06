@@ -23,16 +23,12 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
   const [tempRate, setTempRate] = useState(rates?.usd || 0);
 
   const handleSaveRate = () => {
-    onUpdateCustom({ ...customRates, usd: Number(tempRate) });
-    onToggleCustom(true);
-    localStorage.setItem('astro_is_custom_rate', 'true');
-    localStorage.setItem('astro_custom_rates', JSON.stringify({ ...customRates, usd: Number(tempRate) }));
+    onUpdateCustom({ ...customRates, shop: Number(tempRate) });
+    localStorage.setItem('astro_custom_rates', JSON.stringify({ ...customRates, shop: Number(tempRate) }));
     setIsEditingRate(false);
   };
 
   const handleResetRate = () => {
-    onToggleCustom(false);
-    localStorage.setItem('astro_is_custom_rate', 'false');
     setIsEditingRate(false);
   };
 
@@ -87,8 +83,8 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
           {/* Global Rate Badge */}
           {rates?.usd > 0 && (
             <div style={{ 
-              backgroundColor: isCustomRate ? 'rgba(50, 215, 75, 0.05)' : 'rgba(212, 175, 55, 0.05)', 
-              border: isCustomRate ? '1px solid rgba(50, 215, 75, 0.2)' : '1px solid rgba(212, 175, 55, 0.2)', 
+              backgroundColor: 'rgba(212, 175, 55, 0.05)', 
+              border: '1px solid rgba(212, 175, 55, 0.2)', 
               borderRadius: '12px', 
               padding: '8px 12px',
               display: 'flex',
@@ -99,8 +95,8 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
               transition: 'all 0.3s'
             }}>
               <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isEditingRate ? '10px' : '2px' }}>
-                <span style={{ fontSize: '9px', fontWeight: '900', color: isCustomRate ? '#32d74b' : 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                  {isCustomRate ? 'Tasa Personalizada' : 'Tasa del Día'}
+                <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  Tasa Barbería
                 </span>
                 {!isEditingRate && (
                   <button 
@@ -123,7 +119,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
                     onChange={(e) => setTempRate(e.target.value)}
                     autoFocus
                     style={{ 
-                      width: '60%', 
+                      width: '75%', 
                       backgroundColor: 'rgba(0,0,0,0.3)', 
                       border: '1px solid rgba(212,175,55,0.3)', 
                       borderRadius: '8px', 
@@ -137,24 +133,14 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
                   <button 
                     onClick={handleSaveRate}
                     title="Guardar Tasa"
-                    style={{ flex: 1, backgroundColor: 'var(--gold-primary)', color: 'black', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s active:scale-95' }}
+                    style={{ flex: 1, backgroundColor: 'var(--gold-primary)', color: 'black', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Save size={16} />
                   </button>
-                  {isCustomRate && (
-                    <button 
-                      onClick={handleResetRate}
-                      title="Volver a tasa BCV"
-                      style={{ backgroundColor: 'rgba(255,69,58,0.2)', color: '#ff453a', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <RefreshCcw size={16} />
-                    </button>
-                  )}
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>1$ = {rates.usd.toLocaleString()} Bs.</span>
-                  {isCustomRate && <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#32d74b', boxShadow: '0 0 8px #32d74b' }} title="Tasa manual activa" />}
                 </div>
               )}
             </div>
