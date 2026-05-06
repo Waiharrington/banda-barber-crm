@@ -494,11 +494,11 @@ const DashboardModule = ({
                 <div style={{ position: 'relative' }}>
                   <input 
                     type="number" 
-                    value={tempRates.usdt}
-                    onChange={(e) => setTempRates({ ...tempRates, usdt: parseFloat(e.target.value) || 0 })}
-                    style={{ width: '100%', height: '52px', paddingLeft: '44px', fontSize: '18px', fontWeight: '900', color: 'white' }}
+                    value={tempRates.usdt === 0 ? '' : tempRates.usdt}
+                    onChange={(e) => setTempRates({ ...tempRates, usdt: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                    style={{ width: '100%', height: '52px', paddingLeft: '54px', fontSize: '18px', fontWeight: '900', color: 'white' }}
                   />
-                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: '900', color: 'var(--gold-primary)' }}>$</span>
+                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: '900', color: 'var(--gold-primary)', fontSize: '14px' }}>Bs.</span>
                 </div>
               </div>
 
@@ -507,11 +507,11 @@ const DashboardModule = ({
                 <div style={{ position: 'relative' }}>
                   <input 
                     type="number" 
-                    value={tempRates.shop}
-                    onChange={(e) => setTempRates({ ...tempRates, shop: parseFloat(e.target.value) || 0 })}
-                    style={{ width: '100%', height: '60px', paddingLeft: '44px', fontSize: '24px', fontWeight: '950', color: 'var(--gold-primary)', background: 'transparent', border: 'none' }}
+                    value={tempRates.shop === 0 ? '' : tempRates.shop}
+                    onChange={(e) => setTempRates({ ...tempRates, shop: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                    style={{ width: '100%', height: '60px', paddingLeft: '54px', fontSize: '24px', fontWeight: '950', color: 'var(--gold-primary)', background: 'transparent', border: 'none' }}
                   />
-                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '20px', fontWeight: '950', color: 'var(--gold-primary)' }}>$</span>
+                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', fontWeight: '950', color: 'var(--gold-primary)' }}>Bs.</span>
                 </div>
                 <p style={{ fontSize: '10px', color: 'rgba(212,175,55,0.6)', marginTop: '8px', fontWeight: '700' }}>* Esta tasa se usará para todos los cobros y cálculos de hoy.</p>
               </div>

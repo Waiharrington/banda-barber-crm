@@ -115,8 +115,8 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
                 <div style={{ width: '100%', display: 'flex', gap: '8px' }}>
                   <input 
                     type="number"
-                    value={tempRate}
-                    onChange={(e) => setTempRate(e.target.value)}
+                    value={tempRate === 0 ? '' : tempRate}
+                    onChange={(e) => setTempRate(e.target.value === '' ? 0 : parseFloat(e.target.value))}
                     autoFocus
                     style={{ 
                       width: '75%', 
