@@ -6,15 +6,19 @@ export const dataService = {
   async getClients() {
     const { data, error } = await supabase
       .from('clients')
-      .select('*, appointments(status)')
+      .select('*, appointments(status, total_price)')
       .order('name');
     
     if (error) throw error;
     
-    return data.map(client => ({
-      ...client,
-      total_visits: client.appointments?.filter(a => ['Completado', 'En Silla', 'Por Pagar'].includes(a.status)).length || 0
-    }));
+    return data.map(client => {
+      const validApps = client.appointments?.filter(a => ['Completado', 'En Silla', 'Por Pagar'].includes(a.status)) || [];
+      return {
+        ...client,
+        total_visits: validApps.length,
+        total_spent: validApps.reduce((acc, a) => acc + (Number(a.total_price) || 0), 0)
+      };
+    });
   },
 
   async addClient(client) {
@@ -49,10 +53,32 @@ export const dataService = {
   },
 
   async deleteClient(id) {
+    // 1. Get all appointments for this client
+    const { data: apps } = await supabase
+      .from('appointments')
+      .select('id')
+      .eq('client_id', id);
+    
+    if (apps && apps.length > 0) {
+      const appIds = apps.map(a => a.id);
+      
+      // 2. Delete dependencies of those appointments
+      await Promise.all([
+        supabase.from('appointment_staff').delete().in('appointment_id', appIds),
+        supabase.from('appointment_extras').delete().in('appointment_id', appIds),
+        supabase.from('appointment_products').delete().in('appointment_id', appIds)
+      ]);
+      
+      // 3. Delete appointments
+      await supabase.from('appointments').delete().in('id', appIds);
+    }
+    
+    // 4. Finally delete the client
     const { error } = await supabase
       .from('clients')
       .delete()
       .eq('id', id);
+      
     if (error) throw error;
   },
 

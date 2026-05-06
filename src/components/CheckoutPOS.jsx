@@ -23,11 +23,12 @@ import AstroDialog from './AstroDialog';
 import NewClientModal from './NewClientModal';
 import { UserPlus } from 'lucide-react';
 
-const CheckoutPOS = ({ isMobile, rates }) => {
+const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const { showToast, triggerConfetti, triggerRocket } = useNotifs();
   const [pendingServices, setPendingServices] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [allExtras, setAllExtras] = useState([]);
+  const [allServices, setAllServices] = useState([]);
   const [allClients, setAllClients] = useState([]);
   const [allStaff, setAllStaff] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +39,7 @@ const CheckoutPOS = ({ isMobile, rates }) => {
   const [isDirectSale, setIsDirectSale] = useState(false);
   const [idSearch, setIdSearch] = useState('');
   const [directSaleIdSearch, setDirectSaleIdSearch] = useState('');
+  const [directSaleSearchResults, setDirectSaleSearchResults] = useState([]);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   
   // Checkout Multi-State
@@ -54,6 +56,9 @@ const CheckoutPOS = ({ isMobile, rates }) => {
   // Modal State
   const [showProductModal, setShowProductModal] = useState(false);
   const [showExtraModal, setShowExtraModal] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [showBarberModal, setShowBarberModal] = useState(false);
+  const [selectedServiceForBarber, setSelectedServiceForBarber] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Dialog State
@@ -82,9 +87,13 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                         selectedApp.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'));
       setDidWash(hasWashing);
       
-      // Select first assistant as default if possible
-      const assistant = allStaff.find(s => s.role?.includes('Asistente de Lavado'));
-      if (assistant) setSelectedWasherId(assistant.id);
+      // Select assistant as default ONLY if there is exactly one available
+      const washers = allStaff.filter(s => s.role?.includes('Asistente de Lavado'));
+      if (washers.length === 1) {
+        setSelectedWasherId(washers[0].id);
+      } else {
+        setSelectedWasherId('');
+      }
     } else if (!isDirectSale) {
       setCart([]);
       setTips([]);
@@ -96,12 +105,13 @@ const CheckoutPOS = ({ isMobile, rates }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [apps, inv, ext, cls, staff] = await Promise.all([
+      const [apps, inv, ext, cls, staff, srv] = await Promise.all([
         dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']),
         dataService.getInventory(),
         dataService.getExtras(),
         dataService.getClients(),
-        dataService.getStaff()
+        dataService.getStaff(),
+        dataService.getServices()
       ]);
       
       const today = new Date().toISOString().split('T')[0];
@@ -113,6 +123,7 @@ const CheckoutPOS = ({ isMobile, rates }) => {
       setPendingServices(filtered);
       setInventory(inv.filter(i => i.stock > 0 && i.category === 'Venta'));
       setAllExtras(ext || []);
+      setAllServices(srv || []);
       setAllClients(cls || []);
       setAllStaff(staff || []);
     } catch (err) {
@@ -155,7 +166,12 @@ const CheckoutPOS = ({ isMobile, rates }) => {
   };
 
   const handleAddExtra = async (extra) => {
-    if (!selectedApp) return;
+    if (!selectedApp) {
+      setCart([...cart, { id: 'extra_' + extra.id, name: extra.name, price: extra.price, quantity: 1, type: 'extra' }]);
+      showToast(`${extra.name} añadido al carrito`);
+      setShowExtraModal(false);
+      return;
+    }
     try {
       setLoading(true);
       await dataService.addExtraToAppointment(selectedApp.id, extra.id, extra.price);
@@ -301,16 +317,89 @@ const CheckoutPOS = ({ isMobile, rates }) => {
     setSelectedClient(null);
     setDirectSaleIdSearch('');
     setCart([]);
-    showToast("Venta Directa activada. Ingresa la cédula del cliente.");
+    showToast("Venta Directa activada. Identifica al cliente si lo deseas.");
+  };
+
+  const handleAddService = (service) => {
+    if (!selectedApp) {
+      if (!selectedClient) {
+        showToast("Por favor, identifica al cliente primero en la barra superior.", "warning");
+        return;
+      }
+      setSelectedServiceForBarber(service);
+      setShowServiceModal(false);
+      setShowBarberModal(true);
+    } else {
+      showToast("Para añadir otro servicio, genéralo desde Recepción.", "warning");
+    }
+  };
+
+  const handleConfirmServiceBarber = async (barberId) => {
+    try {
+      setLoading(true);
+      setShowBarberModal(false);
+      
+      const newApp = await dataService.createAppointment({
+        client_id: selectedClient.id,
+        service_id: selectedServiceForBarber.id,
+        staff_id: barberId,
+        status: 'Por Pagar',
+        total_price: selectedServiceForBarber.price
+      });
+      
+      await loadData();
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
+      const fullyLoadedApp = updatedApps.find(a => a.id === newApp.id);
+      
+      if (fullyLoadedApp) {
+        setIsDirectSale(false);
+        setSelectedApp(fullyLoadedApp);
+        showToast("Servicio añadido y barbero asignado.");
+      } else {
+        showToast("Cita creada. Selecciona el servicio en la lista.");
+      }
+      setSelectedServiceForBarber(null);
+    } catch (e) {
+      console.error(e);
+      showToast("Error al asignar barbero", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDirectSaleSearchInput = (val) => {
+    setDirectSaleIdSearch(val);
+    if (val.length >= 2) {
+      const term = val.toLowerCase();
+      const results = allClients.filter(c => 
+        (c.id_card && c.id_card.toLowerCase().includes(term)) || 
+        (c.name && c.name.toLowerCase().includes(term))
+      );
+      setDirectSaleSearchResults(results.slice(0, 5));
+    } else {
+      setDirectSaleSearchResults([]);
+    }
+  };
+
+  const handleSelectDirectSaleClient = (client) => {
+    setSelectedClient(client);
+    setDirectSaleIdSearch('');
+    setDirectSaleSearchResults([]);
+    showToast(`Cliente enlazado: ${client.name}`);
   };
 
   const handleDirectSaleIdSearch = () => {
-    const client = allClients.find(c => c.id_card === directSaleIdSearch);
-    if (client) {
-      setSelectedClient(client);
-      showToast(`Cliente enlazado: ${client.name}`);
+    if (directSaleSearchResults.length === 1) {
+      handleSelectDirectSaleClient(directSaleSearchResults[0]);
     } else {
-      showToast("Cédula no encontrada. ¿Es un cliente nuevo?", "warning");
+      const exact = allClients.find(c => c.id_card === directSaleIdSearch || c.name.toLowerCase() === directSaleIdSearch.toLowerCase());
+      if (exact) {
+        handleSelectDirectSaleClient(exact);
+      } else if (directSaleSearchResults.length > 1) {
+        showToast("Múltiples coincidencias. Selecciona uno de la lista.", "info");
+      } else {
+        showToast("Cliente no encontrado. ¿Es un cliente nuevo?", "warning");
+      }
     }
   };
 
@@ -478,7 +567,7 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                 <div style={{ background: 'var(--gold-primary)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black' }}>
                   <ShoppingBag size={24} />
                 </div>
-                <div style={{ fontWeight: '900', fontSize: '14px', letterSpacing: '1px' }}>VENDER PRODUCTOS</div>
+                <div style={{ fontWeight: '900', fontSize: '12px', letterSpacing: '1px' }}>PRODUCTOS</div>
               </button>
 
               <button 
@@ -489,7 +578,18 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                 <div style={{ background: 'rgba(255,255,255,0.1)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                   <Zap size={24} />
                 </div>
-                <div style={{ fontWeight: '900', fontSize: '14px', letterSpacing: '1px' }}>AÑADIR EXTRAS</div>
+                <div style={{ fontWeight: '900', fontSize: '12px', letterSpacing: '1px' }}>EXTRAS</div>
+              </button>
+
+              <button 
+                onClick={() => setShowServiceModal(true)}
+                style={{ flex: 1, padding: '24px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}
+                className="hover-item"
+              >
+                <div style={{ background: 'rgba(255,255,255,0.1)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                  <Scissors size={24} />
+                </div>
+                <div style={{ fontWeight: '900', fontSize: '12px', letterSpacing: '1px' }}>SERVICIOS</div>
               </button>
             </div>
           )}
@@ -520,25 +620,51 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                             <button onClick={() => setSelectedClient(null)} style={{ background: 'none', border: 'none', color: '#ff453a', fontWeight: '800', cursor: 'pointer', fontSize: '11px' }}>CAMBIAR</button>
                           </div>
                         ) : (
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <div style={{ position: 'relative', flex: 1 }}>
-                              <Search style={{ position: 'absolute', left: '12px', top: '12px' }} size={16} color="var(--text-muted)" />
-                              <input 
-                                type="text" 
-                                placeholder="Cédula del cliente..." 
-                                value={directSaleIdSearch}
-                                onChange={(e) => setDirectSaleIdSearch(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleDirectSaleIdSearch()}
-                                style={{ width: '100%', paddingLeft: '40px', height: '40px', fontSize: '13px' }}
-                              />
+                          <div style={{ position: 'relative' }}>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <div style={{ position: 'relative', flex: 1 }}>
+                                <Search style={{ position: 'absolute', left: '12px', top: '12px' }} size={16} color="var(--text-muted)" />
+                                <input 
+                                  type="text" 
+                                  placeholder="Cédula o nombre del cliente..." 
+                                  value={directSaleIdSearch}
+                                  onChange={(e) => handleDirectSaleSearchInput(e.target.value)}
+                                  onKeyDown={(e) => e.key === 'Enter' && handleDirectSaleIdSearch()}
+                                  style={{ width: '100%', paddingLeft: '40px', height: '40px', fontSize: '13px' }}
+                                />
+                              </div>
+                              <button onClick={handleDirectSaleIdSearch} className="btn-gold" style={{ padding: '0 12px', height: '40px' }}>ENLAZAR</button>
+                              <button 
+                                onClick={() => setShowNewClientModal(true)} 
+                                style={{ padding: '0 12px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                              >
+                                <UserPlus size={16} />
+                              </button>
                             </div>
-                            <button onClick={handleDirectSaleIdSearch} className="btn-gold" style={{ padding: '0 12px', height: '40px' }}>ENLAZAR</button>
-                            <button 
-                              onClick={() => setShowNewClientModal(true)} 
-                              style={{ padding: '0 12px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                            >
-                              <UserPlus size={16} />
-                            </button>
+                            
+                            {/* Autocomplete Dropdown */}
+                            {directSaleSearchResults.length > 0 && (
+                              <div className="animate-scale-in" style={{ 
+                                position: 'absolute', top: '100%', left: 0, right: '110px', 
+                                marginTop: '8px', background: 'rgba(28,28,30,0.95)', 
+                                border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', 
+                                overflow: 'hidden', zIndex: 10, backdropFilter: 'blur(10px)',
+                                boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+                              }}>
+                                {directSaleSearchResults.map(c => (
+                                  <div 
+                                    key={c.id} 
+                                    onClick={() => handleSelectDirectSaleClient(c)}
+                                    style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(212,175,55,0.1)'}
+                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                  >
+                                    <span style={{ fontWeight: '700', fontSize: '13px', color: 'white' }}>{c.name}</span>
+                                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>V-{c.id_card}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
                       </>
@@ -595,7 +721,7 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                         </div>
                         <div>
                           <h4 style={{ fontSize: '15px', fontWeight: '800', color: 'white' }}>¿Se realizó el lavado?</h4>
-                          <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Afecta la comisión del barbero y asistente.</p>
+                          <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Asigna el costo del lavado a la asistente.</p>
                         </div>
                       </div>
                       <button 
@@ -626,9 +752,22 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                           <option value="">Seleccionar Asistente de Lavado</option>
                           {allStaff
                             .filter(s => s.role?.includes('Asistente de Lavado'))
-                            .map(s => <option key={s.id} value={s.id}>{s.name} (${s.washing_rate || 0}/wash)</option>)
+                            .map(s => {
+                              // We simulate availability: if there's only 1, she's always available for this checkout.
+                              // Since we don't track real-time washer assignment during 'En Silla', we show them as Disponible.
+                              return (
+                                <option key={s.id} value={s.id}>
+                                  {s.name} (${s.washing_rate || 0}/wash) - Disponible
+                                </option>
+                              );
+                            })
                           }
                         </select>
+                        {allStaff.filter(s => s.role?.includes('Asistente de Lavado')).length > 1 && !selectedWasherId && (
+                          <div style={{ marginTop: '8px', fontSize: '11px', color: '#ff9500', fontWeight: '800' }}>
+                            ⚠️ Hay múltiples asistentes. Por favor selecciona una.
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -856,6 +995,61 @@ const CheckoutPOS = ({ isMobile, rates }) => {
                   <div style={{ color: 'var(--gold-primary)', fontWeight: '900' }}>
                     <div>${extra.price}</div>
                     {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ {Math.round(extra.price * rates.usd).toLocaleString()} Bs.</div>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Service Modal */}
+      {showServiceModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '80px', overflowY: 'auto' }}>
+          <div className="glass-card animate-scale-in" style={{ width: '100%', maxWidth: '600px', borderRadius: '32px', padding: '32px', marginBottom: '80px', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontWeight: '900' }}>Catálogo de Servicios</h2>
+              <button onClick={() => setShowServiceModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '10px' }}>
+              {allServices.map(service => (
+                <button key={service.id} onClick={() => handleAddService(service)} style={{ padding: '20px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.2)', background: 'rgba(212,175,55,0.02)', textAlign: 'left', cursor: 'pointer' }} className="hover-item">
+                  <div style={{ fontWeight: '800', fontSize: '14px', marginBottom: '4px', color: 'white' }}>{service.name}</div>
+                  <div style={{ color: 'var(--gold-primary)', fontWeight: '900' }}>
+                    <div>${service.price}</div>
+                    {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ {Math.round(service.price * rates.usd).toLocaleString()} Bs.</div>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Barber Select Modal */}
+      {showBarberModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div className="glass-card animate-scale-in" style={{ width: '100%', maxWidth: '400px', borderRadius: '32px', padding: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontWeight: '900', fontSize: '20px' }}>Seleccionar Barbero</h2>
+              <button onClick={() => setShowBarberModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '13px' }}>
+              Selecciona el barbero al que se le asignará la comisión por el servicio <strong>{selectedServiceForBarber?.name}</strong>.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', maxHeight: '400px', overflowY: 'auto', paddingRight: '8px' }}>
+              {allStaff.filter(s => s.role?.includes('Barbero')).map(barber => (
+                <button 
+                  key={barber.id} 
+                  onClick={() => handleConfirmServiceBarber(barber.id)} 
+                  style={{ padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }} 
+                  className="hover-item"
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--gold-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black' }}>
+                    <Scissors size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: '800', color: 'white', fontSize: '15px' }}>{barber.name}</div>
                   </div>
                 </button>
               ))}

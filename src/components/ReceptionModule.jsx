@@ -35,6 +35,7 @@ const ReceptionModule = ({ isMobile }) => {
   const [inventory, setInventory] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [idSearch, setIdSearch] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   
   // Modals
   const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
@@ -105,13 +106,38 @@ const ReceptionModule = ({ isMobile }) => {
   };
 
   const handleIdSearch = () => {
-    const client = clients.find(c => c.id_card === idSearch);
-    if (client) {
-      setSelectedClient(client);
-      setIdSearch('');
-      showToast(`Cliente identificado: ${client.name}`);
+    if (searchResults.length === 1) {
+      handleSelectClient(searchResults[0]);
     } else {
-      showToast("Cédula no encontrada. Registra al cliente.", "warning");
+      const exact = clients.find(c => c.id_card === idSearch || c.name.toLowerCase() === idSearch.toLowerCase());
+      if (exact) {
+        handleSelectClient(exact);
+      } else if (searchResults.length > 1) {
+        showToast("Múltiples coincidencias. Selecciona uno de la lista.", "info");
+      } else {
+        showToast("Cliente no encontrado. Proceda a registrarlo.", "warning");
+      }
+    }
+  };
+
+  const handleSelectClient = (client) => {
+    setSelectedClient(client);
+    setIdSearch('');
+    setSearchResults([]);
+    showToast(`Cliente identificado: ${client.name}`);
+  };
+
+  const handleSearchInput = (val) => {
+    setIdSearch(val);
+    if (val.length >= 2) {
+      const term = val.toLowerCase();
+      const results = clients.filter(c => 
+        (c.id_card && c.id_card.toLowerCase().includes(term)) || 
+        (c.name && c.name.toLowerCase().includes(term))
+      );
+      setSearchResults(results.slice(0, 5));
+    } else {
+      setSearchResults([]);
     }
   };
 
@@ -292,21 +318,47 @@ const ReceptionModule = ({ isMobile }) => {
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ position: 'relative', flex: 1 }}>
-                  <Search style={{ position: 'absolute', left: '16px', top: '14px' }} size={18} color="var(--text-muted)" />
-                  <input 
-                    type="text" 
-                    placeholder="Escribe Cédula..." 
-                    value={idSearch}
-                    onChange={(e) => setIdSearch(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleIdSearch()}
-                    style={{ width: '100%', paddingLeft: '48px', height: '48px' }}
-                  />
+              <div style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <Search style={{ position: 'absolute', left: '16px', top: '14px' }} size={18} color="var(--text-muted)" />
+                    <input 
+                      type="text" 
+                      placeholder="Escribe Nombre o Cédula..." 
+                      value={idSearch}
+                      onChange={(e) => handleSearchInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleIdSearch()}
+                      style={{ width: '100%', paddingLeft: '48px', height: '48px' }}
+                    />
+                  </div>
+                  <button onClick={handleIdSearch} className="btn-gold" style={{ width: '48px', height: '48px', padding: 0, borderRadius: '12px' }}>
+                    <ArrowRight size={20} />
+                  </button>
                 </div>
-                <button onClick={handleIdSearch} className="btn-gold" style={{ width: '48px', height: '48px', padding: 0, borderRadius: '12px' }}>
-                  <ArrowRight size={20} />
-                </button>
+                
+                {/* Search Results Dropdown */}
+                {searchResults.length > 0 && (
+                  <div className="animate-scale-in" style={{ 
+                    position: 'absolute', top: '100%', left: 0, right: '58px', 
+                    marginTop: '8px', background: 'rgba(28,28,30,0.95)', 
+                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', 
+                    overflow: 'hidden', zIndex: 10, backdropFilter: 'blur(10px)',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+                  }}>
+                    {searchResults.map(c => (
+                      <div 
+                        key={c.id} 
+                        onClick={() => handleSelectClient(c)}
+                        style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(212,175,55,0.1)'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <span style={{ fontWeight: '700', fontSize: '14px', color: 'white' }}>{c.name}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>V-{c.id_card}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -462,14 +514,16 @@ const ReceptionModule = ({ isMobile }) => {
             </div>
 
             {/* Upcoming Appointments List */}
-            {upcomingAppointments.length > 0 && (
-              <div style={{ marginTop: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                  <Calendar size={16} color="var(--gold-primary)" />
-                  <span style={{ fontWeight: '800', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase' }}>Citas Agendadas Hoy</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {upcomingAppointments.map(app => (
+            <div style={{ marginTop: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <Calendar size={16} color="var(--gold-primary)" />
+                <span style={{ fontWeight: '800', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--gold-primary)' }}>Próximas Citas (Agenda Hoy)</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {upcomingAppointments.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.1)', fontSize: '12px', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '16px' }}>No hay más citas para hoy</div>
+                ) : (
+                  upcomingAppointments.map(app => (
                     <div 
                       key={app.id} 
                       style={{ 
@@ -495,10 +549,10 @@ const ReceptionModule = ({ isMobile }) => {
                         <Zap size={12} /> INICIAR
                       </button>
                     </div>
-                  ))}
-                </div>
+                  ))
+                )}
               </div>
-            )}
+            </div>
           </div>
         </section>
 

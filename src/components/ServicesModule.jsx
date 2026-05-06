@@ -192,7 +192,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
     variable_cost: 0.50,
     included_items: [],
     commission_barber: 40,
-    commission_washer: 10,
+    commission_washer: 0,
     commission_cashier: 0,
     commission_receptionist: 0
   });
@@ -209,9 +209,9 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
       description: service.description || '',
       included_items: service.included_items || [],
       commission_barber: service.commission_barber || 40,
-      commission_washer: service.commission_washer || 10,
-      commission_cashier: service.commission_cashier || 0,
-      commission_receptionist: service.commission_receptionist || 0
+      commission_washer: 0,
+      commission_cashier: 0,
+      commission_receptionist: 0
     });
     setShowAddForm(true);
   };
@@ -238,7 +238,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
         description: '',
         included_items: [],
         commission_barber: 40,
-        commission_washer: 10,
+        commission_washer: 0,
         commission_cashier: 0,
         commission_receptionist: 0
       });
@@ -358,7 +358,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   description: '',
                   included_items: [],
                   commission_barber: 40,
-                  commission_washer: 10,
+                  commission_washer: 0,
                   commission_cashier: 0,
                   commission_receptionist: 0
                 });
@@ -453,22 +453,16 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>
                     <DollarSign size={14} /> DISTRIBUCIÓN DE COMISIONES (%)
                   </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div className="form-group">
-                      <label style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>BARBERO</label>
-                      <input className="form-input" type="number" value={newService.commission_barber === 0 ? '' : newService.commission_barber} onChange={e => setNewService({...newService, commission_barber: e.target.value === '' ? '' : Number(e.target.value)})} style={{ width: '100%', fontSize: '13px' }} />
-                    </div>
-                    <div className="form-group">
-                      <label style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>ASISTENTE LAVADO</label>
-                      <input className="form-input" type="number" value={newService.commission_washer === 0 ? '' : newService.commission_washer} onChange={e => setNewService({...newService, commission_washer: e.target.value === '' ? '' : Number(e.target.value)})} style={{ width: '100%', fontSize: '13px' }} />
-                    </div>
-                    <div className="form-group">
-                      <label style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>CAJA</label>
-                      <input className="form-input" type="number" value={newService.commission_cashier} onChange={e => setNewService({...newService, commission_cashier: Number(e.target.value)})} style={{ width: '100%', fontSize: '13px', opacity: 0.5 }} />
-                    </div>
-                    <div className="form-group">
-                      <label style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>RECEPCIÓN</label>
-                      <input className="form-input" type="number" value={newService.commission_receptionist} onChange={e => setNewService({...newService, commission_receptionist: Number(e.target.value)})} style={{ width: '100%', fontSize: '13px', opacity: 0.5 }} />
+                      <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>COMISIÓN BARBERO (%)</label>
+                      <input 
+                        className="form-input" 
+                        type="number" 
+                        value={newService.commission_barber === 0 ? '' : newService.commission_barber} 
+                        onChange={e => setNewService({...newService, commission_barber: e.target.value === '' ? '' : Number(e.target.value)})} 
+                        style={{ width: '100%', fontSize: '16px', fontWeight: '900', color: 'var(--gold-primary)', height: '54px' }} 
+                      />
                     </div>
                   </div>
                   
@@ -487,14 +481,14 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                       <div>
                         <div style={{ fontSize: '10px', fontWeight: '800', color: '#32d74b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Margen Real Astro</div>
                         <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>
-                          ${((Number(newService.price) || 0) - ((Number(newService.price) || 0) * ( (Number(newService.commission_barber) || 0) + (Number(newService.commission_washer) || 0) + (Number(newService.commission_cashier) || 0) + (Number(newService.commission_receptionist) || 0) ) / 100)).toFixed(2)}
+                          ${((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)).toFixed(2)}
                         </div>
                       </div>
                       {rates?.usd > 0 && (
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
                           <div style={{ fontSize: '14px', fontWeight: '800', color: '#32d74b' }}>
-                            {Math.round(((Number(newService.price) || 0) - ((Number(newService.price) || 0) * ( (Number(newService.commission_barber) || 0) + (Number(newService.commission_washer) || 0) + (Number(newService.commission_cashier) || 0) + (Number(newService.commission_receptionist) || 0) ) / 100)) * rates.usd).toLocaleString()} Bs.
+                            {Math.round(((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)) * rates.usd).toLocaleString()} Bs.
                           </div>
                         </div>
                       )}

@@ -44,7 +44,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
     { id: 'checkout', label: 'Caja', icon: Wallet, roles: ['Admin', 'Caja'] },
     { id: 'barber', label: 'Panel Barber', icon: Scissors, roles: ['Admin', 'Barbero'] },
     { id: 'clients', label: 'Clientes', icon: Users, roles: ['Admin', 'Recepcionista', 'Barbero', 'Caja'] },
-    { id: 'personnel', label: 'Personal', icon: Scissors, roles: ['Admin'] },
+    { id: 'personnel', label: 'Astro Team', icon: Scissors, roles: ['Admin'] },
     { id: 'services', label: 'Servicios', icon: Star, roles: ['Admin'] },
     { id: 'inventory', label: 'Inventario', icon: Package, roles: ['Admin', 'Caja'] },
     { id: 'finance', label: 'Caja Chica', icon: Wallet, roles: ['Admin', 'Caja'] },

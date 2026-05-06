@@ -93,7 +93,7 @@ function App() {
     { id: 'my-profile', label: 'Mi Perfil', icon: UserCircle },
     { id: 'reception', label: 'Recepción (Padre)', icon: UserCircle },
     { id: 'clients', label: 'Clientes', icon: Users },
-    { id: 'personnel', label: 'Personal', icon: Scissors },
+    { id: 'personnel', label: 'Astro Team', icon: Scissors },
     { id: 'services', label: 'Servicios', icon: Star },
     { id: 'inventory', label: 'Inventario', icon: Package, roles: ['Admin', 'Caja'] },
     { id: 'finance', label: 'Caja Chica', icon: Wallet, roles: ['Admin', 'Caja'] },
@@ -181,8 +181,13 @@ function App() {
       });
       const today = new Date().toISOString().split('T')[0];
       const todayTransactions = t.filter(trans => trans.created_at.startsWith(today));
+      const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
       setStats({
         income: todayTransactions.filter(tr => tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0),
+        weeklyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= sevenDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
+        monthlyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= thirtyDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
         expenses: todayTransactions.filter(tr => tr.type === 'expense').reduce((acc, tr) => acc + Number(tr.amount), 0),
         clients: c.length,
         appointments: todayTransactions.length 
@@ -267,7 +272,7 @@ function App() {
           />
         );
       case 'reception': return <div className="p-container"><ReceptionModule isMobile={isMobile} /></div>;
-      case 'checkout': return <div className="p-container"><CheckoutPOS isMobile={isMobile} rates={effectiveRates} onOpenSale={() => setIsSaleModalOpen(true)} /></div>;
+      case 'checkout': return <div className="p-container"><CheckoutPOS isMobile={isMobile} rates={effectiveRates} onOpenSale={() => setIsSaleModalOpen(true)} onNavigate={handleTabChange} /></div>;
       case 'barber': return <div className="p-container"><BarberPanel isMobile={isMobile} /></div>;
       case 'scheduling': return <div className="p-container"><SchedulingModule isMobile={isMobile} /></div>;
       case 'services': return <div className="p-container"><ServicesModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;

@@ -87,7 +87,12 @@ const DashboardModule = ({
   const [isEditingRates, setIsEditingRates] = useState(false);
   const [tempRates, setTempRates] = useState({ ...customRates });
   const { showToast } = useNotifs();
-  const dailyGoal = parseFloat(localStorage.getItem('astro_daily_goal') || '500');
+  const [isEditingGoals, setIsEditingGoals] = useState(false);
+  const [goals, setGoals] = useState({
+    daily: parseFloat(localStorage.getItem('astro_daily_goal') || '500'),
+    weekly: parseFloat(localStorage.getItem('astro_weekly_goal') || '3000'),
+    monthly: parseFloat(localStorage.getItem('astro_monthly_goal') || '12000')
+  });
   const [isStoreOpen] = useState(true); 
 
   const isBarber = user?.role === 'Barbero' || user?.role?.includes('Barbero|');
@@ -99,12 +104,13 @@ const DashboardModule = ({
     setQuoteIndex(Math.floor(Math.random() * QUOTES.length));
   }, []);
 
-  const handleEditGoal = () => {
-    const newGoal = prompt("Establecer nueva meta diaria ($):", dailyGoal);
-    if (newGoal && !isNaN(newGoal)) {
-      localStorage.setItem('astro_daily_goal', newGoal);
-      window.location.reload();
-    }
+  const handleSaveGoals = (newGoals) => {
+    localStorage.setItem('astro_daily_goal', newGoals.daily);
+    localStorage.setItem('astro_weekly_goal', newGoals.weekly);
+    localStorage.setItem('astro_monthly_goal', newGoals.monthly);
+    setGoals(newGoals);
+    setIsEditingGoals(false);
+    showToast('Metas actualizadas correctamente.');
   };
 
   return (
@@ -226,7 +232,8 @@ const DashboardModule = ({
             borderRadius: '32px', 
             padding: '48px', 
             position: 'relative', 
-            overflow: 'hidden',
+            overflow: 'visible',
+            zIndex: 5,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center'
@@ -246,13 +253,23 @@ const DashboardModule = ({
             </div>
 
             {/* Visual Elements */}
-            <div style={{ position: 'absolute', right: '-20px', bottom: '-40px', width: '380px', height: '420px' }}>
+            <div style={{ 
+              position: 'absolute', 
+              right: isMobile ? '-50px' : '-80px', 
+              bottom: isMobile ? '-50px' : '-80px', 
+              width: isMobile ? '320px' : '480px', 
+              height: isMobile ? '320px' : '480px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10
+            }}>
               <div className="chair-shadow" style={{ 
                 position: 'absolute', 
-                bottom: '80px', 
+                bottom: isMobile ? '40px' : '60px', 
                 left: '50%', 
                 transform: 'translateX(-50%)', 
-                width: '180px', 
+                width: isMobile ? '140px' : '220px', 
                 height: '40px', 
                 background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, transparent 70%)',
                 zIndex: 1,
@@ -263,11 +280,11 @@ const DashboardModule = ({
                 alt="Astro Chair" 
                 className="chair-float"
                 style={{ 
-                  height: isMobile ? '220px' : '280px', 
+                  height: isMobile ? '240px' : '360px', 
                   width: 'auto',
                   objectFit: 'contain',
                   zIndex: 3,
-                  filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.7))',
+                  filter: 'drop-shadow(0 20px 50px rgba(0,0,0,0.8))',
                   pointerEvents: 'none',
                   animation: 'float 4s infinite ease-in-out'
                 }} 
@@ -282,28 +299,50 @@ const DashboardModule = ({
             {!isBarber && <StatCard title="En Inventario" value={dbData.services.length + dbData.clients.length} icon={<ShoppingBag size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
           </div>
 
-          {/* Goal Progress */}
+          {/* Goals Grid */}
           {!isBarber && (
-            <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Target size={18} color="var(--gold-primary)" />
-                  <span style={{ fontWeight: '900', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>Misión Diaria</span>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
+              {[
+                { title: 'Misión Diaria', current: stats.income, goal: goals.daily, icon: <Target size={18} />, label: 'HOY' },
+                { title: 'Meta Semanal', current: stats.weeklyIncome || 0, goal: goals.weekly, icon: <TrendingUp size={18} />, label: '7 DÍAS' },
+                { title: 'Objetivo Mensual', current: stats.monthlyIncome || 0, goal: goals.monthly, icon: <Trophy size={18} />, label: '30 DÍAS' }
+              ].map((m, i) => (
+                <div key={i} className="glass-card" style={{ padding: '24px', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ color: 'var(--gold-primary)' }}>{m.icon}</div>
+                      <span style={{ fontWeight: '900', fontSize: '13px', letterSpacing: '1px', textTransform: 'uppercase' }}>{m.title}</span>
+                    </div>
+                    {i === 0 && (
+                      <button 
+                        onClick={() => setIsEditingGoals(true)}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '24px', fontWeight: '950', color: 'white' }}>
+                      ${m.current.toFixed(0)} <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '700' }}>/ ${m.goal}</span>
+                    </div>
+                    <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)', padding: '4px 8px', borderRadius: '6px' }}>
+                      {Math.min(Math.round((m.current / m.goal) * 100), 100)}%
+                    </div>
+                  </div>
+
+                  <div style={{ height: '8px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ 
+                      width: `${Math.min((m.current / m.goal) * 100, 100)}%`, 
+                      height: '100%', 
+                      background: 'var(--gold-gradient)', 
+                      boxShadow: 'var(--gold-glow)',
+                      transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)' 
+                    }} />
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: '800' }}>${stats.income.toFixed(0)} <span style={{ opacity: 0.3 }}>/</span> ${dailyGoal}</span>
-                  <button onClick={handleEditGoal} className="action-btn" style={{ padding: '6px', borderRadius: '8px' }}><Edit3 size={14} /></button>
-                </div>
-              </div>
-              <div style={{ height: '10px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '5px', overflow: 'hidden' }}>
-                <div style={{ 
-                  width: `${Math.min((stats.income / dailyGoal) * 100, 100)}%`, 
-                  height: '100%', 
-                  background: 'var(--gold-gradient)', 
-                  boxShadow: 'var(--gold-glow)',
-                  transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)' 
-                }} />
-              </div>
+              ))}
             </div>
           )}
         </div>
@@ -312,9 +351,16 @@ const DashboardModule = ({
         {!isBarber && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             <PodiumSection 
-              title="Top Artistas" 
+              title="Top Barbers" 
               icon={<Trophy size={20} color="var(--gold-primary)" />}
-              data={dbData.staff.sort((a,b) => (b.stats?.monthlyIncome || 0) - (a.stats?.monthlyIncome || 0)).slice(0, 3)}
+              data={dbData.staff
+                .filter(s => {
+                  const role = (s.role || 'Barbero').toLowerCase();
+                  return role.includes('barber') && !role.includes('asistente');
+                })
+                .sort((a,b) => (b.stats?.monthlyIncome || 0) - (a.stats?.monthlyIncome || 0))
+                .slice(0, 3)
+              }
               labelKey="name"
               scoreKey={(item) => `$${(item.stats?.monthlyIncome || 0).toFixed(0)}`}
               scoreLabel="ÚLTIMOS 30 DÍAS"
@@ -323,10 +369,10 @@ const DashboardModule = ({
             <PodiumSection 
               title="Top Clientes" 
               icon={<Users size={20} color="var(--gold-primary)" />}
-              data={dbData.clients.sort((a,b) => (b.total_visits || 0) - (a.total_visits || 0)).slice(0, 3)}
+              data={dbData.clients.sort((a,b) => (b.total_spent || 0) - (a.total_spent || 0)).slice(0, 3)}
               labelKey="name"
-              scoreKey={(item) => `${item.total_visits || 0}`}
-              scoreLabel="VISITAS"
+              scoreKey={(item) => `$${(item.total_spent || 0).toFixed(0)}`}
+              scoreLabel="TOTAL CONSUMIDO"
               isClient
               onNavigate={onNavigate}
             />
@@ -334,6 +380,61 @@ const DashboardModule = ({
         )}
       </div>
 
+      {/* Goal Edit Modal */}
+      {isEditingGoals && (
+        <div className="modal-overlay animate-fade-in" style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, backdropFilter: 'blur(10px)'
+        }}>
+          <div className="glass-card animate-scale-in" style={{ width: '400px', padding: '40px', borderRadius: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Target color="var(--gold-primary)" size={20} />
+              </div>
+              <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Metas <span className="text-gold">Astro</span></h3>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
+              <div className="form-group">
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>META DIARIA ($)</label>
+                <input 
+                  type="number" 
+                  className="form-input" 
+                  value={goals.daily} 
+                  onChange={e => setGoals({...goals, daily: e.target.value})}
+                  style={{ width: '100%', fontSize: '16px', fontWeight: '800' }}
+                />
+              </div>
+              <div className="form-group">
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>META SEMANAL ($)</label>
+                <input 
+                  type="number" 
+                  className="form-input" 
+                  value={goals.weekly} 
+                  onChange={e => setGoals({...goals, weekly: e.target.value})}
+                  style={{ width: '100%', fontSize: '16px', fontWeight: '800' }}
+                />
+              </div>
+              <div className="form-group">
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>META MENSUAL ($)</label>
+                <input 
+                  type="number" 
+                  className="form-input" 
+                  value={goals.monthly} 
+                  onChange={e => setGoals({...goals, monthly: e.target.value})}
+                  style={{ width: '100%', fontSize: '16px', fontWeight: '800' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button className="btn-secondary" onClick={() => setIsEditingGoals(false)} style={{ flex: 1 }}>Cancelar</button>
+              <button className="btn-gold" onClick={() => handleSaveGoals(goals)} style={{ flex: 2 }}>Guardar Metas</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Manual Rate Edit Modal */}
       {isEditingRates && (
         <div className="modal-overlay animate-fade-in" style={{
@@ -348,7 +449,6 @@ const DashboardModule = ({
               </div>
               <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Tasas <span className="text-gold">Astro</span></h3>
             </div>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '8px' }}>TASA USD / BS</label>

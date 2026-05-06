@@ -21,7 +21,8 @@ import {
   Lock,
   Mail,
   MoreHorizontal,
-  ChevronRight
+  ChevronRight,
+  Shield
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import AstroSelect from './AstroSelect';
@@ -29,6 +30,29 @@ import AstroCamera from './AstroCamera';
 import StaffProfileModal from './StaffProfileModal';
 
 import { useAuth } from '../context/AuthContext';
+import RoleManagerModal from './RoleManagerModal';
+
+const availableModules = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'scheduling', label: 'Agenda (Astro)' },
+  { id: 'reception', label: 'Recepción (Padre)' },
+  { id: 'checkout', label: 'Caja (Pro)' },
+  { id: 'barber', label: 'Panel Barber (Hijo)' },
+  { id: 'clients', label: 'Clientes' },
+  { id: 'personnel', label: 'Personal' },
+  { id: 'services', label: 'Servicios' },
+  { id: 'inventory', label: 'Inventario' },
+  { id: 'finance', label: 'Caja Chica' },
+  { id: 'history', label: 'Historial' },
+];
+
+const rolePresets = {
+  'Admin': availableModules.map(m => m.id),
+  'Barbero': ['scheduling', 'barber', 'clients', 'history'],
+  'Recepcionista': ['reception', 'scheduling', 'clients', 'history'],
+  'Caja': ['checkout', 'finance', 'inventory', 'clients', 'history'],
+  'Asistente de Lavado': ['barber', 'history']
+};
 
 const PersonnelModule = ({ isMobile, inventory = [] }) => {
   const { showToast } = useNotifs();
@@ -56,27 +80,22 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   // Camera State
   const [showCamera, setShowCamera] = useState(false);
 
-  const availableModules = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'scheduling', label: 'Agenda (Astro)' },
-    { id: 'reception', label: 'Recepción (Padre)' },
-    { id: 'checkout', label: 'Caja (Pro)' },
-    { id: 'barber', label: 'Panel Barber (Hijo)' },
-    { id: 'clients', label: 'Clientes' },
-    { id: 'personnel', label: 'Personal' },
-    { id: 'services', label: 'Servicios' },
-    { id: 'inventory', label: 'Inventario' },
-    { id: 'finance', label: 'Caja Chica' },
-    { id: 'history', label: 'Historial' },
-  ];
+  // New Role State
+  const [isCreatingNewRole, setIsCreatingNewRole] = useState(false);
+  const [newRoleName, setNewRoleName] = useState('');
 
-  const rolePresets = {
-    'Admin': availableModules.map(m => m.id),
-    'Barbero': ['scheduling', 'barber', 'clients', 'history'],
-    'Recepcionista': ['reception', 'scheduling', 'clients', 'history'],
-    'Caja': ['checkout', 'finance', 'inventory', 'clients', 'history'],
-    'Asistente de Lavado': ['barber', 'history']
+  // Advanced Roles Management
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [customRolePresets, setCustomRolePresets] = useState(() => {
+    const saved = localStorage.getItem('astro_custom_roles');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const allRolePresets = {
+    ...rolePresets,
+    ...customRolePresets
   };
+
 
   useEffect(() => {
     fetchStaff();
@@ -138,6 +157,29 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       permissions: rolePresets['Barbero'],
       washing_rate: 0
     });
+    setIsCreatingNewRole(false);
+    setNewRoleName('');
+  };
+
+  const handleSaveCustomRole = (name, perms, oldName) => {
+    const updated = { ...customRolePresets };
+    if (oldName && oldName !== name) delete updated[oldName];
+    updated[name] = perms;
+    setCustomRolePresets(updated);
+    localStorage.setItem('astro_custom_roles', JSON.stringify(updated));
+    showToast(`Rol "${name}" guardado correctamente.`);
+  };
+
+  const handleDeleteCustomRole = (name) => {
+    if (rolePresets[name]) {
+      showToast('No se pueden eliminar los roles base del sistema.', 'error');
+      return;
+    }
+    if (!window.confirm(`¿Eliminar el rol "${name}"? Los miembros actuales mantendrán sus permisos.`)) return;
+    const updated = { ...customRolePresets };
+    delete updated[name];
+    setCustomRolePresets(updated);
+    localStorage.setItem('astro_custom_roles', JSON.stringify(updated));
   };
 
   const handleSubmit = async () => {
@@ -149,7 +191,12 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       setLoading(true);
       
       // Construct role string: RoleName|perm1,perm2...
-      const finalRole = `${formData.role}|${formData.permissions.join(',')}`;
+      const roleToSave = isCreatingNewRole ? newRoleName : formData.role;
+      if (!roleToSave) {
+        showToast('Por favor ingresa un nombre para el rol.', 'error');
+        return;
+      }
+      const finalRole = `${roleToSave}|${formData.permissions.join(',')}`;
 
       const submissionData = {
         name: formData.name,
@@ -216,13 +263,24 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         marginBottom: '40px'
       }}>
         <div>
-          <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Nuestro <span className="text-gold">Equipo</span></h2>
+          <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Astro <span className="text-gold">Team</span></h2>
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Gestión de talento y desempeño.</p>
         </div>
-        <button className="btn-gold" onClick={() => showForm ? handleCloseForm() : setShowForm(true)}>
-          {showForm ? <X size={18} style={{ marginRight: '8px' }} /> : <UserPlus size={18} style={{ marginRight: '8px' }} />}
-          {showForm ? 'Cancelar' : 'Contratar Artista'}
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          {!isMobile && (
+            <button 
+              className="btn-gold" 
+              onClick={() => setIsRoleModalOpen(true)}
+              style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}
+            >
+              <Shield size={18} style={{ marginRight: '8px' }} /> Roles
+            </button>
+          )}
+          <button className="btn-gold" onClick={() => showForm ? handleCloseForm() : setShowForm(true)}>
+            {showForm ? <X size={18} style={{ marginRight: '8px' }} /> : <UserPlus size={18} style={{ marginRight: '8px' }} />}
+            {showForm ? 'Cancelar' : 'Nuevo miembro'}
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -287,24 +345,50 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                     <input className="form-input" placeholder="Ej. Marco Silva" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
                   </div>
                 </div>
-                <AstroSelect 
-                  label="ROL EN EL EQUIPO"
-                  value={formData.role}
-                  onChange={val => {
-                    setFormData({
-                      ...formData, 
-                      role: val,
-                      permissions: rolePresets[val] || formData.permissions
-                    });
-                  }}
-                  options={[
-                    { label: 'Barbero', value: 'Barbero' },
-                    { label: 'Recepcionista', value: 'Recepcionista' },
-                    { label: 'Caja', value: 'Caja' },
-                    { label: 'Asistente de Lavado', value: 'Asistente de Lavado' },
-                    { label: 'Admin', value: 'Admin' }
-                  ]}
-                />
+                {!isCreatingNewRole ? (
+                  <AstroSelect 
+                    label="ROL EN EL EQUIPO"
+                    value={formData.role}
+                    onChange={val => {
+                      if (val === 'NEW_ROLE') {
+                        setIsCreatingNewRole(true);
+                      } else {
+                        setFormData({
+                          ...formData, 
+                          role: val,
+                          permissions: allRolePresets[val] || formData.permissions
+                        });
+                      }
+                    }}
+                    options={[
+                      ...Object.keys(allRolePresets).map(r => ({ label: r, value: r })),
+                      ...Array.from(new Set(staff.map(s => s.role?.split('|')[0]))).filter(r => r && !allRolePresets[r]).map(r => ({ label: r, value: r })),
+                      { label: '➕ CREAR NUEVO ROL...', value: 'NEW_ROLE' }
+                    ]}
+                  />
+                ) : (
+                  <div className="form-group animate-slide-left">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>NOMBRE DEL NUEVO ROL</label>
+                      <button 
+                        onClick={() => { setIsCreatingNewRole(false); setNewRoleName(''); }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '10px', cursor: 'pointer', fontWeight: '800' }}
+                      >
+                        VOLVER A LA LISTA
+                      </button>
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <Sparkles size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                      <input 
+                        className="form-input" 
+                        placeholder="Ej. Gerente de Piso" 
+                        value={newRoleName} 
+                        onChange={e => setNewRoleName(e.target.value)} 
+                        style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid var(--gold-primary)' }} 
+                      />
+                    </div>
+                  </div>
+                )}
                 {formData.role === 'Asistente de Lavado' && (
                   <div className="form-group animate-slide-right">
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>TARIFA POR LAVADO ($)</label>
@@ -409,7 +493,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
               <button className="btn-gold" onClick={handleSubmit} style={{ height: '56px', width: '100%', borderRadius: '16px', fontSize: '16px', fontWeight: '800', marginTop: '10px' }}>
                 <Check size={20} style={{ marginRight: '10px' }} />
-                {isEditing ? 'Actualizar Perfil de Artista' : 'Confirmar y Contratar Artista'}
+                {isEditing ? 'Actualizar Perfil de Artista' : 'Confirmar y unir al equipo'}
               </button>
             </div>
           </div>
@@ -601,6 +685,15 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         staffMember={profileModalData}
         inventory={inventory}
         onUpdate={fetchStaff}
+      />
+
+      <RoleManagerModal 
+        isOpen={isRoleModalOpen}
+        onClose={() => setIsRoleModalOpen(false)}
+        roles={allRolePresets}
+        onSaveRole={handleSaveCustomRole}
+        onDeleteRole={handleDeleteCustomRole}
+        availableModules={availableModules}
       />
     </div>
   );
