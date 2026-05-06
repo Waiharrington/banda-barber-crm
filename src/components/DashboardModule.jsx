@@ -276,7 +276,7 @@ const DashboardModule = ({
                 animation: 'shadow-scale 4s infinite ease-in-out'
               }} />
               <img 
-                src="/src/assets/gold_chair.png" 
+                src="/barber-chair.png" 
                 alt="Astro Chair" 
                 className="chair-float"
                 style={{ 
