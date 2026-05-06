@@ -284,7 +284,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
         marginBottom: '40px'
       }}>
         <div>
-          <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Gestión de <span className="text-gold">Servicios</span></h2>
+          <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}><span className="text-gold">Servicios</span></h2>
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Define tu oferta y servicios adicionales.</p>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -339,7 +339,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
 
           <button className="btn-gold" onClick={() => setIsBillableExtrasModalOpen(true)} style={{ backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212,175,55,0.2)' }}>
             <Sparkles size={18} style={{ marginRight: '8px' }} />
-            Gestionar Extras
+            Extras
           </button>
           <button 
             className="btn-gold" 
@@ -521,7 +521,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                       letterSpacing: '0.5px'
                     }}
                   >
-                    <Settings size={12} /> Gestionar Items
+                    <Settings size={12} /> Items
                   </button>
                 </div>
 
@@ -733,7 +733,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}>Gestionar <span className="text-gold">Extras</span></h3>
+                <h3 style={{ fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}><span className="text-gold">Extras</span></h3>
               </div>
               <button 
                 onClick={() => setIsExtrasModalOpen(false)} 
