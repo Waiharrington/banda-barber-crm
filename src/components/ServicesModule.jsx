@@ -733,7 +733,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}><span className="text-gold">Extras</span></h3>
+                <h3 style={{ fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}><span className="text-gold">Items</span></h3>
               </div>
               <button 
                 onClick={() => setIsExtrasModalOpen(false)} 
@@ -758,18 +758,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                       onFocus={() => setEditingItem(item)}
                       style={{ flex: 1, fontSize: '13px', height: '36px', background: 'transparent', border: 'none', fontWeight: '600', minWidth: 0 }}
                     />
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
-                      <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '800' }}>$</span>
-                      <input 
-                        className="form-input" 
-                        type="number" 
-                        step="0.01"
-                        value={editingItem?.id === item.id ? editingItem.base_cost : item.base_cost} 
-                        onChange={(e) => setEditingItem({ ...(editingItem || item), id: item.id, base_cost: e.target.value })}
-                        onFocus={() => setEditingItem(item)}
-                        style={{ width: '60px', fontSize: '13px', height: '36px', paddingLeft: '18px', paddingRight: '4px', textAlign: 'right', fontWeight: '700', color: 'var(--gold-primary)', background: 'rgba(0,0,0,0.2)', border: editingItem?.id === item.id ? '1px solid var(--gold-primary)' : '1px solid transparent' }}
-                      />
-                    </div>
+
                     
                     <div style={{ display: 'flex', gap: '4px' }}>
                       {editingItem?.id === item.id ? (
@@ -800,23 +789,12 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <input 
                   className="form-input" 
-                  placeholder="Nuevo extra..." 
+                  placeholder="Nuevo ítem..." 
                   value={newItemName}
                   onChange={e => setNewItemName(e.target.value)}
                   style={{ flex: 1, height: '40px', fontSize: '13px', minWidth: 0 }}
                 />
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '11px' }}>$</span>
-                  <input 
-                    className="form-input" 
-                    type="number" 
-                    step="0.01"
-                    placeholder="0.00"
-                    value={newItemCost}
-                    onChange={e => setNewItemCost(e.target.value)}
-                    style={{ width: '70px', height: '40px', paddingLeft: '20px', fontSize: '13px', fontWeight: '700' }}
-                  />
-                </div>
+
                 <button onClick={handleAddMasterChecklistItem} className="btn-gold" style={{ width: '40px', height: '40px', borderRadius: '10px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Plus size={20} />
                 </button>
