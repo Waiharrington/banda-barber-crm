@@ -231,12 +231,12 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   };
 
   const handleDeleteStaff = async (id, name) => {
-    if (!window.confirm(`¿Estás seguro de eliminar a ${name}? Esta acción es irreversible.`)) return;
+    if (!window.confirm(`¿Estás seguro de archivar a ${name}? Ya no aparecerá en las listas activas pero su historial se mantendrá.`)) return;
     try {
       setLoading(true);
       await dataService.deleteStaff(id);
       await fetchStaff();
-      showToast(`${name} ha sido eliminado del equipo.`);
+      showToast(`${name} ha sido archivado correctamente.`);
     } catch (error) {
       showToast('Error al eliminar personal.', 'error');
     } finally {

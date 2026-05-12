@@ -89,7 +89,8 @@ export const dataService = {
       .select('*')
       .order('name');
     if (error) throw error;
-    return data;
+    // Filter out archived staff from active lists
+    return data.filter(s => !s.role?.startsWith('ARCHIVED|'));
   },
 
   async addStaff(member) {
@@ -198,29 +199,21 @@ export const dataService = {
   },
 
   async deleteStaff(id) {
-    // 1. Unlink from appointments
-    await supabase
-      .from('appointments')
-      .update({ staff_id: null })
-      .eq('staff_id', id);
+    // 1. Fetch current staff to preserve their role info
+    const { data: member } = await supabase
+      .from('staff')
+      .select('role')
+      .eq('id', id)
+      .single();
+    
+    if (!member) return;
 
-    // 2. Unlink from appointment_staff (commissions)
-    await supabase
-      .from('appointment_staff')
-      .update({ staff_id: null })
-      .eq('staff_id', id);
-
-    // 3. Unlink from inventory
-    await supabase
-      .from('inventory')
-      .update({ staff_id: null })
-      .eq('staff_id', id);
-
-    // 4. Now delete the staff member
+    // 2. Archive instead of delete
     const { error } = await supabase
       .from('staff')
-      .delete()
+      .update({ role: `ARCHIVED|${member.role}` })
       .eq('id', id);
+      
     if (error) throw error;
   },
 
