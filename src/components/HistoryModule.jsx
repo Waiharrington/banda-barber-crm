@@ -24,6 +24,13 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
   const [dateRange, setDateRange] = useState('all');
   const [selectedId, setSelectedId] = useState(null);
 
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+
   const isAdmin = user?.role === 'Admin';
 
   useEffect(() => {
@@ -127,7 +134,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                   {isAdmin ? 'VENTAS FILTRADAS' : 'MIS GANANCIAS'}
                 </div>
                 <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--gold-primary)' }}>
-                  ${totalIncome.toFixed(2)}
+                  ${formatCurrency(totalIncome)}
                 </div>
              </div>
           </div>
@@ -230,12 +237,16 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                         <td style={{ padding: '18px 24px', textAlign: 'right' }}>
                           <div style={{ fontSize: '16px', fontWeight: '900', color: 'white' }}>
                             ${(() => {
-                              if (!isAdmin) return ((item.commission_earned || 0) + (item.tip_amount || 0)).toFixed(2);
-                              const serviceBase = Number(item.services?.price || 0);
-                              const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
-                              const products = item.appointment_products?.reduce((sum, p) => sum + (Number(p.price || 0) * (p.quantity || 1)), 0) || 0;
-                              const tips = item.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
-                              return (serviceBase + extras + products + tips).toFixed(2);
+                              let val = 0;
+                              if (!isAdmin) val = ((item.commission_earned || 0) + (item.tip_amount || 0));
+                              else {
+                                const serviceBase = Number(item.services?.price || 0);
+                                const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+                                const products = item.appointment_products?.reduce((sum, p) => sum + (Number(p.price || 0) * (p.quantity || 1)), 0) || 0;
+                                const tips = item.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
+                                val = (serviceBase + extras + products + tips);
+                              }
+                              return formatCurrency(val);
                             })()}
                           </div>
                         </td>
@@ -273,7 +284,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                     <DetailItem 
                                       label="Servicio Base" 
                                       value={item.services?.name} 
-                                      subValue={user.role !== 'Asistente de Lavado' ? `$${item.services?.price}` : null} 
+                                      subValue={user.role !== 'Asistente de Lavado' ? `$${formatCurrency(item.services?.price || 0)}` : null} 
                                     />
                                     <div>
                                       <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Extras / Productos</span>
@@ -303,12 +314,12 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                       <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Monto de Venta (Serv + Ext + Prod)</span>
                                       <div style={{ textAlign: 'right' }}>
                                         <div style={{ fontSize: '16px', fontWeight: '900', color: 'white' }}>
-                                          ${(() => {
-                                            const serviceBase = Number(item.services?.price || 0);
-                                            const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
-                                            const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
-                                            return (serviceBase + extras + products).toFixed(2);
-                                          })()}
+                                            ${(() => {
+                                              const serviceBase = Number(item.services?.price || 0);
+                                              const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+                                              const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
+                                              return formatCurrency(serviceBase + extras + products);
+                                            })()}
                                         </div>
                                       </div>
                                     </div>
@@ -338,11 +349,11 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                           <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                                             {user.role === 'Asistente de Lavado' ? 'Tu Tarifa de Lavado' : 'Tu Comisión'}
                                           </span>
-                                          <span style={{ fontSize: '14px', fontWeight: '700' }}>${item.commission_earned?.toFixed(2)}</span>
+                                          <span style={{ fontSize: '14px', fontWeight: '700' }}>${formatCurrency(item.commission_earned || 0)}</span>
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
                                           <span style={{ fontSize: '13px', color: 'var(--gold-primary)', fontWeight: '800' }}>Tu Propina</span>
-                                          <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>+${item.tip_amount?.toFixed(2)}</span>
+                                          <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>+${formatCurrency(item.tip_amount || 0)}</span>
                                         </div>
                                       </>
                                     )}

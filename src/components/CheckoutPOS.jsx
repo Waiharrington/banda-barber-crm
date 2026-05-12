@@ -25,6 +25,12 @@ import { UserPlus } from 'lucide-react';
 
 const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const { showToast, triggerConfetti, triggerRocket } = useNotifs();
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
   const [pendingServices, setPendingServices] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [allExtras, setAllExtras] = useState([]);
@@ -227,6 +233,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         cashUsd: Number(cashUsd),
         transferBs: Number(remainingBs),
         totalTips: totalTips,
+        didWash: didWash,
         staffInvolved: (() => {
           const involved = [];
           const washer = allStaff.find(s => s.id === selectedWasherId);
@@ -249,11 +256,20 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             else if (role === 'Recepcionista') pct = selectedApp.services?.commission_receptionist ?? 0;
             else pct = selectedApp.staff?.commission_pct ?? 40;
 
+            const comm = grossBase * (pct / 100);
+            const prodComm = cart.reduce((acc, p) => acc + (p.price * p.quantity * 0.10), 0);
+            const tipVal = tips.filter(t => t.staffId === selectedApp.staff_id).reduce((acc, t) => acc + Number(t.amount || 0), 0);
+
             involved.push({
               staffId: selectedApp.staff_id,
-              commissionEarned: grossBase * (pct / 100),
-              productCommissionEarned: cart.reduce((acc, p) => acc + (p.price * p.quantity * 0.10), 0),
-              tip: tips.filter(t => t.staffId === selectedApp.staff_id).reduce((acc, t) => acc + Number(t.amount || 0), 0)
+              name: selectedApp.staff?.name || 'Barbero',
+              role: selectedApp.staff?.role || 'Barbero',
+              commissionEarned: comm,
+              commissionBs: comm * fixedRate,
+              productCommissionEarned: prodComm,
+              productCommissionBs: prodComm * fixedRate,
+              tip: tipVal,
+              tipBs: tipVal * fixedRate
             });
           }
 
@@ -262,11 +278,16 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             if (existing) {
               existing.commissionEarned += washRate;
             } else {
+              const tipValW = tips.filter(t => t.staffId === selectedWasherId).reduce((acc, t) => acc + Number(t.amount || 0), 0);
               involved.push({
                 staffId: selectedWasherId,
+                name: washer?.name || 'Asistente',
+                role: washer?.role || 'Asistente de Lavado',
                 commissionEarned: washRate,
+                commissionBs: washRate * fixedRate,
                 productCommissionEarned: 0,
-                tip: tips.filter(t => t.staffId === selectedWasherId).reduce((acc, t) => acc + Number(t.amount || 0), 0)
+                tip: tipValW,
+                tipBs: tipValW * fixedRate
               });
             }
           }
@@ -275,11 +296,16 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             if (!t.staffId) return;
             const existing = involved.find(i => i.staffId === t.staffId);
             if (!existing) {
+              const staffObj = allStaff.find(s => s.id === t.staffId);
+              const tipValT = Number(t.amount || 0);
               involved.push({
                 staffId: t.staffId,
+                name: staffObj?.name || 'Staff',
+                role: staffObj?.role || 'Barbero',
                 commissionEarned: 0,
                 productCommissionEarned: 0,
-                tip: tips.filter(tip => tip.staffId === t.staffId).reduce((acc, tip) => acc + Number(tip.amount || 0), 0)
+                tip: tipValT,
+                tipBs: tipValT * fixedRate
               });
             }
           });
@@ -832,8 +858,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '16px' }}>
                   <span style={{ fontSize: '18px', fontWeight: '900' }}>TOTAL A PAGAR</span>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '32px', fontWeight: '950', color: 'var(--gold-primary)' }}>${totalUsd}</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>≈ {totalBs} BS</div>
+                    <div style={{ fontSize: '32px', fontWeight: '950', color: 'var(--gold-primary)' }}>${formatCurrency(totalUsd)}</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>≈ {formatCurrency(totalBs)} BS</div>
                   </div>
                 </div>
               </div>
@@ -873,7 +899,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   <div className="animate-slide-up" style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '20px', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                       <label style={{ fontSize: '12px', fontWeight: '800' }}>TOTAL EN BOLÍVARES (BS)</label>
-                      <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '20px' }}>{totalBs} BS</div>
+                      <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '20px' }}>{formatCurrency(totalBs)} BS</div>
                     </div>
                     <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '12px', display: 'block' }}>MÉTODO DE PAGO (BS)</label>
                     <div style={{ display: 'flex', gap: '8px' }}>
@@ -914,7 +940,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
                       <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '12px', display: 'block' }}>2. RESTANTE EN BOLÍVARES (BS)</label>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '20px' }}>{remainingBs} BS</div>
+                        <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '20px' }}>{formatCurrency(remainingBs)} BS</div>
                         <div style={{ display: 'flex', flex: 1.5, gap: '6px', flexWrap: 'wrap', marginLeft: '20px' }}>
                           {['Pago Móvil', 'Efectivo', 'Transfe'].map(m => (
                             <button 

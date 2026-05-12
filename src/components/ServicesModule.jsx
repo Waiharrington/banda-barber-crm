@@ -3,7 +3,7 @@ import {
   Plus, Search, Edit2, Trash2, Clock, Scissors, 
   Sparkles, Droplets, Zap, Check, X, Loader2,
   Settings, DollarSign, LayoutList, Star, Crown,
-  LayoutGrid, Table, Eye, Info
+  LayoutGrid, Table, Eye, Info, Pencil
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -772,12 +772,20 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                           <Check size={16} strokeWidth={3} />
                         </button>
                       ) : (
-                        <button 
-                          onClick={(e) => handleDeleteMasterItem(e, item.id, item.name)}
-                          style={{ backgroundColor: 'rgba(255,69,58,0.1)', color: '#ff453a', border: 'none', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <>
+                          <button 
+                            onClick={() => setEditingItem(item)}
+                            style={{ backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: 'none', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button 
+                            onClick={(e) => handleDeleteMasterItem(e, item.id, item.name)}
+                            style={{ backgroundColor: 'rgba(255,69,58,0.1)', color: '#ff453a', border: 'none', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>

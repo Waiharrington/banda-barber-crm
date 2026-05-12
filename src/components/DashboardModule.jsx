@@ -87,6 +87,14 @@ const DashboardModule = ({
   const [isEditingRates, setIsEditingRates] = useState(false);
   const [tempRates, setTempRates] = useState({ ...customRates });
   const { showToast } = useNotifs();
+  
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+
   const [isEditingGoals, setIsEditingGoals] = useState(false);
   const [goals, setGoals] = useState({
     daily: parseFloat(localStorage.getItem('astro_daily_goal') || '500'),
@@ -215,7 +223,7 @@ const DashboardModule = ({
 
           {/* Business Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
-            <StatCard title="Tu Producción" value={`$${myStats.income.toFixed(2)}`} icon={<TrendingUp size={18} color="var(--gold-primary)" />} color="var(--gold-primary)" trend="+12%" positive={true} />
+            <StatCard title="Tu Producción" value={`$${formatCurrency(myStats.income)}`} icon={<TrendingUp size={18} color="var(--gold-primary)" />} color="var(--gold-primary)" trend="+12%" positive={true} />
             {!isAssistant && <StatCard title="Tus Servicios" value={myStats.appointments} icon={<ScissorsIcon size={18} color="var(--gold-primary)" />} color="#4caf50" trend="Activo" positive={true} />}
             {!isBarber && !isAssistant && <StatCard title="En Inventario" value={(dbData?.services?.length || 0) + (dbData?.clients?.length || 0)} icon={<ShoppingBag size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
             {isAssistant && <StatCard title="Lavados Realizados" value={myStats.appointments} icon={<Sparkles size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
@@ -247,7 +255,7 @@ const DashboardModule = ({
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
                     <div style={{ fontSize: '24px', fontWeight: '950', color: 'white' }}>
-                      ${(m.current || 0).toFixed(0)} <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '700' }}>/ ${m.goal}</span>
+                      ${formatCurrency(m.current || 0)} <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '700' }}>/ ${formatCurrency(m.goal)}</span>
                     </div>
                     <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)', padding: '4px 8px', borderRadius: '6px' }}>
                       {Math.min(Math.round(((m.current || 0) / m.goal) * 100), 100)}%

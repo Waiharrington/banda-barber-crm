@@ -680,7 +680,7 @@ export const dataService = {
         : `VENTA DIRECTA PRODUCTOS - Cliente: ${paymentRecord.clientName}`,
       amount: Number(paymentRecord.totalUsd),
       type: 'income',
-      category: 'Ventas Pro',
+      category: 'Ventas Astro',
       exchange_rate: Number(paymentRecord.fixedRate),
       currency: 'USD',
       metadata: { 
