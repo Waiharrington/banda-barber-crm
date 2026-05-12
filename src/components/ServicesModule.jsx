@@ -156,25 +156,25 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
 
   const handleDeleteBillableExtra = async (e, id, name) => {
     e.stopPropagation();
-    if (!window.confirm(`¿Eliminar el extra "${name}"?`)) return;
+    if (!window.confirm(`¿Archivar el extra "${name}"? Se mantendrá en el historial pero ya no se podrá seleccionar para nuevos servicios.`)) return;
     try {
       await dataService.deleteExtra(id);
       await fetchBillableExtras();
-      showToast('Extra eliminado.');
+      showToast('Extra archivado correctamente.');
     } catch (e) {
-      showToast('Error al eliminar extra.', 'error');
+      showToast('Error al archivar el extra.', 'error');
     }
   };
 
   const handleDeleteService = async (id, name) => {
-    if (!window.confirm(`¿Estás seguro de eliminar "${name}"?`)) return;
+    if (!window.confirm(`¿Archivar el servicio "${name}"? Se mantendrá en el historial pero ya no se podrá seleccionar.`)) return;
     try {
       setLoading(true);
       await dataService.deleteService(id);
       await fetchServices();
-      showToast(`Servicio ${name} eliminado.`);
+      showToast(`Servicio "${name}" archivado.`);
     } catch (e) {
-      showToast('Error al eliminar servicio.', 'error');
+      showToast('Error al archivar el servicio.', 'error');
     } finally {
       setLoading(false);
     }

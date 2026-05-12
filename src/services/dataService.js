@@ -224,8 +224,10 @@ export const dataService = {
       .from('services')
       .select('*')
       .order('name');
+    
     if (error) throw error;
-    return data;
+    // Filter out archived services
+    return data.filter(s => !s.name?.startsWith('ARCHIVED|'));
   },
 
   async addService(service) {
@@ -250,9 +252,14 @@ export const dataService = {
   },
 
   async deleteService(id) {
+    // 1. Fetch current service to get name
+    const { data: service } = await supabase.from('services').select('name').eq('id', id).single();
+    if (!service) return;
+
+    // 2. Archive instead of delete
     const { error } = await supabase
       .from('services')
-      .delete()
+      .update({ name: `ARCHIVED|${service.name}` })
       .eq('id', id);
     if (error) throw error;
   },
@@ -261,7 +268,8 @@ export const dataService = {
   async getExtras() {
     const { data, error } = await supabase.from('service_extras').select('*').order('name');
     if (error) throw error;
-    return data;
+    // Filter out archived extras
+    return data.filter(e => !e.name?.startsWith('ARCHIVED|'));
   },
 
   async addExtra(extra) {
@@ -277,7 +285,15 @@ export const dataService = {
   },
 
   async deleteExtra(id) {
-    const { error } = await supabase.from('service_extras').delete().eq('id', id);
+    // 1. Fetch current extra to get name
+    const { data: extra } = await supabase.from('service_extras').select('name').eq('id', id).single();
+    if (!extra) return;
+
+    // 2. Archive instead of delete
+    const { error } = await supabase
+      .from('service_extras')
+      .update({ name: `ARCHIVED|${extra.name}` })
+      .eq('id', id);
     if (error) throw error;
   },
 
