@@ -263,11 +263,12 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
           if (selectedApp && selectedApp.staff_id) {
             const role = selectedApp.staff?.role;
             let price = selectedApp.services?.price || 0;
-            const extrasTotal = selectedApp.appointment_extras?.reduce((acc, e) => acc + (e.price || 0), 0) || 0;
-            let grossBase = price + extrasTotal;
+            let grossBase = price;
 
-            if (didWash && selectedWasherId) {
-              grossBase -= washRate;
+            // REGLA: Si el servicio incluye lavado, se resta la tarifa de la asistente de la base antes de calcular la comisión
+            const includesWashing = selectedApp.services?.included_items?.some(i => i.toLowerCase().includes('lavado'));
+            if (includesWashing && didWash && washRate > 0) {
+              grossBase = Math.max(0, grossBase - washRate);
             }
 
             let pct = 40;
@@ -278,7 +279,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             else pct = selectedApp.staff?.commission_pct ?? 40;
 
             const comm = grossBase * (pct / 100);
-            const prodComm = cart.reduce((acc, p) => acc + (p.price * p.quantity * 0.10), 0);
+            const prodComm = 0; // Products belong 100% to the shop
             const tipVal = tips.filter(t => t.staffId === selectedApp.staff_id).reduce((acc, t) => acc + Number(t.amount || 0), 0);
 
             involved.push({

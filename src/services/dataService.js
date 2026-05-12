@@ -731,7 +731,9 @@ export const dataService = {
         method_bs: paymentRecord.methodBs,
         products_sold: paymentRecord.products || [],
         extras: paymentRecord.extras || [],
-        staffInvolved: paymentRecord.staffInvolved || []
+        staffInvolved: paymentRecord.staffInvolved || [],
+        serviceName: paymentRecord.serviceName,
+        didWash: paymentRecord.didWash
       }
     });
 

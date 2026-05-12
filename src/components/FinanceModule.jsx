@@ -118,8 +118,9 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
         exchange_rate: rates?.usd || 550,
         metadata: {
           staffId: payrollModal.staff.id,
-          amountBs: totalToPayBs,
-          deductionBs: payrollModal.deductionBs,
+          amountBs: finalAmountBs,
+          deductionBs: payrollModal.isAbono ? 0 : payrollModal.deductionBs,
+          isAbono: payrollModal.isAbono,
           voucherImage: payrollModal.file
         }
       };
@@ -1299,24 +1300,42 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           {payrollModal.isOpen && (
             <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
               <div className="glass-card animate-scale-in" style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '32px' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '8px' }}>Pago a <span className="text-gold">{payrollModal.staff?.name}</span></h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '24px' }}>Realiza el descuento de asistencia y sube el comprobante.</p>
+                <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '8px' }}>
+                  {payrollModal.isAbono ? 'Abono a' : 'Pago a'} <span className="text-gold">{payrollModal.staff?.name}</span>
+                </h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '24px' }}>
+                  {payrollModal.isAbono ? 'Indica el monto que deseas abonar hoy.' : 'Realiza el descuento de asistencia y sube el comprobante.'}
+                </p>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px' }}>
                     <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Por Cobrar:</span>
                     <span style={{ fontSize: '18px', fontWeight: '900' }}>{formatCurrency(payrollModal.earnedBs, '')} Bs</span>
                   </div>
-                  
-                  <div>
-                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Deducción Asistente / Insumos (Bs)</label>
-                    <input type="number" value={payrollModal.deductionBs} onChange={(e) => setPayrollModal({...payrollModal, deductionBs: Number(e.target.value)})} style={{ width: '100%', padding: '14px', borderRadius: '12px', background: 'rgba(255,69,58,0.1)', border: '1px solid rgba(255,69,58,0.2)', color: '#ff453a', fontSize: '16px', fontWeight: '900' }} />
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>Monto sugerido basado en la configuración de la Vaca.</p>
-                  </div>
+
+                  {payrollModal.isAbono ? (
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)', display: 'block', marginBottom: '8px' }}>Monto a Abonar (Bs)</label>
+                      <input 
+                        type="number" 
+                        value={payrollModal.paymentAmountBs} 
+                        onChange={(e) => setPayrollModal({...payrollModal, paymentAmountBs: Number(e.target.value)})} 
+                        style={{ width: '100%', padding: '14px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--gold-primary)', color: 'white', fontSize: '18px', fontWeight: '900' }} 
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Deducción Asistente / Insumos (Bs)</label>
+                      <input type="number" value={payrollModal.deductionBs} onChange={(e) => setPayrollModal({...payrollModal, deductionBs: Number(e.target.value)})} style={{ width: '100%', padding: '14px', borderRadius: '12px', background: 'rgba(255,69,58,0.1)', border: '1px solid rgba(255,69,58,0.2)', color: '#ff453a', fontSize: '16px', fontWeight: '900' }} />
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>Monto sugerido basado en la configuración de la Vaca.</p>
+                    </div>
+                  )}
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
-                    <span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--gold-primary)' }}>Total a Pagar:</span>
-                    <span style={{ fontSize: '24px', fontWeight: '900', color: '#32d74b' }}>{formatCurrency(payrollModal.earnedBs - payrollModal.deductionBs, '')} Bs</span>
+                    <span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--gold-primary)' }}>Total a Transferir:</span>
+                    <span style={{ fontSize: '24px', fontWeight: '900', color: '#32d74b' }}>
+                      {formatCurrency(payrollModal.isAbono ? payrollModal.paymentAmountBs : (payrollModal.earnedBs - payrollModal.deductionBs), '')} Bs
+                    </span>
                   </div>
 
                   <div>
@@ -1329,9 +1348,93 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
                   <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
                     <button onClick={() => setPayrollModal({...payrollModal, isOpen: false})} style={{ flex: 1, padding: '14px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', fontWeight: '700' }}>Cancelar</button>
-                    <button onClick={handleProcessPayroll} className="btn-gold" style={{ flex: 1, padding: '14px', borderRadius: '12px', fontWeight: '800' }}>Confirmar Pago</button>
+                    <button onClick={handleProcessPayroll} className="btn-gold" style={{ flex: 1, padding: '14px', borderRadius: '12px', fontWeight: '800' }}>Confirmar {payrollModal.isAbono ? 'Abono' : 'Pago'}</button>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Payroll Detail Modal */}
+          {payrollDetail.isOpen && (
+            <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div className="glass-card animate-scale-in" style={{ maxWidth: '600px', width: '100%', borderRadius: '32px', padding: '32px', maxHeight: '80vh', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Detalle de Servicios: <span className="text-gold">{payrollDetail.staff?.name}</span></h3>
+                  <button onClick={() => setPayrollDetail({ isOpen: false, staff: null, transactions: [] })} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>✕</button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {payrollDetail.transactions.length === 0 ? (
+                    <p style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No hay transacciones registradas.</p>
+                  ) : (
+                    payrollDetail.transactions.map((t, idx) => {
+                      const descParts = t.description.split(' - ');
+                      const clientFromDesc = descParts.find(s => s.toLowerCase().includes('cliente:'))?.split(': ')[1];
+                      const serviceFromDesc = descParts.find(s => s.toLowerCase().includes('servi:'))?.split(': ')[1];
+
+                      const clientName = t.metadata?.clientName || clientFromDesc || 'S/N';
+                      const serviceName = t.metadata?.serviceName || serviceFromDesc || (t.category === 'Ventas Astro' ? 'Servicio' : t.description);
+                      const displayDate = t.created_at || t.date;
+                      
+                      const stInvolved = t.metadata?.staffInvolved?.find(s => String(s.staffId) === String(payrollDetail.staff.id));
+                      const commBs = stInvolved?.commissionBs || 0;
+                      const commUsd = stInvolved?.commissionEarned || 0;
+                      const method = t.metadata?.method_usd || t.metadata?.method_bs || t.description.split(' - ')[2] || 'Efectivo';
+                      
+                      return (
+                        <div key={idx} style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '20px', borderLeft: t.metadata?.didWash ? '4px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontWeight: '900', fontSize: '15px', color: 'white' }}>{serviceName}</span>
+                              <span style={{ fontSize: '12px', color: 'var(--gold-primary)', fontWeight: '700' }}>{clientName}</span>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ color: '#32d74b', fontWeight: '950', fontSize: '16px' }}>{formatCurrency(commBs, '')} Bs</div>
+                              <div style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: '800' }}>+${formatCurrency(commUsd, '')} USD</div>
+                            </div>
+                          </div>
+                          
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px', marginTop: '4px' }}>
+                            <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '2px 8px', borderRadius: '6px', fontWeight: '700', border: '1px solid rgba(255,255,255,0.1)' }}>
+                              {method.toUpperCase()}
+                            </span>
+                            {t.metadata?.didWash && (
+                              <span style={{ fontSize: '10px', background: 'var(--gold-primary)', color: 'black', padding: '2px 8px', borderRadius: '6px', fontWeight: '900' }}>LAVADO</span>
+                            )}
+                          </div>
+
+                          {(t.metadata?.extras?.length > 0 || t.metadata?.products_sold?.length > 0) && (
+                            <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', marginBottom: '12px' }}>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', marginBottom: '4px', textTransform: 'uppercase' }}>Items Adicionales:</div>
+                              {t.metadata?.extras?.map((ex, eidx) => (
+                                <div key={eidx} style={{ fontSize: '11px', color: 'white', display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>• {ex.service_extras?.name || 'Extra'}</span>
+                                  <span style={{ color: 'var(--gold-primary)' }}>+${ex.price}</span>
+                                </div>
+                              ))}
+                              {t.metadata?.products_sold?.map((p, pidx) => (
+                                <div key={pidx} style={{ fontSize: '11px', color: 'white', display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>• {p.name} (x{p.quantity})</span>
+                                  <span style={{ color: 'var(--gold-primary)' }}>+${p.price * p.quantity}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                              {displayDate ? new Date(displayDate).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }) : 'S/F'}
+                            </span>
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px' }}>ID: {t.id.slice(0,8)}</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                <button onClick={() => setPayrollDetail({ isOpen: false, staff: null, transactions: [] })} className="btn-gold" style={{ width: '100%', marginTop: '24px', padding: '14px', borderRadius: '12px', fontWeight: '800' }}>Cerrar</button>
               </div>
             </div>
           )}

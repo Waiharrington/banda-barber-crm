@@ -12,7 +12,8 @@ import {
   Star,
   Plus,
   History,
-  Settings
+  Settings,
+  BarChart3
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
@@ -35,6 +36,7 @@ const MobileBottomNav = ({ activeTab, setActiveTab }) => {
     { id: 'barber', label: 'Panel Barber', icon: Scissors, roles: ['Admin', 'Barbero'] },
     { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente'] },
     { id: 'personnel', label: 'Equipo', icon: Scissors, roles: ['Admin'] },
+    { id: 'reports', label: 'Reportes', icon: BarChart3, roles: ['Admin'] },
     { id: 'services', label: 'Servicios', icon: Star, roles: ['Admin'] },
   ];
 

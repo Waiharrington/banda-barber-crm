@@ -31,7 +31,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
     }).format(amount);
   };
 
-  const isAdmin = user?.role === 'Admin';
+  const isAdmin = user?.role?.toLowerCase().includes('admin');
 
   useEffect(() => {
     fetchHistory();

@@ -11,7 +11,8 @@ import {
   Settings,
   Calendar,
   Edit3,
-  X
+  X,
+  History
 } from 'lucide-react';
 import DashboardModule from './components/DashboardModule';
 import ClientModule from './components/ClientModule';
@@ -24,6 +25,7 @@ import HistoryModule from './components/HistoryModule';
 import { dataService } from './services/dataService';
 import logo from './assets/logo.png';
 import StaffProfileModal from './components/StaffProfileModal';
+import ReportsModule from './components/ReportsModule';
 
 // Mobile Components
 import MobileLayout from './components/mobile/MobileLayout';
@@ -126,6 +128,7 @@ function App() {
     { id: 'services', label: 'Servicios', icon: Star },
     { id: 'inventory', label: 'Inventario', icon: Package, roles: ['Admin', 'Caja'] },
     { id: 'finance', label: 'Caja Chica', icon: Wallet, roles: ['Admin', 'Caja'] },
+    { id: 'reports', label: 'Reportes', icon: BarChart3, roles: ['Admin'] },
     { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente'] },
   ];
 
@@ -317,6 +320,7 @@ function App() {
       case 'services': return <div className="p-container"><ServicesModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
       case 'inventory': return <div className="p-container"><InventoryModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
       case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={effectiveRates} staff={dbData.staff} /></div>;
+      case 'reports': return <div className="p-container"><ReportsModule isMobile={isMobile} rates={effectiveRates} staff={dbData.staff} /></div>;
       case 'clients': return <div className="p-container"><ClientModule isMobile={isMobile} clients={dbData.clients} onRefresh={fetchInitialData} initialClientId={tabParams.clientId} /></div>;
       case 'personnel': return <div className="p-container"><PersonnelModule isMobile={isMobile} inventory={dbData.inventory || []} /></div>;
       case 'history': return <div className="p-container"><HistoryModule isMobile={isMobile} rates={effectiveRates} onNavigate={handleTabChange} /></div>;
