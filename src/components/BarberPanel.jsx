@@ -12,7 +12,8 @@ import {
   Zap,
   LogOut,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  Edit3
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -40,6 +41,22 @@ const BarberPanel = ({ isMobile, rates }) => {
   // Photo States
   const [showCamera, setShowCamera] = useState(false);
   const [cameraTarget, setCameraTarget] = useState({ appId: null, type: 'Antes' });
+  const [editingExtraPriceId, setEditingExtraPriceId] = useState(null);
+
+  const handleUpdateExtraPrice = async (extraId, newPrice) => {
+    try {
+      setLoading(true);
+      await dataService.updateAppointmentExtraPrice(extraId, parseFloat(newPrice) || 0);
+      showToast("Precio actualizado");
+      await loadMyWork();
+      await loadStats();
+    } catch (e) {
+      showToast("Error al actualizar precio", "error");
+    } finally {
+      setLoading(false);
+      setEditingExtraPriceId(null);
+    }
+  };
 
   const [stats, setStats] = useState({ production: 0, services: 0 });
 
@@ -399,7 +416,27 @@ const BarberPanel = ({ isMobile, rates }) => {
                         <div key={ex.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                           <div style={{ fontSize: '13px', fontWeight: '600' }}>{ex.service_extras?.name}</div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>+${ex.price}</span>
+                            {editingExtraPriceId === ex.id ? (
+                              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>$</span>
+                                <input 
+                                  type="number"
+                                  autoFocus
+                                  defaultValue={ex.price}
+                                  onBlur={(e) => handleUpdateExtraPrice(ex.id, e.target.value)}
+                                  onKeyDown={(e) => e.key === 'Enter' && handleUpdateExtraPrice(ex.id, e.target.value)}
+                                  style={{ width: '60px', height: '24px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--gold-primary)', borderRadius: '4px', color: 'white', paddingLeft: '14px', fontSize: '12px', fontWeight: '800', textAlign: 'right' }}
+                                />
+                              </div>
+                            ) : (
+                              <div 
+                                onClick={() => setEditingExtraPriceId(ex.id)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '2px 4px', borderRadius: '4px' }}
+                              >
+                                <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>+${ex.price}</span>
+                                <Edit3 size={10} color="var(--gold-primary)" style={{ opacity: 0.6 }} />
+                              </div>
+                            )}
                             <button 
                               onClick={() => handleDeleteExtra(ex.id)}
                               style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}

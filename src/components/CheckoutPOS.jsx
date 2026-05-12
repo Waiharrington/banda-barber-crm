@@ -14,7 +14,8 @@ import {
   User,
   Scissors,
   Zap,
-  Droplets
+  Droplets,
+  Edit3
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -69,6 +70,26 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
 
   // Dialog State
   const [dialog, setDialog] = useState({ isOpen: false, type: 'alert', title: '', message: '', onConfirm: null });
+  const [editingExtraPriceId, setEditingExtraPriceId] = useState(null);
+
+  const handleUpdateExtraPrice = async (extraId, newPrice) => {
+    try {
+      setLoading(true);
+      await dataService.updateAppointmentExtraPrice(extraId, parseFloat(newPrice) || 0);
+      showToast("Precio actualizado");
+      await loadData();
+      if (selectedApp) {
+        const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
+        const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
+        setSelectedApp(updatedSelected);
+      }
+    } catch (e) {
+      showToast("Error al actualizar precio", "error");
+    } finally {
+      setLoading(false);
+      setEditingExtraPriceId(null);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -727,12 +748,36 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                 ))}
 
                 {selectedApp?.appointment_extras?.map(extra => (
-                  <div key={extra.id} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--gold-primary)' }}>
+                  <div key={extra.id} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--gold-primary)', alignItems: 'center' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <button onClick={() => handleRemoveExtra(extra.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}>[X]</button>
                       {extra.service_extras?.name}
                     </span>
-                    <span style={{ fontWeight: '700' }}>${extra.price}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {editingExtraPriceId === extra.id ? (
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                          <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>$</span>
+                          <input 
+                            type="number"
+                            autoFocus
+                            defaultValue={extra.price}
+                            onBlur={(e) => handleUpdateExtraPrice(extra.id, e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleUpdateExtraPrice(extra.id, e.target.value)}
+                            style={{ width: '60px', height: '24px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--gold-primary)', borderRadius: '4px', color: 'white', paddingLeft: '14px', fontSize: '12px', fontWeight: '800', textAlign: 'right' }}
+                          />
+                        </div>
+                      ) : (
+                        <div 
+                          onClick={() => setEditingExtraPriceId(extra.id)}
+                          style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', transition: 'all 0.2s' }}
+                          onMouseOver={(ev) => ev.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+                          onMouseOut={(ev) => ev.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <span style={{ fontWeight: '700' }}>${extra.price}</span>
+                          <Edit3 size={10} color="var(--gold-primary)" style={{ opacity: 0.6 }} />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
 

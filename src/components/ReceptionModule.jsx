@@ -251,7 +251,7 @@ const ReceptionModule = ({ isMobile }) => {
         const mainAppId = appointments[0].id;
         
         const extraPromises = selectedExtras.map(extra => 
-          dataService.addExtraToAppointment(mainAppId, extra.id, extra.price)
+          dataService.addExtraToAppointment(mainAppId, extra.id, extra.customPrice ?? extra.price)
         );
         
         const productPromises = selectedProducts.map(prod => 

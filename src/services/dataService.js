@@ -306,6 +306,12 @@ export const dataService = {
     return data;
   },
 
+  async updateAppointmentExtraPrice(id, price) {
+    const { data, error } = await supabase.from('appointment_extras').update({ price }).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  },
+
   async getAppointmentExtras(appointmentId) {
     const { data, error } = await supabase.from('appointment_extras').select('*, service_extras(*)').eq('appointment_id', appointmentId);
     if (error) throw error;

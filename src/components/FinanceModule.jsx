@@ -1074,8 +1074,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
           {/* Costs Config Modal */}
           {isEditingCosts && (
-            <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-              <div className="glass-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '32px', padding: '32px' }}>
+            <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center              <div className="glass-card animate-scale-in" style={{ maxWidth: '850px', width: '100%', borderRadius: '32px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                   <h3 style={{ fontSize: '20px', fontWeight: '900', margin: 0 }}>Configuración de <span className="text-gold">Costos Fijos</span></h3>
                   <button 
@@ -1111,7 +1110,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     { key: 'workstations', defaultLabel: 'Sillas Activas' },
                     { key: 'avgServiceTime', defaultLabel: 'Tiempo Prom. (min)' },
                   ].map(field => (
-                    <div key={field.key} style={{ gridColumn: 'span 2', display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '4px' }}>
+                    <div key={field.key} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '4px' }}>
                       <div style={{ flex: 2 }}>
                         <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Nombre</label>
                         <input 
@@ -1125,7 +1124,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                           style={{ width: '100%', height: '44px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 12px', opacity: isCostsLocked ? 0.6 : 1, cursor: isCostsLocked ? 'not-allowed' : 'text', transition: 'all 0.3s' }}
                         />
                       </div>
-                      <div style={{ flex: 1 }}>
+                      <div style={{ flex: 1.5 }}>
                         <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{field.key === 'workstations' || field.key === 'avgServiceTime' ? 'Valor' : 'Monto ($)'}</label>
                         <input 
                           type="number" 
@@ -1138,10 +1137,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     </div>
                   ))}
 
+                  <div style={{ gridColumn: 'span 2', height: '1px', background: 'rgba(255,255,255,0.05)', margin: '8px 0' }} />
+
                   {fixedCosts.extraCosts?.map((cost, idx) => (
-                    <div key={idx} style={{ gridColumn: 'span 2', display: 'flex', gap: '8px', alignItems: 'flex-end', marginBottom: '8px' }}>
+                    <div key={idx} style={{ gridColumn: 'span 2', display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '8px' }}>
                       <div style={{ flex: 2 }}>
-                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Nombre del Gasto</label>
+                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Nombre del Gasto Extra</label>
                         <input 
                           type="text" 
                           placeholder="Ej. Internet"
