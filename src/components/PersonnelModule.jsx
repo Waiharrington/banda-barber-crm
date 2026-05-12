@@ -22,7 +22,9 @@ import {
   Mail,
   MoreHorizontal,
   ChevronRight,
-  Shield
+  Shield,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import AstroSelect from './AstroSelect';
@@ -62,6 +64,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
   // Form & Editing State
   const [showForm, setShowForm] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [profileModalData, setProfileModalData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -159,6 +162,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     });
     setIsCreatingNewRole(false);
     setNewRoleName('');
+    setShowPassword(false);
   };
 
   const handleSaveCustomRole = (name, perms, oldName) => {
@@ -486,7 +490,37 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>CONTRASEÑA</label>
                   <div style={{ position: 'relative' }}>
                     <Lock size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                    <input className="form-input" type="password" placeholder="••••••••" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.2)' }} />
+                    <input 
+                      className="form-input" 
+                      type={showPassword ? "text" : "password"} 
+                      placeholder="••••••••" 
+                      value={formData.password} 
+                      onChange={e => setFormData({...formData, password: e.target.value})} 
+                      style={{ width: '100%', height: '50px', paddingLeft: '48px', paddingRight: '48px', border: '1px solid rgba(212,175,55,0.2)' }} 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '16px',
+                        top: '16px',
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--gold-primary)',
+                        cursor: 'pointer',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: 0.7,
+                        transition: 'opacity 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
                 </div>
               </div>
