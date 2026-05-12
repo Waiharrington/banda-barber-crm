@@ -12,7 +12,10 @@ import {
   Calendar,
   ChevronRight,
   Trash2,
-  Edit2
+  Edit2,
+  Eye,
+  WalletCards,
+  List
 } from 'lucide-react';
 
 import { dataService } from '../services/dataService';
@@ -78,7 +81,16 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
     };
   });
   const [isConfiguringPayroll, setIsConfiguringPayroll] = useState(false);
-  const [payrollModal, setPayrollModal] = useState({ isOpen: false, staff: null, earnedBs: 0, deductionBs: 0, file: null });
+  const [payrollModal, setPayrollModal] = useState({ 
+    isOpen: false, 
+    staff: null, 
+    earnedBs: 0, 
+    deductionBs: 0, 
+    paymentAmountBs: 0,
+    isAbono: false,
+    file: null 
+  });
+  const [payrollDetail, setPayrollDetail] = useState({ isOpen: false, staff: null, transactions: [] });
 
   useEffect(() => {
     fetchTransactions();
@@ -94,11 +106,11 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   const handleProcessPayroll = async () => {
     try {
       setLoading(true);
-      const totalToPayBs = payrollModal.earnedBs - payrollModal.deductionBs;
-      const amountUsd = totalToPayBs / (rates?.usd || 550); 
+      const finalAmountBs = payrollModal.isAbono ? payrollModal.paymentAmountBs : (payrollModal.earnedBs - payrollModal.deductionBs);
+      const amountUsd = finalAmountBs / (rates?.usd || 550); 
       
       const newTx = {
-        description: `Pago Nómina: ${payrollModal.staff.name} (Descuento Asist. ${payrollModal.deductionBs}Bs)`,
+        description: `Pago Nómina: ${payrollModal.staff.name}${payrollModal.isAbono ? ' (Abono)' : ''} (Descuento Asist. ${payrollModal.isAbono ? 0 : payrollModal.deductionBs}Bs)`,
         amount: amountUsd,
         type: 'expense',
         category: 'Pago Nómina',
@@ -822,13 +834,18 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
       {activeTab === 'payroll' && (() => {
         const payrollSummary = staff.map(st => {
-          const earnedBs = transactions.filter(t => t.type === 'income').reduce((sum, t) => {
+          const staffTransactions = transactions.filter(t => t.type === 'income' && t.metadata?.staffInvolved?.some(x => String(x.staffId) === String(st.id)));
+          const servicesCount = staffTransactions.length;
+          const lavadosCount = staffTransactions.filter(t => t.metadata?.didWash).length;
+          
+          const earnedBs = staffTransactions.reduce((sum, t) => {
             const s = t.metadata?.staffInvolved?.find(x => String(x.staffId) === String(st.id));
             return sum + (s ? (s.commissionBs || 0) + (s.tipBs || 0) + (s.productCommissionBs || 0) : 0);
           }, 0);
+          
           const paidBs = transactions.filter(t => t.type === 'expense' && t.category === 'Pago Nómina' && String(t.metadata?.staffId) === String(st.id)).reduce((sum, t) => sum + (t.metadata?.amountBs || 0) + (t.metadata?.deductionBs || 0), 0);
           const balanceBs = earnedBs - paidBs;
-          return { ...st, earnedBs, paidBs, balanceBs };
+          return { ...st, earnedBs, paidBs, balanceBs, servicesCount, lavadosCount, staffTransactions };
         }).filter(s => s.balanceBs > 0 || s.earnedBs > 0 || s.paidBs > 0);
 
         return (
@@ -851,11 +868,21 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       </div>
                       <div>
                         <div style={{ fontWeight: '800', fontSize: '16px' }}>{st.name}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{st.role}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '700', textTransform: 'uppercase' }}>
+                          {st.role?.split('|')[0] || 'Miembro'}
+                        </div>
                       </div>
                     </div>
                   </div>
                   <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '16px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Servicios Realizados</span>
+                      <span style={{ fontSize: '12px', fontWeight: '900', color: 'white' }}>{st.servicesCount}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Lavados</span>
+                      <span style={{ fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)' }}>{st.lavadosCount}</span>
+                    </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Acumulado (Bs)</span>
                       <span style={{ fontSize: '12px', fontWeight: '700' }}>{formatCurrency(st.earnedBs, '')}</span>
@@ -869,23 +896,53 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       <span style={{ fontSize: '16px', fontWeight: '900', color: '#32d74b' }}>{formatCurrency(st.balanceBs, '')}</span>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => {
-                      const splitPct = assistantConfig.splits[st.id] || 0;
-                      const suggestedDeductionBs = ((assistantConfig.baseSalaryUsd / 4) * (splitPct / 100)) * (rates?.usd || 550);
-                      setPayrollModal({
-                        isOpen: true,
-                        staff: st,
-                        earnedBs: st.balanceBs,
-                        deductionBs: Math.round(suggestedDeductionBs),
-                        file: null
-                      });
-                    }}
-                    disabled={st.balanceBs <= 0}
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px', background: st.balanceBs > 0 ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', color: st.balanceBs > 0 ? '#000' : 'var(--text-muted)', fontWeight: '800', border: 'none', cursor: st.balanceBs > 0 ? 'pointer' : 'not-allowed' }}
-                  >
-                    {st.balanceBs > 0 ? 'Realizar Pago' : 'Al Día'}
-                  </button>
+                  
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    <button 
+                      onClick={() => setPayrollDetail({ isOpen: true, staff: st, transactions: st.staffTransactions })}
+                      style={{ flex: 1, minWidth: '80px', padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer' }}
+                    >
+                      <Eye size={16} /> <span style={{fontSize: '11px', fontWeight: '800'}}>Detalle</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => {
+                        setPayrollModal({
+                          isOpen: true,
+                          staff: st,
+                          earnedBs: st.balanceBs,
+                          deductionBs: 0,
+                          paymentAmountBs: Math.round(st.balanceBs / 2),
+                          isAbono: true,
+                          file: null
+                        });
+                      }}
+                      disabled={st.balanceBs <= 0}
+                      style={{ flex: 1, minWidth: '80px', padding: '10px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: st.balanceBs > 0 ? 'pointer' : 'not-allowed', opacity: st.balanceBs > 0 ? 1 : 0.5 }}
+                    >
+                      <WalletCards size={16} /> <span style={{fontSize: '11px', fontWeight: '800'}}>Abonar</span>
+                    </button>
+
+                    <button 
+                      onClick={() => {
+                        const splitPct = assistantConfig.splits[st.id] || 0;
+                        const suggestedDeductionBs = ((assistantConfig.baseSalaryUsd / 4) * (splitPct / 100)) * (rates?.usd || 550);
+                        setPayrollModal({
+                          isOpen: true,
+                          staff: st,
+                          earnedBs: st.balanceBs,
+                          deductionBs: Math.round(suggestedDeductionBs),
+                          paymentAmountBs: st.balanceBs,
+                          isAbono: false,
+                          file: null
+                        });
+                      }}
+                      disabled={st.balanceBs <= 0}
+                      style={{ width: '100%', padding: '12px', borderRadius: '12px', background: st.balanceBs > 0 ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', color: st.balanceBs > 0 ? '#000' : 'var(--text-muted)', fontWeight: '950', border: 'none', cursor: st.balanceBs > 0 ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    >
+                      {st.balanceBs > 0 ? 'Realizar Pago Total' : 'Al Día'}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

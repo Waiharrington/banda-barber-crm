@@ -301,7 +301,12 @@ const BarberPanel = ({ isMobile, rates }) => {
         <p style={{ color: 'var(--text-secondary)', marginBottom: '40px' }}>Selecciona tu perfil para comenzar tu turno.</p>
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '20px', maxWidth: '600px', margin: '0 auto' }}>
-          {staff.map(s => (
+          {staff
+            .filter(s => {
+              const roleName = s.role?.split('|')[0] || '';
+              return roleName.includes('Barbero') || roleName.includes('Asistente de Lavado');
+            })
+            .map(s => (
             <button 
               key={s.id} 
               onClick={() => setSelectedBarber(s)}
