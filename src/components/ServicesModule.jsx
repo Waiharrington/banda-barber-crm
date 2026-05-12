@@ -694,8 +694,9 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                       </td>
                       <td style={{ padding: '16px 24px' }}>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          <span title="Barbero" style={{ fontSize: '10px', color: '#32d74b' }}>B: {service.commission_barber}%</span>
-                          <span title="Lavado" style={{ fontSize: '10px', color: 'var(--gold-primary)' }}>L: {service.commission_washer}%</span>
+                          <span title="Comisión del Barbero" style={{ fontSize: '11px', color: '#32d74b', fontWeight: '700' }}>
+                            Barbero: {service.commission_barber}%
+                          </span>
                         </div>
                       </td>
                       <td style={{ padding: '16px 24px', textAlign: 'right' }}>
