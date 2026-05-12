@@ -294,7 +294,7 @@ const BarberPanel = ({ isMobile, rates }) => {
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--gold-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--gold-glow)' }}>
                 <User size={32} color="black" />
               </div>
-              <span style={{ fontWeight: '800', fontSize: '15px' }}>{s.name}</span>
+              <span style={{ fontWeight: '800', fontSize: '15px', color: 'white' }}>{s.name}</span>
             </button>
           ))}
         </div>

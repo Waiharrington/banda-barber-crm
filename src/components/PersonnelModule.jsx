@@ -51,7 +51,7 @@ const rolePresets = {
   'Barbero': ['scheduling', 'barber', 'clients', 'history'],
   'Recepcionista': ['reception', 'scheduling', 'clients', 'history'],
   'Caja': ['checkout', 'finance', 'inventory', 'clients', 'history'],
-  'Asistente de Lavado': ['barber', 'history']
+  'Asistente de Lavado': ['dashboard', 'history']
 };
 
 const PersonnelModule = ({ isMobile, inventory = [] }) => {

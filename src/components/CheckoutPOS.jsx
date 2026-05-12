@@ -122,7 +122,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
 
       setPendingServices(filtered);
       setInventory(inv.filter(i => i.stock > 0 && i.category === 'Venta'));
-      setAllExtras(ext || []);
+      setAllExtras(ext?.filter(e => e.name !== 'SYSTEM_CONFIG_RATES') || []);
       setAllServices(srv || []);
       setAllClients(cls || []);
       setAllStaff(staff || []);

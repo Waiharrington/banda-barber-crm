@@ -41,6 +41,8 @@ const SchedulingModule = ({ isMobile }) => {
   const [editingApp, setEditingApp] = useState(null);
   const [filterType, setFilterType] = useState('day'); // 'day', 'week', 'fortnight', 'month'
   const [searchTerm, setSearchTerm] = useState('');
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
+  const [clientSearchResults, setClientSearchResults] = useState([]);
 
   const [newApp, setNewApp] = useState({
     clientId: '',
@@ -72,7 +74,7 @@ const SchedulingModule = ({ isMobile }) => {
       setStaff(st);
       setClients(cl);
       setServices(sv);
-      setAllExtras(ex);
+      setAllExtras(ex.filter(e => e.name !== 'SYSTEM_CONFIG_RATES'));
       setAllProducts(pr.filter(p => p.category === 'Venta'));
     } catch (err) {
       console.error(err);
@@ -132,6 +134,9 @@ const SchedulingModule = ({ isMobile }) => {
 
   const handleEditAppointment = (app) => {
     setEditingApp(app);
+    const clientName = clients.find(c => c.id === app.client_id)?.name || '';
+    setClientSearchTerm(clientName);
+    setClientSearchResults([]);
     setNewApp({
       clientId: app.client_id,
       serviceId: app.service_id,
@@ -141,6 +146,27 @@ const SchedulingModule = ({ isMobile }) => {
       products: app.appointment_products?.map(p => ({ id: p.inventory?.id, quantity: p.quantity })) || []
     });
     setShowAddModal(true);
+  };
+
+  const handleClientSearch = (val) => {
+    setClientSearchTerm(val);
+    setNewApp(prev => ({ ...prev, clientId: '' }));
+    if (val.length >= 2) {
+      const term = val.toLowerCase();
+      const results = clients.filter(c =>
+        (c.id_card && c.id_card.toLowerCase().includes(term)) ||
+        (c.name && c.name.toLowerCase().includes(term))
+      );
+      setClientSearchResults(results.slice(0, 5));
+    } else {
+      setClientSearchResults([]);
+    }
+  };
+
+  const handleSelectClient = (client) => {
+    setNewApp(prev => ({ ...prev, clientId: client.id }));
+    setClientSearchTerm(client.name);
+    setClientSearchResults([]);
   };
 
   const handleTimeSelected = async (isoTime) => {
@@ -240,7 +266,13 @@ const SchedulingModule = ({ isMobile }) => {
           <h1 style={{ fontSize: '32px', fontWeight: '900' }}>Agenda <span className="text-gold">Astro</span></h1>
           <p style={{ color: 'var(--text-secondary)' }}>Gestión inteligente de citas y disponibilidad.</p>
         </div>
-        <button className="btn-gold" onClick={() => setShowAddModal(true)}>
+        <button className="btn-gold" onClick={() => {
+            setEditingApp(null);
+            setNewApp({ clientId: '', serviceId: '', staffId: user?.id || '', time: '10:00', extras: [], products: [] });
+            setClientSearchTerm('');
+            setClientSearchResults([]);
+            setShowAddModal(true);
+          }}>
           <Plus size={18} /> Agendar Cita
         </button>
       </header>
@@ -459,7 +491,65 @@ const SchedulingModule = ({ isMobile }) => {
           <div className="glass-card animate-scale-in" style={{ maxWidth: '550px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto', padding: '32px' }}>
             <h2 style={{ marginBottom: '24px', fontWeight: '900' }}>{editingApp ? 'Editar Cita' : 'Nueva Cita'}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <AstroSelect label="CLIENTE" placeholder="Selecciona cliente" value={newApp.clientId} onChange={(val) => setNewApp({...newApp, clientId: val})} options={clients.map(c => ({ label: c.name, value: c.id }))} />
+              {/* Client Search */}
+              <div style={{ position: 'relative' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>CLIENTE</label>
+                <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} size={16} color="var(--text-muted)" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por cédula o nombre..."
+                      value={clientSearchTerm}
+                      onChange={(e) => handleClientSearch(e.target.value)}
+                      style={{
+                        width: '100%',
+                        paddingLeft: '40px',
+                        height: '48px',
+                        fontSize: '14px',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: `1px solid ${newApp.clientId ? 'var(--gold-primary)' : 'rgba(255,255,255,0.1)'}`,
+                        borderRadius: '14px',
+                        color: 'white',
+                        outline: 'none',
+                        fontWeight: '700',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                    {newApp.clientId && (
+                      <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '900' }}>✓</span>
+                    )}
+                  </div>
+                  {clientSearchTerm && (
+                    <button
+                      onClick={() => { setClientSearchTerm(''); setClientSearchResults([]); setNewApp(prev => ({ ...prev, clientId: '' })); }}
+                      style={{ background: 'rgba(255,69,58,0.1)', color: '#ff453a', border: 'none', borderRadius: '12px', padding: '0 14px', fontSize: '11px', fontWeight: '900', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    >LIMPIAR</button>
+                  )}
+                </div>
+                {clientSearchResults.length > 0 && (
+                  <div className="animate-scale-in" style={{
+                    position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
+                    background: 'rgba(18,18,22,0.98)',
+                    border: '1px solid rgba(212,175,55,0.2)', borderRadius: '14px',
+                    overflow: 'hidden', zIndex: 200, backdropFilter: 'blur(20px)',
+                    boxShadow: '0 16px 48px rgba(0,0,0,0.6)'
+                  }}>
+                    {clientSearchResults.map(c => (
+                      <div
+                        key={c.id}
+                        onClick={() => handleSelectClient(c)}
+                        style={{ padding: '12px 18px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(212,175,55,0.08)'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <span style={{ fontWeight: '700', fontSize: '14px', color: 'white' }}>{c.name}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>V-{c.id_card}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <AstroSelect label="SERVICIO" placeholder="Selecciona servicio" value={newApp.serviceId} onChange={(val) => setNewApp({...newApp, serviceId: val})} options={services.map(s => ({ label: `${s.name} ($${s.price})`, value: s.id }))} />
               <AstroSelect 
                 label="BARBERO" 

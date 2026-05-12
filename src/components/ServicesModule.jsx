@@ -84,7 +84,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
   const fetchBillableExtras = async () => {
     try {
       const data = await dataService.getExtras();
-      setBillableExtras(data || []);
+      setBillableExtras(data?.filter(e => e.name !== 'SYSTEM_CONFIG_RATES') || []);
     } catch (e) {
       showToast('Error al cargar extras cobrables.', 'error');
     }

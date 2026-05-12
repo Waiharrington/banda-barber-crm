@@ -99,9 +99,9 @@ const DashboardModule = ({
   const isAssistant = user?.role?.includes('Asistente de Lavado');
 
   // Filter stats for barber or assistant
-  const myStats = (isBarber || isAssistant && dbData?.staff) 
+  const myStats = ((isBarber || isAssistant) && dbData?.staff) 
     ? (dbData.staff.find(s => s.id === user.id)?.stats || { income: 0, appointments: 0 }) 
-    : stats;
+    : (stats || { income: 0, weeklyIncome: 0, monthlyIncome: 0, appointments: 0 });
 
   // Assistant specific: Calculate earnings per barber (Weekly)
   const sevenDaysAgo = new Date();
@@ -217,7 +217,7 @@ const DashboardModule = ({
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
             <StatCard title="Tu Producción" value={`$${myStats.income.toFixed(2)}`} icon={<TrendingUp size={18} color="var(--gold-primary)" />} color="var(--gold-primary)" trend="+12%" positive={true} />
             {!isAssistant && <StatCard title="Tus Servicios" value={myStats.appointments} icon={<ScissorsIcon size={18} color="var(--gold-primary)" />} color="#4caf50" trend="Activo" positive={true} />}
-            {!isBarber && !isAssistant && <StatCard title="En Inventario" value={dbData.services.length + dbData.clients.length} icon={<ShoppingBag size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
+            {!isBarber && !isAssistant && <StatCard title="En Inventario" value={(dbData?.services?.length || 0) + (dbData?.clients?.length || 0)} icon={<ShoppingBag size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
             {isAssistant && <StatCard title="Lavados Realizados" value={myStats.appointments} icon={<Sparkles size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
           </div>
 
@@ -225,11 +225,11 @@ const DashboardModule = ({
           {(user?.role === 'Admin' || user?.role?.includes('Admin|')) && (
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
               {[
-                { title: 'Misión Diaria', current: stats.income, goal: goals.daily, icon: <Target size={18} />, label: 'HOY' },
-                { title: 'Meta Semanal', current: stats.weeklyIncome || 0, goal: goals.weekly, icon: <TrendingUp size={18} />, label: '7 DÍAS' },
-                { title: 'Objetivo Mensual', current: stats.monthlyIncome || 0, goal: goals.monthly, icon: <Trophy size={18} />, label: '30 DÍAS' }
+                { id: 'daily', title: 'Misión Diaria', current: stats?.income || 0, goal: goals.daily, icon: <Target size={18} />, label: 'HOY' },
+                { id: 'weekly', title: 'Meta Semanal', current: stats?.weeklyIncome || 0, goal: goals.weekly, icon: <TrendingUp size={18} />, label: '7 DÍAS' },
+                { id: 'monthly', title: 'Objetivo Mensual', current: stats?.monthlyIncome || 0, goal: goals.monthly, icon: <Trophy size={18} />, label: '30 DÍAS' }
               ].map((m, i) => (
-                <div key={i} className="glass-card" style={{ padding: '24px', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
+                <div key={m.id} className="glass-card" style={{ padding: '24px', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div style={{ color: 'var(--gold-primary)' }}>{m.icon}</div>
@@ -247,16 +247,16 @@ const DashboardModule = ({
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px' }}>
                     <div style={{ fontSize: '24px', fontWeight: '950', color: 'white' }}>
-                      ${m.current.toFixed(0)} <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '700' }}>/ ${m.goal}</span>
+                      ${(m.current || 0).toFixed(0)} <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: '700' }}>/ ${m.goal}</span>
                     </div>
                     <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)', padding: '4px 8px', borderRadius: '6px' }}>
-                      {Math.min(Math.round((m.current / m.goal) * 100), 100)}%
+                      {Math.min(Math.round(((m.current || 0) / m.goal) * 100), 100)}%
                     </div>
                   </div>
 
                   <div style={{ height: '8px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
                     <div style={{ 
-                      width: `${Math.min((m.current / m.goal) * 100, 100)}%`, 
+                      width: `${Math.min(((m.current || 0) / m.goal) * 100, 100)}%`, 
                       height: '100%', 
                       background: 'var(--gold-gradient)', 
                       boxShadow: 'var(--gold-glow)',
@@ -275,7 +275,7 @@ const DashboardModule = ({
             <PodiumSection 
               title="Top Barbers" 
               icon={<Trophy size={20} color="var(--gold-primary)" />}
-              data={dbData.staff
+              data={(dbData?.staff || [])
                 .filter(s => {
                   const role = (s.role || 'Barbero').toLowerCase();
                   return role.includes('barber') && !role.includes('asistente');
@@ -291,7 +291,7 @@ const DashboardModule = ({
             <PodiumSection 
               title="Top Clientes" 
               icon={<Users size={20} color="var(--gold-primary)" />}
-              data={dbData.clients.sort((a,b) => (b.total_spent || 0) - (a.total_spent || 0)).slice(0, 3)}
+              data={(dbData?.clients || []).sort((a,b) => (b.total_spent || 0) - (a.total_spent || 0)).slice(0, 3)}
               labelKey="name"
               scoreKey={(item) => `$${(item.total_spent || 0).toFixed(0)}`}
               scoreLabel="TOTAL CONSUMIDO"
@@ -357,7 +357,7 @@ const DashboardModule = ({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '300px' }} className="astro-scrollbar">
-                {(!dbData.todayAppointments || dbData.todayAppointments.length === 0) ? (
+                {(!dbData?.todayAppointments || dbData.todayAppointments.length === 0) ? (
                   <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
                     <p style={{ fontSize: '14px' }}>No hay citas agendadas para hoy.</p>
                   </div>

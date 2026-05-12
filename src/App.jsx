@@ -10,7 +10,8 @@ import {
   Wallet, 
   Settings,
   Calendar,
-  Edit3
+  Edit3,
+  X
 } from 'lucide-react';
 import DashboardModule from './components/DashboardModule';
 import ClientModule from './components/ClientModule';
@@ -47,7 +48,8 @@ function App() {
   const [tabParams, setTabParams] = useState({});
   const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
   const [isEditingRates, setIsEditingRates] = useState(false);
-  const [tempRates, setTempRates] = useState({});
+  const [isReceptionModalOpen, setIsReceptionModalOpen] = useState(false);
+  const [tempRates, setTempRates] = useState({ shop: 0, usdt: 0 });
   
   // Multi-currency State
   const [currency, setCurrency] = useState('USD'); 
@@ -237,6 +239,13 @@ function App() {
   };
 
   const handleTabChange = (tabId, params = {}) => {
+    // Permission check for non-admins
+    const userRole = user?.role || '';
+    const roleName = userRole.split('|')[0];
+    if (roleName === 'Asistente de Lavado' && !['dashboard', 'history', 'my-profile'].includes(tabId)) {
+      return;
+    }
+
     if (tabId === 'my-profile') {
       setIsMyProfileOpen(true);
       if (isMobile) setIsSidebarOpen(false);
@@ -307,7 +316,7 @@ function App() {
       case 'scheduling': return <div className="p-container"><SchedulingModule isMobile={isMobile} /></div>;
       case 'services': return <div className="p-container"><ServicesModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
       case 'inventory': return <div className="p-container"><InventoryModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
-      case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
+      case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={effectiveRates} staff={dbData.staff} /></div>;
       case 'clients': return <div className="p-container"><ClientModule isMobile={isMobile} clients={dbData.clients} onRefresh={fetchInitialData} initialClientId={tabParams.clientId} /></div>;
       case 'personnel': return <div className="p-container"><PersonnelModule isMobile={isMobile} inventory={dbData.inventory || []} /></div>;
       case 'history': return <div className="p-container"><HistoryModule isMobile={isMobile} rates={effectiveRates} onNavigate={handleTabChange} /></div>;
@@ -375,7 +384,7 @@ function App() {
         <div key={activeTab} className="animate-fade-in" style={{ height: '100%' }}>
           <TopBar 
             rates={effectiveRates} 
-            onOpenSale={() => handleTabChange('recepcion')}
+            onOpenSale={() => setIsReceptionModalOpen(true)}
             onEditRates={() => {
               setTempRates(customRates);
               setIsEditingRates(true);
@@ -460,6 +469,23 @@ function App() {
               >
                 Activar Tasa
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reception Modal (Floating Workspace) */}
+      {isReceptionModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 3000, backgroundColor: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '0' : '20px' }}>
+          <div className="glass-card animate-scale-in" style={{ width: '100%', maxWidth: '1400px', height: isMobile ? '100%' : '90vh', overflowY: 'auto', borderRadius: isMobile ? '0' : '32px', border: '1px solid rgba(212,175,55,0.3)', position: 'relative', background: 'var(--bg-primary)' }}>
+            <button 
+              onClick={() => setIsReceptionModalOpen(false)}
+              style={{ position: 'absolute', right: '20px', top: '20px', zIndex: 3001, background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <X size={20} />
+            </button>
+            <div style={{ padding: isMobile ? '20px' : '40px' }}>
+              <ReceptionModule isMobile={isMobile} rates={effectiveRates} />
             </div>
           </div>
         </div>
