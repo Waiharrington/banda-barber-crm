@@ -99,6 +99,27 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     ...customRolePresets
   };
 
+  // Sync custom roles with roles found in staff members
+  useEffect(() => {
+    if (staff.length > 0) {
+      const foundRoles = {};
+      staff.forEach(s => {
+        if (s.role?.includes('|')) {
+          const [name, permsStr] = s.role.split('|');
+          if (name && !allRolePresets[name]) {
+            foundRoles[name] = permsStr.split(',');
+          }
+        }
+      });
+      
+      if (Object.keys(foundRoles).length > 0) {
+        const updated = { ...customRolePresets, ...foundRoles };
+        setCustomRolePresets(updated);
+        localStorage.setItem('astro_custom_roles', JSON.stringify(updated));
+      }
+    }
+  }, [staff]);
+
 
   useEffect(() => {
     fetchStaff();
@@ -119,14 +140,11 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
   const handleEditClick = (person) => {
     let roleName = person.role || 'Barbero';
-    let perms = rolePresets[roleName] || [];
+    let perms = allRolePresets[roleName] || [];
     
     if (person.role?.includes('|')) {
       [roleName, perms] = person.role.split('|');
       perms = perms.split(',');
-    } else if (person.role?.startsWith('Custom:')) {
-      perms = person.role.split(':')[1].split(',');
-      roleName = 'Personalizado';
     }
 
     setFormData({
@@ -167,7 +185,15 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
   const handleSaveCustomRole = (name, perms, oldName) => {
     const updated = { ...customRolePresets };
-    if (oldName && oldName !== name) delete updated[oldName];
+    
+    // If we're renaming, remove the old one
+    if (oldName && oldName !== name) {
+      delete updated[oldName];
+      // If the old one was a default role, we "hide" it by shadowing it with an empty entry or just letting the custom overwrite
+      // Actually, if it was default, it will stay in rolePresets but be shadowed by 'updated' if it has the same name.
+      // If the name changed, we should mark the default as 'hidden' if we wanted to remove it from the list.
+    }
+    
     updated[name] = perms;
     setCustomRolePresets(updated);
     localStorage.setItem('astro_custom_roles', JSON.stringify(updated));
@@ -176,10 +202,19 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
   const handleDeleteCustomRole = (name) => {
     if (!window.confirm(`¿Estás seguro de eliminar el rol "${name}"? Los miembros actuales que tengan este rol mantendrán sus permisos individuales, pero el rol ya no podrá ser asignado a nuevos artistas.`)) return;
+    
     const updated = { ...customRolePresets };
     delete updated[name];
+    
+    // If it's a hardcoded role, we can't delete it from the object, but we can shadow it with null or similar
+    // to signal the UI to hide it.
+    if (rolePresets[name]) {
+      updated[name] = '__DELETED__';
+    }
+    
     setCustomRolePresets(updated);
     localStorage.setItem('astro_custom_roles', JSON.stringify(updated));
+    showToast(`Rol "${name}" eliminado.`);
   };
 
   const handleSubmit = async () => {
@@ -197,6 +232,11 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         return;
       }
       const finalRole = `${roleToSave}|${formData.permissions.join(',')}`;
+
+      // If it's a new role, also save it to presets so it shows in the manager
+      if (isCreatingNewRole && !allRolePresets[roleToSave]) {
+        handleSaveCustomRole(roleToSave, formData.permissions);
+      }
 
       const submissionData = {
         name: formData.name,
@@ -361,8 +401,12 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       }
                     }}
                     options={[
-                      ...Object.keys(allRolePresets).map(r => ({ label: r, value: r })),
-                      ...Array.from(new Set(staff.map(s => s.role?.split('|')[0]))).filter(r => r && !allRolePresets[r]).map(r => ({ label: r, value: r })),
+                      ...Object.entries(allRolePresets)
+                        .filter(([_, v]) => v !== '__DELETED__')
+                        .map(([r]) => ({ label: r, value: r })),
+                      ...Array.from(new Set(staff.map(s => s.role?.split('|')[0])))
+                        .filter(r => r && !allRolePresets[r])
+                        .map(r => ({ label: r, value: r })),
                       { label: '➕ CREAR NUEVO ROL...', value: 'NEW_ROLE' }
                     ]}
                   />
@@ -720,7 +764,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       <RoleManagerModal 
         isOpen={isRoleModalOpen}
         onClose={() => setIsRoleModalOpen(false)}
-        roles={allRolePresets}
+        roles={Object.fromEntries(Object.entries(allRolePresets).filter(([_, v]) => v !== '__DELETED__'))}
         onSaveRole={handleSaveCustomRole}
         onDeleteRole={handleDeleteCustomRole}
         availableModules={availableModules}
