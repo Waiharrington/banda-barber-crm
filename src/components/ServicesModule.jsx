@@ -838,8 +838,18 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         className="form-input"
                         value={editingExtra?.id === extra.id ? editingExtra.name : extra.name}
                         onChange={e => setEditingExtra({ ...(editingExtra || extra), id: extra.id, name: e.target.value })}
-                        onFocus={() => setEditingExtra(extra)}
-                        style={{ background: 'transparent', border: 'none', padding: 0, height: 'auto', fontSize: '14px', fontWeight: '700', width: '100%' }}
+                        readOnly={editingExtra?.id !== extra.id}
+                        style={{ 
+                          background: 'transparent', 
+                          border: 'none', 
+                          padding: 0, 
+                          height: 'auto', 
+                          fontSize: '14px', 
+                          fontWeight: '700', 
+                          width: '100%',
+                          color: editingExtra?.id === extra.id ? 'var(--gold-primary)' : 'white',
+                          pointerEvents: editingExtra?.id === extra.id ? 'auto' : 'none'
+                        }}
                       />
                       <div style={{ fontSize: '11px', color: 'var(--gold-primary)', marginTop: '4px', fontWeight: '800' }}>PRECIO EN CAJA</div>
                     </div>
@@ -853,8 +863,18 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                           step="0.01"
                           value={editingExtra?.id === extra.id ? editingExtra.price : extra.price}
                           onChange={e => setEditingExtra({ ...(editingExtra || extra), id: extra.id, price: e.target.value })}
-                          onFocus={() => setEditingExtra(extra)}
-                          style={{ height: '36px', paddingLeft: '22px', fontSize: '13px', fontWeight: '800', textAlign: 'right', background: 'rgba(0,0,0,0.2)', border: editingExtra?.id === extra.id ? '1px solid var(--gold-primary)' : '1px solid transparent', width: '100%' }}
+                          readOnly={editingExtra?.id !== extra.id}
+                          style={{ 
+                            height: '36px', 
+                            paddingLeft: '22px', 
+                            fontSize: '13px', 
+                            fontWeight: '800', 
+                            textAlign: 'right', 
+                            background: editingExtra?.id === extra.id ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.2)', 
+                            border: editingExtra?.id === extra.id ? '1px solid var(--gold-primary)' : '1px solid transparent', 
+                            width: '100%',
+                            pointerEvents: editingExtra?.id === extra.id ? 'auto' : 'none'
+                          }}
                         />
                       </div>
                       
