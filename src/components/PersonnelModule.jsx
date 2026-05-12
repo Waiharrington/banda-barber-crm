@@ -175,11 +175,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   };
 
   const handleDeleteCustomRole = (name) => {
-    if (rolePresets[name]) {
-      showToast('No se pueden eliminar los roles base del sistema.', 'error');
-      return;
-    }
-    if (!window.confirm(`¿Eliminar el rol "${name}"? Los miembros actuales mantendrán sus permisos.`)) return;
+    if (!window.confirm(`¿Estás seguro de eliminar el rol "${name}"? Los miembros actuales que tengan este rol mantendrán sus permisos individuales, pero el rol ya no podrá ser asignado a nuevos artistas.`)) return;
     const updated = { ...customRolePresets };
     delete updated[name];
     setCustomRolePresets(updated);

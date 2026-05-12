@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, 
-  Settings, 
+  Edit2, 
   Plus, 
   Trash2, 
   Check, 
@@ -131,17 +131,14 @@ const RoleManagerModal = ({ isOpen, onClose, roles, onSaveRole, onDeleteRole, av
                       onClick={() => handleEditClick(name, perms)}
                       style={{ background: 'rgba(255,255,255,0.05)', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', color: 'white' }}
                     >
-                      <Settings size={18} />
+                      <Edit2 size={18} />
                     </button>
-                    {/* Don't allow deleting base roles if you want, or allow it but with warning */}
-                    {!['Admin', 'Barbero'].includes(name) && (
-                      <button 
-                        onClick={() => onDeleteRole(name)}
-                        style={{ background: 'rgba(255,69,58,0.1)', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', color: '#ff453a' }}
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    )}
+                    <button 
+                      onClick={() => onDeleteRole(name)}
+                      style={{ background: 'rgba(255,69,58,0.1)', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', color: '#ff453a' }}
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                 </div>
               ))}
