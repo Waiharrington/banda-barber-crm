@@ -815,7 +815,12 @@ const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, on
                       <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--gold-primary)', marginLeft: '10px' }}>${item.price}</div>
                     </div>
                     {item.included_items && item.included_items.length > 0 && (
-                      <div style={{ fontSize: '10px', color: isSelected ? 'rgba(212,175,55,0.6)' : 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ 
+                        fontSize: '10px', 
+                        color: isSelected ? 'rgba(212,175,55,0.6)' : 'var(--text-muted)', 
+                        marginTop: '2px',
+                        lineHeight: '1.4'
+                      }}>
                         {item.included_items.join(' • ')}
                       </div>
                     )}

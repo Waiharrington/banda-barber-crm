@@ -973,28 +973,29 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       <span style={{ fontWeight: '700', color: '#ff453a' }}>-${formatCurrency(totalFixedCosts)}</span>
                    </div>
                    
-                   {/* Desglose de Costos Base */}
-                   {[
-                     { key: 'rent', defaultLabel: 'Alquiler' },
-                     { key: 'services', defaultLabel: 'Servicios' },
-                     { key: 'payroll', defaultLabel: 'Nómina Fija' },
-                     { key: 'software', defaultLabel: 'Software' },
-                     { key: 'marketing', defaultLabel: 'Marketing' },
-                     { key: 'tax', defaultLabel: 'Impuestos' }
-                   ].map(c => (
-                     <div key={c.key} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0 6px 16px', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>↳ {fixedCosts.customLabels?.[c.key] || c.defaultLabel}</span>
-                        <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)' }}>-${formatCurrency(fixedCosts[c.key] || 0)}</span>
-                     </div>
-                   ))}
+                   {/* Grilla de Desglose de Costos (2 columnas para ahorrar espacio) */}
+                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px', padding: '12px 16px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', margin: '8px 0' }}>
+                     {[
+                       { key: 'rent', defaultLabel: 'Alquiler' },
+                       { key: 'services', defaultLabel: 'Servicios' },
+                       { key: 'payroll', defaultLabel: 'Nómina Fija' },
+                       { key: 'software', defaultLabel: 'Software' },
+                       { key: 'marketing', defaultLabel: 'Marketing' },
+                       { key: 'tax', defaultLabel: 'Impuestos' }
+                     ].map(c => (
+                       <div key={c.key} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>↳ {fixedCosts.customLabels?.[c.key] || c.defaultLabel}</span>
+                          <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', marginLeft: '8px' }}>-${formatCurrency(fixedCosts[c.key] || 0)}</span>
+                       </div>
+                     ))}
 
-                   {/* Desglose de Costos Extra */}
-                   {fixedCosts.extraCosts?.map((c, i) => (
-                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0 6px 16px', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>↳ {c.label || 'Sin nombre'}</span>
-                        <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)' }}>-${formatCurrency(c.value)}</span>
-                     </div>
-                   ))}
+                     {fixedCosts.extraCosts?.map((c, i) => (
+                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>↳ {c.label || 'Sin nombre'}</span>
+                          <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', marginLeft: '8px' }}>-${formatCurrency(c.value)}</span>
+                       </div>
+                     ))}
+                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                      <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Costos Variables (Caja Chica)</span>
