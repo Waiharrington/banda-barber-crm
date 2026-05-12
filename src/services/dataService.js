@@ -268,8 +268,11 @@ export const dataService = {
   async getExtras() {
     const { data, error } = await supabase.from('service_extras').select('*').order('name');
     if (error) throw error;
-    // Filter out archived extras
-    return data.filter(e => !e.name?.startsWith('ARCHIVED|'));
+    // Filter out archived extras and system config items
+    return data.filter(e => 
+      !e.name?.startsWith('ARCHIVED|') && 
+      e.name !== 'SYSTEM_CONFIG_RATES'
+    );
   },
 
   async addExtra(extra) {

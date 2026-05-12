@@ -10,7 +10,9 @@ import {
   Filter,
   Wallet,
   Calendar,
-  ChevronRight
+  ChevronRight,
+  Trash2,
+  Edit2
 } from 'lucide-react';
 
 import { dataService } from '../services/dataService';
@@ -38,7 +40,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   // Business Logic States (from Excel 2)
   const [fixedCosts, setFixedCosts] = useState(() => {
     const saved = localStorage.getItem('astro_fixed_costs');
-    return saved ? JSON.parse(saved) : { 
+    const defaults = { 
       rent: 522, 
       services: 300, 
       payroll: 60, 
@@ -46,10 +48,15 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       marketing: 60,
       tax: 200,
       workstations: 3,
-      avgServiceTime: 45 // minutes
+      avgServiceTime: 45,
+      extraCosts: []
     };
+    if (!saved) return defaults;
+    const parsed = JSON.parse(saved);
+    return { ...defaults, ...parsed };
   });
   const [isEditingCosts, setIsEditingCosts] = useState(false);
+  const [isCostsLocked, setIsCostsLocked] = useState(true);
   const [selectedTxId, setSelectedTxId] = useState(null);
 
   // Payroll / Nómina States
@@ -320,8 +327,9 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   })();
 
   const totalFixedCosts = Object.entries(fixedCosts).reduce((acc, [key, val]) => {
-    return (key !== 'workstations' && key !== 'avgServiceTime') ? acc + Number(val) : acc;
-  }, 0);
+    if (['workstations', 'avgServiceTime', 'extraCosts'].includes(key)) return acc;
+    return acc + Number(val || 0);
+  }, 0) + (fixedCosts.extraCosts?.reduce((acc, c) => acc + Number(c.value || 0), 0) || 0);
 
   const netProfit = balance - totalFixedCosts;
   const breakEven = totalFixedCosts / 0.4; // Assuming 40% margin (after 60% commission)
@@ -951,9 +959,15 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                      <span style={{ fontWeight: '700', color: '#ff453a' }}>-${formatCurrency(egresosBarberos)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                     <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Costos Fijos Operativos</span>
-                     <span style={{ fontWeight: '700', color: '#ff453a' }}>-${formatCurrency(totalFixedCosts)}</span>
-                  </div>
+                      <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Costos Fijos Operativos</span>
+                      <span style={{ fontWeight: '700', color: '#ff453a' }}>-${formatCurrency(totalFixedCosts)}</span>
+                   </div>
+                   {fixedCosts.extraCosts?.map((c, i) => (
+                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0 6px 16px', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>↳ {c.label}</span>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)' }}>-${formatCurrency(c.value)}</span>
+                     </div>
+                   ))}
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                      <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Costos Variables (Caja Chica)</span>
                      <span style={{ fontWeight: '700', color: '#ff453a' }}>-${formatCurrency(costosVariables)}</span>
@@ -1033,7 +1047,30 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           {isEditingCosts && (
             <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
               <div className="glass-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '32px', padding: '32px' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '24px' }}>Configuración de <span className="text-gold">Costos Fijos</span></h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '20px', fontWeight: '900', margin: 0 }}>Configuración de <span className="text-gold">Costos Fijos</span></h3>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsCostsLocked(!isCostsLocked)}
+                    style={{ 
+                      background: isCostsLocked ? 'rgba(212,175,55,0.1)' : 'var(--gold-primary)', 
+                      color: isCostsLocked ? 'var(--gold-primary)' : 'black', 
+                      border: 'none', 
+                      width: '40px', 
+                      height: '40px', 
+                      borderRadius: '12px', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      cursor: 'pointer', 
+                      transition: 'all 0.3s ease',
+                      boxShadow: !isCostsLocked ? '0 0 15px rgba(212,175,55,0.3)' : 'none'
+                    }}
+                    title={isCostsLocked ? "Desbloquear para editar" : "Bloquear edición"}
+                  >
+                    <Edit2 size={18} />
+                  </button>
+                </div>
                 <form onSubmit={handleSaveCosts} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   {[
                     { label: 'Alquiler ($)', key: 'rent' },
@@ -1050,14 +1087,74 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       <input 
                         type="number" 
                         value={fixedCosts[field.key]} 
+                        disabled={isCostsLocked}
                         onChange={(e) => setFixedCosts({ ...fixedCosts, [field.key]: parseFloat(e.target.value) || 0 })}
-                        style={{ width: '100%', height: '44px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 12px' }}
+                        style={{ width: '100%', height: '44px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 12px', opacity: isCostsLocked ? 0.6 : 1, cursor: isCostsLocked ? 'not-allowed' : 'text', transition: 'all 0.3s' }}
                       />
                     </div>
                   ))}
+
+                  {fixedCosts.extraCosts?.map((cost, idx) => (
+                    <div key={idx} style={{ gridColumn: 'span 2', display: 'flex', gap: '8px', alignItems: 'flex-end', marginBottom: '8px' }}>
+                      <div style={{ flex: 2 }}>
+                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Nombre del Gasto</label>
+                        <input 
+                          type="text" 
+                          placeholder="Ej. Internet"
+                          value={cost.label} 
+                          disabled={isCostsLocked}
+                          onChange={(e) => {
+                            const newExtras = [...fixedCosts.extraCosts];
+                            newExtras[idx].label = e.target.value;
+                            setFixedCosts({ ...fixedCosts, extraCosts: newExtras });
+                          }}
+                          style={{ width: '100%', height: '44px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 12px', opacity: isCostsLocked ? 0.6 : 1, cursor: isCostsLocked ? 'not-allowed' : 'text', transition: 'all 0.3s' }}
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Monto ($)</label>
+                        <input 
+                          type="number" 
+                          value={cost.value} 
+                          disabled={isCostsLocked}
+                          onChange={(e) => {
+                            const newExtras = [...fixedCosts.extraCosts];
+                            newExtras[idx].value = parseFloat(e.target.value) || 0;
+                            setFixedCosts({ ...fixedCosts, extraCosts: newExtras });
+                          }}
+                          style={{ width: '100%', height: '44px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 12px', opacity: isCostsLocked ? 0.6 : 1, cursor: isCostsLocked ? 'not-allowed' : 'text', transition: 'all 0.3s' }}
+                        />
+                      </div>
+                      <button 
+                        type="button" 
+                        disabled={isCostsLocked}
+                        onClick={() => {
+                          const newExtras = fixedCosts.extraCosts.filter((_, i) => i !== idx);
+                          setFixedCosts({ ...fixedCosts, extraCosts: newExtras });
+                        }}
+                        style={{ background: 'rgba(255,69,58,0.1)', border: 'none', color: '#ff453a', borderRadius: '10px', width: '44px', height: '44px', cursor: isCostsLocked ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isCostsLocked ? 0.4 : 1, transition: 'all 0.3s' }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+
+                  <button 
+                    type="button" 
+                    disabled={isCostsLocked}
+                    onClick={() => {
+                      setFixedCosts({ 
+                        ...fixedCosts, 
+                        extraCosts: [...(fixedCosts.extraCosts || []), { label: '', value: 0 }] 
+                      });
+                    }}
+                    style={{ gridColumn: 'span 2', background: 'rgba(212,175,55,0.1)', border: '1px dashed var(--gold-primary)', color: 'var(--gold-primary)', padding: '12px', borderRadius: '12px', cursor: isCostsLocked ? 'not-allowed' : 'pointer', fontWeight: '800', fontSize: '12px', marginTop: '8px', opacity: isCostsLocked ? 0.5 : 1, transition: 'all 0.3s' }}
+                  >
+                    + AGREGAR COSTO ADICIONAL
+                  </button>
                   <div style={{ gridColumn: 'span 2', display: 'flex', gap: '12px', marginTop: '20px' }}>
-                    <button type="button" onClick={() => setIsEditingCosts(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', fontWeight: '700', cursor: 'pointer' }}>Cancelar</button>
-                    <button type="submit" className="btn-gold" style={{ flex: 1, padding: '14px', borderRadius: '12px', fontWeight: '800' }}>Guardar Cambios</button>
+                    <button type="button" onClick={() => { setIsEditingCosts(false); setIsCostsLocked(true); }} style={{ flex: 1, padding: '14px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', fontWeight: '700', cursor: 'pointer' }}>Cancelar</button>
+                    <button type="submit" disabled={isCostsLocked} className="btn-gold" style={{ flex: 1, padding: '14px', borderRadius: '12px', fontWeight: '800', opacity: isCostsLocked ? 0.5 : 1, cursor: isCostsLocked ? 'not-allowed' : 'pointer' }}>Guardar Cambios</button>
                   </div>
                 </form>
               </div>

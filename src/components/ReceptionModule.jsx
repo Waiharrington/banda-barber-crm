@@ -738,7 +738,7 @@ const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, on
         </div>
 
         <div style={{ overflowY: 'auto', flex: 1, paddingRight: '10px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {items.map(item => {
               const isSelected = selectedItems.find(si => si.id === item.id);
               return (
@@ -746,41 +746,46 @@ const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, on
                   key={item.id}
                   onClick={() => onToggle(item)}
                   style={{
-                    padding: '20px',
-                    borderRadius: '24px',
-                    border: isSelected ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
-                    background: isSelected ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)',
+                    padding: '12px 16px',
+                    borderRadius: '16px',
+                    border: isSelected ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
+                    background: isSelected ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.02)',
                     textAlign: 'left',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '20px',
+                    gap: '12px',
                     width: '100%'
                   }}
                 >
-                  {item.image_url ? (
-                    <img src={item.image_url} alt={item.name} style={{ width: '80px', height: '80px', borderRadius: '16px', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ width: '80px', height: '80px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Package size={32} color="rgba(255,255,255,0.2)" />
-                    </div>
-                  )}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div style={{ fontSize: '16px', fontWeight: '800', color: isSelected ? 'var(--gold-primary)' : 'white' }}>{item.name}</div>
-                      <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--gold-primary)' }}>${item.price}</div>
-                    </div>
-                    {item.included_items && item.included_items.length > 0 && (
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '8px', lineHeight: '1.5' }}>
-                        <span style={{ color: 'var(--gold-primary)', fontWeight: '800', fontSize: '9px', textTransform: 'uppercase', marginRight: '6px' }}>Incluye:</span>
-                        {item.included_items.join(' • ')}
-                      </div>
+                  <div style={{ 
+                    width: '40px', 
+                    height: '40px', 
+                    borderRadius: '10px', 
+                    background: isSelected ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    flexShrink: 0 
+                  }}>
+                    {item.image_url ? (
+                      <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }} />
+                    ) : (
+                      <Package size={20} color={isSelected ? 'black' : 'rgba(255,255,255,0.2)'} />
                     )}
                   </div>
+                  
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '700', color: isSelected ? 'var(--gold-primary)' : 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+                      <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--gold-primary)', marginLeft: '10px' }}>${item.price}</div>
+                    </div>
+                  </div>
+
                   {isSelected && (
-                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <CheckCircle2 size={16} color="black" />
+                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <CheckCircle2 size={14} color="black" />
                     </div>
                   )}
                 </button>
