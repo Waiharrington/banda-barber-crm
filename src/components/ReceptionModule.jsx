@@ -75,7 +75,7 @@ const ReceptionModule = ({ isMobile }) => {
       setServices(s);
       setStaff(st.filter(member => {
         const role = (member.role || 'Barbero').toLowerCase();
-        return role.includes('barber') && !role.includes('asistente');
+        return role.includes('barber') && !role.includes('asistente') && !role.includes('admin');
       }));
       setActiveAppointments(active);
       setAllExtras(ext || []);
