@@ -122,9 +122,26 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   }, [staff]);
 
 
+  const [exchangeRate, setExchangeRate] = useState(58); // Default
+
   useEffect(() => {
     fetchStaff();
+    loadRates();
   }, []);
+
+  const loadRates = async () => {
+    try {
+      const rates = await dataService.getGlobalRates();
+      if (rates.shop) {
+        setExchangeRate(rates.shop);
+      } else {
+        const bcv = await dataService.getExchangeRates();
+        setExchangeRate(bcv.usd || 58);
+      }
+    } catch (err) {
+      console.error("Error loading rates:", err);
+    }
+  };
 
   const fetchStaff = async () => {
     try {
@@ -474,7 +491,14 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
                 {formData.roles.includes('Asistente de Lavado') && (
                   <div className="form-group animate-slide-right">
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>TARIFA POR LAVADO ($)</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>TARIFA POR LAVADO ($)</label>
+                      {formData.washing_rate > 0 && (
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
+                          ≈ {(formData.washing_rate * exchangeRate).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs.
+                        </span>
+                      )}
+                    </div>
                     <div style={{ position: 'relative' }}>
                       <Droplets size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
                       <input 
