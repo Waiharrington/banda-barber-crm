@@ -60,7 +60,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData }) => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gold-primary)' }}>
             <Star size={14} />
-            <span style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '0.5px' }}>TOP ARTISTA</span>
+            <span style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '0.5px' }}>TOP MIEMBRO</span>
           </div>
           <div style={{ fontSize: '15px', fontWeight: '800' }}>Marco Silva</div>
         </div>

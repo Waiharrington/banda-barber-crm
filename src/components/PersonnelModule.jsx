@@ -70,13 +70,13 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ 
     name: '', 
-    role: 'Barbero', 
+    roles: ['Barbero'], 
     image_url: '',
     phone: '',
     address: '',
     username: '',
     password: '',
-    permissions: ['scheduling', 'barber', 'clients'],
+    permissions: rolePresets['Barbero'],
     washing_rate: 0
   });
 
@@ -139,17 +139,19 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   };
 
   const handleEditClick = (person) => {
-    let roleName = person.role || 'Barbero';
-    let perms = allRolePresets[roleName] || [];
+    let rolePart = person.role || 'Barbero';
+    let perms = allRolePresets[rolePart] || [];
+    let rolesArray = [rolePart];
     
     if (person.role?.includes('|')) {
-      [roleName, perms] = person.role.split('|');
-      perms = perms.split(',');
+      const [rPart, pPart] = person.role.split('|');
+      rolesArray = rPart.split(', ');
+      perms = pPart.split(',');
     }
 
     setFormData({
       name: person.name,
-      role: roleName,
+      roles: rolesArray,
       image_url: person.image_url || '',
       phone: person.phone || '',
       address: person.address || '',
@@ -176,7 +178,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       username: '',
       password: '',
       permissions: rolePresets['Barbero'],
-      washing_rate: 0
+      washing_rate: 0,
+      roles: ['Barbero']
     });
     setIsCreatingNewRole(false);
     setNewRoleName('');
@@ -225,17 +228,17 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     try {
       setLoading(true);
       
-      // Construct role string: RoleName|perm1,perm2...
-      const roleToSave = isCreatingNewRole ? newRoleName : formData.role;
-      if (!roleToSave) {
-        showToast('Por favor ingresa un nombre para el rol.', 'error');
+      // Construct role string: Role1, Role2|perm1,perm2...
+      const roleNames = isCreatingNewRole ? [...formData.roles, newRoleName] : formData.roles;
+      if (roleNames.length === 0) {
+        showToast('Por favor selecciona al menos un rol.', 'error');
         return;
       }
-      const finalRole = `${roleToSave}|${formData.permissions.join(',')}`;
+      const finalRole = `${roleNames.join(', ')}|${formData.permissions.join(',')}`;
 
       // If it's a new role, also save it to presets so it shows in the manager
-      if (isCreatingNewRole && !allRolePresets[roleToSave]) {
-        handleSaveCustomRole(roleToSave, formData.permissions);
+      if (isCreatingNewRole && newRoleName && !allRolePresets[newRoleName]) {
+        handleSaveCustomRole(newRoleName, formData.permissions);
       }
 
       const submissionData = {
@@ -385,55 +388,90 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                     <input className="form-input" placeholder="Ej. Marco Silva" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
                   </div>
                 </div>
-                {!isCreatingNewRole ? (
-                  <AstroSelect 
-                    label="ROL EN EL EQUIPO"
-                    value={formData.role}
-                    onChange={val => {
-                      if (val === 'NEW_ROLE') {
-                        setIsCreatingNewRole(true);
-                      } else {
-                        setFormData({
-                          ...formData, 
-                          role: val,
-                          permissions: allRolePresets[val] || formData.permissions
-                        });
-                      }
-                    }}
-                    options={[
-                      ...Object.entries(allRolePresets)
-                        .filter(([_, v]) => v !== '__DELETED__')
-                        .map(([r]) => ({ label: r, value: r })),
-                      ...Array.from(new Set(staff.map(s => s.role?.split('|')[0])))
-                        .filter(r => r && !allRolePresets[r])
-                        .map(r => ({ label: r, value: r })),
-                      { label: '➕ CREAR NUEVO ROL...', value: 'NEW_ROLE' }
-                    ]}
-                  />
-                ) : (
-                  <div className="form-group animate-slide-left">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>NOMBRE DEL NUEVO ROL</label>
-                      <button 
-                        onClick={() => { setIsCreatingNewRole(false); setNewRoleName(''); }}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '10px', cursor: 'pointer', fontWeight: '800' }}
-                      >
-                        VOLVER A LA LISTA
-                      </button>
-                    </div>
-                    <div style={{ position: 'relative' }}>
-                      <Sparkles size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                      <input 
-                        className="form-input" 
-                        placeholder="Ej. Gerente de Piso" 
-                        value={newRoleName} 
-                        onChange={e => setNewRoleName(e.target.value)} 
-                        style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid var(--gold-primary)' }} 
-                      />
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '1px' }}>ROLES EN EL EQUIPO</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {Object.entries(allRolePresets)
+                      .filter(([_, v]) => v !== '__DELETED__')
+                      .map(([r]) => (
+                        <div 
+                          key={r}
+                          onClick={() => {
+                            const isSelected = formData.roles.includes(r);
+                            let newRoles = isSelected 
+                              ? formData.roles.filter(x => x !== r)
+                              : [...formData.roles, r];
+                            
+                            // If we click a new role, we add its permissions
+                            let newPerms = [...formData.permissions];
+                            if (!isSelected) {
+                              const rolePerms = allRolePresets[r] || [];
+                              newPerms = Array.from(new Set([...newPerms, ...rolePerms]));
+                            }
+
+                            setFormData({ ...formData, roles: newRoles, permissions: newPerms });
+                          }}
+                          style={{
+                            padding: '8px 14px',
+                            borderRadius: '10px',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            backgroundColor: formData.roles.includes(r) ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)',
+                            color: formData.roles.includes(r) ? 'black' : 'white',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            transition: '0.2s'
+                          }}
+                        >
+                          {r}
+                        </div>
+                      ))
+                    }
+                    <div 
+                      onClick={() => setIsCreatingNewRole(true)}
+                      style={{
+                        padding: '8px 14px',
+                        borderRadius: '10px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        backgroundColor: isCreatingNewRole ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.02)',
+                        color: 'var(--gold-primary)',
+                        border: '1px dashed var(--gold-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Plus size={14} /> NUEVO ROL
                     </div>
                   </div>
-                )}
-                {formData.role === 'Asistente de Lavado' && (
+                  {isCreatingNewRole && (
+                    <div className="animate-slide-left" style={{ marginTop: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>NOMBRE DEL NUEVO ROL</label>
+                        <button 
+                          onClick={() => { setIsCreatingNewRole(false); setNewRoleName(''); }}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '10px', cursor: 'pointer', fontWeight: '800' }}
+                        >
+                          DESCARTAR
+                        </button>
+                      </div>
+                      <div style={{ position: 'relative' }}>
+                        <Sparkles size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                        <input 
+                          className="form-input" 
+                          placeholder="Ej. Gerente de Piso" 
+                          value={newRoleName} 
+                          onChange={e => setNewRoleName(e.target.value)} 
+                          style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid var(--gold-primary)' }} 
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {formData.roles.includes('Asistente de Lavado') && (
                   <div className="form-group animate-slide-right">
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>TARIFA POR LAVADO ($)</label>
                     <div style={{ position: 'relative' }}>
@@ -567,7 +605,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
               <button className="btn-gold" onClick={handleSubmit} style={{ height: '56px', width: '100%', borderRadius: '16px', fontSize: '16px', fontWeight: '800', marginTop: '10px' }}>
                 <Check size={20} style={{ marginRight: '10px' }} />
-                {isEditing ? 'Actualizar Perfil de Artista' : 'Confirmar y unir al equipo'}
+                {isEditing ? 'Actualizar Perfil de Miembro' : 'Confirmar y unir al equipo'}
               </button>
             </div>
           </div>
@@ -582,7 +620,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         <div className="glass-card" style={{ textAlign: 'center', padding: '80px', borderRadius: '32px' }}>
           <User size={64} color="rgba(212, 175, 55, 0.1)" style={{ marginBottom: '24px' }} />
           <h3 style={{ fontSize: '20px', color: 'var(--text-primary)' }}>El equipo está esperando</h3>
-          <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Comienza agregando a los artistas que harán brillar tu marca.</p>
+          <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Comienza agregando a los miembros que harán brillar tu marca.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -600,7 +638,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
           }}>
             {!isMobile && (
               <>
-                <div>ARTISTA</div>
+                <div>MIEMBRO</div>
                 <div>NOMBRE / ROL</div>
                 <div>TELÉFONO</div>
                 <div>DIRECCIÓN</div>
@@ -646,9 +684,9 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
               <div>
                 <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{person.name}</h4>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '700', marginTop: '2px' }}>
-                  {getRoleIcon(person.role?.split('|')[0])}
+                  {getRoleIcon(person.role?.split('|')[0]?.split(', ')[0])}
                   {person.role?.split('|')[0]}
-                  {person.role?.includes('|') && (
+                  {person.role?.split('|')[0]?.includes(', ') && (
                     <span style={{ 
                       padding: '2px 6px', 
                       backgroundColor: 'rgba(212,175,55,0.1)', 
@@ -657,7 +695,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       marginLeft: '4px',
                       border: '1px solid rgba(212,175,55,0.2)'
                     }}>
-                      PERSONALIZADO
+                      MULTI-ROL
                     </span>
                   )}
                 </div>
@@ -731,7 +769,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                 <button className="action-btn" onClick={() => setProfileModalData(person)} title="Ver Perfil" style={{ color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)' }}>
                   <User size={18} />
                 </button>
-                <button className="action-btn" onClick={() => handleEditClick(person)} title="Editar Artista">
+                <button className="action-btn" onClick={() => handleEditClick(person)} title="Editar Miembro">
                   <Edit2 size={18} />
                 </button>
                 <button className="action-btn" onClick={() => handleDeleteStaff(person.id, person.name)} style={{ color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.05)' }} title="Dar de baja">
