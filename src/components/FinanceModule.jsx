@@ -44,16 +44,26 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       rent: 522, 
       services: 300, 
       payroll: 60, 
-      software: 45,
-      marketing: 60,
-      tax: 200,
-      workstations: 3,
-      avgServiceTime: 45,
-      extraCosts: []
+      software: 45, 
+      marketing: 60, 
+      tax: 200, 
+      workstations: 3, 
+      avgServiceTime: 45, 
+      extraCosts: [],
+      customLabels: {
+        rent: 'Alquiler ($)',
+        services: 'Servicios ($)',
+        payroll: 'Nómina Fija ($)',
+        software: 'Software ($)',
+        marketing: 'Marketing ($)',
+        tax: 'Impuestos ($)',
+        workstations: 'Sillas Activas',
+        avgServiceTime: 'Tiempo Prom. (min)'
+      }
     };
     if (!saved) return defaults;
     const parsed = JSON.parse(saved);
-    return { ...defaults, ...parsed };
+    return { ...defaults, ...parsed, customLabels: { ...defaults.customLabels, ...parsed.customLabels } };
   });
   const [isEditingCosts, setIsEditingCosts] = useState(false);
   const [isCostsLocked, setIsCostsLocked] = useState(true);
@@ -327,7 +337,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   })();
 
   const totalFixedCosts = Object.entries(fixedCosts).reduce((acc, [key, val]) => {
-    if (['workstations', 'avgServiceTime', 'extraCosts'].includes(key)) return acc;
+    if (['workstations', 'avgServiceTime', 'extraCosts', 'customLabels'].includes(key)) return acc;
     return acc + Number(val || 0);
   }, 0) + (fixedCosts.extraCosts?.reduce((acc, c) => acc + Number(c.value || 0), 0) || 0);
 
@@ -962,12 +972,30 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Costos Fijos Operativos</span>
                       <span style={{ fontWeight: '700', color: '#ff453a' }}>-${formatCurrency(totalFixedCosts)}</span>
                    </div>
+                   
+                   {/* Desglose de Costos Base */}
+                   {[
+                     { key: 'rent', defaultLabel: 'Alquiler' },
+                     { key: 'services', defaultLabel: 'Servicios' },
+                     { key: 'payroll', defaultLabel: 'Nómina Fija' },
+                     { key: 'software', defaultLabel: 'Software' },
+                     { key: 'marketing', defaultLabel: 'Marketing' },
+                     { key: 'tax', defaultLabel: 'Impuestos' }
+                   ].map(c => (
+                     <div key={c.key} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0 6px 16px', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>↳ {fixedCosts.customLabels?.[c.key] || c.defaultLabel}</span>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)' }}>-${formatCurrency(fixedCosts[c.key] || 0)}</span>
+                     </div>
+                   ))}
+
+                   {/* Desglose de Costos Extra */}
                    {fixedCosts.extraCosts?.map((c, i) => (
                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0 6px 16px', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>↳ {c.label}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>↳ {c.label || 'Sin nombre'}</span>
                         <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)' }}>-${formatCurrency(c.value)}</span>
                      </div>
                    ))}
+
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                      <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Costos Variables (Caja Chica)</span>
                      <span style={{ fontWeight: '700', color: '#ff453a' }}>-${formatCurrency(costosVariables)}</span>
@@ -1073,24 +1101,39 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 </div>
                 <form onSubmit={handleSaveCosts} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   {[
-                    { label: 'Alquiler ($)', key: 'rent' },
-                    { label: 'Servicios ($)', key: 'services' },
-                    { label: 'Nómina Fija ($)', key: 'payroll' },
-                    { label: 'Software ($)', key: 'software' },
-                    { label: 'Marketing ($)', key: 'marketing' },
-                    { label: 'Impuestos ($)', key: 'tax' },
-                    { label: 'Sillas Activas', key: 'workstations' },
-                    { label: 'Tiempo Prom. (min)', key: 'avgServiceTime' },
+                    { key: 'rent', defaultLabel: 'Alquiler ($)' },
+                    { key: 'services', defaultLabel: 'Servicios ($)' },
+                    { key: 'payroll', defaultLabel: 'Nómina Fija ($)' },
+                    { key: 'software', defaultLabel: 'Software ($)' },
+                    { key: 'marketing', defaultLabel: 'Marketing ($)' },
+                    { key: 'tax', defaultLabel: 'Impuestos ($)' },
+                    { key: 'workstations', defaultLabel: 'Sillas Activas' },
+                    { key: 'avgServiceTime', defaultLabel: 'Tiempo Prom. (min)' },
                   ].map(field => (
-                    <div key={field.key}>
-                      <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{field.label}</label>
-                      <input 
-                        type="number" 
-                        value={fixedCosts[field.key]} 
-                        disabled={isCostsLocked}
-                        onChange={(e) => setFixedCosts({ ...fixedCosts, [field.key]: parseFloat(e.target.value) || 0 })}
-                        style={{ width: '100%', height: '44px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 12px', opacity: isCostsLocked ? 0.6 : 1, cursor: isCostsLocked ? 'not-allowed' : 'text', transition: 'all 0.3s' }}
-                      />
+                    <div key={field.key} style={{ gridColumn: 'span 2', display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '4px' }}>
+                      <div style={{ flex: 2 }}>
+                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Nombre</label>
+                        <input 
+                          type="text" 
+                          disabled={isCostsLocked}
+                          value={fixedCosts.customLabels?.[field.key] || field.defaultLabel} 
+                          onChange={(e) => setFixedCosts({ 
+                            ...fixedCosts, 
+                            customLabels: { ...fixedCosts.customLabels, [field.key]: e.target.value } 
+                          })}
+                          style={{ width: '100%', height: '44px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 12px', opacity: isCostsLocked ? 0.6 : 1, cursor: isCostsLocked ? 'not-allowed' : 'text', transition: 'all 0.3s' }}
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{field.key === 'workstations' || field.key === 'avgServiceTime' ? 'Valor' : 'Monto ($)'}</label>
+                        <input 
+                          type="number" 
+                          disabled={isCostsLocked}
+                          value={fixedCosts[field.key]} 
+                          onChange={(e) => setFixedCosts({ ...fixedCosts, [field.key]: parseFloat(e.target.value) || 0 })}
+                          style={{ width: '100%', height: '44px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 12px', opacity: isCostsLocked ? 0.6 : 1, cursor: isCostsLocked ? 'not-allowed' : 'text', transition: 'all 0.3s' }}
+                        />
+                      </div>
                     </div>
                   ))}
 

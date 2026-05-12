@@ -12,7 +12,8 @@ import {
   ShoppingBag,
   Sparkles,
   X,
-  Package
+  Package,
+  Edit3
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -175,9 +176,18 @@ const ReceptionModule = ({ isMobile }) => {
     if (exists) {
       setSelectedExtras(selectedExtras.filter(e => e.id !== extra.id));
     } else {
-      setSelectedExtras([...selectedExtras, extra]);
+      // Add with default price as initial customPrice
+      setSelectedExtras([...selectedExtras, { ...extra, customPrice: extra.price }]);
     }
   };
+
+  const updateExtraPrice = (id, newPrice) => {
+    setSelectedExtras(selectedExtras.map(e => 
+      e.id === id ? { ...e, customPrice: parseFloat(newPrice) || 0 } : e
+    ));
+  };
+
+  const [editingExtraPriceId, setEditingExtraPriceId] = useState(null);
   
   const toggleProduct = (product) => {
     const exists = selectedProducts.find(p => p.id === product.id);
@@ -403,11 +413,34 @@ const ReceptionModule = ({ isMobile }) => {
                     </div>
                   ))}
                   {selectedExtras.map(e => (
-                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', alignItems: 'center' }}>
                       <span style={{ color: 'var(--text-muted)' }}>+ {e.name}</span>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>${e.price}</span>
-                        <button onClick={() => toggleExtra(e)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '14px' }}>&times;</button>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {editingExtraPriceId === e.id ? (
+                          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                            <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>$</span>
+                            <input 
+                              type="number"
+                              autoFocus
+                              value={e.customPrice}
+                              onChange={(val) => updateExtraPrice(e.id, val.target.value)}
+                              onBlur={() => setEditingExtraPriceId(null)}
+                              onKeyDown={(key) => key.key === 'Enter' && setEditingExtraPriceId(null)}
+                              style={{ width: '60px', height: '24px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--gold-primary)', borderRadius: '4px', color: 'white', paddingLeft: '14px', fontSize: '12px', fontWeight: '800', textAlign: 'right' }}
+                            />
+                          </div>
+                        ) : (
+                          <div 
+                            onClick={() => setEditingExtraPriceId(e.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', transition: 'all 0.2s' }}
+                            onMouseOver={(ev) => ev.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+                            onMouseOut={(ev) => ev.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>${e.customPrice ?? e.price}</span>
+                            <Edit3 size={10} color="var(--gold-primary)" style={{ opacity: 0.6 }} />
+                          </div>
+                        )}
+                        <button onClick={() => toggleExtra(e)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', padding: '0 4px' }}>&times;</button>
                       </div>
                     </div>
                   ))}
@@ -422,7 +455,7 @@ const ReceptionModule = ({ isMobile }) => {
                   ))}
                 </div>
                 <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'right', fontWeight: '900', color: 'var(--gold-primary)', fontSize: '18px' }}>
-                  TOTAL: ${selectedServices.reduce((acc, s) => acc + s.price, 0) + selectedExtras.reduce((acc, e) => acc + e.price, 0) + selectedProducts.reduce((acc, p) => acc + (p.price * p.quantity), 0)}
+                  TOTAL: ${selectedServices.reduce((acc, s) => acc + s.price, 0) + selectedExtras.reduce((acc, e) => acc + (e.customPrice ?? e.price), 0) + selectedProducts.reduce((acc, p) => acc + (p.price * p.quantity), 0)}
                 </div>
               </div>
             )}
@@ -781,6 +814,11 @@ const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, on
                       <div style={{ fontSize: '14px', fontWeight: '700', color: isSelected ? 'var(--gold-primary)' : 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
                       <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--gold-primary)', marginLeft: '10px' }}>${item.price}</div>
                     </div>
+                    {item.included_items && item.included_items.length > 0 && (
+                      <div style={{ fontSize: '10px', color: isSelected ? 'rgba(212,175,55,0.6)' : 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {item.included_items.join(' • ')}
+                      </div>
+                    )}
                   </div>
 
                   {isSelected && (
