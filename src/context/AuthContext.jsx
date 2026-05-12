@@ -25,6 +25,9 @@ export const AuthProvider = ({ children }) => {
             };
             setUser(userData);
             localStorage.setItem('astro_auth_user', JSON.stringify(userData));
+          } else {
+            // If they are not in the active staff list anymore (e.g. archived), force logout
+            logout();
           }
         } catch (e) {
           console.error('Sync error:', e);
