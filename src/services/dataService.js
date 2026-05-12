@@ -198,6 +198,25 @@ export const dataService = {
   },
 
   async deleteStaff(id) {
+    // 1. Unlink from appointments
+    await supabase
+      .from('appointments')
+      .update({ staff_id: null })
+      .eq('staff_id', id);
+
+    // 2. Unlink from appointment_staff (commissions)
+    await supabase
+      .from('appointment_staff')
+      .update({ staff_id: null })
+      .eq('staff_id', id);
+
+    // 3. Unlink from inventory
+    await supabase
+      .from('inventory')
+      .update({ staff_id: null })
+      .eq('staff_id', id);
+
+    // 4. Now delete the staff member
     const { error } = await supabase
       .from('staff')
       .delete()

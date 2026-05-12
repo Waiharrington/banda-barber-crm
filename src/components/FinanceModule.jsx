@@ -1076,7 +1076,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
                   <div>
                     <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>% Aporte Mensual por Barbero</h4>
-                    {staff.map(s => (
+                    {staff.filter(s => s.role === 'Barbero').map(s => (
                       <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <span style={{ fontSize: '14px', fontWeight: '600' }}>{s.name}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
