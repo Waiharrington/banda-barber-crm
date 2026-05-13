@@ -733,11 +733,49 @@ export const dataService = {
         extras: paymentRecord.extras || [],
         staffInvolved: paymentRecord.staffInvolved || [],
         serviceName: paymentRecord.serviceName,
-        didWash: paymentRecord.didWash
+        didWash: paymentRecord.didWash,
+        clientCedula: paymentRecord.clientCedula
       }
     });
 
+    // 5. Sincronizar con Google Sheets
+    this.syncTransactionToSheets(paymentRecord);
+
     return true;
+  },
+
+  async syncTransactionToSheets(paymentRecord) {
+    // URL de la Web App de Google Apps Script configurada
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzolbTHmehdEjnLoH4YB9gY_H23McM139rm8yIO1v9ASevnD8Ac_hENzJRC-oH2UcsWKA/exec"; 
+    
+    if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return; // Si no está configurada, ignorar
+
+    try {
+      const barbero = paymentRecord.staffInvolved?.find(s => s.role?.toLowerCase().includes('barbero'))?.name || 'Venta Directa';
+      
+      const payload = {
+        fecha: new Date().toLocaleDateString('es-VE'),
+        cliente: paymentRecord.clientName || 'Cliente General',
+        cedula: paymentRecord.clientCedula || 'S/C',
+        barbero: barbero,
+        servicio: paymentRecord.serviceName || 'Productos',
+        metodoPago: paymentRecord.isMixed ? 'Mixto' : (paymentRecord.methodBs && paymentRecord.methodBs !== 'N/A' ? paymentRecord.methodBs : paymentRecord.methodUsd),
+        lavado: paymentRecord.didWash ? 1 : 0,
+        monto: `${(paymentRecord.totalUsd * paymentRecord.fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`
+      };
+
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'text/plain'
+        },
+        body: JSON.stringify(payload)
+      });
+      console.log('Sincronizado con Google Sheets exitosamente');
+    } catch (e) {
+      console.error('Error al sincronizar con Google Sheets:', e);
+    }
   },
 
   // BCV Exchange Rates

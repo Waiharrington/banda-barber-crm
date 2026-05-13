@@ -247,6 +247,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         appointmentId: selectedApp?.id || null,
         clientId: selectedApp?.client_id || selectedClient?.id,
         clientName: selectedApp?.clients?.name || selectedClient?.name,
+        clientCedula: selectedApp?.clients?.id_card || selectedClient?.id_card,
         serviceName: selectedApp?.services?.name || 'Venta de Productos',
         totalUsd: totalUsd,
         fixedRate: fixedRate,
