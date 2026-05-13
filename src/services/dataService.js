@@ -739,14 +739,14 @@ export const dataService = {
     });
 
     // 5. Sincronizar con Google Sheets
-    this.syncTransactionToSheets(paymentRecord);
+    await this.syncTransactionToSheets(paymentRecord);
 
     return true;
   },
 
   async syncTransactionToSheets(paymentRecord) {
     // URL de la Web App de Google Apps Script configurada
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxa8Ds-g49hae4C5SX0g03HyAYIDWu_yKv-1_NtrBq5UkRhe21_wQMVMa5M9bEUauHBCQ/exec"; 
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwqkYcgz10iRU6w6kH_Y1VFxxSQQEd6dDKvIu6ZUCz03g1qPfMC09M6Fe2rSChiP085jA/exec"; 
     
     if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return; // Si no está configurada, ignorar
 
