@@ -746,7 +746,7 @@ export const dataService = {
 
   async syncTransactionToSheets(paymentRecord) {
     // URL de la Web App de Google Apps Script configurada
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzolbTHmehdEjnLoH4YB9gY_H23McM139rm8yIO1v9ASevnD8Ac_hENzJRC-oH2UcsWKA/exec"; 
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbSzh7BhJrgmEIANAMR4sT_uMMYBWro_ePSxvU13QBbSsjyBPLCWfM2MgP9PLFq2a-mxg/exec"; 
     
     if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return; // Si no está configurada, ignorar
 
