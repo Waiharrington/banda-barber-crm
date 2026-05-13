@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Lock, Loader2, Sparkles } from 'lucide-react';
+import { User, Lock, Loader2, Sparkles, Eye, EyeOff } from 'lucide-react';
 import logo from '../assets/logo.png';
 import ParticleBackground from './ParticleBackground';
 
@@ -8,6 +8,7 @@ const Login = () => {
   const { login, loading } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
@@ -76,7 +77,7 @@ const Login = () => {
           <div style={{ position: 'relative' }}>
             <Lock size={18} color="var(--gold-primary)" style={{ position: 'absolute', left: '16px', top: '14px' }} />
             <input 
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -91,6 +92,25 @@ const Login = () => {
                 fontSize: '15px'
               }}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '16px',
+                top: '14px',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
 
           {error && (
