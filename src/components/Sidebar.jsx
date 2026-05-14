@@ -11,13 +11,15 @@ import {
   LogOut,
   Pencil,
   RefreshCcw,
-  Save
+  Save,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import logo from '../assets/logo.png';
 import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';
 
-const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomRate, onToggleCustom, onUpdateCustom, customRates }) => {
+const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomRate, onToggleCustom, onUpdateCustom, customRates, isCollapsed, setIsCollapsed }) => {
   const { user, logout } = useAuth();
   const [isEditingRate, setIsEditingRate] = useState(false);
   const [tempRate, setTempRate] = useState(rates?.usd || 0);
@@ -76,18 +78,37 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
   const sidebarStyle = isMobile ? {
     width: '100%', height: 'auto', backgroundColor: 'transparent', display: 'flex', flexDirection: 'column', padding: '0'
   } : {
-    width: '260px', height: '100vh', backgroundColor: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)',
-    display: 'flex', flexDirection: 'column', padding: '20px 16px', position: 'fixed', left: 0, top: 0, overflowY: 'auto'
+    width: isCollapsed ? '80px' : '260px', height: '100vh', backgroundColor: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)',
+    display: 'flex', flexDirection: 'column', padding: isCollapsed ? '20px 10px' : '20px 16px', position: 'fixed', left: 0, top: 0, overflowY: 'auto',
+    transition: 'all 0.3s ease', zIndex: 100
   };
 
   return (
     <div className="sidebar" style={sidebarStyle}>
       {!isMobile && (
-        <div className="logo-container" style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-          <img src={logo} alt="Astro Barber" style={{ width: '100%', height: 'auto', maxWidth: '140px' }} />
-          
-          {/* Global Rate Badge */}
-          {rates?.usd > 0 && (
+        <div className="logo-container" style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', position: 'relative' }}>
+          <button 
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            style={{ 
+              position: isCollapsed ? 'static' : 'absolute', 
+              right: isCollapsed ? 'auto' : '0', 
+              top: '0', 
+              background: 'transparent', 
+              border: 'none', 
+              color: 'var(--text-muted)', 
+              cursor: 'pointer',
+              marginBottom: isCollapsed ? '24px' : '0'
+            }}
+          >
+            {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+          </button>
+
+          {!isCollapsed && (
+            <>
+              <img src={logo} alt="Astro Barber" style={{ width: '100%', height: 'auto', maxWidth: '140px', marginTop: '24px' }} />
+              
+              {/* Global Rate Badge */}
+              {rates?.usd > 0 && (
             <div style={{ 
               backgroundColor: 'rgba(212, 175, 55, 0.05)', 
               border: '1px solid rgba(212, 175, 55, 0.2)', 
@@ -151,6 +172,8 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
               )}
             </div>
           )}
+            </>
+          )}
         </div>
       )}
 
@@ -162,17 +185,19 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
             <button
               key={item.id} onClick={() => setActiveTab(item.id)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
+                display: 'flex', alignItems: 'center', gap: '10px', padding: isCollapsed ? '12px 0' : '10px 12px',
                 backgroundColor: isActive ? 'rgba(212, 175, 55, 0.08)' : 'transparent', border: 'none', borderRadius: '12px',
                 color: isActive ? 'var(--gold-primary)' : 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                textAlign: 'left', width: '100%', fontWeight: isActive ? '700' : '500'
+                textAlign: 'left', width: '100%', fontWeight: isActive ? '700' : '500',
+                justifyContent: isCollapsed ? 'center' : 'flex-start'
               }}
+              title={isCollapsed ? item.label : undefined}
             >
               <div style={{ color: isActive ? 'var(--gold-primary)' : 'var(--text-muted)' }}>
-                <Icon size={20} />
+                <Icon size={24} />
               </div>
-              <span style={{ fontSize: '15px' }}>{item.label}</span>
-              {isActive && (
+              {!isCollapsed && <span style={{ fontSize: '15px' }}>{item.label}</span>}
+              {!isCollapsed && isActive && (
                 <div style={{ marginLeft: 'auto', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--gold-primary)', boxShadow: '0 0 10px var(--gold-primary)' }} />
               )}
             </button>
@@ -182,20 +207,23 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
 
       {!isMobile && (
         <div style={{ marginTop: 'auto' }}>
-          <div className="user-profile" style={{ padding: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="user-profile" style={{ padding: isCollapsed ? '16px 0' : '16px', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', justifyContent: isCollapsed ? 'center' : 'flex-start' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <UserCircle size={20} color="var(--gold-primary)" />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-              <span style={{ fontSize: '14px', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{user?.role?.split('|')[0]}</span>
-            </div>
+            {!isCollapsed && (
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <span style={{ fontSize: '14px', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{user?.role?.split('|')[0]}</span>
+              </div>
+            )}
           </div>
           <button 
             onClick={logout}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: 'rgba(255, 69, 58, 0.05)', border: 'none', borderRadius: '12px', color: '#ff453a', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}
+            title={isCollapsed ? 'Cerrar Sesión' : undefined}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: isCollapsed ? 'center' : 'flex-start', gap: '10px', padding: '10px 12px', background: 'rgba(255, 69, 58, 0.05)', border: 'none', borderRadius: '12px', color: '#ff453a', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}
           >
-            <LogOut size={18} /> Cerrar Sesión
+            <LogOut size={isCollapsed ? 24 : 18} /> {!isCollapsed && "Cerrar Sesión"}
           </button>
         </div>
       )}

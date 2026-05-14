@@ -44,6 +44,8 @@ function App() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('astro_active_tab') || 'dashboard');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
+  const [isCollapsed, setIsCollapsed] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isTabLoading, setIsTabLoading] = useState(false);
@@ -133,7 +135,16 @@ function App() {
   ];
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
+      if (width < 1024 && width >= 768) {
+        setIsCollapsed(true);
+      } else if (width >= 1024) {
+        setIsCollapsed(false);
+      }
+    };
     window.addEventListener('resize', handleResize);
     
     // Initial Load Sequence
@@ -292,7 +303,9 @@ function App() {
           />
         ) : (
           <DashboardModule 
-            isMobile={isMobile} 
+            isMobile={isMobile}
+            isTablet={isTablet}
+            isCollapsed={isCollapsed}
             onOpenSale={() => setIsSaleModalOpen(true)} 
             stats={stats} 
             chartData={chartData} 
@@ -370,6 +383,8 @@ function App() {
         rates={effectiveRates} 
         bcvRates={rates}
         isCustomRate={isCustomRate}
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
         onToggleCustom={setIsCustomRate}
         onUpdateCustom={async (newRates) => {
           setCustomRates(newRates);
@@ -380,10 +395,11 @@ function App() {
       />
       <main className="main-content" style={{ 
         flex: 1, 
-        marginLeft: isMobile ? '0' : '260px', 
+        marginLeft: isMobile ? '0' : (isCollapsed ? '80px' : '260px'), 
         padding: 'var(--spacing-xl)', 
         minHeight: '100vh',
-        backgroundColor: 'var(--bg-primary)'
+        backgroundColor: 'var(--bg-primary)',
+        transition: 'margin-left 0.3s ease'
       }}>
         <div key={activeTab} className="animate-fade-in" style={{ height: '100%' }}>
           <TopBar 
