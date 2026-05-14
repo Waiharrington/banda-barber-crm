@@ -136,7 +136,9 @@ const Login = () => {
             }}
           >
             {loading ? <Loader2 className="animate-spin" /> : (
+              <>
                 <Rocket size={18} /> INICIAR SESIÓN
+              </>
             )}
           </button>
         </form>
