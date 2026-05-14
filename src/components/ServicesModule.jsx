@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Search, Edit2, Trash2, Clock, Scissors, 
-  Sparkles, Droplets, Zap, Check, X, Loader2,
+  Rocket, Droplets, Zap, Check, X, Loader2,
   Settings, DollarSign, LayoutList, Star, Crown,
   LayoutGrid, Table, Eye, Info, Pencil
 } from 'lucide-react';
@@ -267,7 +267,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
   const getCategoryIcon = (cat) => {
     switch(cat) {
       case 'Barbería': return <Scissors size={20} />;
-      case 'Estilismo': return <Sparkles size={20} />;
+      case 'Estilismo': return <Rocket size={20} />;
       case 'Tratamientos': return <Droplets size={20} />;
       default: return <Zap size={20} />;
     }
@@ -338,7 +338,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
           )}
 
           <button className="btn-gold" onClick={() => setIsBillableExtrasModalOpen(true)} style={{ backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212,175,55,0.2)' }}>
-            <Sparkles size={18} style={{ marginRight: '8px' }} />
+            <Rocket size={18} style={{ marginRight: '8px' }} />
             Extras
           </button>
           <button 
@@ -820,7 +820,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Sparkles size={24} color="var(--gold-primary)" /> Servicios Adicionales (Extras)
+                  <Rocket size={24} color="var(--gold-primary)" /> Servicios Adicionales (Extras)
                 </h3>
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>Servicios con costo extra que se añaden en caja.</p>
               </div>

@@ -10,7 +10,7 @@ import {
   Clock,
   ArrowRight,
   ShoppingBag,
-  Sparkles,
+  Rocket,
   X,
   Package,
   Edit3
@@ -390,7 +390,7 @@ const ReceptionModule = ({ isMobile }) => {
                 onClick={() => setIsExtraModalOpen(true)}
                 style={{ background: 'rgba(212,175,55,0.05)', border: '1px dashed rgba(212,175,55,0.3)', padding: '12px', borderRadius: '16px', color: 'var(--gold-primary)', fontWeight: '800', fontSize: '11px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}
               >
-                <Sparkles size={18} /> + EXTRA
+                <Rocket size={18} /> + EXTRA
               </button>
               <button 
                 onClick={() => setIsProductModalOpen(true)}
@@ -631,7 +631,7 @@ const ReceptionModule = ({ isMobile }) => {
                     ))}
                     {selectedExtras.map(e => (
                       <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Sparkles size={14} color="var(--gold-primary)" />
+                        <Rocket size={14} color="var(--gold-primary)" />
                         <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{e.name} (Extra)</span>
                       </div>
                     ))}
@@ -728,7 +728,7 @@ const ReceptionModule = ({ isMobile }) => {
         isOpen={isExtraModalOpen}
         onClose={() => setIsExtraModalOpen(false)}
         title="Añadir Extras"
-        icon={<Sparkles size={24} color="var(--gold-primary)" />}
+        icon={<Rocket size={24} color="var(--gold-primary)" />}
         items={allExtras}
         selectedItems={selectedExtras}
         onToggle={toggleExtra}

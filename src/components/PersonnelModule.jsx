@@ -7,7 +7,7 @@ import {
   UserPlus,
   Loader2,
   Droplets,
-  Sparkles,
+  Rocket,
   Settings,
   Camera,
   X,
@@ -476,7 +476,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         </button>
                       </div>
                       <div style={{ position: 'relative' }}>
-                        <Sparkles size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                        <Rocket size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
                         <input 
                           className="form-input" 
                           placeholder="Ej. Gerente de Piso" 

@@ -5,7 +5,7 @@ import {
   User, 
   Search, 
   Plus, 
-  Sparkles, 
+  Rocket, 
   Scissors, 
   CreditCard, 
   Loader2, 
@@ -293,7 +293,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
                   value={selectedService?.id || ''}
                   onChange={val => setSelectedService(services.find(s => s.id == val))}
                   options={services.map(s => ({ label: `${s.name} — $${s.price}`, value: s.id }))}
-                  icon={<Sparkles size={18} color="var(--gold-primary)" />}
+                  icon={<Rocket size={18} color="var(--gold-primary)" />}
                 />
                 <AstroSelect 
                   label="Atendido por"

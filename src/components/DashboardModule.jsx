@@ -7,7 +7,6 @@ import {
   ArrowDownRight,
   Plus,
   Rocket,
-  Sparkles,
   Target,
   Edit3,
   User,
@@ -190,7 +189,7 @@ const DashboardModule = ({
                     e.currentTarget.style.backgroundColor = 'transparent';
                   }}
                 >
-                  <Sparkles size={16} color="var(--gold-primary)" className="animate-pulse" />
+                  <Rocket size={16} color="var(--gold-primary)" className="animate-pulse" />
                 </button>
               </div>
               <h2 style={{ fontSize: isMobile ? '20px' : (isTablet ? '22px' : '32px'), fontWeight: '950', lineHeight: '1.2', marginBottom: '24px', letterSpacing: '-1px', position: 'relative', zIndex: 20, textWrap: 'pretty' }}>
@@ -249,7 +248,7 @@ const DashboardModule = ({
             <StatCard title="Tu Producción" value={`$${formatCurrency(myStats.income)}`} icon={<TrendingUp size={18} color="var(--gold-primary)" />} color="var(--gold-primary)" trend="+12%" positive={true} />
             {!isAssistant && <StatCard title="Tus Servicios" value={myStats.appointments} icon={<ScissorsIcon size={18} color="var(--gold-primary)" />} color="#4caf50" trend="Activo" positive={true} />}
             {!isBarber && !isAssistant && <StatCard title="En Inventario" value={(dbData?.services?.length || 0) + (dbData?.clients?.length || 0)} icon={<ShoppingBag size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
-            {isAssistant && <StatCard title="Lavados Realizados" value={myStats.appointments} icon={<Sparkles size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
+            {isAssistant && <StatCard title="Lavados Realizados" value={myStats.appointments} icon={<Rocket size={18} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} />}
           </div>
 
           {/* Goals Grid - Only for Admins */}
