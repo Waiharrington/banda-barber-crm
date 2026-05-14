@@ -143,9 +143,6 @@ const Login = () => {
           </button>
         </form>
 
-        <p style={{ marginTop: '32px', color: 'var(--text-muted)', fontSize: '12px' }}>
-          Astro Barber CRM v3.0 • Premium Management
-        </p>
       </div>
     </div>
   );
