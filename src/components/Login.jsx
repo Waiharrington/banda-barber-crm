@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Lock, Loader2, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Loader2, Rocket, Eye, EyeOff } from 'lucide-react';
 import logo from '../assets/logo.png';
 import ParticleBackground from './ParticleBackground';
 
@@ -136,9 +136,7 @@ const Login = () => {
             }}
           >
             {loading ? <Loader2 className="animate-spin" /> : (
-              <>
-                <Sparkles size={18} /> INICIAR SESIÓN
-              </>
+                <Rocket size={18} /> INICIAR SESIÓN
             )}
           </button>
         </form>
