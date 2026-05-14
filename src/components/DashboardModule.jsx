@@ -61,7 +61,7 @@ const QUOTES = [
   { text: "Cada cliente es una oportunidad de crear una obra maestra.", creator: "Visión" },
   { text: "El mejor marketing es un cliente satisfecho.", creator: "Marketing" },
   { text: "Sé tan bueno que no puedan ignorarte.", creator: "Steve Martin" },
-  { text: "Tu única competencia es la persona que ves en el espejo.", creator: "Superación" },
+  { text: "Tu única competencia es la persona en el espejo.", creator: "Superación" },
   { text: "El negocio de la belleza es el negocio de la felicidad.", creator: "Emprendimiento" }
 ];
 
@@ -69,6 +69,8 @@ import { useAuth } from '../context/AuthContext';
 
 const DashboardModule = ({ 
   isMobile, 
+  isTablet,
+  isCollapsed,
   onOpenSale, 
   stats, 
   chartData, 
@@ -167,55 +169,76 @@ const DashboardModule = ({
             flexDirection: 'column',
             justifyContent: 'center'
           }}>
-            <div style={{ position: 'relative', zIndex: 2, maxWidth: '60%' }}>
+            <div style={{ position: 'relative', zIndex: 2, maxWidth: isTablet ? '55%' : (isMobile ? '65%' : '55%'), transform: isTablet ? 'translateY(-40px)' : (isMobile ? 'translateY(-20px)' : 'translateY(0)') }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
                 <div style={{ width: '20px', height: '2px', backgroundColor: 'var(--gold-primary)' }} />
-                <span style={{ fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '2px', textTransform: 'uppercase' }}>Pensamiento Astro</span>
-                <Sparkles size={14} color="var(--gold-primary)" className="animate-pulse" />
+                <span style={{ fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '2px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Pensamiento Astro</span>
+                <button 
+                  onClick={() => setQuoteIndex((prev) => (prev + 1) % QUOTES.length)}
+                  style={{ 
+                    background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
+                    transition: 'transform 0.2s ease, background-color 0.2s ease'
+                  }}
+                  title="Descubrir otro Pensamiento Astro"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.2) rotate(15deg)';
+                    e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <Sparkles size={16} color="var(--gold-primary)" className="animate-pulse" />
+                </button>
               </div>
-              <h2 style={{ fontSize: isMobile ? '32px' : '42px', fontWeight: '950', lineHeight: '1.1', marginBottom: '24px', letterSpacing: '-1.5px' }}>
+              <h2 style={{ fontSize: isMobile ? '20px' : (isTablet ? '22px' : '32px'), fontWeight: '950', lineHeight: '1.2', marginBottom: '24px', letterSpacing: '-1px', position: 'relative', zIndex: 20, textWrap: 'pretty' }}>
                 {QUOTES[quoteIndex].text}
               </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '16px', fontWeight: '600' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '16px', fontWeight: '600', position: 'relative', zIndex: 20 }}>
                 — {QUOTES[quoteIndex].creator}
               </p>
             </div>
 
-            {/* Visual Elements */}
+            {/* Visual Elements (Astro Premium Responsive) */}
             <div style={{ 
               position: 'absolute', 
-              right: isMobile ? '-50px' : '-80px', 
-              bottom: isMobile ? '-50px' : '-80px', 
-              width: isMobile ? '320px' : '480px', 
-              height: isMobile ? '320px' : '480px',
+              right: isMobile ? '-10px' : '-20px', 
+              bottom: isMobile ? '-10px' : '-15px', 
+              width: isMobile ? '50%' : '55%', 
+              height: '100%',
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-end',
               justifyContent: 'center',
-              zIndex: 10
+              zIndex: 10,
+              pointerEvents: 'none'
             }}>
               <div className="chair-shadow" style={{ 
                 position: 'absolute', 
-                bottom: isMobile ? '40px' : '60px', 
+                bottom: '10px', 
                 left: '50%', 
                 transform: 'translateX(-50%)', 
-                width: isMobile ? '140px' : '220px', 
-                height: '40px', 
-                background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, transparent 70%)',
+                width: '90%', 
+                height: '30px', 
+                background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.6) 0%, transparent 70%)',
                 zIndex: 1,
-                animation: 'shadow-scale 4s infinite ease-in-out'
+                animation: 'shadow-scale 8s infinite ease-in-out'
               }} />
               <img 
                 src="/barber-chair.png" 
                 alt="Astro Chair" 
                 className="chair-float"
                 style={{ 
-                  height: isMobile ? '240px' : '360px', 
-                  width: 'auto',
+                  width: '100%', 
+                  maxWidth: '400px',
+                  height: 'auto',
+                  maxHeight: '95%',
                   objectFit: 'contain',
                   zIndex: 3,
-                  filter: 'drop-shadow(0 20px 50px rgba(0,0,0,0.8))',
-                  pointerEvents: 'none',
-                  animation: 'float 4s infinite ease-in-out'
+                  /* Doble drop-shadow para crear el resplandor "Oro Astro" premium */
+                  filter: 'drop-shadow(0 15px 35px rgba(0,0,0,0.7)) drop-shadow(0 0 25px rgba(212, 175, 55, 0.35))',
+                  animation: 'float 8s infinite ease-in-out'
                 }} 
               />
             </div>
