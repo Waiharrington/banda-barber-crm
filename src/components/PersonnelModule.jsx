@@ -407,64 +407,51 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                   </div>
                 </div>
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '1px' }}>ROLES EN EL EQUIPO</label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {Object.entries(allRolePresets)
-                      .filter(([_, v]) => v !== '__DELETED__')
-                      .map(([r]) => (
-                        <div 
-                          key={r}
-                          onClick={() => {
-                            // Single selection: turn off custom creation and set only this role & its permissions
-                            setIsCreatingNewRole(false);
-                            setNewRoleName('');
-                            const newPerms = allRolePresets[r] || [];
-                            setFormData({ ...formData, roles: [r], permissions: newPerms });
-                          }}
-                          style={{
-                            padding: '8px 14px',
-                            borderRadius: '10px',
-                            fontSize: '12px',
-                            fontWeight: '700',
-                            cursor: 'pointer',
-                            backgroundColor: formData.roles.includes(r) && !isCreatingNewRole ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)',
-                            color: formData.roles.includes(r) && !isCreatingNewRole ? 'black' : 'white',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            transition: '0.2s'
-                          }}
-                        >
-                          {r}
-                        </div>
-                      ))
-                    }
-                    <div 
-                      onClick={() => {
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '1px' }}>ROL EN EL EQUIPO</label>
+                  
+                  <AstroSelect 
+                    options={[
+                      ...Object.entries(allRolePresets)
+                        .filter(([_, v]) => v !== '__DELETED__')
+                        .map(([r]) => ({ value: r, label: r })),
+                      // Dynamic legacy multiple role support so old profiles don't break
+                      ...(formData.roles.length > 0 && !allRolePresets[formData.roles.join(', ')] ? [{ value: formData.roles.join(', '), label: formData.roles.join(', ') }] : []),
+                      { value: '__NEW_ROLE__', label: '+ CREAR NUEVO ROL...' }
+                    ]}
+                    value={isCreatingNewRole ? '__NEW_ROLE__' : formData.roles.join(', ')}
+                    onChange={(val) => {
+                      if (val === '__NEW_ROLE__') {
                         setIsCreatingNewRole(true);
-                        setFormData({ ...formData, roles: [] }); // Clear selected role when creating a custom one
-                      }}
-                      style={{
-                        padding: '8px 14px',
-                        borderRadius: '10px',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        backgroundColor: isCreatingNewRole ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.02)',
-                        color: 'var(--gold-primary)',
-                        border: '1px dashed var(--gold-primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <Plus size={14} /> NUEVO ROL
-                    </div>
-                  </div>
+                        setFormData({ ...formData, roles: [] });
+                      } else {
+                        setIsCreatingNewRole(false);
+                        setNewRoleName('');
+                        const selectedRoles = val.split(', ');
+                        let newPerms = [];
+                        if (selectedRoles.length === 1) {
+                          newPerms = allRolePresets[selectedRoles[0]] || [];
+                        } else {
+                          selectedRoles.forEach(r => {
+                            const rolePerms = allRolePresets[r] || [];
+                            newPerms = Array.from(new Set([...newPerms, ...rolePerms]));
+                          });
+                        }
+                        setFormData({ ...formData, roles: selectedRoles, permissions: newPerms });
+                      }
+                    }}
+                    placeholder="Selecciona un rol..."
+                  />
+
                   {isCreatingNewRole && (
                     <div className="animate-slide-left" style={{ marginTop: '12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                         <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>NOMBRE DEL NUEVO ROL</label>
                         <button 
-                          onClick={() => { setIsCreatingNewRole(false); setNewRoleName(''); }}
+                          onClick={() => { 
+                            setIsCreatingNewRole(false); 
+                            setNewRoleName(''); 
+                            setFormData({ ...formData, roles: ['Barbero'], permissions: allRolePresets['Barbero'] || [] });
+                          }}
                           style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '10px', cursor: 'pointer', fontWeight: '800' }}
                         >
                           DESCARTAR
