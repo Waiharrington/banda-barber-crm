@@ -152,13 +152,14 @@ const ReceptionModule = ({ isMobile }) => {
   };
 
   const toggleService = (serviceId) => {
-    const service = services.find(s => s.id === serviceId);
-    if (!service) return;
-    
     const exists = selectedServices.find(s => s.id === serviceId);
     if (exists) {
       setSelectedServices(selectedServices.filter(s => s.id !== serviceId));
-    } else {
+      return;
+    }
+    
+    const service = services.find(s => s.id === serviceId);
+    if (service) {
       setSelectedServices([...selectedServices, service]);
     }
   };
@@ -747,6 +748,7 @@ const ReceptionModule = ({ isMobile }) => {
         items={services}
         selectedItems={selectedServices}
         onToggle={(s) => toggleService(s.id)}
+        exchangeRate={exchangeRate}
       />
 
       <SelectionModal 
@@ -757,6 +759,7 @@ const ReceptionModule = ({ isMobile }) => {
         items={allExtras}
         selectedItems={selectedExtras}
         onToggle={toggleExtra}
+        exchangeRate={exchangeRate}
       />
 
       <SelectionModal 
@@ -767,6 +770,7 @@ const ReceptionModule = ({ isMobile }) => {
         items={inventory}
         selectedItems={selectedProducts}
         onToggle={toggleProduct}
+        exchangeRate={exchangeRate}
       />
 
       <style>{`
@@ -779,7 +783,7 @@ const ReceptionModule = ({ isMobile }) => {
   );
 };
 
-const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, onToggle }) => {
+const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, onToggle, exchangeRate = 58 }) => {
   if (!isOpen) return null;
   
   return (
@@ -837,7 +841,10 @@ const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, on
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ fontSize: '14px', fontWeight: '700', color: isSelected ? 'var(--gold-primary)' : 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
-                      <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--gold-primary)', marginLeft: '10px' }}>${item.price}</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: '10px' }}>
+                        <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--gold-primary)' }}>{(item.price * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>Ref: ${item.price}</div>
+                      </div>
                     </div>
                     {item.included_items && item.included_items.length > 0 && (
                       <div style={{ 
