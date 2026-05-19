@@ -985,17 +985,17 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px', padding: '24px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
                 {bundledApps.map(app => {
                   const sPrice = app.services?.price || 0;
-                  return app.services && (
+                  return (
                     <div key={app.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <button 
                           onClick={() => handleRemoveBundledService(app)} 
                           style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}
-                          title="Eliminar servicio"
+                          title={app.services ? "Eliminar servicio" : "Eliminar extras"}
                         >
                           [X]
                         </button>
-                        Servicio: {app.services.name}
+                        {app.services ? `Servicio: ${app.services.name}` : 'Extras'}
                         {' • '}
                         <span 
                           onClick={() => handleOpenChangeBundledBarber(app)}
@@ -1008,15 +1008,21 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                             alignItems: 'center',
                             gap: '4px'
                           }}
-                          title="Click para cambiar barbero de este servicio"
+                          title="Click para cambiar barbero"
                         >
                           {app.staff?.name?.split(' ')[0] || 'Caja'}
                           <Edit3 size={10} />
                         </span>
                       </span>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                        <span style={{ fontWeight: '700' }}>{(sPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${sPrice}</span>
+                        {app.services ? (
+                          <>
+                            <span style={{ fontWeight: '700' }}>{(sPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${sPrice}</span>
+                          </>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Monto en extras</span>
+                        )}
                       </div>
                     </div>
                   );
@@ -1035,7 +1041,12 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   </div>
                 ))}
 
-                {selectedApp?.appointment_extras?.map(extra => (
+                {bundledApps.flatMap(app => 
+                  app.appointment_extras?.map(extra => ({
+                    ...extra,
+                    appId: app.id
+                  })) || []
+                ).map(extra => (
                   <div key={extra.id} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--gold-primary)', alignItems: 'center' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <button onClick={() => handleRemoveExtra(extra.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}>[X]</button>

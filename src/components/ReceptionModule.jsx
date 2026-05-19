@@ -209,15 +209,21 @@ const ReceptionModule = ({ isMobile }) => {
   };
 
   const handleSubmit = async (statusOverride, scheduledAt = null) => {
-    const isProductOnly = selectedServices.length === 0 && selectedProducts.length > 0;
+    const isProductOnly = selectedServices.length === 0 && selectedExtras.length === 0 && selectedProducts.length > 0;
     
     if (!selectedClient) {
       showToast("Selecciona un cliente primero", "error");
       return;
     }
 
-    if (!isProductOnly && (selectedServices.length === 0 || !formData.staffId)) {
-      showToast("Selecciona servicio y barbero", "error");
+    if (selectedServices.length === 0 && selectedExtras.length === 0 && selectedProducts.length === 0) {
+      showToast("Agrega al menos un servicio, extra o producto", "error");
+      return;
+    }
+
+    const hasStaffRequired = selectedServices.length > 0 || selectedExtras.length > 0;
+    if (hasStaffRequired && !formData.staffId) {
+      showToast("Selecciona un barbero", "error");
       return;
     }
 
@@ -243,17 +249,30 @@ const ReceptionModule = ({ isMobile }) => {
         if (dsError) throw dsError;
         appointments = [directSale];
       } else {
-        const promises = selectedServices.map(service => 
-          dataService.createAppointment({
+        if (selectedServices.length > 0) {
+          const promises = selectedServices.map(service => 
+            dataService.createAppointment({
+              client_id: selectedClient.id,
+              service_id: service.id,
+              staff_id: formData.staffId,
+              status: statusOverride || formData.status,
+              total_price: service.price,
+              scheduled_at: scheduledAt
+            })
+          );
+          appointments = await Promise.all(promises);
+        } else {
+          // Only extras (no main services)
+          const shellApp = await dataService.createAppointment({
             client_id: selectedClient.id,
-            service_id: service.id,
+            service_id: null,
             staff_id: formData.staffId,
             status: statusOverride || formData.status,
-            total_price: service.price,
+            total_price: 0,
             scheduled_at: scheduledAt
-          })
-        );
-        appointments = await Promise.all(promises);
+          });
+          appointments = [shellApp];
+        }
       }
       
       // If there are extras/products, link them to the first appointment
@@ -612,7 +631,7 @@ const ReceptionModule = ({ isMobile }) => {
                 <h3 style={{ color: 'var(--text-muted)' }}>Identifica al cliente</h3>
                 <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.2)', marginTop: '8px' }}>Ingresa la Cédula para cargar su ficha técnica.</p>
               </>
-            ) : selectedServices.length === 0 && selectedProducts.length === 0 ? (
+            ) : selectedServices.length === 0 && selectedProducts.length === 0 && selectedExtras.length === 0 ? (
               <>
                 <Scissors size={48} color="rgba(212,175,55,0.2)" style={{ marginBottom: '20px' }} />
                 <h3 style={{ color: 'var(--text-secondary)' }}>Añade productos o servicios</h3>
@@ -663,7 +682,7 @@ const ReceptionModule = ({ isMobile }) => {
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
-                  {selectedServices.length > 0 ? (
+                  {(selectedServices.length > 0 || selectedExtras.length > 0) ? (
                     <>
                       <button 
                         disabled={loading || (formData.staffId && activeAppointments.some(a => a.staff_id === formData.staffId))}
