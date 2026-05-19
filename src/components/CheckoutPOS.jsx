@@ -57,8 +57,10 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const [cashUsd, setCashUsd] = useState(0);
   const [methodUsd, setMethodUsd] = useState('Efectivo');
   const [methodBs, setMethodBs] = useState('Pago Móvil');
-  const [didWash, setDidWash] = useState(false);
   const [selectedWasherId, setSelectedWasherId] = useState('');
+  const [washCount, setWashCount] = useState(0);
+  const [bundledApps, setBundledApps] = useState([]);
+  const [activeAppForBarberChange, setActiveAppForBarberChange] = useState(null);
 
   // Modal State
   const [showProductModal, setShowProductModal] = useState(false);
@@ -99,23 +101,58 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
 
   useEffect(() => {
     if (selectedApp) {
-      const products = selectedApp.appointment_products?.map(ap => ({
-        id: ap.inventory?.id,
-        name: ap.inventory?.name,
-        price: ap.price,
-        quantity: ap.quantity
-      })) || [];
-      setCart(products);
+      const clientPendingApps = pendingServices.filter(
+        app => app.client_id === selectedApp.client_id
+      );
+      
+      const uniqueApps = [
+        selectedApp, 
+        ...clientPendingApps.filter(app => app.id !== selectedApp.id)
+      ];
+      setBundledApps(uniqueApps);
+    } else {
+      setBundledApps([]);
+    }
+  }, [selectedApp, pendingServices]);
 
-      // Auto-load primary staff for tip
-      setTips([{ id: Date.now().toString(), staffId: selectedApp.staff_id, amount: 0 }]);
+  useEffect(() => {
+    if (bundledApps.length > 0) {
+      // 1. Merge products
+      const mergedProducts = [];
+      bundledApps.forEach(app => {
+        app.appointment_products?.forEach(ap => {
+          const exists = mergedProducts.find(p => p.id === ap.inventory?.id);
+          if (exists) {
+            exists.quantity += ap.quantity;
+          } else {
+            mergedProducts.push({
+              id: ap.inventory?.id,
+              name: ap.inventory?.name,
+              price: ap.price,
+              quantity: ap.quantity
+            });
+          }
+        });
+      });
+      setCart(mergedProducts);
+
+      // 2. Initialize tips for all unique staff in the bundle
+      const uniqueStaffIds = Array.from(new Set(bundledApps.map(a => a.staff_id).filter(Boolean)));
+      const initialTips = uniqueStaffIds.map((staffId, idx) => ({
+        id: (Date.now() + idx).toString(),
+        staffId: staffId,
+        amount: 0
+      }));
+      setTips(initialTips);
+
+      // 3. Auto-detect washing count
+      const washEligibleCount = bundledApps.filter(app => 
+        app.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || 
+        app.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'))
+      ).length;
+      setWashCount(washEligibleCount);
       
-      // Auto-detect washing
-      const hasWashing = selectedApp.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || 
-                        selectedApp.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'));
-      setDidWash(hasWashing);
-      
-      // Select assistant as default ONLY if there is exactly one available
+      // Default wash assistant selection (ONLY if exactly one is available)
       const washers = allStaff.filter(s => s.role?.includes('Asistente de Lavado'));
       if (washers.length === 1) {
         setSelectedWasherId(washers[0].id);
@@ -125,10 +162,10 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     } else if (!isDirectSale) {
       setCart([]);
       setTips([]);
-      setDidWash(false);
+      setWashCount(0);
       setSelectedWasherId('');
     }
-  }, [selectedApp, isDirectSale, allStaff]);
+  }, [bundledApps, isDirectSale, allStaff]);
 
   const loadData = async () => {
     try {
@@ -174,14 +211,21 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     }
   };
 
-  const servicePrice = selectedApp?.services?.price || 0;
+  const servicePrice = bundledApps.reduce((acc, app) => acc + (app.services?.price || 0), 0);
   const productsTotal = cart.reduce((acc, p) => acc + (p.price * p.quantity), 0);
-  const extrasTotal = selectedApp?.appointment_extras?.reduce((acc, e) => acc + (e.price || 0), 0) || 0;
+  const extrasTotal = bundledApps.reduce((acc, app) => acc + (app.appointment_extras?.reduce((subAcc, e) => subAcc + (e.price || 0), 0) || 0), 0);
   const totalTips = tips.reduce((acc, t) => acc + Number(t.amount || 0), 0);
   const totalUsd = servicePrice + productsTotal + extrasTotal + totalTips;
   const totalBs = (totalUsd * fixedRate).toFixed(2);
   
   const remainingBs = Math.max(0, (totalUsd - Number(cashUsd)) * fixedRate).toFixed(2);
+
+  const washEligibleCount = bundledApps.filter(app => 
+    app.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || 
+    app.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'))
+  ).length;
+
+  const didWash = washCount > 0;
 
   const handleAddToCart = (product) => {
     const exists = cart.find(p => p.id === product.id);
@@ -246,69 +290,81 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       
       const paymentData = {
         appointmentId: selectedApp?.id || null,
+        appointmentIds: bundledApps.map(a => a.id),
         clientId: selectedApp?.client_id || selectedClient?.id,
         clientName: selectedApp?.clients?.name || selectedClient?.name,
         clientCedula: selectedApp?.clients?.id_card || selectedClient?.id_card,
-        serviceName: selectedApp?.services?.name || 'Venta de Productos',
+        serviceName: bundledApps.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Venta de Productos',
         totalUsd: totalUsd,
         fixedRate: fixedRate,
         isMixed: paymentMode === 'mixed',
         cashUsd: Number(cashUsd),
         transferBs: Number(remainingBs),
         totalTips: totalTips,
-        didWash: didWash,
+        didWash: washCount > 0,
+        washCount: washCount,
+        extras: bundledApps.flatMap(a => a.appointment_extras || []),
         staffInvolved: (() => {
           const involved = [];
           const washer = allStaff.find(s => s.id === selectedWasherId);
           const washRate = washer ? Number(washer.washing_rate || 0) : 0;
           
-          if (selectedApp && selectedApp.staff_id) {
-            const role = selectedApp.staff?.role;
-            let price = selectedApp.services?.price || 0;
+          let appliedWashes = 0;
+          bundledApps.forEach(app => {
+            if (!app.staff_id) return;
+            const role = app.staff?.role;
+            let price = app.services?.price || 0;
             let grossBase = price;
 
-            // REGLA: Si el servicio incluye lavado, se resta la tarifa de la asistente de la base antes de calcular la comisión
-            const includesWashing = selectedApp.services?.included_items?.some(i => i.toLowerCase().includes('lavado'));
-            if (includesWashing && didWash && washRate > 0) {
+            const includesWashing = app.services?.included_items?.some(i => i.toLowerCase().includes('lavado'));
+            if (includesWashing && appliedWashes < washCount && washRate > 0) {
               grossBase = Math.max(0, grossBase - washRate);
+              appliedWashes++;
             }
 
             let pct = 40;
-            if (role === 'Barbero') pct = selectedApp.services?.commission_barber ?? 40;
-            else if (role === 'Asistente de Lavado') pct = selectedApp.services?.commission_washer ?? 10;
-            else if (role === 'Caja') pct = selectedApp.services?.commission_cashier ?? 0;
-            else if (role === 'Recepcionista') pct = selectedApp.services?.commission_receptionist ?? 0;
-            else pct = selectedApp.staff?.commission_pct ?? 40;
+            if (role === 'Barbero') pct = app.services?.commission_barber ?? 40;
+            else if (role === 'Asistente de Lavado') pct = app.services?.commission_washer ?? 10;
+            else if (role === 'Caja') pct = app.services?.commission_cashier ?? 0;
+            else if (role === 'Recepcionista') pct = app.services?.commission_receptionist ?? 0;
+            else pct = app.staff?.commission_pct ?? 40;
 
             const comm = grossBase * (pct / 100);
-            const prodComm = 0; // Products belong 100% to the shop
-            const tipVal = tips.filter(t => t.staffId === selectedApp.staff_id).reduce((acc, t) => acc + Number(t.amount || 0), 0);
+            const tipVal = tips.filter(t => t.staffId === app.staff_id).reduce((acc, t) => acc + Number(t.amount || 0), 0);
 
-            involved.push({
-              staffId: selectedApp.staff_id,
-              name: selectedApp.staff?.name || 'Barbero',
-              role: selectedApp.staff?.role || 'Barbero',
-              commissionEarned: comm,
-              commissionBs: comm * fixedRate,
-              productCommissionEarned: prodComm,
-              productCommissionBs: prodComm * fixedRate,
-              tip: tipVal,
-              tipBs: tipVal * fixedRate
-            });
-          }
+            const existing = involved.find(i => i.staffId === app.staff_id);
+            if (existing) {
+              existing.commissionEarned += comm;
+              existing.commissionBs += comm * fixedRate;
+            } else {
+              involved.push({
+                staffId: app.staff_id,
+                name: app.staff?.name || 'Barbero',
+                role: app.staff?.role || 'Barbero',
+                commissionEarned: comm,
+                commissionBs: comm * fixedRate,
+                productCommissionEarned: 0,
+                productCommissionBs: 0,
+                tip: tipVal,
+                tipBs: tipVal * fixedRate
+              });
+            }
+          });
 
-          if (didWash && selectedWasherId) {
+          if (washCount > 0 && selectedWasherId) {
+            const washCommission = washCount * washRate;
             const existing = involved.find(i => i.staffId === selectedWasherId);
             if (existing) {
-              existing.commissionEarned += washRate;
+              existing.commissionEarned += washCommission;
+              existing.commissionBs += washCommission * fixedRate;
             } else {
               const tipValW = tips.filter(t => t.staffId === selectedWasherId).reduce((acc, t) => acc + Number(t.amount || 0), 0);
               involved.push({
                 staffId: selectedWasherId,
                 name: washer?.name || 'Asistente',
                 role: washer?.role || 'Asistente de Lavado',
-                commissionEarned: washRate,
-                commissionBs: washRate * fixedRate,
+                commissionEarned: washCommission,
+                commissionBs: washCommission * fixedRate,
                 productCommissionEarned: 0,
                 tip: tipValW,
                 tipBs: tipValW * fixedRate
@@ -371,17 +427,13 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   };
 
   const handleAddService = (service) => {
-    if (!selectedApp) {
-      if (!selectedClient) {
-        showToast("Por favor, identifica al cliente primero en la barra superior.", "warning");
-        return;
-      }
-      setSelectedServiceForBarber(service);
-      setShowServiceModal(false);
-      setShowBarberModal(true);
-    } else {
-      showToast("Para añadir otro servicio, genéralo desde Recepción.", "warning");
+    if (!selectedApp && !selectedClient) {
+      showToast("Por favor, identifica al cliente primero en la barra superior.", "warning");
+      return;
     }
+    setSelectedServiceForBarber(service);
+    setShowServiceModal(false);
+    setShowBarberModal(true);
   };
 
   const handleConfirmServiceBarber = async (barberId) => {
@@ -389,8 +441,14 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       setLoading(true);
       setShowBarberModal(false);
       
+      const clientId = selectedClient?.id || selectedApp?.client_id;
+      if (!clientId) {
+        showToast("Error: No hay cliente seleccionado", "error");
+        return;
+      }
+
       const newApp = await dataService.createAppointment({
-        client_id: selectedClient.id,
+        client_id: clientId,
         service_id: selectedServiceForBarber.id,
         staff_id: barberId,
         status: 'Por Pagar',
@@ -399,14 +457,20 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       
       await loadData();
       const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
-      const fullyLoadedApp = updatedApps.find(a => a.id === newApp.id);
       
-      if (fullyLoadedApp) {
-        setIsDirectSale(false);
-        setSelectedApp(fullyLoadedApp);
+      if (selectedApp) {
+        const currentAppResel = updatedApps.find(a => a.id === selectedApp.id);
+        if (currentAppResel) setSelectedApp(currentAppResel);
         showToast("Servicio añadido y barbero asignado.");
       } else {
-        showToast("Cita creada. Selecciona el servicio en la lista.");
+        const fullyLoadedApp = updatedApps.find(a => a.id === newApp.id);
+        if (fullyLoadedApp) {
+          setIsDirectSale(false);
+          setSelectedApp(fullyLoadedApp);
+          showToast("Servicio añadido y barbero asignado.");
+        } else {
+          showToast("Cita creada. Selecciona el servicio en la lista.");
+        }
       }
       setSelectedServiceForBarber(null);
     } catch (e) {
@@ -423,13 +487,23 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     setShowBarberModal(true);
   };
 
+  const handleOpenChangeBundledBarber = (app) => {
+    setActiveAppForBarberChange(app);
+    setIsChangingBarber(true);
+    setShowBarberModal(true);
+  };
+
   const handleChangeBarber = async (barberId) => {
+    const appToChange = activeAppForBarberChange || selectedApp;
+    if (!appToChange) return;
+
     try {
       setLoading(true);
       setShowBarberModal(false);
       setIsChangingBarber(false);
+      setActiveAppForBarberChange(null);
       
-      await dataService.updateAppointment(selectedApp.id, { staff_id: barberId });
+      await dataService.updateAppointment(appToChange.id, { staff_id: barberId });
       showToast("Barbero actualizado correctamente");
       await loadData();
       
@@ -444,30 +518,39 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     }
   };
 
-  const handleRemoveService = () => {
-    if (!selectedApp) return;
+  const handleRemoveBundledService = (app) => {
+    if (!app) return;
     
     setDialog({
       isOpen: true,
       title: "Eliminar Servicio",
-      message: "¿Seguro que deseas eliminar el servicio de esta cita? Se recalculará el total.",
+      message: `¿Seguro que deseas eliminar el servicio "${app.services?.name}" de esta cita?`,
       type: "confirm",
       onConfirm: async () => {
         setDialog(prev => ({ ...prev, isOpen: false }));
         try {
           setLoading(true);
           
-          await dataService.updateAppointment(selectedApp.id, { 
+          await dataService.updateAppointment(app.id, { 
             service_id: null,
-            total_price: Math.max(0, (selectedApp.total_price || 0) - (selectedApp.services?.price || 0))
+            total_price: Math.max(0, (app.total_price || 0) - (app.services?.price || 0))
           });
           
           showToast("Servicio eliminado de la cita.");
           await loadData();
           
           const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
-          const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
-          setSelectedApp(updatedSelected);
+          const currentAppResel = updatedApps.find(a => a.id === selectedApp.id);
+          if (currentAppResel) {
+            setSelectedApp(currentAppResel);
+          } else {
+            const nextApp = updatedApps.find(a => a.client_id === selectedApp.client_id);
+            if (nextApp) {
+              setSelectedApp(nextApp);
+            } else {
+              setSelectedApp(null);
+            }
+          }
         } catch (e) {
           console.error(e);
           showToast("Error al eliminar el servicio", "error");
@@ -724,24 +807,9 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     {selectedApp ? (
                       <>
                         {selectedApp.clients.name} 
-                        {selectedApp.services?.name ? ` • ${selectedApp.services.name}` : ''}
-                        {' • '}
-                        <span 
-                          onClick={handleOpenChangeBarber}
-                          style={{ 
-                            color: 'var(--gold-primary)', 
-                            fontWeight: '700', 
-                            cursor: 'pointer',
-                            textDecoration: 'underline',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                          title="Click para cambiar barbero"
-                        >
-                          {selectedApp.staff?.name || 'Caja'}
-                          <Edit3 size={12} />
-                        </span>
+                        {bundledApps.length > 0 && bundledApps.map(a => a.services?.name).filter(Boolean).length > 0 ? (
+                          ` • ${bundledApps.map(a => a.services?.name).filter(Boolean).join(' + ')}`
+                        ) : ''}
                       </>
                     ) : (
                       <>
@@ -817,24 +885,44 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px', padding: '24px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
-                {selectedApp && selectedApp.services && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <button 
-                        onClick={handleRemoveService} 
-                        style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}
-                        title="Eliminar servicio"
-                      >
-                        [X]
-                      </button>
-                      Servicio: {selectedApp.services.name}
-                    </span>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                      <span style={{ fontWeight: '700' }}>{(servicePrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${servicePrice}</span>
+                {bundledApps.map(app => {
+                  const sPrice = app.services?.price || 0;
+                  return app.services && (
+                    <div key={app.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button 
+                          onClick={() => handleRemoveBundledService(app)} 
+                          style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}
+                          title="Eliminar servicio"
+                        >
+                          [X]
+                        </button>
+                        Servicio: {app.services.name}
+                        {' • '}
+                        <span 
+                          onClick={() => handleOpenChangeBundledBarber(app)}
+                          style={{ 
+                            color: 'var(--gold-primary)', 
+                            fontWeight: '700', 
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title="Click para cambiar barbero de este servicio"
+                        >
+                          {app.staff?.name?.split(' ')[0] || 'Caja'}
+                          <Edit3 size={10} />
+                        </span>
+                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                        <span style={{ fontWeight: '700' }}>{(sPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${sPrice}</span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })}
                 
                 {cart.map(p => (
                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -887,8 +975,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                 ))}
 
                 {/* Washing Section */}
-                {(selectedApp?.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || 
-                  selectedApp?.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'))) && (
+                {washEligibleCount > 0 && (
                   <div className="glass-card animate-slide-up" style={{ padding: '24px', borderRadius: '24px', marginBottom: '24px', border: '1px solid rgba(10,132,255,0.1)', background: 'rgba(10,132,255,0.02)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -896,29 +983,35 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           <Droplets size={20} />
                         </div>
                         <div>
-                          <h4 style={{ fontSize: '15px', fontWeight: '800', color: 'white' }}>¿Se realizó el lavado?</h4>
-                          <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Asigna el costo del lavado a la asistente.</p>
+                          <h4 style={{ fontSize: '15px', fontWeight: '800', color: 'white' }}>Lavados de Cabello</h4>
+                          <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Selecciona la cantidad de lavados realizados.</p>
                         </div>
                       </div>
-                      <button 
-                        onClick={() => setDidWash(!didWash)}
-                        style={{ 
-                          padding: '8px 24px', 
-                          borderRadius: '12px', 
-                          border: 'none', 
-                          backgroundColor: didWash ? '#0a84ff' : 'rgba(255,255,255,0.05)',
-                          color: didWash ? 'white' : 'var(--text-muted)',
-                          fontWeight: '900',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          transition: '0.3s'
-                        }}
-                      >
-                        {didWash ? 'SÍ' : 'NO'}
-                      </button>
+                      
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {Array.from({ length: washEligibleCount + 1 }).map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setWashCount(idx)}
+                            style={{
+                              padding: '8px 16px',
+                              borderRadius: '10px',
+                              border: 'none',
+                              backgroundColor: washCount === idx ? '#0a84ff' : 'rgba(255,255,255,0.05)',
+                              color: washCount === idx ? 'white' : 'var(--text-muted)',
+                              fontWeight: '900',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              transition: '0.3s'
+                            }}
+                          >
+                            {idx} {idx === 1 ? 'lavado' : 'lavados'}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
-                    {didWash && (
+                    {washCount > 0 && (
                       <div className="animate-fade-in">
                         <select 
                           value={selectedWasherId}
@@ -929,8 +1022,6 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           {allStaff
                             .filter(s => s.role?.includes('Asistente de Lavado'))
                             .map(s => {
-                              // We simulate availability: if there's only 1, she's always available for this checkout.
-                              // Since we don't track real-time washer assignment during 'En Silla', we show them as Disponible.
                               return (
                                 <option key={s.id} value={s.id}>
                                   {s.name} (${s.washing_rate || 0}/wash) - Disponible

@@ -668,17 +668,22 @@ export const dataService = {
 
   // Final Checkout Logic
   async processFinalPayment(paymentRecord) {
-    // 1. Mark appointment as completed (if exists)
-    if (paymentRecord.appointmentId) {
+    // 1. Mark appointments as completed
+    if (paymentRecord.appointmentIds && paymentRecord.appointmentIds.length > 0) {
+      for (const appId of paymentRecord.appointmentIds) {
+        await this.updateAppointmentStatus(appId, 'Completado');
+      }
+    } else if (paymentRecord.appointmentId) {
       await this.updateAppointmentStatus(paymentRecord.appointmentId, 'Completado');
     }
 
     // 2. Register commissioners (Staff involved)
     if (paymentRecord.staffInvolved && paymentRecord.staffInvolved.length > 0) {
+      const primaryAppId = paymentRecord.appointmentId || paymentRecord.appointmentIds?.[0] || null;
       const staffRecords = paymentRecord.staffInvolved
         .filter(s => s.staffId) // Only if there is a staff member
         .map(s => ({
-          appointment_id: paymentRecord.appointmentId || null,
+          appointment_id: primaryAppId,
           staff_id: s.staffId,
           commission_earned: s.commissionEarned || 0,
           product_commission: s.productCommissionEarned || 0,
