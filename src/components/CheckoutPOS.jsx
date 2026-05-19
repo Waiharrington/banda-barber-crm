@@ -71,6 +71,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   // Dialog State
   const [dialog, setDialog] = useState({ isOpen: false, type: 'alert', title: '', message: '', onConfirm: null });
   const [editingExtraPriceId, setEditingExtraPriceId] = useState(null);
+  const [isChangingBarber, setIsChangingBarber] = useState(false);
 
   const handleUpdateExtraPrice = async (extraId, newPrice) => {
     try {
@@ -416,6 +417,62 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     }
   };
 
+  const handleOpenChangeBarber = () => {
+    if (!selectedApp) return;
+    setIsChangingBarber(true);
+    setShowBarberModal(true);
+  };
+
+  const handleChangeBarber = async (barberId) => {
+    try {
+      setLoading(true);
+      setShowBarberModal(false);
+      setIsChangingBarber(false);
+      
+      await dataService.updateAppointment(selectedApp.id, { staff_id: barberId });
+      showToast("Barbero actualizado correctamente");
+      await loadData();
+      
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
+      const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
+      setSelectedApp(updatedSelected);
+    } catch (e) {
+      console.error(e);
+      showToast("Error al cambiar de barbero", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveService = async () => {
+    if (!selectedApp) return;
+    
+    if (!window.confirm("¿Seguro que deseas eliminar el servicio de esta cita?")) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      await dataService.updateAppointment(selectedApp.id, { 
+        service_id: null,
+        total_price: Math.max(0, (selectedApp.total_price || 0) - (selectedApp.services?.price || 0))
+      });
+      
+      showToast("Servicio eliminado de la cita.");
+      await loadData();
+      
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
+      const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
+      setSelectedApp(updatedSelected);
+    } catch (e) {
+      console.error(e);
+      showToast("Error al eliminar el servicio", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDirectSaleSearchInput = (val) => {
     setDirectSaleIdSearch(val);
     if (val.length >= 2) {
@@ -660,7 +717,27 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   <h3 style={{ fontSize: '24px', fontWeight: '900' }}>{selectedApp ? 'Resumen de Cobro' : 'Venta Directa'}</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
                     {selectedApp ? (
-                      <>{selectedApp.clients.name} • {selectedApp.services?.name || 'Venta Directa'} • <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>{selectedApp.staff?.name || 'Caja'}</span></>
+                      <>
+                        {selectedApp.clients.name} 
+                        {selectedApp.services?.name ? ` • ${selectedApp.services.name}` : ''}
+                        {' • '}
+                        <span 
+                          onClick={handleOpenChangeBarber}
+                          style={{ 
+                            color: 'var(--gold-primary)', 
+                            fontWeight: '700', 
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title="Click para cambiar barbero"
+                        >
+                          {selectedApp.staff?.name || 'Caja'}
+                          <Edit3 size={12} />
+                        </span>
+                      </>
                     ) : (
                       <>
                         {selectedClient ? (
@@ -735,9 +812,18 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px', padding: '24px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
-                {selectedApp && (
+                {selectedApp && selectedApp.services && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>Servicio: {selectedApp.services?.name}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button 
+                        onClick={handleRemoveService} 
+                        style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}
+                        title="Eliminar servicio"
+                      >
+                        [X]
+                      </button>
+                      Servicio: {selectedApp.services.name}
+                    </span>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
                       <span style={{ fontWeight: '700' }}>{(servicePrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${servicePrice}</span>
@@ -1117,16 +1203,20 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
           <div className="glass-card animate-scale-in" style={{ width: '100%', maxWidth: '400px', borderRadius: '32px', padding: '32px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontWeight: '900', fontSize: '20px' }}>Seleccionar Barbero</h2>
-              <button onClick={() => setShowBarberModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+              <button onClick={() => { setShowBarberModal(false); setIsChangingBarber(false); }} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
             </div>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '13px' }}>
-              Selecciona el barbero al que se le asignará la comisión por el servicio <strong>{selectedServiceForBarber?.name}</strong>.
+              {isChangingBarber ? (
+                "Selecciona el nuevo barbero para esta cita."
+              ) : (
+                <>Selecciona el barbero al que se le asignará la comisión por el servicio <strong>{selectedServiceForBarber?.name}</strong>.</>
+              )}
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', maxHeight: '400px', overflowY: 'auto', paddingRight: '8px' }}>
               {allStaff.filter(s => s.role?.includes('Barbero')).map(barber => (
                 <button 
                   key={barber.id} 
-                  onClick={() => handleConfirmServiceBarber(barber.id)} 
+                  onClick={() => isChangingBarber ? handleChangeBarber(barber.id) : handleConfirmServiceBarber(barber.id)} 
                   style={{ padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }} 
                   className="hover-item"
                 >
