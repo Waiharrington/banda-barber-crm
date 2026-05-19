@@ -442,22 +442,6 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           TRANSACCIONES
         </button>
         <button 
-          onClick={() => setActiveTab('analysis')}
-          style={{ 
-            padding: '12px 20px', 
-            background: 'none', 
-            border: 'none', 
-            color: activeTab === 'analysis' ? 'var(--gold-primary)' : 'var(--text-secondary)',
-            fontWeight: '800',
-            fontSize: '14px',
-            cursor: 'pointer',
-            borderBottom: activeTab === 'analysis' ? '2px solid var(--gold-primary)' : 'none',
-            transition: '0.2s'
-          }}
-        >
-          RENTABILIDAD Y OCUPACIÓN
-        </button>
-        <button 
           onClick={() => setActiveTab('payroll')}
           style={{ 
             padding: '12px 20px', 
@@ -472,6 +456,22 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           }}
         >
           NÓMINA Y PAGOS
+        </button>
+        <button 
+          onClick={() => setActiveTab('analysis')}
+          style={{ 
+            padding: '12px 20px', 
+            background: 'none', 
+            border: 'none', 
+            color: activeTab === 'analysis' ? 'var(--gold-primary)' : 'var(--text-secondary)',
+            fontWeight: '800',
+            fontSize: '14px',
+            cursor: 'pointer',
+            borderBottom: activeTab === 'analysis' ? '2px solid var(--gold-primary)' : 'none',
+            transition: '0.2s'
+          }}
+        >
+          RENTABILIDAD Y OCUPACIÓN
         </button>
       </div>
 
