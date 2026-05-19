@@ -290,7 +290,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
       // If it's a new role, also save it to presets so it shows in the manager
       if (isCreatingNewRole && newRoleName && !allRolePresets[newRoleName]) {
-        handleSaveCustomRole(newRoleName, formData.permissions);
+        await handleSaveCustomRole(newRoleName, formData.permissions);
       }
 
       const submissionData = {
