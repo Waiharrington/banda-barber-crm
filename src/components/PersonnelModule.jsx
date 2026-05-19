@@ -246,13 +246,13 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     try {
       setLoading(true);
       
-      // Construct role string: Role1, Role2|perm1,perm2...
-      const roleNames = isCreatingNewRole ? [...formData.roles, newRoleName] : formData.roles;
-      if (roleNames.length === 0) {
-        showToast('Por favor selecciona al menos un rol.', 'error');
+      // Construct role string (Single selection format): Role|perm1,perm2...
+      const roleNames = isCreatingNewRole ? [newRoleName] : formData.roles;
+      if (roleNames.length === 0 || !roleNames[0]) {
+        showToast('Por favor selecciona un rol.', 'error');
         return;
       }
-      const finalRole = `${roleNames.join(', ')}|${formData.permissions.join(',')}`;
+      const finalRole = `${roleNames[0]}|${formData.permissions.join(',')}`;
 
       // If it's a new role, also save it to presets so it shows in the manager
       if (isCreatingNewRole && newRoleName && !allRolePresets[newRoleName]) {
@@ -415,19 +415,11 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         <div 
                           key={r}
                           onClick={() => {
-                            const isSelected = formData.roles.includes(r);
-                            let newRoles = isSelected 
-                              ? formData.roles.filter(x => x !== r)
-                              : [...formData.roles, r];
-                            
-                            // If we click a new role, we add its permissions
-                            let newPerms = [...formData.permissions];
-                            if (!isSelected) {
-                              const rolePerms = allRolePresets[r] || [];
-                              newPerms = Array.from(new Set([...newPerms, ...rolePerms]));
-                            }
-
-                            setFormData({ ...formData, roles: newRoles, permissions: newPerms });
+                            // Single selection: turn off custom creation and set only this role & its permissions
+                            setIsCreatingNewRole(false);
+                            setNewRoleName('');
+                            const newPerms = allRolePresets[r] || [];
+                            setFormData({ ...formData, roles: [r], permissions: newPerms });
                           }}
                           style={{
                             padding: '8px 14px',
@@ -435,8 +427,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                             fontSize: '12px',
                             fontWeight: '700',
                             cursor: 'pointer',
-                            backgroundColor: formData.roles.includes(r) ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)',
-                            color: formData.roles.includes(r) ? 'black' : 'white',
+                            backgroundColor: formData.roles.includes(r) && !isCreatingNewRole ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)',
+                            color: formData.roles.includes(r) && !isCreatingNewRole ? 'black' : 'white',
                             border: '1px solid rgba(255,255,255,0.1)',
                             transition: '0.2s'
                           }}
@@ -446,7 +438,10 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       ))
                     }
                     <div 
-                      onClick={() => setIsCreatingNewRole(true)}
+                      onClick={() => {
+                        setIsCreatingNewRole(true);
+                        setFormData({ ...formData, roles: [] }); // Clear selected role when creating a custom one
+                      }}
                       style={{
                         padding: '8px 14px',
                         borderRadius: '10px',
