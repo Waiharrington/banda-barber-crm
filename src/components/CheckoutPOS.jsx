@@ -558,7 +558,10 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <Scissors size={12} /> {app.services?.name || 'Venta de Productos'} • <span style={{ fontWeight: '600' }}>{app.staff?.name?.split(' ')[0] || 'Caja'}</span>
                       </div>
-                      <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>${app.services?.price || app.total_price || 0}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                        <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>{((app.services?.price || app.total_price || 0) * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: ${app.services?.price || app.total_price || 0}</span>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -733,19 +736,25 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px', padding: '24px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
                 {selectedApp && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>Servicio: {selectedApp.services?.name}</span>
-                    <span style={{ fontWeight: '700' }}>${servicePrice}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                      <span style={{ fontWeight: '700' }}>{(servicePrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${servicePrice}</span>
+                    </div>
                   </div>
                 )}
                 
                 {cart.map(p => (
-                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <button onClick={() => setCart(cart.filter(item => item.id !== p.id))} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}>[X]</button>
                       {p.name} (x{p.quantity})
                     </span>
-                    <span>${(p.price * p.quantity).toFixed(2)}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                      <span style={{ fontWeight: '700' }}>{(p.price * p.quantity * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${(p.price * p.quantity).toFixed(2)}</span>
+                    </div>
                   </div>
                 ))}
 
@@ -775,7 +784,10 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           onMouseOver={(ev) => ev.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
                           onMouseOut={(ev) => ev.currentTarget.style.backgroundColor = 'transparent'}
                         >
-                          <span style={{ fontWeight: '700' }}>${extra.price}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                            <span style={{ fontWeight: '700' }}>{(extra.price * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${extra.price}</span>
+                          </div>
                           <Edit3 size={10} color="var(--gold-primary)" style={{ opacity: 0.6 }} />
                         </div>
                       )}
@@ -905,8 +917,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '16px' }}>
                   <span style={{ fontSize: '18px', fontWeight: '900' }}>TOTAL A PAGAR</span>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '32px', fontWeight: '950', color: 'var(--gold-primary)' }}>${formatCurrency(totalUsd)}</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>≈ {formatCurrency(totalBs)} BS</div>
+                    <div style={{ fontSize: '32px', fontWeight: '950', color: 'var(--gold-primary)' }}>{formatCurrency(totalBs)} Bs.</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Ref: ${formatCurrency(totalUsd)}</div>
                   </div>
                 </div>
               </div>
