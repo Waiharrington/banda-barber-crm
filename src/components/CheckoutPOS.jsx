@@ -15,7 +15,8 @@ import {
   Scissors,
   Zap,
   Droplets,
-  Edit3
+  Edit3,
+  XCircle
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -273,6 +274,37 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancelOrder = () => {
+    if (bundledApps.length === 0) return;
+    
+    setDialog({
+      isOpen: true,
+      title: "Cancelar Orden",
+      message: `¿Seguro que deseas cancelar toda la orden de este cliente? Se marcarán los servicios como 'Cancelado'.`,
+      type: "confirm",
+      onConfirm: async () => {
+        setDialog(prev => ({ ...prev, isOpen: false }));
+        try {
+          setLoading(true);
+          
+          for (const app of bundledApps) {
+            await dataService.updateAppointmentStatus(app.id, 'Cancelado');
+          }
+          
+          showToast("Orden cancelada correctamente", "success");
+          setSelectedApp(null);
+          setSelectedClient(null);
+          await loadData();
+        } catch (e) {
+          console.error(e);
+          showToast("Error al cancelar la orden", "error");
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   const handleProcessCheckout = async () => {
@@ -1197,14 +1229,41 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                 )}
               </div>
 
-              <button 
-                onClick={handleProcessCheckout}
-                disabled={loading}
-                className="btn-gold" 
-                style={{ width: '100%', height: '64px', borderRadius: '20px', fontSize: '18px', gap: '12px' }}
-              >
-                <CheckCircle size={24} /> FINALIZAR COBRO
-              </button>
+              <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+                <button 
+                  onClick={handleCancelOrder}
+                  disabled={loading}
+                  style={{ 
+                    flex: '1', 
+                    height: '64px', 
+                    borderRadius: '20px', 
+                    fontSize: '16px', 
+                    gap: '10px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(255, 69, 58, 0.1)',
+                    border: '1.5px solid rgba(255, 69, 58, 0.4)',
+                    color: '#ff453a',
+                    fontWeight: '900',
+                    cursor: 'pointer',
+                    transition: '0.3s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255, 69, 58, 0.2)'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255, 69, 58, 0.1)'}
+                >
+                  <XCircle size={22} /> CANCELAR
+                </button>
+
+                <button 
+                  onClick={handleProcessCheckout}
+                  disabled={loading}
+                  className="btn-gold" 
+                  style={{ flex: '2', height: '64px', borderRadius: '20px', fontSize: '18px', gap: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <CheckCircle size={24} /> FINALIZAR COBRO
+                </button>
+              </div>
             </div>
           )}
         </section>
