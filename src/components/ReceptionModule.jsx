@@ -78,7 +78,10 @@ const ReceptionModule = ({ isMobile }) => {
       setServices(s);
       setStaff(st.filter(member => {
         const role = (member.role || 'Barbero').toLowerCase();
-        return role.includes('barber') && !role.includes('asistente') && !role.includes('admin');
+        return (role.includes('barber') || role.includes('asistente')) && 
+               !role.includes('admin') && 
+               !role.includes('recepcionista') && 
+               !role.includes('caja');
       }));
       setActiveAppointments(active);
       setAllExtras(ext || []);
@@ -174,8 +177,8 @@ const ReceptionModule = ({ isMobile }) => {
   };
 
   const handleScheduleClick = () => {
-    if (!selectedClient || selectedServices.length === 0 || !formData.staffId) {
-      showToast("Selecciona cliente, servicio y barbero primero", "warning");
+    if (!selectedClient || (selectedServices.length === 0 && selectedExtras.length === 0) || !formData.staffId) {
+      showToast("Selecciona cliente, servicio/extra y barbero/asistente primero", "warning");
       return;
     }
     setIsScheduleModalOpen(true);
@@ -223,7 +226,7 @@ const ReceptionModule = ({ isMobile }) => {
 
     const hasStaffRequired = selectedServices.length > 0 || selectedExtras.length > 0;
     if (hasStaffRequired && !formData.staffId) {
-      showToast("Selecciona un barbero", "error");
+      showToast("Selecciona un barbero o asistente", "error");
       return;
     }
 
@@ -494,7 +497,7 @@ const ReceptionModule = ({ isMobile }) => {
             )}
 
             <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px' }}>BARBEROS (DISPONIBILIDAD EN VIVO)</label>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px' }}>BARBEROS Y ASISTENTES DISPONIBLES</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '12px' }}>
                 {staff.map(s => {
                   const active = activeAppointments.find(a => a.staff_id === s.id);
@@ -676,7 +679,7 @@ const ReceptionModule = ({ isMobile }) => {
                     ))}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                       <Users size={14} color="var(--text-muted)" />
-                      <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Barbero: <span style={{ color: 'white', fontWeight: '700' }}>{staff.find(s => s.id === formData.staffId)?.name || 'No seleccionado'}</span></span>
+                      <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Asignado: <span style={{ color: 'white', fontWeight: '700' }}>{staff.find(s => s.id === formData.staffId)?.name || 'No seleccionado'}</span></span>
                     </div>
                   </div>
                 </div>
@@ -697,7 +700,7 @@ const ReceptionModule = ({ isMobile }) => {
                         }}
                       >
                         <Zap size={20} fill="currentColor" /> 
-                        {activeAppointments.some(a => a.staff_id === formData.staffId) ? 'BARBERO OCUPADO' : 'INICIAR AHORA'}
+                         {activeAppointments.some(a => a.staff_id === formData.staffId) ? 'PERSONAL OCUPADO' : 'INICIAR AHORA'}
                       </button>
                       
                       {activeAppointments.some(a => a.staff_id === formData.staffId) && (
