@@ -47,6 +47,7 @@ const ReceptionModule = ({ isMobile }) => {
   
   const [activeAppointments, setActiveAppointments] = useState([]);
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+  const [exchangeRate, setExchangeRate] = useState(58); // Default
   
   const [formData, setFormData] = useState({
     serviceId: '',
@@ -63,14 +64,15 @@ const ReceptionModule = ({ isMobile }) => {
 
   const loadData = async () => {
     try {
-      const [c, s, st, active, ext, inv, allApps] = await Promise.all([
+      const [c, s, st, active, ext, inv, allApps, rates] = await Promise.all([
         dataService.getClients(),
         dataService.getServices(),
         dataService.getStaff(),
         dataService.getAppointmentsByState(['En Silla']),
         dataService.getExtras(),
         dataService.getInventory(),
-        dataService.getAppointmentsByState(['Agendado'])
+        dataService.getAppointmentsByState(['Agendado']),
+        dataService.getGlobalRates()
       ]);
       setClients(c);
       setServices(s);
@@ -87,6 +89,13 @@ const ReceptionModule = ({ isMobile }) => {
       
       const today = new Date().toISOString().split('T')[0];
       setUpcomingAppointments(allApps.filter(a => a.scheduled_at?.startsWith(today) || a.created_at?.startsWith(today)));
+
+      if (rates && rates.shop) {
+        setExchangeRate(rates.shop);
+      } else {
+        const bcv = await dataService.getExchangeRates();
+        setExchangeRate(bcv.usd || 58);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -406,9 +415,12 @@ const ReceptionModule = ({ isMobile }) => {
                   {selectedServices.map(s => (
                     <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                       <span style={{ color: 'white', fontWeight: '700' }}>{s.name}</span>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>${s.price}</span>
-                        <button onClick={() => removeService(s.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '14px' }}>&times;</button>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                          <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{(s.price * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: '600' }}>Ref: ${s.price}</span>
+                        </div>
+                        <button onClick={() => toggleService(s.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '14px', marginLeft: '4px' }}>&times;</button>
                       </div>
                     </div>
                   ))}
@@ -436,8 +448,13 @@ const ReceptionModule = ({ isMobile }) => {
                             onMouseOver={(ev) => ev.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
                             onMouseOut={(ev) => ev.currentTarget.style.backgroundColor = 'transparent'}
                           >
-                            <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>${e.customPrice ?? e.price}</span>
-                            <Edit3 size={10} color="var(--gold-primary)" style={{ opacity: 0.6 }} />
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                              <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{((e.customPrice ?? e.price) * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: '600' }}>Ref: ${e.customPrice ?? e.price}</span>
+                                <Edit3 size={8} color="var(--text-muted)" />
+                              </div>
+                            </div>
                           </div>
                         )}
                         <button onClick={() => toggleExtra(e)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', padding: '0 4px' }}>&times;</button>
@@ -447,15 +464,23 @@ const ReceptionModule = ({ isMobile }) => {
                   {selectedProducts.map(p => (
                     <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                       <span style={{ color: '#32d74b' }}>📦 {p.name}</span>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>${p.price}</span>
-                        <button onClick={() => toggleProduct(p)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '14px' }}>&times;</button>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                          <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{(p.price * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: '600' }}>Ref: ${p.price}</span>
+                        </div>
+                        <button onClick={() => toggleProduct(p)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '14px', marginLeft: '4px' }}>&times;</button>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'right', fontWeight: '900', color: 'var(--gold-primary)', fontSize: '18px' }}>
-                  TOTAL: ${selectedServices.reduce((acc, s) => acc + s.price, 0) + selectedExtras.reduce((acc, e) => acc + (e.customPrice ?? e.price), 0) + selectedProducts.reduce((acc, p) => acc + (p.price * p.quantity), 0)}
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'right', fontWeight: '900', color: 'var(--gold-primary)' }}>
+                  <div style={{ fontSize: '18px' }}>
+                    TOTAL: {((selectedServices.reduce((acc, s) => acc + s.price, 0) + selectedExtras.reduce((acc, e) => acc + (e.customPrice ?? e.price), 0) + selectedProducts.reduce((acc, p) => acc + (p.price * p.quantity), 0)) * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    REF: ${selectedServices.reduce((acc, s) => acc + s.price, 0) + selectedExtras.reduce((acc, e) => acc + (e.customPrice ?? e.price), 0) + selectedProducts.reduce((acc, p) => acc + (p.price * p.quantity), 0)}
+                  </div>
                 </div>
               </div>
             )}
