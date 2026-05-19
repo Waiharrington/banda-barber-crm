@@ -317,24 +317,12 @@ const ReceptionModule = ({ isMobile }) => {
 
             {selectedClient ? (
               <div className="animate-scale-in" style={{ padding: '20px', backgroundColor: 'rgba(212,175,55,0.05)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.2)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontWeight: '800', fontSize: '18px' }}>{selectedClient.name}</div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>V-{selectedClient.id_card}</div>
                   </div>
                   <button onClick={() => setSelectedClient(null)} style={{ background: 'none', border: 'none', color: '#ff453a', fontWeight: '800', cursor: 'pointer' }}>Cambiar</button>
-                </div>
-                
-                {/* Technical File Mini View */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '2px' }}>Cabello</div>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--gold-primary)' }}>{selectedClient.hair_type || 'No especificado'}</div>
-                  </div>
-                  <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '2px' }}>Cuero</div>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--gold-primary)' }}>{selectedClient.scalp_type || 'No especificado'}</div>
-                  </div>
                 </div>
               </div>
             ) : (
