@@ -212,6 +212,21 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     }
   };
 
+  const handleStartGroupAppointments = async (apps) => {
+    try {
+      setLoading(true);
+      for (const app of apps) {
+        await dataService.updateAppointmentStatus(app.id, 'En Silla');
+      }
+      showToast("¡Servicios iniciados! El cliente ya está en silla.");
+      loadData();
+    } catch (error) {
+      showToast("Error al iniciar servicios", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const servicePrice = bundledApps.reduce((acc, app) => acc + (app.services?.price || 0), 0);
   const productsTotal = cart.reduce((acc, p) => acc + (p.price * p.quantity), 0);
   const extrasTotal = bundledApps.reduce((acc, app) => acc + (app.appointment_extras?.reduce((subAcc, e) => subAcc + (e.price || 0), 0) || 0), 0);
@@ -636,6 +651,39 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     showToast(`¡Cliente ${newClient.name} registrado y enlazado!`);
   };
 
+  // Group active services (status !== 'Agendado') by client
+  const activeServices = pendingServices.filter(a => a.status !== 'Agendado');
+  const groupedActiveServices = [];
+  activeServices.forEach(app => {
+    const existing = groupedActiveServices.find(g => g.client_id === app.client_id);
+    if (existing) {
+      existing.apps.push(app);
+    } else {
+      groupedActiveServices.push({
+        client_id: app.client_id,
+        client_name: app.clients?.name || 'Cliente',
+        status: app.status,
+        apps: [app]
+      });
+    }
+  });
+
+  // Group scheduled services (status === 'Agendado') by client
+  const scheduledServices = pendingServices.filter(a => a.status === 'Agendado');
+  const groupedScheduledServices = [];
+  scheduledServices.forEach(app => {
+    const existing = groupedScheduledServices.find(g => g.client_id === app.client_id);
+    if (existing) {
+      existing.apps.push(app);
+    } else {
+      groupedScheduledServices.push({
+        client_id: app.client_id,
+        client_name: app.clients?.name || 'Cliente',
+        apps: [app]
+      });
+    }
+  });
+
   if (!rates?.usd && !loading) {
     return (
       <div className="glass-card" style={{ textAlign: 'center', padding: '40px' }}>
@@ -694,7 +742,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                       title: 'Cita Encontrada',
                       message: `El cliente ${scheduledMatch.clients?.name} tiene una cita agendada para hoy. ¿Deseas iniciar su servicio ahora?`,
                       onConfirm: () => {
-                        handleStartAppointment(scheduledMatch.id);
+                        const clientApps = pendingServices.filter(app => app.client_id === scheduledMatch.client_id && app.status === 'Agendado');
+                        handleStartGroupAppointments(clientApps);
                         setDialog({ ...dialog, isOpen: false });
                         setIdSearch('');
                       }
@@ -711,76 +760,93 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {pendingServices.filter(a => a.status !== 'Agendado').length === 0 ? (
+              {groupedActiveServices.length === 0 ? (
                 <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No hay clientes por cobrar.</div>
               ) : (
-                pendingServices.filter(a => a.status !== 'Agendado').map(app => (
-                  <div 
-                    key={app.id} 
-                    onClick={() => setSelectedApp(app)}
-                    style={{ 
-                      padding: '16px', 
-                      borderRadius: '16px', 
-                      border: selectedApp?.id === app.id ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
-                      background: selectedApp?.id === app.id ? 'rgba(212,175,55,0.05)' : 'rgba(255,255,255,0.02)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontWeight: '800' }}>{app.clients.name}</span>
-                      <span style={{ fontSize: '10px', backgroundColor: app.status === 'En Silla' ? 'var(--gold-primary)' : '#4caf50', color: 'black', padding: '2px 8px', borderRadius: '10px', fontWeight: '900' }}>{app.status}</span>
-                    </div>
-                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Scissors size={12} /> {app.services?.name || 'Venta de Productos'} • <span style={{ fontWeight: '600' }}>{app.staff?.name?.split(' ')[0] || 'Caja'}</span>
+                groupedActiveServices.map(group => {
+                  const firstApp = group.apps[0];
+                  const isSelected = selectedApp?.client_id === group.client_id;
+                  const badgeStatus = group.apps.some(a => a.status === 'En Silla') ? 'En Silla' : 'Por Pagar';
+                  const serviceNames = group.apps.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Venta de Productos';
+                  const staffNames = Array.from(new Set(group.apps.map(a => a.staff?.name?.split(' ')[0]).filter(Boolean))).join(', ') || 'Caja';
+                  const totalUsd = group.apps.reduce((acc, a) => acc + (a.services?.price || a.total_price || 0), 0);
+                  
+                  return (
+                    <div 
+                      key={group.client_id} 
+                      onClick={() => setSelectedApp(firstApp)}
+                      style={{ 
+                        padding: '16px', 
+                        borderRadius: '16px', 
+                        border: isSelected ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
+                        background: isSelected ? 'rgba(212,175,55,0.05)' : 'rgba(255,255,255,0.02)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ fontWeight: '800' }}>{group.client_name}</span>
+                        <span style={{ fontSize: '10px', backgroundColor: badgeStatus === 'En Silla' ? 'var(--gold-primary)' : '#4caf50', color: 'black', padding: '2px 8px', borderRadius: '10px', fontWeight: '900' }}>{badgeStatus}</span>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                        <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>{((app.services?.price || app.total_price || 0) * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: ${app.services?.price || app.total_price || 0}</span>
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <Scissors size={12} /> {serviceNames} • <span style={{ fontWeight: '600' }}>{staffNames}</span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                          <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>{(totalUsd * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: ${totalUsd}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
             <div style={{ marginTop: '24px' }}>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>PRÓXIMAS CITAS (AGENDA HOY)</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {pendingServices.filter(a => a.status === 'Agendado').length === 0 ? (
+                {groupedScheduledServices.length === 0 ? (
                   <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.1)', fontSize: '12px', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '16px' }}>No hay más citas para hoy</div>
                 ) : (
-                  pendingServices.filter(a => a.status === 'Agendado').map(app => (
-                    <div 
-                      key={app.id} 
-                      style={{ 
-                        padding: '16px', 
-                        borderRadius: '16px', 
-                        background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid rgba(255,255,255,0.03)',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: '800', fontSize: '14px' }}>{app.clients?.name}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                          {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {app.staff?.name}
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          handleStartAppointment(app.id);
-                          triggerRocket();
+                  groupedScheduledServices.map(group => {
+                    const firstApp = group.apps[0];
+                    const serviceNames = group.apps.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Venta de Productos';
+                    const staffNames = Array.from(new Set(group.apps.map(a => a.staff?.name?.split(' ')[0]).filter(Boolean))).join(', ') || 'Caja';
+                    const timeString = new Date(firstApp.scheduled_at || firstApp.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    
+                    return (
+                      <div 
+                        key={group.client_id} 
+                        style={{ 
+                          padding: '16px', 
+                          borderRadius: '16px', 
+                          background: 'rgba(255,255,255,0.02)',
+                          border: '1px solid rgba(255,255,255,0.03)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
                         }}
-                        style={{ padding: '8px 12px', borderRadius: '10px', background: 'var(--gold-primary)', color: 'black', border: 'none', fontSize: '10px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
                       >
-                        <Zap size={12} /> INICIAR
-                      </button>
-                    </div>
-                  ))
+                        <div style={{ maxWidth: '70%' }}>
+                          <div style={{ fontWeight: '800', fontSize: '14px' }}>{group.client_name}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {timeString} • {serviceNames} • {staffNames}
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            handleStartGroupAppointments(group.apps);
+                            triggerRocket();
+                          }}
+                          className="btn-gold"
+                          style={{ padding: '6px 12px', borderRadius: '10px', fontSize: '11px', fontWeight: '900' }}
+                        >
+                          Iniciar
+                        </button>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
