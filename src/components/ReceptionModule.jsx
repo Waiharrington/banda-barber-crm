@@ -77,11 +77,10 @@ const ReceptionModule = ({ isMobile }) => {
       setClients(c);
       setServices(s);
       setStaff(st.filter(member => {
-        const role = (member.role || 'Barbero').toLowerCase();
-        return (role.includes('barber') || role.includes('asistente')) && 
-               !role.includes('admin') && 
-               !role.includes('recepcionista') && 
-               !role.includes('caja');
+        const roleName = (member.role?.split('|')[0] || 'Barbero').toLowerCase();
+        return !roleName.includes('admin') && 
+               !roleName.includes('recepcionista') && 
+               !roleName.includes('caja');
       }));
       setActiveAppointments(active);
       setAllExtras(ext || []);

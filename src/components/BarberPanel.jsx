@@ -78,11 +78,12 @@ const BarberPanel = ({ isMobile, rates }) => {
     }
   };
 
-  // Auto-select if current user is a barber
+  // Auto-select if current user is a selectable staff member
   useEffect(() => {
     if (staff.length > 0 && user) {
-      const isBarber = user.role === 'Barbero' || user.role?.startsWith('Barbero|');
-      if (isBarber) {
+      const roleName = (user.role || '').toLowerCase();
+      const isSelectableRole = !roleName.includes('admin') && !roleName.includes('recepcionista') && !roleName.includes('caja');
+      if (isSelectableRole) {
         const me = staff.find(s => s.id === user.id);
         if (me) setSelectedBarber(me);
       }
@@ -297,14 +298,16 @@ const BarberPanel = ({ isMobile, rates }) => {
   if (!selectedBarber) {
     return (
       <div className="animate-fade-in" style={{ padding: '40px 20px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '10px' }}>Panel del <span className="text-gold">Barbero</span></h2>
+        <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '10px' }}>Panel de <span className="text-gold">Barberos / Asistentes</span></h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '40px' }}>Selecciona tu perfil para comenzar tu turno.</p>
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '20px', maxWidth: '600px', margin: '0 auto' }}>
           {staff
             .filter(s => {
-              const roleName = s.role?.split('|')[0] || '';
-              return roleName.includes('Barbero') || roleName.includes('Asistente de Lavado');
+              const roleName = (s.role?.split('|')[0] || '').toLowerCase();
+              return !roleName.includes('admin') && 
+                     !roleName.includes('recepcionista') && 
+                     !roleName.includes('caja');
             })
             .map(s => (
             <button 

@@ -1434,18 +1434,23 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div className="glass-card animate-scale-in" style={{ width: '100%', maxWidth: '400px', borderRadius: '32px', padding: '32px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontWeight: '900', fontSize: '20px' }}>Seleccionar Barbero</h2>
+              <h2 style={{ fontWeight: '900', fontSize: '20px' }}>Seleccionar Barbero / Asistente</h2>
               <button onClick={() => { setShowBarberModal(false); setIsChangingBarber(false); }} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
             </div>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '13px' }}>
               {isChangingBarber ? (
-                "Selecciona el nuevo barbero para esta cita."
+                "Selecciona el nuevo barbero o asistente para esta cita."
               ) : (
-                <>Selecciona el barbero al que se le asignará la comisión por el servicio <strong>{selectedServiceForBarber?.name}</strong>.</>
+                <>Selecciona el barbero o asistente al que se le asignará la comisión por el servicio <strong>{selectedServiceForBarber?.name}</strong>.</>
               )}
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', maxHeight: '400px', overflowY: 'auto', paddingRight: '8px' }}>
-              {allStaff.filter(s => s.role?.includes('Barbero')).map(barber => (
+              {allStaff.filter(s => {
+                const roleName = (s.role?.split('|')[0] || '').toLowerCase();
+                return !roleName.includes('admin') && 
+                       !roleName.includes('recepcionista') && 
+                       !roleName.includes('caja');
+              }).map(barber => (
                 <button 
                   key={barber.id} 
                   onClick={() => isChangingBarber ? handleChangeBarber(barber.id) : handleConfirmServiceBarber(barber.id)} 
