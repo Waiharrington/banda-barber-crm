@@ -444,33 +444,38 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     }
   };
 
-  const handleRemoveService = async () => {
+  const handleRemoveService = () => {
     if (!selectedApp) return;
     
-    if (!window.confirm("¿Seguro que deseas eliminar el servicio de esta cita?")) {
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      
-      await dataService.updateAppointment(selectedApp.id, { 
-        service_id: null,
-        total_price: Math.max(0, (selectedApp.total_price || 0) - (selectedApp.services?.price || 0))
-      });
-      
-      showToast("Servicio eliminado de la cita.");
-      await loadData();
-      
-      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
-      const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
-      setSelectedApp(updatedSelected);
-    } catch (e) {
-      console.error(e);
-      showToast("Error al eliminar el servicio", "error");
-    } finally {
-      setLoading(false);
-    }
+    setDialog({
+      isOpen: true,
+      title: "Eliminar Servicio",
+      message: "¿Seguro que deseas eliminar el servicio de esta cita? Se recalculará el total.",
+      type: "confirm",
+      onConfirm: async () => {
+        setDialog(prev => ({ ...prev, isOpen: false }));
+        try {
+          setLoading(true);
+          
+          await dataService.updateAppointment(selectedApp.id, { 
+            service_id: null,
+            total_price: Math.max(0, (selectedApp.total_price || 0) - (selectedApp.services?.price || 0))
+          });
+          
+          showToast("Servicio eliminado de la cita.");
+          await loadData();
+          
+          const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
+          const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
+          setSelectedApp(updatedSelected);
+        } catch (e) {
+          console.error(e);
+          showToast("Error al eliminar el servicio", "error");
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   const handleDirectSaleSearchInput = (val) => {
