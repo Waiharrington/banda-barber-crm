@@ -204,21 +204,55 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     setShowPassword(false);
   };
 
-  const handleSaveCustomRole = (name, perms, oldName) => {
-    const updated = { ...customRolePresets };
-    
-    // If we're renaming, remove the old one
-    if (oldName && oldName !== name) {
-      delete updated[oldName];
-      // If the old one was a default role, we "hide" it by shadowing it with an empty entry or just letting the custom overwrite
-      // Actually, if it was default, it will stay in rolePresets but be shadowed by 'updated' if it has the same name.
-      // If the name changed, we should mark the default as 'hidden' if we wanted to remove it from the list.
+  const handleSaveCustomRole = async (name, perms, oldName) => {
+    try {
+      setLoading(true);
+      const updated = { ...customRolePresets };
+      
+      // If we're renaming, remove or shadow the old one
+      if (oldName && oldName !== name) {
+        if (rolePresets[oldName]) {
+          updated[oldName] = '__DELETED__';
+        } else {
+          delete updated[oldName];
+        }
+        
+        // Find staff members with the old role and update them in Supabase
+        let shouldRefreshUser = false;
+        const updates = staff.map(async (s) => {
+          if (!s.role) return;
+          const parts = s.role.split('|');
+          const roleNames = parts[0].split(', ');
+          if (roleNames.includes(oldName)) {
+            const updatedRoleNames = roleNames.map(r => r === oldName ? name : r).join(', ');
+            const newRole = parts.length > 1 ? `${updatedRoleNames}|${parts[1]}` : updatedRoleNames;
+            
+            if (s.id === user?.id) {
+              shouldRefreshUser = true;
+            }
+            return dataService.updateStaff(s.id, { role: newRole });
+          }
+        }).filter(Boolean);
+        
+        if (updates.length > 0) {
+          await Promise.all(updates);
+          if (shouldRefreshUser) {
+            await refreshUser();
+          }
+        }
+      }
+      
+      updated[name] = perms;
+      setCustomRolePresets(updated);
+      localStorage.setItem('astro_custom_roles', JSON.stringify(updated));
+      showToast(`Rol "${name}" guardado correctamente.`);
+      await fetchStaff();
+    } catch (err) {
+      console.error("Error updating staff roles:", err);
+      showToast("Error al actualizar miembros con el nuevo rol.", "error");
+    } finally {
+      setLoading(false);
     }
-    
-    updated[name] = perms;
-    setCustomRolePresets(updated);
-    localStorage.setItem('astro_custom_roles', JSON.stringify(updated));
-    showToast(`Rol "${name}" guardado correctamente.`);
   };
 
   const handleDeleteCustomRole = (name) => {
