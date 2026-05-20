@@ -972,7 +972,7 @@ const VisitDetailModal = ({ visit, onClose, gallery = [] }) => {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontWeight: '700', fontSize: '14px' }}>${visit.service_price}</div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{servicePriceBs.toLocaleString()} Bs.</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{servicePriceBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
               </div>
             </div>
 
@@ -1004,7 +1004,7 @@ const VisitDetailModal = ({ visit, onClose, gallery = [] }) => {
               <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--gold-primary)', lineHeight: '1' }}>${visit.amount}</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{totalBs.toLocaleString()} Bs.</div>
+              <div style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
               <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>TASA: {visit.exchange_rate} Bs.</div>
             </div>
           </div>

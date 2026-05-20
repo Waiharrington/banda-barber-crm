@@ -425,7 +425,7 @@ const ReceptionModule = ({ isMobile }) => {
                       <span style={{ color: 'white', fontWeight: '700' }}>{s.name}</span>
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                          <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{(s.price * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                          <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{(s.price * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
                           <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: '600' }}>Ref: ${s.price}</span>
                         </div>
                         <button onClick={() => toggleService(s.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '14px', marginLeft: '4px' }}>&times;</button>
@@ -457,7 +457,7 @@ const ReceptionModule = ({ isMobile }) => {
                             onMouseOut={(ev) => ev.currentTarget.style.backgroundColor = 'transparent'}
                           >
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                              <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{((e.customPrice ?? e.price) * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                              <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{((e.customPrice ?? e.price) * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: '600' }}>Ref: ${e.customPrice ?? e.price}</span>
                                 <Edit3 size={8} color="var(--text-muted)" />
@@ -474,7 +474,7 @@ const ReceptionModule = ({ isMobile }) => {
                       <span style={{ color: '#32d74b' }}>📦 {p.name}</span>
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                          <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{(p.price * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                          <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{(p.price * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
                           <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: '600' }}>Ref: ${p.price}</span>
                         </div>
                         <button onClick={() => toggleProduct(p)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '14px', marginLeft: '4px' }}>&times;</button>
@@ -484,7 +484,7 @@ const ReceptionModule = ({ isMobile }) => {
                 </div>
                 <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'right', fontWeight: '900', color: 'var(--gold-primary)' }}>
                   <div style={{ fontSize: '18px' }}>
-                    TOTAL: {((selectedServices.reduce((acc, s) => acc + s.price, 0) + selectedExtras.reduce((acc, e) => acc + (e.customPrice ?? e.price), 0) + selectedProducts.reduce((acc, p) => acc + (p.price * p.quantity), 0)) * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.
+                    TOTAL: {((selectedServices.reduce((acc, s) => acc + s.price, 0) + selectedExtras.reduce((acc, e) => acc + (e.customPrice ?? e.price), 0) + selectedProducts.reduce((acc, p) => acc + (p.price * p.quantity), 0)) * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
                     REF: ${selectedServices.reduce((acc, s) => acc + s.price, 0) + selectedExtras.reduce((acc, e) => acc + (e.customPrice ?? e.price), 0) + selectedProducts.reduce((acc, p) => acc + (p.price * p.quantity), 0)}
@@ -849,7 +849,7 @@ const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, on
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ fontSize: '14px', fontWeight: '700', color: isSelected ? 'var(--gold-primary)' : 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: '10px' }}>
-                        <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--gold-primary)' }}>{(item.price * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</div>
+                        <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--gold-primary)' }}>{(item.price * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>Ref: ${item.price}</div>
                       </div>
                     </div>

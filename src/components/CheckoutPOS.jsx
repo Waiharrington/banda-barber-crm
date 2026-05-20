@@ -793,7 +793,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           <Scissors size={12} /> {serviceNames} • <span style={{ fontWeight: '600' }}>{staffNames}</span>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                          <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>{(totalUsd * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                          <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>{(totalUsd * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
                           <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: ${totalUsd}</span>
                         </div>
                       </div>
@@ -1017,7 +1017,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
                         {app.services ? (
                           <>
-                            <span style={{ fontWeight: '700' }}>{(sPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                            <span style={{ fontWeight: '700' }}>{(sPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
                             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${sPrice}</span>
                           </>
                         ) : (
@@ -1035,7 +1035,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                       {p.name} (x{p.quantity})
                     </span>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                      <span style={{ fontWeight: '700' }}>{(p.price * p.quantity * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                      <span style={{ fontWeight: '700' }}>{(p.price * p.quantity * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${(p.price * p.quantity).toFixed(2)}</span>
                     </div>
                   </div>
@@ -1073,7 +1073,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           onMouseOut={(ev) => ev.currentTarget.style.backgroundColor = 'transparent'}
                         >
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                            <span style={{ fontWeight: '700' }}>{(extra.price * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs.</span>
+                            <span style={{ fontWeight: '700' }}>{(extra.price * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
                             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${extra.price}</span>
                           </div>
                           <Edit3 size={10} color="var(--gold-primary)" style={{ opacity: 0.6 }} />

@@ -509,7 +509,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>TARIFA POR LAVADO ($)</label>
                       {formData.washing_rate > 0 && (
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
-                          ≈ {(formData.washing_rate * exchangeRate).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs.
+                          ≈ {(formData.washing_rate * exchangeRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs.
                         </span>
                       )}
                     </div>
