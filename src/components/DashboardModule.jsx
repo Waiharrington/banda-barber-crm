@@ -76,17 +76,10 @@ const DashboardModule = ({
   dbData, 
   handleSeedData, 
   rates, 
-  bcvRates,
-  isCustomRate,
-  setIsCustomRate,
-  customRates,
-  setCustomRates,
   onNavigate
 }) => {
   const { user } = useAuth();
   const [quoteIndex, setQuoteIndex] = useState(0);
-  const [isEditingRates, setIsEditingRates] = useState(false);
-  const [tempRates, setTempRates] = useState({ ...customRates });
   const { showToast } = useNotifs();
   
   const formatCurrency = (amount) => {

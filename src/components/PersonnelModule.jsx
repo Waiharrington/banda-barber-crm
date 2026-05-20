@@ -131,12 +131,10 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
   const loadRates = async () => {
     try {
-      const rates = await dataService.getGlobalRates();
-      if (rates.shop) {
-        setExchangeRate(rates.shop);
-      } else {
-        const bcv = await dataService.getExchangeRates();
-        setExchangeRate(bcv.usd || 58);
+      const ratesData = await dataService.getExchangeRates();
+      if (ratesData) {
+        const activeType = localStorage.getItem('astro_active_rate') || 'usdt';
+        setExchangeRate(activeType === 'bcv' ? (ratesData.bcv || 36.5) : (ratesData.usdt || 43.2));
       }
     } catch (err) {
       console.error("Error loading rates:", err);

@@ -64,7 +64,7 @@ const ReceptionModule = ({ isMobile }) => {
 
   const loadData = async () => {
     try {
-      const [c, s, st, active, ext, inv, allApps, rates] = await Promise.all([
+      const [c, s, st, active, ext, inv, allApps, ratesData] = await Promise.all([
         dataService.getClients(),
         dataService.getServices(),
         dataService.getStaff(),
@@ -72,7 +72,7 @@ const ReceptionModule = ({ isMobile }) => {
         dataService.getExtras(),
         dataService.getInventory(),
         dataService.getAppointmentsByState(['Agendado']),
-        dataService.getGlobalRates()
+        dataService.getExchangeRates()
       ]);
       setClients(c);
       setServices(s);
@@ -92,11 +92,9 @@ const ReceptionModule = ({ isMobile }) => {
       const today = new Date().toISOString().split('T')[0];
       setUpcomingAppointments(allApps.filter(a => a.scheduled_at?.startsWith(today) || a.created_at?.startsWith(today)));
 
-      if (rates && rates.shop) {
-        setExchangeRate(rates.shop);
-      } else {
-        const bcv = await dataService.getExchangeRates();
-        setExchangeRate(bcv.usd || 58);
+      if (ratesData) {
+        const activeType = localStorage.getItem('astro_active_rate') || 'usdt';
+        setExchangeRate(activeType === 'bcv' ? (ratesData.bcv || 36.5) : (ratesData.usdt || 43.2));
       }
     } catch (err) {
       console.error(err);

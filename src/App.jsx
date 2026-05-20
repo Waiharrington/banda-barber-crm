@@ -10,7 +10,6 @@ import {
   Wallet, 
   Settings,
   Calendar,
-  Edit3,
   X,
   History
 } from 'lucide-react';
@@ -51,57 +50,48 @@ function App() {
   const [isTabLoading, setIsTabLoading] = useState(false);
   const [tabParams, setTabParams] = useState({});
   const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
-  const [isEditingRates, setIsEditingRates] = useState(false);
   const [isReceptionModalOpen, setIsReceptionModalOpen] = useState(false);
-  const [tempRates, setTempRates] = useState({ shop: 0, usdt: 0 });
   
   // Multi-currency State
   const [currency, setCurrency] = useState('USD'); 
-  const [rates, setRates] = useState({ usd: 0, updated_at: null });
+  const [rates, setRates] = useState({ bcv: 0, usdt: 0, updated_at: null });
   
-  // Custom Rates State (Persisted)
-  const [isCustomRate, setIsCustomRate] = useState(true); // Always custom now as shop rate is manual
-  const [customRates, setCustomRates] = useState(() => {
-    const saved = localStorage.getItem('astro_custom_rates');
-    return saved ? JSON.parse(saved) : { bcv: 49.04, usdt: 58.50, shop: 58.00 };
+  // Active Rate Toggle (BCV or USDT) - persisted
+  const [activeRateType, setActiveRateType] = useState(() => {
+    return localStorage.getItem('astro_active_rate') || 'usdt';
   });
 
   // Calculate Exchange Gap
-  const bcvVal = rates.usd || customRates.bcv || 49.04;
-  const usdtVal = customRates.usdt || 58.50;
-  const exchangeGap = ((usdtVal - bcvVal) / bcvVal) * 100;
+  const exchangeGap = rates.bcv > 0 ? ((rates.usdt - rates.bcv) / rates.bcv) * 100 : 0;
 
-  // Effective Rates Logic - Use the SHOP rate for all calculations
+  // Effective Rates Logic - Use selected rate for all Bs calculations
   const effectiveRates = { 
-    usd: customRates.shop || 58.00, 
-    bcv: bcvVal,
-    usdt: usdtVal,
+    usd: activeRateType === 'bcv' ? rates.bcv : rates.usdt, 
+    bcv: rates.bcv,
+    usdt: rates.usdt,
     gap: exchangeGap,
-    updated_at: 'Manual' 
+    activeType: activeRateType,
+    updated_at: rates.updated_at 
   };
 
   const handleRefresh = () => setRefreshKey(prev => prev + 1);
 
-  // Auto-Sync BCV and Global Rates on Mount
+  // Auto-Sync BCV and USDT Rates on Mount + every 10 min
   useEffect(() => {
     const syncRates = async () => {
-      const [bcvData, globalRates] = await Promise.all([
-        dataService.getExchangeRates(),
-        dataService.getGlobalRates()
-      ]);
-      
-      if (bcvData) setRates(bcvData);
-      if (globalRates) {
-        setCustomRates(prev => ({ 
-          ...prev, 
-          shop: globalRates.shop, 
-          usdt: globalRates.usdt,
-          bcv: bcvData?.usd || prev.bcv
-        }));
-      }
+      const ratesData = await dataService.getExchangeRates();
+      if (ratesData) setRates(ratesData);
     };
     syncRates();
+    const interval = setInterval(syncRates, 10 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
+
+  // Persist active rate type
+  const handleSetActiveRateType = (type) => {
+    setActiveRateType(type);
+    localStorage.setItem('astro_active_rate', type);
+  };
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
@@ -312,17 +302,6 @@ function App() {
             dbData={dbData} 
             handleSeedData={handleSeedData} 
             rates={effectiveRates}
-            bcvRates={rates}
-            isCustomRate={isCustomRate}
-            setIsCustomRate={(val) => {
-              setIsCustomRate(val);
-              localStorage.setItem('astro_is_custom_rate', val);
-            }}
-            customRates={customRates}
-            setCustomRates={(val) => {
-              setCustomRates(val);
-              localStorage.setItem('astro_custom_rates', JSON.stringify(val));
-            }}
             onNavigate={handleTabChange}
           />
         );
@@ -381,17 +360,10 @@ function App() {
         activeTab={activeTab} 
         setActiveTab={(id) => handleTabChange(id, {})} 
         rates={effectiveRates} 
-        bcvRates={rates}
-        isCustomRate={isCustomRate}
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
-        onToggleCustom={setIsCustomRate}
-        onUpdateCustom={async (newRates) => {
-          setCustomRates(newRates);
-          localStorage.setItem('astro_custom_rates', JSON.stringify(newRates));
-          await dataService.updateGlobalRates({ shop: newRates.shop, usdt: newRates.usdt });
-        }}
-        customRates={customRates}
+        activeRateType={activeRateType}
+        onToggleRateType={handleSetActiveRateType}
       />
       <main className="main-content" style={{ 
         flex: 1, 
@@ -405,94 +377,12 @@ function App() {
           <TopBar 
             rates={effectiveRates} 
             onOpenSale={() => setIsReceptionModalOpen(true)}
-            onEditRates={() => {
-              setTempRates(customRates);
-              setIsEditingRates(true);
-            }}
+            activeRateType={activeRateType}
+            onToggleRateType={handleSetActiveRateType}
           />
           {renderContent()}
         </div>
       </main>
-      
-      {/* Global Rate Edit Modal */}
-      {isEditingRates && (
-        <div className="modal-overlay animate-fade-in" style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 2000, backdropFilter: 'blur(10px)'
-        }}>
-          <div className="glass-card animate-scale-in" style={{ width: '400px', padding: '40px', borderRadius: '32px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Edit3 color="var(--gold-primary)" size={20} />
-              </div>
-              <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Tasas <span className="text-gold">Astro</span></h3>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
-              <div style={{ padding: '16px', borderRadius: '16px', backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>TASA BCV (OFICIAL)</span>
-                  <span style={{ fontSize: '14px', fontWeight: '900' }}>{rates.usd.toFixed(2)} Bs.</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>BRECHA CAMBIARIA</span>
-                  <span style={{ fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)' }}>{effectiveRates.gap.toFixed(2)}%</span>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '8px' }}>TASA USDT (PROMEDIO)</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type="number" 
-                    value={tempRates.usdt === 0 ? '' : tempRates.usdt}
-                    onChange={(e) => setTempRates({ ...tempRates, usdt: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                    style={{ width: '100%', height: '52px', paddingLeft: '54px', fontSize: '18px', fontWeight: '900', color: 'white' }}
-                  />
-                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: '900', color: 'var(--gold-primary)', fontSize: '14px' }}>Bs.</span>
-                </div>
-              </div>
-
-              <div style={{ padding: '20px', borderRadius: '24px', backgroundColor: 'rgba(212,175,55,0.05)', border: '2px solid var(--gold-primary)' }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '1.5px', marginBottom: '12px', textTransform: 'uppercase' }}>Tasa de la Barbería (ACTIVA)</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type="number" 
-                    value={tempRates.shop === 0 ? '' : tempRates.shop}
-                    onChange={(e) => setTempRates({ ...tempRates, shop: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                    style={{ width: '100%', height: '60px', paddingLeft: '54px', fontSize: '24px', fontWeight: '950', color: 'var(--gold-primary)', background: 'transparent', border: 'none' }}
-                  />
-                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', fontWeight: '950', color: 'var(--gold-primary)' }}>Bs.</span>
-                </div>
-                <p style={{ fontSize: '10px', color: 'rgba(212,175,55,0.6)', marginTop: '8px', fontWeight: '700' }}>* Esta tasa se usará para todos los cobros y cálculos de hoy.</p>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button 
-                onClick={() => setIsEditingRates(false)}
-                className="action-btn"
-                style={{ flex: 1, height: '48px', opacity: 0.5 }}
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={async () => {
-                  setCustomRates(tempRates);
-                  setIsCustomRate(true);
-                  setIsEditingRates(false);
-                  localStorage.setItem('astro_custom_rates', JSON.stringify(tempRates));
-                  await dataService.updateGlobalRates({ shop: tempRates.shop, usdt: tempRates.usdt });
-                }}
-                className="btn-gold"
-                style={{ flex: 1, height: '48px' }}
-              >
-                Activar Tasa
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Reception Modal (Floating Workspace) */}
       {isReceptionModalOpen && (

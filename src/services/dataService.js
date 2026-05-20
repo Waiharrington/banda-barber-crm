@@ -783,20 +783,24 @@ export const dataService = {
     }
   },
 
-  // BCV Exchange Rates
+  // BCV + USDT Exchange Rates (Auto from DolarApi — same source as Al Cambio)
   async getExchangeRates() {
     try {
-      const usdRes = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
-      if (!usdRes.ok) throw new Error('USD rate not available');
-      const usdData = await usdRes.json();
+      const allRes = await fetch('https://ve.dolarapi.com/v1/dolares');
+      if (!allRes.ok) throw new Error('Rates not available');
+      const allData = await allRes.json();
+      
+      const bcvRate = allData.find(r => r.fuente === 'oficial');
+      const paraleloRate = allData.find(r => r.fuente === 'paralelo');
       
       return {
-        usd: usdData.promedio,
-        updated_at: new Date().toISOString()
+        bcv: bcvRate?.promedio || 0,
+        usdt: paraleloRate?.promedio || 0,
+        updated_at: bcvRate?.fechaActualizacion || new Date().toISOString()
       };
     } catch (error) {
-      console.error('Error fetching BCV rates:', error);
-      return { usd: 36.5, updated_at: null, error: true };
+      console.error('Error fetching exchange rates:', error);
+      return { bcv: 36.5, usdt: 43.2, updated_at: null, error: true };
     }
   },
 

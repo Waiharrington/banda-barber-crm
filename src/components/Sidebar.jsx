@@ -9,30 +9,14 @@ import {
   Calendar,
   History,
   LogOut,
-  Pencil,
-  RefreshCcw,
-  Save,
   PanelLeftClose,
   PanelLeftOpen
 } from 'lucide-react';
 import logo from '../assets/logo.png';
 import { useAuth } from '../context/AuthContext';
-import { useState } from 'react';
 
-const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomRate, onToggleCustom, onUpdateCustom, customRates, isCollapsed, setIsCollapsed }) => {
+const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsCollapsed, activeRateType, onToggleRateType }) => {
   const { user, logout } = useAuth();
-  const [isEditingRate, setIsEditingRate] = useState(false);
-  const [tempRate, setTempRate] = useState(rates?.usd || 0);
-
-  const handleSaveRate = () => {
-    onUpdateCustom({ ...customRates, shop: Number(tempRate) });
-    localStorage.setItem('astro_custom_rates', JSON.stringify({ ...customRates, shop: Number(tempRate) }));
-    setIsEditingRate(false);
-  };
-
-  const handleResetRate = () => {
-    setIsEditingRate(false);
-  };
 
   const allMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
@@ -55,9 +39,8 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
     const [roleName, customPerms] = userRole.split('|');
 
     if (roleName === 'Admin') return true;
-    if (item.id === 'my-profile') return true; // Everyone can see their own profile
+    if (item.id === 'my-profile') return true;
     
-    // Hard restriction for washing assistant to ensure they only see their specific panels
     if (roleName === 'Asistente de Lavado') {
       return ['dashboard', 'history'].includes(item.id);
     }
@@ -107,71 +90,61 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, bcvRates, isCustomR
             <>
               <img src={logo} alt="Astro Barber" style={{ width: '100%', height: 'auto', maxWidth: '140px', marginTop: '24px' }} />
               
-              {/* Global Rate Badge */}
-              {rates?.usd > 0 && (
-            <div style={{ 
-              backgroundColor: 'rgba(212, 175, 55, 0.05)', 
-              border: '1px solid rgba(212, 175, 55, 0.2)', 
-              borderRadius: '12px', 
-              padding: '8px 12px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              width: '100%',
-              position: 'relative',
-              transition: 'all 0.3s'
-            }}>
-              <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isEditingRate ? '10px' : '2px' }}>
-                <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                  Tasa Barbería
-                </span>
-                {!isEditingRate && (
-                  <button 
-                    onClick={() => {
-                      setTempRate(rates.usd);
-                      setIsEditingRate(true);
+              {/* Rate Toggle Badge */}
+              {(rates?.bcv > 0 || rates?.usdt > 0) && (
+                <div style={{ 
+                  backgroundColor: 'rgba(212, 175, 55, 0.05)', 
+                  border: '1px solid rgba(212, 175, 55, 0.15)', 
+                  borderRadius: '14px', 
+                  padding: '10px',
+                  width: '100%',
+                  display: 'flex',
+                  gap: '6px'
+                }}>
+                  <button
+                    onClick={() => onToggleRateType && onToggleRateType('bcv')}
+                    style={{
+                      flex: 1,
+                      padding: '8px 6px',
+                      borderRadius: '10px',
+                      border: activeRateType === 'bcv' ? '1.5px solid var(--gold-primary)' : '1.5px solid transparent',
+                      background: activeRateType === 'bcv' ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.02)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '2px',
+                      transition: 'all 0.25s ease'
                     }}
-                    style={{ background: 'transparent', border: 'none', padding: '2px', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center' }}
                   >
-                    <Pencil size={10} />
+                    <span style={{ fontSize: '8px', fontWeight: '900', color: activeRateType === 'bcv' ? 'var(--gold-primary)' : 'var(--text-muted)', letterSpacing: '0.5px' }}>BCV</span>
+                    <span style={{ fontSize: '13px', fontWeight: '950', color: activeRateType === 'bcv' ? 'var(--gold-primary)' : 'white' }}>
+                      {rates.bcv > 0 ? rates.bcv.toFixed(2) : '—'}
+                    </span>
                   </button>
-                )}
-              </div>
-
-              {isEditingRate ? (
-                <div style={{ width: '100%', display: 'flex', gap: '8px' }}>
-                  <input 
-                    type="number"
-                    value={tempRate === 0 ? '' : tempRate}
-                    onChange={(e) => setTempRate(e.target.value === '' ? 0 : parseFloat(e.target.value))}
-                    autoFocus
-                    style={{ 
-                      width: '75%', 
-                      backgroundColor: 'rgba(0,0,0,0.3)', 
-                      border: '1px solid rgba(212,175,55,0.3)', 
-                      borderRadius: '8px', 
-                      padding: '6px 10px', 
-                      color: 'white', 
-                      fontSize: '14px', 
-                      fontWeight: '800',
-                      outline: 'none'
+                  <button
+                    onClick={() => onToggleRateType && onToggleRateType('usdt')}
+                    style={{
+                      flex: 1,
+                      padding: '8px 6px',
+                      borderRadius: '10px',
+                      border: activeRateType === 'usdt' ? '1.5px solid #26a65b' : '1.5px solid transparent',
+                      background: activeRateType === 'usdt' ? 'rgba(38,166,91,0.12)' : 'rgba(255,255,255,0.02)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '2px',
+                      transition: 'all 0.25s ease'
                     }}
-                  />
-                  <button 
-                    onClick={handleSaveRate}
-                    title="Guardar Tasa"
-                    style={{ flex: 1, backgroundColor: 'var(--gold-primary)', color: 'black', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Save size={16} />
+                    <span style={{ fontSize: '8px', fontWeight: '900', color: activeRateType === 'usdt' ? '#26a65b' : 'var(--text-muted)', letterSpacing: '0.5px' }}>USDT</span>
+                    <span style={{ fontSize: '13px', fontWeight: '950', color: activeRateType === 'usdt' ? '#26a65b' : 'white' }}>
+                      {rates.usdt > 0 ? rates.usdt.toFixed(2) : '—'}
+                    </span>
                   </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '15px', fontWeight: '900', color: 'white' }}>1$ = {rates.usd.toLocaleString()} Bs.</span>
                 </div>
               )}
-            </div>
-          )}
             </>
           )}
         </div>

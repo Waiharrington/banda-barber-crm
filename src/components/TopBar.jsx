@@ -1,19 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   User, 
-  Edit3, 
   Plus, 
-  Target 
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useNotifs } from '../context/NotificationContext';
 
 const TopBar = ({ 
   rates, 
   onOpenSale, 
   isStoreOpen = true, 
-  onEditRates,
-  onNavigate
+  activeRateType,
+  onToggleRateType
 }) => {
   const { user } = useAuth();
   
@@ -66,70 +64,106 @@ const TopBar = ({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div className="glass-card" style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '24px', borderRadius: '18px', border: '1px solid rgba(212,175,55,0.1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ 
-              padding: '4px 8px', 
-              backgroundColor: 'rgba(255,255,255,0.05)', 
-              borderRadius: '6px',
-              fontSize: '9px',
-              fontWeight: '900',
-              color: 'var(--text-muted)'
+        {/* Rate Toggle Card */}
+        <div className="glass-card" style={{ padding: '8px', display: 'flex', alignItems: 'center', gap: '4px', borderRadius: '18px', border: '1px solid rgba(212,175,55,0.1)' }}>
+          {/* BCV Button */}
+          <button
+            onClick={() => onToggleRateType('bcv')}
+            style={{
+              padding: '10px 18px',
+              borderRadius: '14px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+              transition: 'all 0.3s ease',
+              background: activeRateType === 'bcv' 
+                ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.05))' 
+                : 'transparent',
+              border: activeRateType === 'bcv' 
+                ? '1.5px solid var(--gold-primary)' 
+                : '1.5px solid transparent',
+              boxShadow: activeRateType === 'bcv' ? '0 0 15px rgba(212,175,55,0.15)' : 'none'
+            }}
+          >
+            <span style={{ 
+              fontSize: '9px', 
+              fontWeight: '900', 
+              color: activeRateType === 'bcv' ? 'var(--gold-primary)' : 'var(--text-muted)',
+              letterSpacing: '0.5px'
             }}>
               BCV
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>{rates.bcv.toFixed(2)}</div>
-            </div>
-          </div>
+            </span>
+            <span style={{ 
+              fontSize: '15px', 
+              fontWeight: '950', 
+              color: activeRateType === 'bcv' ? 'var(--gold-primary)' : 'white'
+            }}>
+              {rates.bcv > 0 ? rates.bcv.toFixed(2) : '—'}
+            </span>
+          </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ 
-              padding: '4px 8px', 
-              backgroundColor: 'rgba(255,255,255,0.05)', 
-              borderRadius: '6px',
-              fontSize: '9px',
-              fontWeight: '900',
-              color: 'var(--text-muted)'
+          {/* USDT Button */}
+          <button
+            onClick={() => onToggleRateType('usdt')}
+            style={{
+              padding: '10px 18px',
+              borderRadius: '14px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px',
+              transition: 'all 0.3s ease',
+              background: activeRateType === 'usdt' 
+                ? 'linear-gradient(135deg, rgba(38,166,91,0.2), rgba(38,166,91,0.05))' 
+                : 'transparent',
+              border: activeRateType === 'usdt' 
+                ? '1.5px solid #26a65b' 
+                : '1.5px solid transparent',
+              boxShadow: activeRateType === 'usdt' ? '0 0 15px rgba(38,166,91,0.15)' : 'none'
+            }}
+          >
+            <span style={{ 
+              fontSize: '9px', 
+              fontWeight: '900', 
+              color: activeRateType === 'usdt' ? '#26a65b' : 'var(--text-muted)',
+              letterSpacing: '0.5px'
             }}>
               USDT
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>{rates.usdt.toFixed(2)}</div>
-            </div>
-            <div style={{ 
-              fontSize: '10px', 
-              fontWeight: '800', 
+            </span>
+            <span style={{ 
+              fontSize: '15px', 
+              fontWeight: '950', 
+              color: activeRateType === 'usdt' ? '#26a65b' : 'white'
+            }}>
+              {rates.usdt > 0 ? rates.usdt.toFixed(2) : '—'}
+            </span>
+          </button>
+
+          {/* Gap indicator */}
+          <div style={{ 
+            padding: '4px 10px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '1px'
+          }}>
+            <span style={{ fontSize: '8px', fontWeight: '800', color: 'var(--text-muted)' }}>GAP</span>
+            <span style={{ 
+              fontSize: '11px', 
+              fontWeight: '900', 
               color: rates.gap > 10 ? '#ff4d4d' : '#4caf50',
               backgroundColor: rates.gap > 10 ? 'rgba(255,77,77,0.1)' : 'rgba(76,175,80,0.1)',
               padding: '2px 6px',
               borderRadius: '4px'
             }}>
-              {rates.gap.toFixed(1)}%
-            </div>
+              {rates.gap > 0 ? rates.gap.toFixed(1) : '0'}%
+            </span>
           </div>
-
-          <div style={{ width: '1px', height: '30px', backgroundColor: 'rgba(255,255,255,0.1)' }} />
-          
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '0.5px' }}>TASA BARBERÍA</div>
-            <div style={{ fontSize: '18px', fontWeight: '950', color: 'var(--gold-primary)' }}>{rates.usd.toFixed(2)}</div>
-          </div>
-
-          <button 
-            onClick={onEditRates}
-            className="edit-rates-btn"
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: 'var(--gold-primary)', 
-              cursor: 'pointer',
-              padding: '4px',
-              transition: '0.2s'
-            }}
-          >
-            <Edit3 size={16} />
-          </button>
         </div>
         
         <button 
