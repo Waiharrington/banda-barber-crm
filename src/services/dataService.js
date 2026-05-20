@@ -751,7 +751,7 @@ export const dataService = {
 
   async syncTransactionToSheets(paymentRecord) {
     // URL de la Web App de Google Apps Script configurada
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwJZALfyNQIYgc9lM5x2cKQWPXgqOMCM0JHjCso72ZMXDf6ZAvEYWluHwbhZNVq-sJR/exec"; 
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw7Q196_14F8BoUJ16YKm2lprTeEuB9gAIKgWwDyFkfDtfFk_KMq0JcSS_jHFSvb1v_/exec"; 
     
     if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return; // Si no está configurada, ignorar
 
@@ -780,6 +780,26 @@ export const dataService = {
       console.log('Sincronizado con Google Sheets exitosamente');
     } catch (e) {
       console.error('Error al sincronizar con Google Sheets:', e);
+    }
+  },
+
+  async triggerWeeklyClosing() {
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw7Q196_14F8BoUJ16YKm2lprTeEuB9gAIKgWwDyFkfDtfFk_KMq0JcSS_jHFSvb1v_/exec";
+    if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return false;
+
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'text/plain'
+        },
+        body: JSON.stringify({ action: 'cierreSemanal' })
+      });
+      return true;
+    } catch (e) {
+      console.error('Error al ejecutar el cierre semanal:', e);
+      throw e;
     }
   },
 
