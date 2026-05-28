@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, Phone, CreditCard, Loader2 } from 'lucide-react';
+import { X, User, Phone, CreditCard, Loader2, Calendar } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 
@@ -9,7 +9,8 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    id_card: ''
+    id_card: '',
+    birth_date: ''
   });
 
   if (!isOpen) return null;
@@ -147,6 +148,21 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
                 placeholder="Ej. 25.123.456" 
                 value={formData.id_card}
                 onChange={(e) => setFormData({...formData, id_card: e.target.value})}
+                style={{ width: '100%', paddingLeft: '48px' }}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              Fecha de Nacimiento
+            </label>
+            <div style={{ position: 'relative' }}>
+              <Calendar style={{ position: 'absolute', left: '16px', top: '14px' }} size={18} color="var(--gold-primary)" />
+              <input 
+                type="date" 
+                value={formData.birth_date}
+                onChange={(e) => setFormData({...formData, birth_date: e.target.value})}
                 style={{ width: '100%', paddingLeft: '48px' }}
               />
             </div>

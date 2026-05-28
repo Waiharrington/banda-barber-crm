@@ -61,9 +61,12 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const [selectedWasherId, setSelectedWasherId] = useState('');
   const [washCount, setWashCount] = useState(0);
   const [bundledApps, setBundledApps] = useState([]);
+  const [linkedApps, setLinkedApps] = useState([]);
+  const [totalAppsInCheckout, setTotalAppsInCheckout] = useState([]);
   const [activeAppForBarberChange, setActiveAppForBarberChange] = useState(null);
 
   // Modal State
+  const [showLinkModal, setShowLinkModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showExtraModal, setShowExtraModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
@@ -117,10 +120,18 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   }, [selectedApp, pendingServices]);
 
   useEffect(() => {
-    if (bundledApps.length > 0) {
+    setLinkedApps([]);
+  }, [selectedApp]);
+
+  useEffect(() => {
+    setTotalAppsInCheckout([...bundledApps, ...linkedApps]);
+  }, [bundledApps, linkedApps]);
+
+  useEffect(() => {
+    if (totalAppsInCheckout.length > 0) {
       // 1. Merge products
       const mergedProducts = [];
-      bundledApps.forEach(app => {
+      totalAppsInCheckout.forEach(app => {
         app.appointment_products?.forEach(ap => {
           const exists = mergedProducts.find(p => p.id === ap.inventory?.id);
           if (exists) {
@@ -138,7 +149,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       setCart(mergedProducts);
 
       // 2. Initialize tips for all unique staff in the bundle
-      const uniqueStaffIds = Array.from(new Set(bundledApps.map(a => a.staff_id).filter(Boolean)));
+      const uniqueStaffIds = Array.from(new Set(totalAppsInCheckout.map(a => a.staff_id).filter(Boolean)));
       const initialTips = uniqueStaffIds.map((staffId, idx) => ({
         id: (Date.now() + idx).toString(),
         staffId: staffId,
@@ -147,7 +158,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       setTips(initialTips);
 
       // 3. Auto-detect washing count
-      const washEligibleCount = bundledApps.filter(app => 
+      const washEligibleCount = totalAppsInCheckout.filter(app => 
         app.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || 
         app.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'))
       ).length;
@@ -166,7 +177,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       setWashCount(0);
       setSelectedWasherId('');
     }
-  }, [bundledApps, isDirectSale, allStaff]);
+  }, [totalAppsInCheckout, isDirectSale, allStaff]);
 
   const loadData = async () => {
     try {
@@ -227,16 +238,16 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     }
   };
 
-  const servicePrice = bundledApps.reduce((acc, app) => acc + (app.services?.price || 0), 0);
+  const servicePrice = totalAppsInCheckout.reduce((acc, app) => acc + (app.services?.price || 0), 0);
   const productsTotal = cart.reduce((acc, p) => acc + (p.price * p.quantity), 0);
-  const extrasTotal = bundledApps.reduce((acc, app) => acc + (app.appointment_extras?.reduce((subAcc, e) => subAcc + (e.price || 0), 0) || 0), 0);
+  const extrasTotal = totalAppsInCheckout.reduce((acc, app) => acc + (app.appointment_extras?.reduce((subAcc, e) => subAcc + (e.price || 0), 0) || 0), 0);
   const totalTips = tips.reduce((acc, t) => acc + Number(t.amount || 0), 0);
   const totalUsd = servicePrice + productsTotal + extrasTotal + totalTips;
   const totalBs = (totalUsd * fixedRate).toFixed(2);
   
   const remainingBs = Math.max(0, (totalUsd - Number(cashUsd)) * fixedRate).toFixed(2);
 
-  const washEligibleCount = bundledApps.filter(app => 
+  const washEligibleCount = totalAppsInCheckout.filter(app => 
     app.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || 
     app.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'))
   ).length;
@@ -291,8 +302,13 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     }
   };
 
+  const handleUnlinkApp = (appId) => {
+    setLinkedApps(linkedApps.filter(a => a.id !== appId));
+    showToast("Cita desenlazada de la cuenta.");
+  };
+
   const handleCancelOrder = () => {
-    if (bundledApps.length === 0) return;
+    if (totalAppsInCheckout.length === 0) return;
     
     setDialog({
       isOpen: true,
@@ -304,7 +320,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         try {
           setLoading(true);
           
-          for (const app of bundledApps) {
+          for (const app of totalAppsInCheckout) {
             await dataService.updateAppointmentStatus(app.id, 'Cancelado');
           }
           
@@ -337,11 +353,11 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       
       const paymentData = {
         appointmentId: selectedApp?.id || null,
-        appointmentIds: bundledApps.map(a => a.id),
+        appointmentIds: totalAppsInCheckout.map(a => a.id),
         clientId: selectedApp?.client_id || selectedClient?.id,
         clientName: selectedApp?.clients?.name || selectedClient?.name,
         clientCedula: selectedApp?.clients?.id_card || selectedClient?.id_card,
-        serviceName: bundledApps.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Venta de Productos',
+        serviceName: totalAppsInCheckout.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Venta de Productos',
         totalUsd: totalUsd,
         fixedRate: fixedRate,
         isMixed: paymentMode === 'mixed',
@@ -350,14 +366,30 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         totalTips: totalTips,
         didWash: washCount > 0,
         washCount: washCount,
-        extras: bundledApps.flatMap(a => a.appointment_extras || []),
+        extras: totalAppsInCheckout.flatMap(a => a.appointment_extras || []),
+        appointments: totalAppsInCheckout.map(app => {
+          const appExtrasTotal = app.appointment_extras?.reduce((sum, e) => sum + (e.price || 0), 0) || 0;
+          const servicePrice = app.services?.price || 0;
+          const includesWashing = app.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || false;
+          return {
+            id: app.id,
+            clientName: app.clients?.name || 'Cliente',
+            clientCedula: app.clients?.id_card || 'S/C',
+            barberName: app.staff?.name || 'Barbero',
+            serviceName: app.services?.name || 'Servicio',
+            servicePrice: servicePrice,
+            extrasPrice: appExtrasTotal,
+            totalPrice: servicePrice + appExtrasTotal,
+            didWash: includesWashing || (washCount > 0)
+          };
+        }),
         staffInvolved: (() => {
           const involved = [];
           const washer = allStaff.find(s => s.id === selectedWasherId);
           const washRate = washer ? Number(washer.washing_rate || 0) : 0;
           
           let appliedWashes = 0;
-          bundledApps.forEach(app => {
+          totalAppsInCheckout.forEach(app => {
             if (!app.staff_id) return;
             const role = app.staff?.role;
             let price = app.services?.price || 0;
@@ -983,18 +1015,30 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px', padding: '24px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
-                {bundledApps.map(app => {
+                {totalAppsInCheckout.map(app => {
                   const sPrice = app.services?.price || 0;
+                  const isLinked = app.client_id !== selectedApp?.client_id;
                   return (
                     <div key={app.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <button 
-                          onClick={() => handleRemoveBundledService(app)} 
-                          style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}
-                          title={app.services ? "Eliminar servicio" : "Eliminar extras"}
-                        >
-                          [X]
-                        </button>
+                        {isLinked ? (
+                          <button 
+                            onClick={() => handleUnlinkApp(app.id)} 
+                            style={{ background: 'none', border: 'none', color: '#ff9500', cursor: 'pointer', fontWeight: '800' }}
+                            title="Desenlazar cita"
+                          >
+                            [Desenlazar]
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => handleRemoveBundledService(app)} 
+                            style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}
+                            title={app.services ? "Eliminar servicio" : "Eliminar extras"}
+                          >
+                            [X]
+                          </button>
+                        )}
+                        {isLinked && <span style={{ color: 'var(--gold-primary)', fontWeight: '800', fontSize: '12px' }}>({app.clients?.name?.split(' ')[0]}):</span>}
                         {app.services ? `Servicio: ${app.services.name}` : 'Extras'}
                         {' • '}
                         <span 
@@ -1028,6 +1072,30 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   );
                 })}
                 
+                {selectedApp && (
+                  <button 
+                    onClick={() => setShowLinkModal(true)}
+                    style={{ 
+                      width: '100%', 
+                      padding: '12px', 
+                      borderRadius: '16px', 
+                      border: '1px dashed var(--gold-primary)', 
+                      background: 'rgba(212,175,55,0.05)', 
+                      color: 'var(--gold-primary)', 
+                      fontWeight: '800', 
+                      fontSize: '13px', 
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      marginTop: '8px'
+                    }}
+                  >
+                    🔗 ENLAZAR OTRAS CITAS (PAGO GRUPAL)
+                  </button>
+                )}
+                
                 {cart.map(p => (
                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1041,7 +1109,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   </div>
                 ))}
 
-                {bundledApps.flatMap(app => 
+                {totalAppsInCheckout.flatMap(app => 
                   app.appointment_extras?.map(extra => ({
                     ...extra,
                     appId: app.id
@@ -1475,6 +1543,71 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         onClose={() => setShowNewClientModal(false)}
         onSuccess={handleNewClientSuccess}
       />
+
+      {/* Link Citas Modal (Pago Grupal) */}
+      {showLinkModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div className="glass-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', padding: '28px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontWeight: '900', fontSize: '20px' }}>Enlazar Citas en Espera</h2>
+              <button onClick={() => setShowLinkModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+            </div>
+            
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '13px' }}>
+              Selecciona los clientes que están en silla o pendientes de cobro para cargarlos a la cuenta de <strong>{selectedApp?.clients?.name}</strong>.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '350px', overflowY: 'auto', paddingRight: '8px' }} className="astro-scrollbar">
+              {groupedActiveServices.filter(g => g.client_id !== selectedApp?.client_id && !linkedApps.some(la => la.client_id === g.client_id)).length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                  No hay otros clientes pendientes en silla o por pagar.
+                </div>
+              ) : (
+                groupedActiveServices
+                  .filter(g => g.client_id !== selectedApp?.client_id && !linkedApps.some(la => la.client_id === g.client_id))
+                  .map(group => {
+                    const sNames = group.apps.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Servicio';
+                    const tPrice = group.apps.reduce((acc, a) => acc + (a.services?.price || a.total_price || 0), 0);
+                    return (
+                      <div 
+                        key={group.client_id}
+                        style={{ padding: '14px 16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: '800', fontSize: '14px', color: 'white' }}>{group.client_name}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{sNames}</div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ fontWeight: '700', color: 'var(--gold-primary)', fontSize: '13px' }}>${tPrice}</span>
+                          <button 
+                            onClick={() => {
+                              setLinkedApps([...linkedApps, ...group.apps]);
+                              showToast(`Cita de ${group.client_name} enlazada.`);
+                            }}
+                            className="btn-gold"
+                            style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '900' }}
+                          >
+                            Enlazar
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+
+            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setShowLinkModal(false)} 
+                className="btn-gold" 
+                style={{ padding: '10px 24px', borderRadius: '12px', fontWeight: '800' }}
+              >
+                LISTO
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .hover-item:hover {

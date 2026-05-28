@@ -751,32 +751,167 @@ export const dataService = {
 
   async syncTransactionToSheets(paymentRecord) {
     // URL de la Web App de Google Apps Script configurada
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw7Q196_14F8BoUJ16YKm2lprTeEuB9gAIKgWwDyFkfDtfFk_KMq0JcSS_jHFSvb1v_/exec"; 
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxubmD5xEMOgwGoH5z_MSrlCylTOrD1U9pnReXJ10WU-RoPTz4SlXKGl_yW7jnJN-rG/exec"; 
     
     if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return; // Si no está configurada, ignorar
 
     try {
-      const barbero = paymentRecord.staffInvolved?.find(s => s.role?.toLowerCase().includes('barbero'))?.name || 'Venta Directa';
-      
-      const payload = {
-        fecha: new Date().toLocaleDateString('es-VE'),
-        cliente: paymentRecord.clientName || 'Cliente General',
-        cedula: paymentRecord.clientCedula || 'S/C',
-        barbero: barbero,
-        servicio: paymentRecord.serviceName || 'Productos',
-        metodoPago: paymentRecord.isMixed ? 'Mixto' : (paymentRecord.methodBs && paymentRecord.methodBs !== 'N/A' ? paymentRecord.methodBs : paymentRecord.methodUsd),
-        lavado: paymentRecord.didWash ? 1 : 0,
-        monto: `${(paymentRecord.totalUsd * paymentRecord.fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`
-      };
+      const cashUsdVal = Number(paymentRecord.cashUsd) || 0;
+      const transferBsVal = Number(paymentRecord.transferBs) || 0;
+      const totalUsdVal = Number(paymentRecord.totalUsd) || 0;
+      const fixedRateVal = Number(paymentRecord.fixedRate) || 0;
 
-      await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'text/plain'
-        },
-        body: JSON.stringify(payload)
-      });
+      // Detección inteligente del método de pago desglosado para dólares y bolívares
+      let metodoPagoUsd = 'No aplica';
+      let metodoPagoBs = 'No aplica';
+
+      if (paymentRecord.isMixed || (cashUsdVal > 0 && transferBsVal > 0)) {
+        metodoPagoUsd = `${paymentRecord.methodUsd || 'Efectivo'} ($)`;
+        metodoPagoBs = `${paymentRecord.methodBs || 'Pago Móvil'} (Bs)`;
+      } else if (cashUsdVal > 0 || (paymentRecord.methodUsd && paymentRecord.methodUsd !== 'N/A' && (!paymentRecord.methodBs || paymentRecord.methodBs === 'N/A'))) {
+        metodoPagoUsd = `${paymentRecord.methodUsd || 'Efectivo'} ($)`;
+        metodoPagoBs = 'No aplica';
+      } else {
+        metodoPagoUsd = 'No aplica';
+        metodoPagoBs = `${paymentRecord.methodBs || 'Pago Móvil'} (Bs)`;
+      }
+
+      // If we have distinct appointments, log each one as a separate row!
+      if (paymentRecord.appointments && paymentRecord.appointments.length > 0) {
+        for (const app of paymentRecord.appointments) {
+          let appMontoUsdText = '';
+          let appMontoBsText = '';
+          const appTotalUsdVal = Number(app.totalPrice) || 0;
+
+          if (paymentRecord.isMixed || (cashUsdVal > 0 && transferBsVal > 0)) {
+            // Proportional split for mixed payment
+            const proportion = totalUsdVal > 0 ? (appTotalUsdVal / totalUsdVal) : 0;
+            const appCashUsd = cashUsdVal * proportion;
+            const appTransferBs = transferBsVal * proportion;
+            appMontoUsdText = `${appCashUsd.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
+            appMontoBsText = `${appTransferBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+          } else if (cashUsdVal > 0 || (paymentRecord.methodUsd && paymentRecord.methodUsd !== 'N/A' && (!paymentRecord.methodBs || paymentRecord.methodBs === 'N/A'))) {
+            appMontoUsdText = `${appTotalUsdVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
+            appMontoBsText = `${(appTotalUsdVal * fixedRateVal).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+          } else {
+            appMontoUsdText = `${appTotalUsdVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
+            appMontoBsText = `${(appTotalUsdVal * fixedRateVal).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+          }
+
+          const payload = {
+            fecha: new Date().toLocaleDateString('es-VE'),
+            cliente: app.clientName || 'Cliente',
+            cedula: app.clientCedula || 'S/C',
+            barbero: app.barberName || 'Barbero',
+            servicio: app.serviceName || 'Servicio',
+            metodoPagoUsd: metodoPagoUsd,
+            metodoPagoBs: metodoPagoBs,
+            lavado: app.didWash ? 1 : 0,
+            montoBs: appMontoBsText,
+            montoUsd: appMontoUsdText,
+            tasa: `${fixedRateVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`
+          };
+
+          await fetch(WEBHOOK_URL, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'text/plain'
+            },
+            body: JSON.stringify(payload)
+          });
+        }
+
+        // Check if there are also products sold in the transaction
+        const productsTotalUsd = paymentRecord.products?.reduce((sum, p) => sum + (Number(p.price || 0) * (p.quantity || 1)), 0) || 0;
+        if (productsTotalUsd > 0) {
+          let prodMontoUsdText = '';
+          let prodMontoBsText = '';
+
+          if (paymentRecord.isMixed || (cashUsdVal > 0 && transferBsVal > 0)) {
+            const proportion = totalUsdVal > 0 ? (productsTotalUsd / totalUsdVal) : 0;
+            const prodCashUsd = cashUsdVal * proportion;
+            const prodTransferBs = transferBsVal * proportion;
+            prodMontoUsdText = `${prodCashUsd.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
+            prodMontoBsText = `${prodTransferBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+          } else {
+            prodMontoUsdText = `${productsTotalUsd.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
+            prodMontoBsText = `${(productsTotalUsd * fixedRateVal).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+          }
+
+          const payload = {
+            fecha: new Date().toLocaleDateString('es-VE'),
+            cliente: paymentRecord.clientName || 'Cliente General',
+            cedula: paymentRecord.clientCedula || 'S/C',
+            barbero: 'Venta Directa',
+            servicio: 'Venta de Productos',
+            metodoPagoUsd: metodoPagoUsd,
+            metodoPagoBs: metodoPagoBs,
+            lavado: 0,
+            montoBs: prodMontoBsText,
+            montoUsd: prodMontoUsdText,
+            tasa: `${fixedRateVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`
+          };
+
+          await fetch(WEBHOOK_URL, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'text/plain'
+            },
+            body: JSON.stringify(payload)
+          });
+        }
+      } else {
+        // Fallback for single/direct transactions
+        let barberoObj = paymentRecord.staffInvolved?.find(s => {
+          const roleLower = s.role?.toLowerCase() || '';
+          return roleLower.includes('barber') || roleLower.includes('estilista') || roleLower.includes('socio');
+        });
+        
+        if (!barberoObj && paymentRecord.staffInvolved && paymentRecord.staffInvolved.length > 0) {
+          barberoObj = paymentRecord.staffInvolved[0];
+        }
+        
+        const barbero = barberoObj ? barberoObj.name.trim() : 'Venta Directa';
+        
+        let finalMontoUsdText = '';
+        let finalMontoBsText = '';
+
+        if (paymentRecord.isMixed || (cashUsdVal > 0 && transferBsVal > 0)) {
+          finalMontoUsdText = `${cashUsdVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
+          finalMontoBsText = `${transferBsVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+        } else if (cashUsdVal > 0 || (paymentRecord.methodUsd && paymentRecord.methodUsd !== 'N/A' && (!paymentRecord.methodBs || paymentRecord.methodBs === 'N/A'))) {
+          finalMontoUsdText = `${totalUsdVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
+          finalMontoBsText = `${(totalUsdVal * fixedRateVal).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+        } else {
+          finalMontoUsdText = `${totalUsdVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
+          finalMontoBsText = `${(totalUsdVal * fixedRateVal).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+        }
+
+        const payload = {
+          fecha: new Date().toLocaleDateString('es-VE'),
+          cliente: paymentRecord.clientName || 'Cliente General',
+          cedula: paymentRecord.clientCedula || 'S/C',
+          barbero: barbero,
+          servicio: paymentRecord.serviceName || 'Productos',
+          metodoPagoUsd: metodoPagoUsd,
+          metodoPagoBs: metodoPagoBs,
+          lavado: paymentRecord.didWash ? 1 : 0,
+          montoBs: finalMontoBsText,
+          montoUsd: finalMontoUsdText,
+          tasa: `${fixedRateVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`
+        };
+
+        await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          body: JSON.stringify(payload)
+        });
+      }
       console.log('Sincronizado con Google Sheets exitosamente');
     } catch (e) {
       console.error('Error al sincronizar con Google Sheets:', e);
@@ -784,13 +919,13 @@ export const dataService = {
   },
 
   async triggerWeeklyClosing() {
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw7Q196_14F8BoUJ16YKm2lprTeEuB9gAIKgWwDyFkfDtfFk_KMq0JcSS_jHFSvb1v_/exec";
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxubmD5xEMOgwGoH5z_MSrlCylTOrD1U9pnReXJ10WU-RoPTz4SlXKGl_yW7jnJN-rG/exec";
     if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return false;
 
     try {
       await fetch(WEBHOOK_URL, {
         method: 'POST',
-        mode: 'no-cors',
+        mode: 'cors',
         headers: {
           'Content-Type': 'text/plain'
         },

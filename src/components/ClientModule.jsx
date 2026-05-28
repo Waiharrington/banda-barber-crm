@@ -42,6 +42,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
     name: '', 
     phone: '', 
     id_card: '',
+    birth_date: '',
     hair_type: 'Normal', 
     scalp_type: 'Normal' 
   });
@@ -82,6 +83,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
         name: '', 
         phone: '', 
         id_card: '',
+        birth_date: '',
         hair_type: 'Normal', 
         scalp_type: 'Normal' 
       });
@@ -179,6 +181,10 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                 <div className="form-group">
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Teléfono</label>
                   <input className="form-input" placeholder="WhatsApp" value={newClient.phone} onChange={(e) => setNewClient({...newClient, phone: e.target.value})} style={{ width: '100%' }} />
+                </div>
+                <div className="form-group">
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Cumpleaños</label>
+                  <input type="date" className="form-input" value={newClient.birth_date} onChange={(e) => setNewClient({...newClient, birth_date: e.target.value})} style={{ width: '100%' }} />
                 </div>
                 <AstroSelect 
                   label="Tipo de Cabello"
@@ -419,6 +425,7 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
     name: client.name, 
     phone: client.phone,
     id_card: client.id_card,
+    birth_date: client.birth_date || '',
     hair_type: client.hair_type,
     scalp_type: client.scalp_type
   });
@@ -606,6 +613,10 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
                 <input className="form-input" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} placeholder="Nombre" style={{ width: '100%' }} />
                 <input className="form-input" value={editData.id_card} onChange={e => setEditData({...editData, id_card: e.target.value})} placeholder="Cédula" style={{ width: '100%' }} />
                 <input className="form-input" value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} placeholder="Teléfono" style={{ width: '100%' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left', marginBottom: '8px' }}>
+                  <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Cumpleaños</label>
+                  <input className="form-input" value={editData.birth_date} onChange={e => setEditData({...editData, birth_date: e.target.value})} type="date" style={{ width: '100%' }} />
+                </div>
                 <AstroSelect 
                   label="Tipo de Cabello"
                   value={editData.hair_type}
@@ -652,6 +663,7 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <DetailItem label="Tipo de Cabello" value={client.hair_type || 'Normal'} />
               <DetailItem label="Cuero Cabelludo" value={client.scalp_type || 'Normal'} />
+              <DetailItem label="Cumpleaños" value={client.birth_date ? new Date(client.birth_date + 'T00:00:00').toLocaleDateString([], {day: '2-digit', month: 'long', year: 'numeric'}) : 'No registrado'} />
               <DetailItem label="Registrado" value={client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'} />
             </div>
             {!isEditing && (

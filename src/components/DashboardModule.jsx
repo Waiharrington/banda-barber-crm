@@ -17,7 +17,9 @@ import {
   ShoppingBag,
   Scissors as ScissorsIcon,
   Circle,
-  RefreshCw
+  RefreshCw,
+  Gift,
+  Cake
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -321,6 +323,8 @@ const DashboardModule = ({
               isClient
               onNavigate={onNavigate}
             />
+
+            <BirthdaySection clients={dbData?.clients || []} onNavigate={onNavigate} />
           </div>
         )}
 
@@ -530,6 +534,109 @@ const StatCard = ({ title, value, icon, color, trend, positive }) => (
     <div style={{ fontSize: '24px', fontWeight: '900', marginTop: '4px' }}>{value}</div>
   </div>
 );
+
+const BirthdaySection = ({ clients, onNavigate }) => {
+  const today = new Date();
+  const todayMonth = today.getMonth() + 1;
+  const todayDay = today.getDate();
+
+  // Birthdays Today
+  const todaysBirthdays = (clients || []).filter(c => {
+    if (!c.birth_date) return false;
+    const parts = c.birth_date.split('-');
+    const m = parseInt(parts[1], 10);
+    const d = parseInt(parts[2], 10);
+    return m === todayMonth && d === todayDay;
+  });
+
+  // Upcoming Birthdays (next 15 days)
+  const upcomingBirthdays = (clients || [])
+    .filter(c => {
+      if (!c.birth_date) return false;
+      const parts = c.birth_date.split('-');
+      const m = parseInt(parts[1], 10);
+      const d = parseInt(parts[2], 10);
+      
+      const bday = new Date(today.getFullYear(), m - 1, d);
+      if (bday < today && !(m === todayMonth && d === todayDay)) {
+        bday.setFullYear(today.getFullYear() + 1);
+      }
+      
+      const diffTime = bday - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      c.daysToBday = diffDays;
+      c.bdayDateStr = `${d} de ${bday.toLocaleDateString([], { month: 'long' })}`;
+      
+      return diffDays > 0 && diffDays <= 15;
+    })
+    .sort((a, b) => a.daysToBday - b.daysToBday)
+    .slice(0, 5);
+
+  return (
+    <div className="glass-card" style={{ padding: '24px', borderRadius: '28px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Cake size={20} color="var(--gold-primary)" />
+        </div>
+        <h3 style={{ fontSize: '18px', fontWeight: '900' }}>Cumpleaños de <span className="text-gold">Clientes</span></h3>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {/* Today's birthdays */}
+        <div>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: todaysBirthdays.length > 0 ? '#4caf50' : 'rgba(255,255,255,0.1)' }}></span>
+            CUMPLEN HOY
+          </div>
+
+          {todaysBirthdays.length === 0 ? (
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '8px 12px', backgroundColor: 'rgba(255,255,255,0.01)', borderRadius: '10px' }}>
+              Ningún cliente cumple años hoy.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {todaysBirthdays.map(c => (
+                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)', borderRadius: '12px', cursor: 'pointer' }} onClick={() => onNavigate && onNavigate('clients', { clientId: c.id })}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Gift size={16} color="var(--gold-primary)" />
+                    <span style={{ fontWeight: '800', color: 'white', textDecoration: 'underline' }}>{c.name}</span>
+                  </div>
+                  <span style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)', padding: '2px 8px', borderRadius: '4px' }}>¡FELICIDADES!</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Upcoming birthdays */}
+        <div>
+          <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '12px' }}>
+            PRÓXIMOS 15 DÍAS
+          </div>
+
+          {upcomingBirthdays.length === 0 ? (
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '8px 12px', backgroundColor: 'rgba(255,255,255,0.01)', borderRadius: '10px' }}>
+              Sin cumpleaños próximos.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {upcomingBirthdays.map(c => (
+                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '12px', cursor: 'pointer' }} onClick={() => onNavigate && onNavigate('clients', { clientId: c.id })}>
+                  <span style={{ fontWeight: '700', color: 'var(--text-secondary)' }}>{c.name}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--gold-primary)', fontWeight: '800' }}>{c.bdayDateStr}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>(en {c.daysToBday} d)</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const PodiumSection = ({ title, icon, data, labelKey, scoreKey, scoreLabel, isClient, onNavigate }) => {
   // Sort into 2nd, 1st, 3rd for visual podium order
