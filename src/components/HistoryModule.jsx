@@ -133,8 +133,11 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                 <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
                   {isAdmin ? 'VENTAS FILTRADAS' : 'MIS GANANCIAS'}
                 </div>
-                <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--gold-primary)' }}>
-                  ${formatCurrency(totalIncome)}
+                <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--gold-primary)', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                  <span>{formatCurrency(totalIncome * (rates?.bcv || rates?.usd || 550))} Bs.</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '750', marginTop: '2px' }}>
+                    Ref: ${formatCurrency(totalIncome)}
+                  </span>
                 </div>
              </div>
           </div>
@@ -236,7 +239,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                         </td>
                         <td style={{ padding: '18px 24px', textAlign: 'right' }}>
                           <div style={{ fontSize: '16px', fontWeight: '900', color: 'white' }}>
-                            ${(() => {
+                            {(() => {
                               let val = 0;
                               if (!isAdmin) val = ((item.commission_earned || 0) + (item.tip_amount || 0));
                               else {
@@ -246,7 +249,22 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                 const tips = item.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
                                 val = (serviceBase + extras + products + tips);
                               }
-                              return formatCurrency(val);
+                              const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
+                              return `${formatCurrency(val * rate)} Bs.`;
+                            })()}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '750', marginTop: '2px' }}>
+                            {(() => {
+                              let val = 0;
+                              if (!isAdmin) val = ((item.commission_earned || 0) + (item.tip_amount || 0));
+                              else {
+                                const serviceBase = Number(item.services?.price || 0);
+                                const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+                                const products = item.appointment_products?.reduce((sum, p) => sum + (Number(p.price || 0) * (p.quantity || 1)), 0) || 0;
+                                const tips = item.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
+                                val = (serviceBase + extras + products + tips);
+                              }
+                              return `Ref: $${formatCurrency(val)}`;
                             })()}
                           </div>
                         </td>
@@ -284,27 +302,31 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                     <DetailItem 
                                       label="Servicio Base" 
                                       value={item.services?.name} 
-                                      subValue={user.role !== 'Asistente de Lavado' ? `$${formatCurrency(item.services?.price || 0)}` : null} 
+                                      subValue={user.role !== 'Asistente de Lavado' ? `${formatCurrency((item.services?.price || 0) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs. ($${formatCurrency(item.services?.price || 0)})` : null} 
                                     />
                                     <div>
                                       <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Extras / Productos</span>
                                       {item.appointment_extras?.map(ex => (
                                         <div key={ex.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
                                           <span>{ex.service_extras?.name}</span>
-                                          <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>+${ex.price}</span>
+                                          <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>
+                                            +{formatCurrency(Number(ex.price) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs. (Ref: +${ex.price})
+                                          </span>
                                         </div>
                                       ))}
                                       {item.appointment_products?.map(pr => (
                                         <div key={pr.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
                                           <span>{pr.inventory?.name} ({pr.quantity}u)</span>
-                                          <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>+${pr.price}</span>
+                                          <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>
+                                            +{formatCurrency(Number(pr.price) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs. (Ref: +${pr.price})
+                                          </span>
                                         </div>
                                       ))}
                                       {(!item.appointment_extras?.length && !item.appointment_products?.length) && <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Ninguno</div>}
                                     </div>
                                   </div>
                                 </div>
-
+ 
                                 {/* Finance Section */}
                                 <div>
                                   <SectionHeader icon={<TrendingUp size={14} />} title="Liquidación" />
@@ -314,11 +336,20 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                       <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Monto de Venta (Serv + Ext + Prod)</span>
                                       <div style={{ textAlign: 'right' }}>
                                         <div style={{ fontSize: '16px', fontWeight: '900', color: 'white' }}>
-                                            ${(() => {
+                                            {(() => {
                                               const serviceBase = Number(item.services?.price || 0);
                                               const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
                                               const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
-                                              return formatCurrency(serviceBase + extras + products);
+                                              const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
+                                              return `${formatCurrency((serviceBase + extras + products) * rate)} Bs.`;
+                                            })()}
+                                        </div>
+                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '750', marginTop: '2px' }}>
+                                            {(() => {
+                                              const serviceBase = Number(item.services?.price || 0);
+                                              const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+                                              const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
+                                              return `Ref: $${formatCurrency(serviceBase + extras + products)}`;
                                             })()}
                                         </div>
                                       </div>
@@ -328,32 +359,63 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                     {isAdmin ? (
                                       <div style={{ marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
                                         <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', display: 'block' }}>Desglose de Propinas y Comisiones</span>
-                                        {item.appointment_staff?.length > 0 ? item.appointment_staff.map((st, sidx) => (
-                                          <div key={sidx} style={{ marginBottom: '12px', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                              <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{st.staff?.name}</span>
-                                              <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>+${Number(st.commission_earned || 0).toFixed(2)} Comisión</span>
+                                        {item.appointment_staff?.length > 0 ? item.appointment_staff.map((st, sidx) => {
+                                          const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
+                                          return (
+                                            <div key={sidx} style={{ marginBottom: '12px', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)' }}>
+                                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{st.staff?.name}</span>
+                                                <div style={{ textAlign: 'right' }}>
+                                                  <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+                                                    +{formatCurrency(Number(st.commission_earned || 0) * rate)} Bs.
+                                                  </div>
+                                                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
+                                                    Ref: +${Number(st.commission_earned || 0).toFixed(2)} Comisión
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Propina:</span>
+                                                <div style={{ textAlign: 'right' }}>
+                                                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                                                    {formatCurrency(Number(st.tip_amount || 0) * rate)} Bs.
+                                                  </span>
+                                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginLeft: '6px' }}>
+                                                    (Ref: ${Number(st.tip_amount || 0).toFixed(2)})
+                                                  </span>
+                                                </div>
+                                              </div>
                                             </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
-                                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Propina:</span>
-                                              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600' }}>${Number(st.tip_amount || 0).toFixed(2)}</span>
-                                            </div>
-                                          </div>
-                                        )) : (
+                                          );
+                                        }) : (
                                           <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>No hay personal registrado en esta venta.</div>
                                         )}
                                       </div>
                                     ) : (
                                       <>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', alignItems: 'center' }}>
                                           <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                                             {user.role === 'Asistente de Lavado' ? 'Tu Tarifa de Lavado' : 'Tu Comisión'}
                                           </span>
-                                          <span style={{ fontSize: '14px', fontWeight: '700' }}>${formatCurrency(item.commission_earned || 0)}</span>
+                                          <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>
+                                              {formatCurrency((item.commission_earned || 0) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs.
+                                            </span>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
+                                              Ref: ${formatCurrency(item.commission_earned || 0)}
+                                            </div>
+                                          </div>
                                         </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px', alignItems: 'center' }}>
                                           <span style={{ fontSize: '13px', color: 'var(--gold-primary)', fontWeight: '800' }}>Tu Propina</span>
-                                          <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>+${formatCurrency(item.tip_amount || 0)}</span>
+                                          <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+                                              +{formatCurrency((item.tip_amount || 0) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs.
+                                            </span>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
+                                              Ref: +${formatCurrency(item.tip_amount || 0)}
+                                            </div>
+                                          </div>
                                         </div>
                                       </>
                                     )}

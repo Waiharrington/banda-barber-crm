@@ -246,7 +246,7 @@ function App() {
     // Permission check for non-admins
     const userRole = user?.role || '';
     const roleName = userRole.split('|')[0];
-    if (roleName === 'Asistente de Lavado' && !['dashboard', 'history', 'my-profile'].includes(tabId)) {
+    if (roleName === 'Asistente de Lavado' && !['dashboard', 'history', 'my-profile', 'barber'].includes(tabId)) {
       return;
     }
 

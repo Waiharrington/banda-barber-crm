@@ -42,7 +42,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
     if (item.id === 'my-profile') return true;
     
     if (roleName === 'Asistente de Lavado') {
-      return ['dashboard', 'history'].includes(item.id);
+      return ['dashboard', 'history', 'barber'].includes(item.id);
     }
 
     if (customPerms) {

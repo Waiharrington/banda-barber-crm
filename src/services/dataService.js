@@ -608,6 +608,37 @@ export const dataService = {
     return data;
   },
 
+  async assignAssistantToAppointment(appointmentId, assistantId) {
+    // Delete any existing washer records for this appointment in appointment_staff to avoid duplicates
+    const { data: staffList } = await supabase
+      .from('appointment_staff')
+      .select('id, staff(role)')
+      .eq('appointment_id', appointmentId);
+      
+    if (staffList) {
+      const toDelete = staffList.filter(s => s.staff?.role?.includes('Asistente de Lavado')).map(s => s.id);
+      if (toDelete.length > 0) {
+        await supabase.from('appointment_staff').delete().in('id', toDelete);
+      }
+    }
+    
+    // Insert the new assistant record
+    const { data, error } = await supabase
+      .from('appointment_staff')
+      .insert([{
+        appointment_id: appointmentId,
+        staff_id: assistantId,
+        commission_earned: 0,
+        product_commission: 0,
+        tip_amount: 0
+      }])
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return data;
+  },
+
   async deleteAppointment(id) {
     const { error } = await supabase
       .from('appointments')
@@ -680,6 +711,14 @@ export const dataService = {
     // 2. Register commissioners (Staff involved)
     if (paymentRecord.staffInvolved && paymentRecord.staffInvolved.length > 0) {
       const primaryAppId = paymentRecord.appointmentId || paymentRecord.appointmentIds?.[0] || null;
+      
+      // Delete any temporary/placeholder staff records for these appointments to prevent duplicates
+      if (paymentRecord.appointmentIds && paymentRecord.appointmentIds.length > 0) {
+        await supabase.from('appointment_staff').delete().in('appointment_id', paymentRecord.appointmentIds);
+      } else if (primaryAppId) {
+        await supabase.from('appointment_staff').delete().eq('appointment_id', primaryAppId);
+      }
+
       const staffRecords = paymentRecord.staffInvolved
         .filter(s => s.staffId) // Only if there is a staff member
         .map(s => ({
@@ -751,7 +790,7 @@ export const dataService = {
 
   async syncTransactionToSheets(paymentRecord) {
     // URL de la Web App de Google Apps Script configurada
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxubmD5xEMOgwGoH5z_MSrlCylTOrD1U9pnReXJ10WU-RoPTz4SlXKGl_yW7jnJN-rG/exec"; 
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwQ3ro99kB2GUSTvM1lZIGTIFqxYQSWelgTxOLacz9bUMa2t44IyhhaTubOwUDXMgAM/exec"; 
     
     if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return; // Si no está configurada, ignorar
 
@@ -798,6 +837,10 @@ export const dataService = {
             appMontoBsText = `${(appTotalUsdVal * fixedRateVal).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
           }
 
+          const staffTips = paymentRecord.staffInvolved?.find(si => si.staffId === app.staff_id || si.name === app.barberName);
+          const appTipUsd = staffTips ? (Number(staffTips.tip) || 0) : 0;
+          const appTipBs = appTipUsd * fixedRateVal;
+
           const payload = {
             fecha: new Date().toLocaleDateString('es-VE'),
             cliente: app.clientName || 'Cliente',
@@ -809,7 +852,9 @@ export const dataService = {
             lavado: app.didWash ? 1 : 0,
             montoBs: appMontoBsText,
             montoUsd: appMontoUsdText,
-            tasa: `${fixedRateVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`
+            tasa: `${fixedRateVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`,
+            propina: appTipBs,
+            vale: 0
           };
 
           await fetch(WEBHOOK_URL, {
@@ -850,7 +895,9 @@ export const dataService = {
             lavado: 0,
             montoBs: prodMontoBsText,
             montoUsd: prodMontoUsdText,
-            tasa: `${fixedRateVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`
+            tasa: `${fixedRateVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`,
+            propina: 0,
+            vale: 0
           };
 
           await fetch(WEBHOOK_URL, {
@@ -912,14 +959,66 @@ export const dataService = {
           body: JSON.stringify(payload)
         });
       }
+      // Sincronizar propina de asistente (lavador) si existe
+      const assistantStaff = paymentRecord.staffInvolved?.find(s => s.role?.toLowerCase().includes('asistente') || s.role?.toLowerCase().includes('lavado') || s.role?.toLowerCase().includes('operaciones'));
+      const assistantTipUsd = assistantStaff ? (Number(assistantStaff.tip) || 0) : 0;
+      
+      if (assistantTipUsd > 0) {
+        const assistantTipBs = assistantTipUsd * fixedRateVal;
+        const assistantPayload = {
+          fecha: new Date().toLocaleDateString('es-VE'),
+          cliente: paymentRecord.clientName || 'Cliente General',
+          cedula: paymentRecord.clientCedula || 'S/C',
+          barbero: assistantStaff.name || 'Alexandra',
+          servicio: 'Propina Asistente',
+          metodoPagoUsd: metodoPagoUsd,
+          metodoPagoBs: metodoPagoBs,
+          lavado: 0,
+          montoBs: "0,00Bs.",
+          montoUsd: "0,00$",
+          tasa: `${fixedRateVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`,
+          propina: assistantTipBs,
+          vale: 0
+        };
+        
+        await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          body: JSON.stringify(assistantPayload)
+        });
+      }
+
       console.log('Sincronizado con Google Sheets exitosamente');
     } catch (e) {
       console.error('Error al sincronizar con Google Sheets:', e);
     }
   },
 
+  async syncValeToSheets(valePayload) {
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwQ3ro99kB2GUSTvM1lZIGTIFqxYQSWelgTxOLacz9bUMa2t44IyhhaTubOwUDXMgAM/exec"; 
+    if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return;
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'text/plain'
+        },
+        body: JSON.stringify({
+          ...valePayload,
+          propina: 0
+        })
+      });
+    } catch (e) {
+      console.error("Error syncing vale to sheets:", e);
+    }
+  },
+
   async triggerWeeklyClosing() {
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxubmD5xEMOgwGoH5z_MSrlCylTOrD1U9pnReXJ10WU-RoPTz4SlXKGl_yW7jnJN-rG/exec";
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwQ3ro99kB2GUSTvM1lZIGTIFqxYQSWelgTxOLacz9bUMa2t44IyhhaTubOwUDXMgAM/exec";
     if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return false;
 
     try {

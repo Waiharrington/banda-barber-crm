@@ -83,7 +83,7 @@ const SchedulingModule = ({ isMobile }) => {
 
   const loadAllAppointments = async () => {
     try {
-      let data = await dataService.getAppointmentsByState(['Agendado', 'En Silla', 'Por Pagar', 'Completado', 'Cancelada']);
+      let data = await dataService.getAppointmentsByState(['Agendado', 'En Silla', 'En Lavado', 'Por Pagar', 'Completado', 'Cancelada']);
       
       const isBarber = user?.role === 'Barbero' || user?.role?.startsWith('Barbero|');
       if (isBarber) {
@@ -99,7 +99,7 @@ const SchedulingModule = ({ isMobile }) => {
   const loadFilteredAppointments = async () => {
     try {
       setLoading(true);
-      let data = await dataService.getAppointmentsByState(['Agendado', 'En Silla', 'Por Pagar', 'Completado', 'Cancelada']);
+      let data = await dataService.getAppointmentsByState(['Agendado', 'En Silla', 'En Lavado', 'Por Pagar', 'Completado', 'Cancelada']);
       
       const isBarber = user?.role === 'Barbero' || user?.role?.startsWith('Barbero|');
       if (isBarber) {
@@ -447,8 +447,8 @@ const SchedulingModule = ({ isMobile }) => {
                     <div style={{ textAlign: 'center' }}>
                       <span style={{ 
                         fontSize: '9px', fontWeight: '900', padding: '4px 10px', borderRadius: '20px', textTransform: 'uppercase',
-                        backgroundColor: app.status === 'Agendado' ? 'rgba(212,175,55,0.1)' : app.status === 'En Silla' ? 'rgba(0,122,255,0.1)' : app.status === 'Por Pagar' ? 'rgba(50,215,75,0.1)' : app.status === 'Completado' ? 'rgba(142,142,147,0.1)' : 'rgba(255,69,58,0.1)',
-                        color: app.status === 'Agendado' ? 'var(--gold-primary)' : app.status === 'En Silla' ? '#007aff' : app.status === 'Por Pagar' ? '#32d74b' : app.status === 'Completado' ? '#8e8e93' : '#ff453a'
+                        backgroundColor: app.status === 'Agendado' ? 'rgba(212,175,55,0.1)' : app.status === 'En Silla' ? 'rgba(0,122,255,0.1)' : app.status === 'En Lavado' ? 'rgba(0,191,255,0.1)' : app.status === 'Por Pagar' ? 'rgba(50,215,75,0.1)' : app.status === 'Completado' ? 'rgba(142,142,147,0.1)' : 'rgba(255,69,58,0.1)',
+                        color: app.status === 'Agendado' ? 'var(--gold-primary)' : app.status === 'En Silla' ? '#007aff' : app.status === 'En Lavado' ? '#00bfff' : app.status === 'Por Pagar' ? '#32d74b' : app.status === 'Completado' ? '#8e8e93' : '#ff453a'
                       }}>
                         {app.status}
                       </span>

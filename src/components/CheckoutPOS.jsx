@@ -54,6 +54,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const [fixedRate, setFixedRate] = useState(rates?.usd || 0);
   const [tips, setTips] = useState([]); // Array of { id, staffId, amount }
   const [cart, setCart] = useState([]); // Sold products
+  const [itemSalesAssociations, setItemSalesAssociations] = useState({}); // { itemId: staffId }
   const [paymentMode, setPaymentMode] = useState('full_usd'); // or 'mixed'
   const [cashUsd, setCashUsd] = useState(0);
   const [methodUsd, setMethodUsd] = useState('Efectivo');
@@ -86,7 +87,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       showToast("Precio actualizado");
       await loadData();
       if (selectedApp) {
-        const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
+        const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
         const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
         setSelectedApp(updatedSelected);
       }
@@ -153,7 +154,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       const initialTips = uniqueStaffIds.map((staffId, idx) => ({
         id: (Date.now() + idx).toString(),
         staffId: staffId,
-        amount: 0
+        amount: 0,
+        currency: 'USD'
       }));
       setTips(initialTips);
 
@@ -164,26 +166,72 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       ).length;
       setWashCount(washEligibleCount);
       
-      // Default wash assistant selection (ONLY if exactly one is available)
-      const washers = allStaff.filter(s => s.role?.includes('Asistente de Lavado'));
-      if (washers.length === 1) {
-        setSelectedWasherId(washers[0].id);
+      // Check if there is already a washer associated in database
+      const existingWasherRecord = totalAppsInCheckout
+        .flatMap(a => a.appointment_staff || [])
+        .find(as => as.staff?.role?.toLowerCase().includes('asistente'));
+
+      let currentWasherId = '';
+      if (existingWasherRecord) {
+        setSelectedWasherId(existingWasherRecord.staff_id);
+        currentWasherId = existingWasherRecord.staff_id;
       } else {
-        setSelectedWasherId('');
+        // Default wash assistant selection (ONLY if exactly one is available)
+        const washers = allStaff.filter(s => s.role?.toLowerCase().includes('asistente'));
+        if (washers.length === 1) {
+          setSelectedWasherId(washers[0].id);
+          currentWasherId = washers[0].id;
+        } else {
+          setSelectedWasherId('');
+        }
+      }
+
+      // 4. Initialize item sales associations intelligently
+      const newAssociations = { ...itemSalesAssociations };
+      let changed = false;
+
+      totalAppsInCheckout.forEach(app => {
+        // Products default association
+        app.appointment_products?.forEach(ap => {
+          const itemId = ap.inventory?.id;
+          if (itemId && !newAssociations[itemId]) {
+            newAssociations[itemId] = app.staff_id || '';
+            changed = true;
+          }
+        });
+
+        // Extras default association
+        app.appointment_extras?.forEach(ex => {
+          const itemId = ex.id;
+          if (itemId && !newAssociations[itemId]) {
+            const isWashExtra = ex.service_extras?.name?.toLowerCase().includes('lavado');
+            if (isWashExtra && currentWasherId) {
+              newAssociations[itemId] = currentWasherId;
+            } else {
+              newAssociations[itemId] = app.staff_id || '';
+            }
+            changed = true;
+          }
+        });
+      });
+
+      if (changed) {
+        setItemSalesAssociations(newAssociations);
       }
     } else if (!isDirectSale) {
       setCart([]);
       setTips([]);
       setWashCount(0);
       setSelectedWasherId('');
+      setItemSalesAssociations({});
     }
-  }, [totalAppsInCheckout, isDirectSale, allStaff]);
+  }, [totalAppsInCheckout, isDirectSale, allStaff, itemSalesAssociations, selectedWasherId]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [apps, inv, ext, cls, staff, srv] = await Promise.all([
-        dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']),
+        dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']),
         dataService.getInventory(),
         dataService.getExtras(),
         dataService.getClients(),
@@ -241,7 +289,12 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const servicePrice = totalAppsInCheckout.reduce((acc, app) => acc + (app.services?.price || 0), 0);
   const productsTotal = cart.reduce((acc, p) => acc + (p.price * p.quantity), 0);
   const extrasTotal = totalAppsInCheckout.reduce((acc, app) => acc + (app.appointment_extras?.reduce((subAcc, e) => subAcc + (e.price || 0), 0) || 0), 0);
-  const totalTips = tips.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+  const totalTips = tips.reduce((acc, t) => {
+    const isBs = t.currency === 'BS';
+    const amountVal = Number(t.amount || 0);
+    const usdVal = isBs ? (amountVal / fixedRate) : amountVal;
+    return acc + usdVal;
+  }, 0);
   const totalUsd = servicePrice + productsTotal + extrasTotal + totalTips;
   const totalBs = (totalUsd * fixedRate).toFixed(2);
   
@@ -276,7 +329,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       await dataService.addExtraToAppointment(selectedApp.id, extra.id, extra.price);
       showToast(`${extra.name} añadido a la cuenta.`);
       await loadData();
-      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
       const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
       setSelectedApp(updatedSelected);
     } catch (e) {
@@ -292,7 +345,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       await dataService.removeExtraFromAppointment(extraId);
       showToast("Extra eliminado.");
       await loadData();
-      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
       const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
       setSelectedApp(updatedSelected);
     } catch (e) {
@@ -409,7 +462,12 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             else pct = app.staff?.commission_pct ?? 40;
 
             const comm = grossBase * (pct / 100);
-            const tipVal = tips.filter(t => t.staffId === app.staff_id).reduce((acc, t) => acc + Number(t.amount || 0), 0);
+            const tipVal = tips.filter(t => t.staffId === app.staff_id).reduce((acc, t) => {
+              const isBs = t.currency === 'BS';
+              const amountVal = Number(t.amount || 0);
+              const usdVal = isBs ? (amountVal / fixedRate) : amountVal;
+              return acc + usdVal;
+            }, 0);
 
             const existing = involved.find(i => i.staffId === app.staff_id);
             if (existing) {
@@ -437,7 +495,12 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
               existing.commissionEarned += washCommission;
               existing.commissionBs += washCommission * fixedRate;
             } else {
-              const tipValW = tips.filter(t => t.staffId === selectedWasherId).reduce((acc, t) => acc + Number(t.amount || 0), 0);
+              const tipValW = tips.filter(t => t.staffId === selectedWasherId).reduce((acc, t) => {
+                const isBs = t.currency === 'BS';
+                const amountVal = Number(t.amount || 0);
+                const usdVal = isBs ? (amountVal / fixedRate) : amountVal;
+                return acc + usdVal;
+              }, 0);
               involved.push({
                 staffId: selectedWasherId,
                 name: washer?.name || 'Asistente',
@@ -456,7 +519,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             const existing = involved.find(i => i.staffId === t.staffId);
             if (!existing) {
               const staffObj = allStaff.find(s => s.id === t.staffId);
-              const tipValT = Number(t.amount || 0);
+              const isBs = t.currency === 'BS';
+              const tipValT = isBs ? (Number(t.amount || 0) / fixedRate) : Number(t.amount || 0);
               involved.push({
                 staffId: t.staffId,
                 name: staffObj?.name || 'Staff',
@@ -465,6 +529,70 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                 productCommissionEarned: 0,
                 tip: tipValT,
                 tipBs: tipValT * fixedRate
+              });
+            }
+          });
+
+          // 4. Extras Commission Assignment
+          totalAppsInCheckout.forEach(app => {
+            app.appointment_extras?.forEach(ex => {
+              const assignedStaffId = itemSalesAssociations[ex.id] || app.staff_id;
+              if (!assignedStaffId) return;
+ 
+              const staffObj = allStaff.find(s => s.id === assignedStaffId);
+              const role = staffObj?.role;
+              let pct = 40;
+              if (role === 'Barbero') pct = app.services?.commission_barber ?? 40;
+              else if (role === 'Asistente de Lavado') pct = app.services?.commission_washer ?? 10;
+              else if (role === 'Caja') pct = app.services?.commission_cashier ?? 0;
+              else if (role === 'Recepcionista') pct = app.services?.commission_receptionist ?? 0;
+              else pct = staffObj?.commission_pct ?? 40;
+ 
+              const extraComm = (ex.price || 0) * (pct / 100);
+ 
+              const existing = involved.find(i => i.staffId === assignedStaffId);
+              if (existing) {
+                existing.commissionEarned += extraComm;
+                existing.commissionBs += extraComm * fixedRate;
+              } else {
+                involved.push({
+                  staffId: assignedStaffId,
+                  name: staffObj?.name || 'Staff',
+                  role: staffObj?.role || 'Staff',
+                  commissionEarned: extraComm,
+                  commissionBs: extraComm * fixedRate,
+                  productCommissionEarned: 0,
+                  productCommissionBs: 0,
+                  tip: 0,
+                  tipBs: 0
+                });
+              }
+            });
+          });
+ 
+          // 5. Products Commission Assignment (10% standard product commission)
+          cart.forEach(p => {
+            const assignedStaffId = itemSalesAssociations[p.id];
+            if (!assignedStaffId) return;
+ 
+            const staffObj = allStaff.find(s => s.id === assignedStaffId);
+            const productComm = (p.price || 0) * (p.quantity || 1) * 0.10; // 10% commission
+ 
+            const existing = involved.find(i => i.staffId === assignedStaffId);
+            if (existing) {
+              existing.productCommissionEarned = (existing.productCommissionEarned || 0) + productComm;
+              existing.productCommissionBs = (existing.productCommissionBs || 0) + (productComm * fixedRate);
+            } else {
+              involved.push({
+                staffId: assignedStaffId,
+                name: staffObj?.name || 'Staff',
+                role: staffObj?.role || 'Staff',
+                commissionEarned: 0,
+                commissionBs: 0,
+                productCommissionEarned: productComm,
+                productCommissionBs: productComm * fixedRate,
+                tip: 0,
+                tipBs: 0
               });
             }
           });
@@ -530,12 +658,12 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         client_id: clientId,
         service_id: selectedServiceForBarber.id,
         staff_id: barberId,
-        status: 'Por Pagar',
+        status: 'En Silla',
         total_price: selectedServiceForBarber.price
       });
       
       await loadData();
-      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
       
       if (selectedApp) {
         const currentAppResel = updatedApps.find(a => a.id === selectedApp.id);
@@ -586,7 +714,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       showToast("Barbero actualizado correctamente");
       await loadData();
       
-      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
       const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
       setSelectedApp(updatedSelected);
     } catch (e) {
@@ -618,7 +746,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
           showToast("Servicio eliminado de la cita.");
           await loadData();
           
-          const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado']);
+          const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
           const currentAppResel = updatedApps.find(a => a.id === selectedApp.id);
           if (currentAppResel) {
             setSelectedApp(currentAppResel);
@@ -796,9 +924,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                 <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No hay clientes por cobrar.</div>
               ) : (
                 groupedActiveServices.map(group => {
-                  const firstApp = group.apps[0];
                   const isSelected = selectedApp?.client_id === group.client_id;
-                  const badgeStatus = group.apps.some(a => a.status === 'En Silla') ? 'En Silla' : 'Por Pagar';
+                  const badgeStatus = group.apps.some(a => a.status === 'En Silla') ? 'En Silla' : (group.apps.some(a => a.status === 'En Lavado') ? 'En Lavado' : 'Por Pagar');
                   const serviceNames = group.apps.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Venta de Productos';
                   const staffNames = Array.from(new Set(group.apps.map(a => a.staff?.name?.split(' ')[0]).filter(Boolean))).join(', ') || 'Caja';
                   const totalUsd = group.apps.reduce((acc, a) => acc + (a.services?.price || a.total_price || 0), 0);
@@ -806,7 +933,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   return (
                     <div 
                       key={group.client_id} 
-                      onClick={() => setSelectedApp(firstApp)}
+                      onClick={() => setSelectedApp(group.apps[0])}
                       style={{ 
                         padding: '16px', 
                         borderRadius: '16px', 
@@ -818,7 +945,15 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <span style={{ fontWeight: '800' }}>{group.client_name}</span>
-                        <span style={{ fontSize: '10px', backgroundColor: badgeStatus === 'En Silla' ? 'var(--gold-primary)' : '#4caf50', color: 'black', padding: '2px 8px', borderRadius: '10px', fontWeight: '900' }}>{badgeStatus}</span>
+                        <span style={{ 
+                          fontSize: '10px', 
+                          backgroundColor: badgeStatus === 'En Silla' ? 'var(--gold-primary)' : (badgeStatus === 'En Lavado' ? 'rgba(0,122,255,0.15)' : '#4caf50'), 
+                          color: badgeStatus === 'En Silla' ? 'black' : (badgeStatus === 'En Lavado' ? '#007aff' : 'white'), 
+                          border: badgeStatus === 'En Lavado' ? '1px solid rgba(0,122,255,0.3)' : 'none',
+                          padding: '2px 8px', 
+                          borderRadius: '10px', 
+                          fontWeight: '900' 
+                        }}>{badgeStatus}</span>
                       </div>
                       <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1095,12 +1230,36 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     🔗 ENLAZAR OTRAS CITAS (PAGO GRUPAL)
                   </button>
                 )}
-                
-                {cart.map(p => (
+                 {cart.map(p => (
                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <button onClick={() => setCart(cart.filter(item => item.id !== p.id))} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}>[X]</button>
                       {p.name} (x{p.quantity})
+                      
+                      {/* Staff Selector for Product Sale */}
+                      <select
+                        value={itemSalesAssociations[p.id] || ''}
+                        onChange={(e) => setItemSalesAssociations({ ...itemSalesAssociations, [p.id]: e.target.value })}
+                        style={{
+                          background: 'rgba(255,255,255,0.05)',
+                          border: 'none',
+                          color: 'var(--gold-primary)',
+                          fontSize: '11px',
+                          fontWeight: '800',
+                          borderRadius: '8px',
+                          padding: '4px 8px',
+                          marginLeft: '8px',
+                          cursor: 'pointer',
+                          outline: 'none'
+                        }}
+                      >
+                        <option value="" style={{ background: '#1c1c1e', color: 'white' }}>Sin Vendedor</option>
+                        {allStaff.map(s => (
+                          <option key={s.id} value={s.id} style={{ background: '#1c1c1e', color: 'white' }}>
+                            {s.name.split(' ')[0]} ({s.role?.split(' ')[0]})
+                          </option>
+                        ))}
+                      </select>
                     </span>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
                       <span style={{ fontWeight: '700' }}>{(p.price * p.quantity * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
@@ -1108,7 +1267,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     </div>
                   </div>
                 ))}
-
+ 
                 {totalAppsInCheckout.flatMap(app => 
                   app.appointment_extras?.map(extra => ({
                     ...extra,
@@ -1119,6 +1278,31 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <button onClick={() => handleRemoveExtra(extra.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}>[X]</button>
                       {extra.service_extras?.name}
+                      
+                      {/* Staff Selector for Extra */}
+                      <select
+                        value={itemSalesAssociations[extra.id] || ''}
+                        onChange={(e) => setItemSalesAssociations({ ...itemSalesAssociations, [extra.id]: e.target.value })}
+                        style={{
+                          background: 'rgba(255,255,255,0.05)',
+                          border: 'none',
+                          color: 'var(--gold-primary)',
+                          fontSize: '11px',
+                          fontWeight: '800',
+                          borderRadius: '8px',
+                          padding: '4px 8px',
+                          marginLeft: '8px',
+                          cursor: 'pointer',
+                          outline: 'none'
+                        }}
+                      >
+                        <option value="" style={{ background: '#1c1c1e', color: 'white' }}>Sin Asignar</option>
+                        {allStaff.map(s => (
+                          <option key={s.id} value={s.id} style={{ background: '#1c1c1e', color: 'white' }}>
+                            {s.name.split(' ')[0]} ({s.role?.split(' ')[0]})
+                          </option>
+                        ))}
+                      </select>
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {editingExtraPriceId === extra.id ? (
@@ -1197,7 +1381,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                         >
                           <option value="">Seleccionar Asistente de Lavado</option>
                           {allStaff
-                            .filter(s => s.role?.includes('Asistente de Lavado'))
+                            .filter(s => s.role?.toLowerCase().includes('asistente'))
                             .map(s => {
                               return (
                                 <option key={s.id} value={s.id}>
@@ -1207,7 +1391,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                             })
                           }
                         </select>
-                        {allStaff.filter(s => s.role?.includes('Asistente de Lavado')).length > 1 && !selectedWasherId && (
+                        {allStaff.filter(s => s.role?.toLowerCase().includes('asistente')).length > 1 && !selectedWasherId && (
                           <div style={{ marginTop: '8px', fontSize: '11px', color: '#ff9500', fontWeight: '800' }}>
                             ⚠️ Hay múltiples asistentes. Por favor selecciona una.
                           </div>
@@ -1224,7 +1408,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                       <TrendingUp size={14} color="var(--gold-primary)" /> PROPINAS
                     </span>
                     <button 
-                      onClick={() => setTips([...tips, { id: Date.now().toString(), staffId: allStaff[0]?.id || '', amount: 0 }])}
+                      onClick={() => setTips([...tips, { id: Date.now().toString(), staffId: allStaff[0]?.id || '', amount: 0, currency: 'USD' }])}
                       style={{ background: 'rgba(212,175,55,0.1)', border: 'none', color: 'var(--gold-primary)', borderRadius: '8px', padding: '4px 8px', fontSize: '10px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
                       <Plus size={12} /> AGREGAR PROPINA
@@ -1248,8 +1432,35 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                             <option key={s.id} value={s.id}>{s.name}</option>
                           ))}
                         </select>
+                        
+                        {/* Currency Selector (USD/BS Toggle) */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newTips = [...tips];
+                            newTips[idx].currency = newTips[idx].currency === 'BS' ? 'USD' : 'BS';
+                            setTips(newTips);
+                          }}
+                          style={{ 
+                            width: '44px', 
+                            height: '36px', 
+                            background: t.currency === 'BS' ? 'rgba(255,255,255,0.05)' : 'rgba(212,175,55,0.15)', 
+                            border: '1px solid rgba(255,255,255,0.1)', 
+                            borderRadius: '10px', 
+                            color: t.currency === 'BS' ? '#ffffff' : 'var(--gold-primary)', 
+                            fontWeight: '900', 
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {t.currency === 'BS' ? 'Bs' : '$'}
+                        </button>
+                        
                         <div style={{ position: 'relative', width: '80px' }}>
-                          <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', opacity: 0.5 }}>$</span>
                           <input 
                             type="number" 
                             placeholder="0"

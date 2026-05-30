@@ -22,12 +22,31 @@ import {
 import { dataService } from '../services/dataService';
 import AstroDialog from './AstroDialog';
 
+const getStartOfWeek = () => {
+  const now = new Date();
+  const day = now.getDay(); // 0 is Sunday, 1 is Monday, etc.
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+  const monday = new Date(now.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+};
+
 const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   const { showToast } = useNotifs();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const [activeTab, setActiveTab] = useState('transactions'); // 'transactions' or 'analysis'
+
+  // Transaction Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterService, setFilterService] = useState('all');
+  const [filterType, setFilterType] = useState('all'); // 'all', 'income', 'expense'
+  const [filterBarber, setFilterBarber] = useState('all'); // 'all' or staff ID
+  const [filterDate, setFilterDate] = useState('all'); // 'all', 'today', 'this_week', 'this_month', 'custom'
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
   
   // Custom Dialog State
   const [dialog, setDialog] = useState({
@@ -115,9 +134,75 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
     deductionBs: 0, 
     paymentAmountBs: 0,
     isAbono: false,
-    file: null 
+    file: null,
+    paymentMethod: 'Efectivo ($)'
   });
   const [payrollDetail, setPayrollDetail] = useState({ isOpen: false, staff: null, transactions: [] });
+  const [valeModal, setValeModal] = useState({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo ($)' });
+
+  const handleRegisterVale = async () => {
+    if (!valeModal.amountBs || Number(valeModal.amountBs) <= 0) {
+      showToast("Ingresa un monto válido para el vale", "warning");
+      return;
+    }
+    try {
+      setLoading(true);
+      const amountBs = Number(valeModal.amountBs);
+      const amountUsd = amountBs / (rates?.usd || 550);
+      const chosenMethod = valeModal.paymentMethod || 'Efectivo ($)';
+      
+      const newTx = {
+        description: `ADELANTO VALE - Barbero: ${valeModal.staff.name} (${chosenMethod})`,
+        amount: amountUsd,
+        type: 'expense',
+        category: 'Vales Barberos',
+        currency: 'USD',
+        exchange_rate: rates?.usd || 550,
+        metadata: {
+          staffId: valeModal.staff.id,
+          amountBs: amountBs,
+          isVale: true,
+          paymentMethod: chosenMethod
+        }
+      };
+      
+      await dataService.addTransaction(newTx);
+      
+      // Sincronizar Vale con Google Sheets de forma dinámica
+      try {
+        const isUsdMethod = ['Efectivo ($)', 'Zelle', 'Binance', 'Zinli'].includes(chosenMethod);
+        const formattedMethod = chosenMethod.includes('($)') || chosenMethod.includes('(Bs)')
+          ? chosenMethod
+          : `${chosenMethod} (${isUsdMethod ? '$' : 'Bs'})`;
+
+        await dataService.syncValeToSheets({
+          fecha: new Date().toLocaleDateString('es-VE'),
+          barbero: valeModal.staff.name,
+          vale: amountBs,
+          montoUsd: isUsdMethod ? `${amountUsd.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$` : "0,00$",
+          montoBs: !isUsdMethod ? `${amountBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.` : "0,00Bs.",
+          metodoPagoUsd: isUsdMethod ? formattedMethod : "No aplica",
+          metodoPagoBs: !isUsdMethod ? formattedMethod : "No aplica",
+          servicio: "Adelanto (Vale)",
+          cliente: "ADELANTO VALE",
+          cedula: "S/C",
+          lavado: 0,
+          tasa: `${(rates?.usd || 550).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`
+        });
+      } catch (sheetErr) {
+        console.error("Error al sincronizar vale a Sheets:", sheetErr);
+      }
+
+      showToast(`Vale de ${amountBs} Bs registrado con éxito para ${valeModal.staff.name} en ${chosenMethod}`, 'success');
+      setValeModal({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo ($)' });
+      fetchTransactions();
+    } catch (err) {
+      console.error(err);
+      showToast("Error al registrar vale", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleWeeklyCloseExecute = async () => {
     setWeeklyCloseModal(prev => ({ ...prev, loading: true, error: null }));
@@ -192,9 +277,10 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       setLoading(true);
       const finalAmountBs = payrollModal.isAbono ? payrollModal.paymentAmountBs : (payrollModal.earnedBs - payrollModal.deductionBs);
       const amountUsd = finalAmountBs / (rates?.usd || 550); 
+      const chosenMethod = payrollModal.paymentMethod || 'Efectivo ($)';
       
       const newTx = {
-        description: `Pago Nómina: ${payrollModal.staff.name}${payrollModal.isAbono ? ' (Abono)' : ''} (Descuento Asist. ${payrollModal.isAbono ? 0 : payrollModal.deductionBs}Bs)`,
+        description: `Pago Nómina: ${payrollModal.staff.name}${payrollModal.isAbono ? ' (Abono)' : ''} (Descuento Asist. ${payrollModal.isAbono ? 0 : payrollModal.deductionBs}Bs) [${chosenMethod}]`,
         amount: amountUsd,
         type: 'expense',
         category: 'Pago Nómina',
@@ -205,12 +291,13 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           amountBs: finalAmountBs,
           deductionBs: payrollModal.isAbono ? 0 : payrollModal.deductionBs,
           isAbono: payrollModal.isAbono,
-          voucherImage: payrollModal.file
+          voucherImage: payrollModal.file,
+          paymentMethod: chosenMethod
         }
       };
       
       await dataService.addTransaction(newTx);
-      showToast('Nómina pagada con éxito', 'success');
+      showToast(`Nómina pagada con éxito (${chosenMethod})`, 'success');
       setPayrollModal(prev => ({ ...prev, isOpen: false }));
       fetchTransactions();
     } catch(err) {
@@ -352,14 +439,16 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   meta.staffInvolved?.[0]?.name || 
                   "N/A";
     
-    let paymentMethod = "Efectivo ($)";
-    const transferAmount = Number(meta.transfer_bs || meta.transferBs || 0);
-    const isMixed = meta.mixed_payment || meta.isMixed;
-    
-    if (transferAmount > 0) {
-      paymentMethod = isMixed ? "Mixto ($ + Bs)" : "Pago Móvil / Transferencia";
-    } else if (isMixed) {
-      paymentMethod = "Mixto ($ + Bs)";
+    let paymentMethod = meta.paymentMethod || "Efectivo ($)";
+    if (!meta.paymentMethod) {
+      const transferAmount = Number(meta.transfer_bs || meta.transferBs || 0);
+      const isMixed = meta.mixed_payment || meta.isMixed;
+      
+      if (transferAmount > 0) {
+        paymentMethod = isMixed ? "Mixto ($ + Bs)" : "Pago Móvil / Transferencia";
+      } else if (isMixed) {
+        paymentMethod = "Mixto ($ + Bs)";
+      }
     }
     
     // Lavado: check if any staff member is involved with washing logic or if it's in meta
@@ -441,6 +530,58 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   const netProfit = balance - totalFixedCosts;
   const breakEven = totalFixedCosts / 0.4; // Assuming 40% margin (after 60% commission)
   const avgTicket = totalIncome / (Object.values(analysisData.barberStats).reduce((acc, b) => acc + b.services, 0) || 1);
+
+  const filteredTransactions = transactions.filter(t => {
+    // 1. Filter by Type
+    if (filterType !== 'all' && t.type !== filterType) return false;
+    
+    // Parse transaction details
+    const { clientName, serviceName } = parseTxExcel(t);
+    
+    // 2. Filter by Service
+    if (filterService !== 'all' && serviceName.toLowerCase() !== filterService.toLowerCase()) return false;
+
+    // 3. Filter by Search Query (Client Name / Description)
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      const matchClient = clientName.toLowerCase().includes(q);
+      const matchDesc = (t.description || '').toLowerCase().includes(q);
+      if (!matchClient && !matchDesc) return false;
+    }
+    
+    // 4. Filter by Barber
+    if (filterBarber !== 'all') {
+      const isAssociated = t.metadata?.staffInvolved?.some(s => String(s.staffId) === String(filterBarber));
+      if (!isAssociated) return false;
+    }
+    
+    // 5. Filter by Date
+    if (filterDate !== 'all') {
+      const txDate = new Date(t.created_at);
+      const today = new Date();
+      if (filterDate === 'today') {
+        if (txDate.toDateString() !== today.toDateString()) return false;
+      } else if (filterDate === 'this_week') {
+        const startOfWeek = getStartOfWeek();
+        if (txDate < startOfWeek) return false;
+      } else if (filterDate === 'this_month') {
+        if (txDate.getMonth() !== today.getMonth() || txDate.getFullYear() !== today.getFullYear()) return false;
+      } else if (filterDate === 'custom') {
+        if (startDate) {
+          const sDate = new Date(startDate);
+          sDate.setHours(0, 0, 0, 0);
+          if (txDate < sDate) return false;
+        }
+        if (endDate) {
+          const eDate = new Date(endDate);
+          eDate.setHours(23, 59, 59, 999);
+          if (txDate > eDate) return false;
+        }
+      }
+    }
+    
+    return true;
+  });
 
   const handleSaveCosts = (e) => {
     e.preventDefault();
@@ -701,28 +842,238 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             }}>
               <Download size={16} /> Exportar
             </button>
-            <button style={{ 
+            <button onClick={() => setShowFilterPanel(!showFilterPanel)} style={{ 
               flex: 1,
-              background: 'var(--bg-tertiary)', 
+              background: showFilterPanel ? 'var(--gold-primary)' : 'var(--bg-tertiary)', 
               border: '1px solid var(--border-color)', 
-              color: 'var(--text-secondary)', 
+              color: showFilterPanel ? 'black' : 'var(--text-secondary)', 
               padding: '10px 16px', 
               borderRadius: '12px', 
               display: 'flex', 
               gap: '8px', 
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '13px'
+              fontSize: '13px',
+              cursor: 'pointer',
+              fontWeight: showFilterPanel ? '850' : '600'
             }}>
-              <Filter size={16} /> Filtros
+              <Filter size={16} /> {showFilterPanel ? 'Ocultar Filtros' : 'Filtros'}
             </button>
           </div>
         </div>
 
+        {/* HIGH-END TRANSACTIONS FILTER PANEL */}
+        {showFilterPanel && (() => {
+          const uniqueServices = Array.from(new Set(transactions.map(t => parseTxExcel(t).serviceName).filter(Boolean)));
+          
+          return (
+            <div className="glass-card animate-fade-in" style={{
+              padding: '20px',
+              borderRadius: '20px',
+              marginBottom: '24px',
+              backgroundColor: 'rgba(255, 255, 255, 0.01)',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '16px'
+              }}>
+                {/* Search Input (Cliente) */}
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Buscar por Cliente</label>
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="text" 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Ej. Luis, Juan..."
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px 10px 36px',
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        color: 'white',
+                        fontSize: '13px',
+                        outline: 'none'
+                      }}
+                    />
+                    <Search size={14} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--text-muted)' }} />
+                  </div>
+                </div>
+
+                {/* Service Filter */}
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Servicio</label>
+                  <select 
+                    value={filterService}
+                    onChange={(e) => setFilterService(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: 'white',
+                      fontSize: '13px',
+                      height: '38px',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="all">Todos los Servicios</option>
+                    {uniqueServices.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Type Select */}
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Tipo de Movimiento</label>
+                  <select 
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: 'white',
+                      fontSize: '13px',
+                      height: '38px',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="all">Todos los Movimientos</option>
+                    <option value="income">Ingresos (+)</option>
+                    <option value="expense">Egresos (-)</option>
+                  </select>
+                </div>
+
+                {/* Barber Select */}
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Barbero Asignado</label>
+                  <select 
+                    value={filterBarber}
+                    onChange={(e) => setFilterBarber(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: 'white',
+                      fontSize: '13px',
+                      height: '38px',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="all">Cualquier Barbero</option>
+                    {staff.filter(s => {
+                      const role = s.role?.toLowerCase() || '';
+                      return role.includes('barber') || role.includes('estilista') || role.includes('socio') || role.includes('lider');
+                    }).map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Date Select */}
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Fecha</label>
+                  <select 
+                    value={filterDate}
+                    onChange={(e) => setFilterDate(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: 'white',
+                      fontSize: '13px',
+                      height: '38px',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="all">Todo el Historial</option>
+                    <option value="today">Hoy</option>
+                    <option value="this_week">Esta Semana</option>
+                    <option value="this_month">Este Mes</option>
+                    <option value="custom">Rango Personalizado</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Custom Date Range Picker */}
+              {filterDate === 'custom' && (
+                <div className="animate-fade-in" style={{
+                  display: 'flex',
+                  gap: '16px',
+                  alignItems: 'center',
+                  padding: '16px',
+                  backgroundColor: 'rgba(0,0,0,0.15)',
+                  borderRadius: '12px',
+                  flexWrap: 'wrap',
+                  border: '1px solid rgba(255,255,255,0.05)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700' }}>Desde:</span>
+                    <input 
+                      type="date" 
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(0,0,0,0.3)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: 'white',
+                        fontSize: '12px',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700' }}>Hasta:</span>
+                    <input 
+                      type="date" 
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(0,0,0,0.3)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: 'white',
+                        fontSize: '12px',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {isMobile ? (
           /* Mobile Card List */
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {transactions.map(t => (
+            {filteredTransactions.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No hay transacciones registradas que coincidan.</div>
+            ) : filteredTransactions.map(t => (
               <div key={t.id} style={{ 
                 backgroundColor: 'rgba(255,255,255,0.02)', 
                 padding: '16px', 
@@ -778,7 +1129,11 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 </tr>
               </thead>
               <tbody>
-                {transactions.map(t => {
+                {filteredTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>No hay transacciones registradas que coincidan.</td>
+                  </tr>
+                ) : filteredTransactions.map(t => {
                   const { clientName, serviceName, barbero, paymentMethod, didWash } = parseTxExcel(t);
                   const isExpanded = selectedTxId === t.id;
                   
@@ -918,20 +1273,86 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       )}
 
       {activeTab === 'payroll' && (() => {
-        const payrollSummary = staff.map(st => {
-          const staffTransactions = transactions.filter(t => t.type === 'income' && t.metadata?.staffInvolved?.some(x => String(x.staffId) === String(st.id)));
-          const servicesCount = staffTransactions.length;
-          const lavadosCount = staffTransactions.filter(t => t.metadata?.didWash).length;
+        const startOfWeek = getStartOfWeek();
+        const weeklyTransactions = transactions.filter(t => new Date(t.created_at) >= startOfWeek);
+
+        const processedPayroll = staff.map(st => {
+          const serviceTransactions = weeklyTransactions.filter(t => t.type === 'income' && t.metadata?.staffInvolved?.some(x => String(x.staffId) === String(st.id)));
+          const valesTransactions = transactions.filter(t => t.type === 'expense' && t.category === 'Vales Barberos' && String(t.metadata?.staffId) === String(st.id) && new Date(t.created_at) >= startOfWeek);
+          const staffTransactions = [...serviceTransactions, ...valesTransactions].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
           
-          const earnedBs = staffTransactions.reduce((sum, t) => {
+          const servicesCount = serviceTransactions.length;
+          
+          const earnedBs = serviceTransactions.reduce((sum, t) => {
             const s = t.metadata?.staffInvolved?.find(x => String(x.staffId) === String(st.id));
-            return sum + (s ? (s.commissionBs || 0) + (s.tipBs || 0) + (s.productCommissionBs || 0) : 0);
+            return sum + (s ? (s.commissionBs || 0) + (s.productCommissionBs || 0) : 0);
           }, 0);
+
+          const propinasBs = serviceTransactions.reduce((sum, t) => {
+            const s = t.metadata?.staffInvolved?.find(x => String(x.staffId) === String(st.id));
+            return sum + (s ? (s.tipBs || 0) : 0);
+          }, 0);
+
+          const valesBs = valesTransactions.reduce((sum, t) => sum + (t.metadata?.amountBs || 0), 0);
           
-          const paidBs = transactions.filter(t => t.type === 'expense' && t.category === 'Pago Nómina' && String(t.metadata?.staffId) === String(st.id)).reduce((sum, t) => sum + (t.metadata?.amountBs || 0) + (t.metadata?.deductionBs || 0), 0);
-          const balanceBs = earnedBs - paidBs;
-          return { ...st, earnedBs, paidBs, balanceBs, servicesCount, lavadosCount, staffTransactions };
-        }).filter(s => s.balanceBs > 0 || s.earnedBs > 0 || s.paidBs > 0);
+          const paidBs = weeklyTransactions.filter(t => t.type === 'expense' && t.category === 'Pago Nómina' && String(t.metadata?.staffId) === String(st.id)).reduce((sum, t) => sum + (t.metadata?.amountBs || 0) + (t.metadata?.deductionBs || 0), 0);
+          
+          const roleLower = st.role?.toLowerCase() || '';
+          const isAssistant = roleLower.includes('asistente') || roleLower.includes('lavado') || roleLower.includes('operaciones');
+          const isBarber = !isAssistant && (roleLower.includes('barbero') || roleLower.includes('barber') || roleLower.includes('socio') || roleLower.includes('estilista') || roleLower.includes('lider'));
+          
+          let grossIncomeBs = 0;
+          let lavadosCount = 0;
+          let lavadoDeductionBs = 0;
+          let weeklyAssistanceUsd = 0;
+          let weeklyAssistanceBs = 0;
+          let netIncomeBs = 0;
+          
+          if (isBarber) {
+            grossIncomeBs = serviceTransactions.reduce((sum, t) => sum + ((t.amount || 0) * (t.exchange_rate || rates?.usd || 550)), 0);
+            lavadosCount = serviceTransactions.filter(t => t.metadata?.didWash).length;
+            lavadoDeductionBs = lavadosCount * 1.00 * (rates?.usd || 550);
+            weeklyAssistanceUsd = assistantConfig.splits[st.id] || 0;
+            weeklyAssistanceBs = weeklyAssistanceUsd * (rates?.usd || 550);
+            netIncomeBs = earnedBs - lavadoDeductionBs - weeklyAssistanceBs;
+          } else if (isAssistant) {
+            lavadosCount = serviceTransactions.filter(t => t.metadata?.didWash).length;
+            const totalBarberAssistanceUsd = Object.values(assistantConfig.splits || {}).reduce((sum, val) => sum + (Number(val) || 0), 0);
+            weeklyAssistanceUsd = totalBarberAssistanceUsd;
+            weeklyAssistanceBs = totalBarberAssistanceUsd * (rates?.usd || 550);
+            netIncomeBs = earnedBs + weeklyAssistanceBs;
+          } else {
+            netIncomeBs = earnedBs;
+          }
+          
+          const balanceBs = netIncomeBs + propinasBs - valesBs - paidBs;
+          const netIncomeUsd = netIncomeBs / (rates?.usd || 550);
+          
+          return {
+            ...st,
+            isBarber,
+            isAssistant,
+            servicesCount,
+            lavadosCount,
+            grossIncomeBs,
+            lavadoDeductionBs,
+            weeklyAssistanceUsd,
+            weeklyAssistanceBs,
+            earnedBs,
+            propinasBs,
+            valesBs,
+            netIncomeBs,
+            netIncomeUsd,
+            paidBs,
+            balanceBs,
+            staffTransactions
+          };
+        }).filter(s => s.balanceBs !== 0 || s.earnedBs > 0 || s.paidBs > 0 || s.valesBs > 0);
+
+        const astroGrossIncomeBs = processedPayroll.reduce((sum, s) => sum + (s.isBarber ? s.grossIncomeBs : 0), 0);
+        const totalStaffNetIncomeBs = processedPayroll.reduce((sum, s) => sum + s.netIncomeBs, 0);
+        const astroNetProfitBs = Math.max(0, astroGrossIncomeBs - totalStaffNetIncomeBs);
+        const astroNetProfitUsd = astroNetProfitBs / (rates?.usd || 550);
 
         return (
           <div className="animate-fade-in">
@@ -968,55 +1389,184 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 </button>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-              {payrollSummary.length === 0 ? (
+
+            {/* ASTRO GENERAL RESULTS (Resultados Astro) */}
+            <div className="glass-card animate-fade-in" style={{ 
+              background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.02) 100%)', 
+              border: '1px solid rgba(212,175,55,0.3)',
+              borderRadius: '24px',
+              padding: '24px',
+              marginBottom: '32px',
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '24px'
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold-primary)' }}></div>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-primary)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Resultados Astro (Semanal)</span>
+                </div>
+                <h4 style={{ fontSize: '20px', fontWeight: '900', color: 'white', margin: 0 }}>Rendimiento General de la Barbería</h4>
+              </div>
+              
+              <div style={{ display: 'flex', gap: isMobile ? '16px' : '40px', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
+                <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700', marginBottom: '4px', textTransform: 'uppercase' }}>Ingreso Bruto</div>
+                  <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{formatCurrency(astroGrossIncomeBs, '')} Bs.</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800', marginBottom: '4px', textTransform: 'uppercase' }}>Ganancia Neta (Astro)</div>
+                  <div style={{ fontSize: '20px', fontWeight: '950', color: '#32d74b' }}>{formatCurrency(astroNetProfitBs, '')} Bs.</div>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginTop: '2px' }}>REF: ${formatCurrency(astroNetProfitUsd, '')}</div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+              {processedPayroll.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>No hay saldos pendientes.</div>
-              ) : payrollSummary.map(st => (
-                <div key={st.id} className="glass-card" style={{ padding: '24px', borderRadius: '24px' }}>
+              ) : processedPayroll.map(st => (
+                <div key={st.id} className="glass-card animate-fade-in" style={{ 
+                  padding: '24px', 
+                  borderRadius: '24px',
+                  border: st.isAssistant ? '1px solid rgba(0, 191, 255, 0.2)' : '1px solid rgba(255,255,255,0.08)'
+                }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-primary)', fontWeight: '900', fontSize: '18px' }}>
+                      <div style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        borderRadius: '12px', 
+                        background: st.isAssistant ? 'rgba(0,191,255,0.1)' : 'rgba(212,175,55,0.1)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        color: st.isAssistant ? '#00bfff' : 'var(--gold-primary)', 
+                        fontWeight: '900', 
+                        fontSize: '18px' 
+                      }}>
                         {st.name.charAt(0)}
                       </div>
                       <div>
-                        <div style={{ fontWeight: '800', fontSize: '16px' }}>{st.name}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '700', textTransform: 'uppercase' }}>
+                        <div style={{ fontWeight: '800', fontSize: '16px', color: 'white' }}>{st.name}</div>
+                        <div style={{ fontSize: '11px', color: st.isAssistant ? '#00bfff' : 'var(--gold-primary)', fontWeight: '800', textTransform: 'uppercase' }}>
                           {st.role?.split('|')[0] || 'Miembro'}
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '16px', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Servicios Realizados</span>
-                      <span style={{ fontSize: '12px', fontWeight: '900', color: 'white' }}>{st.servicesCount}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Lavados</span>
-                      <span style={{ fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)' }}>{st.lavadosCount}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Acumulado (Bs)</span>
-                      <span style={{ fontSize: '12px', fontWeight: '700' }}>{formatCurrency(st.earnedBs, '')}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px', marginBottom: '16px' }}>
+                    {st.isBarber ? (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Servicios Realizados</span>
+                          <span style={{ fontSize: '12px', fontWeight: '850', color: 'white' }}>{st.servicesCount}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Lavados (#)</span>
+                          <span style={{ fontSize: '12px', fontWeight: '850', color: 'white' }}>{st.lavadosCount}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Lavado (Bs)</span>
+                          <span style={{ fontSize: '12px', fontWeight: '850', color: 'var(--gold-primary)' }}>{formatCurrency(st.lavadoDeductionBs, '')} Bs.</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Ingreso Bruto</span>
+                          <span style={{ fontSize: '12px', fontWeight: '850', color: 'white' }}>{formatCurrency(st.grossIncomeBs, '')} Bs.</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Deducción Asistencia</span>
+                          <span style={{ fontSize: '12px', fontWeight: '850', color: '#ff453a' }}>-{formatCurrency(st.weeklyAssistanceBs, '')} Bs.</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Ingreso Neto</span>
+                          <span style={{ fontSize: '12px', fontWeight: '900', color: 'white' }}>{formatCurrency(st.netIncomeBs, '')} Bs.</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>REF (USD)</span>
+                          <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)' }}>${formatCurrency(st.netIncomeUsd, '')}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+                          <span style={{ fontSize: '12px', color: '#32d74b', fontWeight: '800' }}>Propinas (+)</span>
+                          <span style={{ fontSize: '12px', fontWeight: '850', color: '#32d74b' }}>+{formatCurrency(st.propinasBs, '')} Bs.</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: '#ff453a', fontWeight: '800' }}>Vales / Adelantos (-)</span>
+                          <span style={{ fontSize: '12px', fontWeight: '850', color: '#ff453a' }}>-{formatCurrency(st.valesBs, '')} Bs.</span>
+                        </div>
+                      </>
+                    ) : st.isAssistant ? (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Lavados Realizados</span>
+                          <span style={{ fontSize: '12px', fontWeight: '850', color: 'white' }}>{st.lavadosCount}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Asistencia Semanal</span>
+                          <span style={{ fontSize: '12px', fontWeight: '850', color: '#00bfff' }}>{formatCurrency(st.weeklyAssistanceBs, '')} Bs.</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Comisión Lavados</span>
+                          <span style={{ fontSize: '12px', fontWeight: '850', color: 'white' }}>{formatCurrency(st.earnedBs, '')} Bs.</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Ingreso Neto</span>
+                          <span style={{ fontSize: '12px', fontWeight: '900', color: 'white' }}>{formatCurrency(st.netIncomeBs, '')} Bs.</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>REF (USD)</span>
+                          <span style={{ fontSize: '12px', fontWeight: '800', color: '#00bfff' }}>${formatCurrency(st.netIncomeUsd, '')}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Comisiones Acumuladas</span>
+                          <span style={{ fontSize: '12px', fontWeight: '850', color: 'white' }}>{formatCurrency(st.earnedBs, '')} Bs.</span>
+                        </div>
+                      </>
+                    )}
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '8px' }}>
                       <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Pagado/Deducido (Bs)</span>
-                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#ff453a' }}>-{formatCurrency(st.paidBs, '')}</span>
+                      <span style={{ fontSize: '12px', fontWeight: '800', color: '#ff453a' }}>-{formatCurrency(st.paidBs, '')} Bs.</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                       <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--gold-primary)' }}>Por Pagar (Bs)</span>
-                      <span style={{ fontSize: '16px', fontWeight: '900', color: '#32d74b' }}>{formatCurrency(st.balanceBs, '')}</span>
+                      <span style={{ fontSize: '16px', fontWeight: '950', color: '#32d74b' }}>{formatCurrency(st.balanceBs, '')} Bs.</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>REF (USD)</span>
+                      <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)' }}>${formatCurrency(st.balanceBs / (rates?.usd || 550), '')}</span>
                     </div>
                   </div>
                   
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     <button 
                       onClick={() => setPayrollDetail({ isOpen: true, staff: st, transactions: st.staffTransactions })}
-                      style={{ flex: 1, minWidth: '80px', padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer' }}
+                      style={{ flex: 1, minWidth: '70px', padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer' }}
                     >
                       <Eye size={16} /> <span style={{fontSize: '11px', fontWeight: '800'}}>Detalle</span>
                     </button>
                     
+                    {(st.isBarber || st.isAssistant) && (
+                      <button 
+                        onClick={() => {
+                          setValeModal({
+                            isOpen: true,
+                            staff: st,
+                            amountBs: '',
+                            paymentMethod: 'Efectivo ($)'
+                          });
+                        }}
+                        style={{ flex: 1, minWidth: '70px', padding: '10px', borderRadius: '10px', background: 'rgba(255, 69, 58, 0.1)', color: '#ff453a', border: '1px solid rgba(255, 69, 58, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer' }}
+                      >
+                        <Minus size={16} /> <span style={{fontSize: '11px', fontWeight: '800'}}>Vale</span>
+                      </button>
+                    )}
+
                     <button 
                       onClick={() => {
                         setPayrollModal({
@@ -1026,27 +1576,27 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                           deductionBs: 0,
                           paymentAmountBs: Math.round(st.balanceBs / 2),
                           isAbono: true,
-                          file: null
+                          file: null,
+                          paymentMethod: 'Efectivo ($)'
                         });
                       }}
                       disabled={st.balanceBs <= 0}
-                      style={{ flex: 1, minWidth: '80px', padding: '10px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: st.balanceBs > 0 ? 'pointer' : 'not-allowed', opacity: st.balanceBs > 0 ? 1 : 0.5 }}
+                      style={{ flex: 1, minWidth: '70px', padding: '10px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: st.balanceBs > 0 ? 'pointer' : 'not-allowed', opacity: st.balanceBs > 0 ? 1 : 0.5 }}
                     >
                       <WalletCards size={16} /> <span style={{fontSize: '11px', fontWeight: '800'}}>Abonar</span>
                     </button>
 
                     <button 
                       onClick={() => {
-                        const barberWeeklyUsd = assistantConfig.splits[st.id] || 0;
-                        const suggestedDeductionBs = barberWeeklyUsd * (rates?.usd || 550);
                         setPayrollModal({
                           isOpen: true,
                           staff: st,
                           earnedBs: st.balanceBs,
-                          deductionBs: Math.round(suggestedDeductionBs),
+                          deductionBs: 0,
                           paymentAmountBs: st.balanceBs,
                           isAbono: false,
-                          file: null
+                          file: null,
+                          paymentMethod: 'Efectivo ($)'
                         });
                       }}
                       disabled={st.balanceBs <= 0}
@@ -1536,6 +2086,33 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
 
                   <div>
+                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Método de Pago</label>
+                    <select 
+                      value={payrollModal.paymentMethod} 
+                      onChange={(e) => setPayrollModal({...payrollModal, paymentMethod: e.target.value})} 
+                      style={{ 
+                        width: '100%', 
+                        padding: '14px', 
+                        borderRadius: '12px', 
+                        background: 'rgba(255,255,255,0.05)', 
+                        border: '1px solid rgba(255,255,255,0.1)', 
+                        color: 'white', 
+                        fontSize: '16px', 
+                        fontWeight: '700',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="Efectivo ($)">Efectivo ($)</option>
+                      <option value="Zelle">Zelle</option>
+                      <option value="Pago Móvil">Pago Móvil</option>
+                      <option value="Efectivo (Bs)">Efectivo (Bs)</option>
+                      <option value="Binance">Binance</option>
+                      <option value="Zinli">Zinli</option>
+                    </select>
+                  </div>
+
+                  <div>
                     <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Comprobante de Pago (Foto / Capture)</label>
                     <input type="file" accept="image/*" onChange={handleFileUpload} style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', color: 'white', fontSize: '12px' }} />
                     {payrollModal.file && (
@@ -1546,6 +2123,86 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
                     <button onClick={() => setPayrollModal({...payrollModal, isOpen: false})} style={{ flex: 1, padding: '14px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', fontWeight: '700' }}>Cancelar</button>
                     <button onClick={handleProcessPayroll} className="btn-gold" style={{ flex: 1, padding: '14px', borderRadius: '12px', fontWeight: '800' }}>Confirmar {payrollModal.isAbono ? 'Abono' : 'Pago'}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Registrar Vale Modal */}
+          {valeModal.isOpen && (
+            <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div className="glass-card animate-scale-in" style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '32px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '8px' }}>
+                  Registrar <span className="text-gold">Vale / Adelanto</span>
+                </h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '24px' }}>
+                  Ingresa el monto del adelanto en Bolívares (Bs) para <span style={{ fontWeight: '800', color: 'white' }}>{valeModal.staff?.name}</span>. Este monto se descontará automáticamente de su pago semanal.
+                </p>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)', display: 'block', marginBottom: '8px' }}>Monto del Vale (Bs)</label>
+                    <input 
+                      type="number" 
+                      value={valeModal.amountBs} 
+                      onChange={(e) => setValeModal({...valeModal, amountBs: e.target.value})} 
+                      placeholder="Ej. 500, 1000..."
+                      style={{ 
+                        width: '100%', 
+                        padding: '14px', 
+                        borderRadius: '12px', 
+                        background: 'rgba(255,255,255,0.05)', 
+                        border: '1px solid var(--gold-primary)', 
+                        color: 'white', 
+                        fontSize: '18px', 
+                        fontWeight: '900',
+                        outline: 'none'
+                      }} 
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Método de Pago</label>
+                    <select 
+                      value={valeModal.paymentMethod} 
+                      onChange={(e) => setValeModal({...valeModal, paymentMethod: e.target.value})} 
+                      style={{ 
+                        width: '100%', 
+                        padding: '14px', 
+                        borderRadius: '12px', 
+                        background: 'rgba(255,255,255,0.05)', 
+                        border: '1px solid rgba(255,255,255,0.1)', 
+                        color: 'white', 
+                        fontSize: '16px', 
+                        fontWeight: '700',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="Efectivo ($)">Efectivo ($)</option>
+                      <option value="Zelle">Zelle</option>
+                      <option value="Pago Móvil">Pago Móvil</option>
+                      <option value="Efectivo (Bs)">Efectivo (Bs)</option>
+                      <option value="Binance">Binance</option>
+                      <option value="Zinli">Zinli</option>
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                    <button 
+                      onClick={() => setValeModal({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo ($)' })} 
+                      style={{ flex: 1, padding: '14px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', fontWeight: '700', cursor: 'pointer' }}
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      onClick={handleRegisterVale} 
+                      className="btn-gold" 
+                      style={{ flex: 1, padding: '14px', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}
+                    >
+                      Registrar Vale
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1566,54 +2223,131 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     <p style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>No hay transacciones registradas.</p>
                   ) : (
                     payrollDetail.transactions.map((t, idx) => {
+                                // CASO 1: VALE / ADELANTO (Gasto - En Rojo)
+                      if (t.type === 'expense' && t.category === 'Vales Barberos') {
+                        const amountBs = t.metadata?.amountBs || t.amount * (rates?.usd || 550);
+                        const amountUsd = t.amount;
+                        const reason = t.description.replace(`ADELANTO VALE - Barbero: ${payrollDetail.staff?.name}`, '').replace(' - ', '').trim();
+                        
+                        return (
+                          <div key={idx} style={{ background: 'rgba(255, 69, 58, 0.04)', padding: '20px', borderRadius: '20px', borderLeft: '4px solid #ff453a', border: '1px solid rgba(255, 69, 58, 0.12)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontWeight: '900', fontSize: '15px', color: '#ff453a' }}>💸 VALE / ADELANTO</span>
+                                {reason && reason !== 'Vale de efectivo' && (
+                                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>{reason}</span>
+                                )}
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ color: '#ff453a', fontWeight: '950', fontSize: '16px' }}>-{formatCurrency(amountBs, '')} Bs</div>
+                                <div style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: '800' }}>-${formatCurrency(amountUsd, '')} USD</div>
+                              </div>
+                            </div>
+                            
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px', marginTop: '12px' }}>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                                {displayDate ? new Date(displayDate).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }) : 'S/F'}
+                              </span>
+                              <span style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px' }}>ID: {t.id.slice(0,8)}</span>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // CASO 2: SERVICIO / VENTA (Ingresos)
                       const descParts = t.description.split(' - ');
                       const clientFromDesc = descParts.find(s => s.toLowerCase().includes('cliente:'))?.split(': ')[1];
                       const serviceFromDesc = descParts.find(s => s.toLowerCase().includes('servi:'))?.split(': ')[1];
 
                       const clientName = t.metadata?.clientName || clientFromDesc || 'S/N';
                       const serviceName = t.metadata?.serviceName || serviceFromDesc || (t.category === 'Ventas Astro' ? 'Servicio' : t.description);
-                      const displayDate = t.created_at || t.date;
                       
                       const stInvolved = t.metadata?.staffInvolved?.find(s => String(s.staffId) === String(payrollDetail.staff.id));
                       const commBs = stInvolved?.commissionBs || 0;
                       const commUsd = stInvolved?.commissionEarned || 0;
-                      const method = t.metadata?.method_usd || t.metadata?.method_bs || t.description.split(' - ')[2] || 'Efectivo';
+                      const prodCommBs = stInvolved?.productCommissionBs || 0;
+                      const prodCommUsd = stInvolved?.productCommissionEarned || 0;
+                      const tipBs = stInvolved?.tipBs || 0;
+                      const tipUsd = stInvolved?.tip || 0;
                       
+                      const totalEarningsBs = commBs + prodCommBs;
+                      const totalEarningsUsd = commUsd + prodCommUsd;
+
+                      // Identificación inteligente del método de pago real
+                      let methodText = 'Efectivo';
+                      if (t.metadata?.mixed_payment || t.metadata?.isMixed) {
+                        const usdPart = t.metadata?.method_usd || 'Efectivo';
+                        const bsPart = t.metadata?.method_bs || 'Pago Móvil';
+                        methodText = `Mixto (${usdPart} + ${bsPart})`;
+                      } else {
+                        const mUsd = t.metadata?.method_usd;
+                        const mBs = t.metadata?.method_bs;
+                        if (mUsd && mUsd !== 'N/A' && mUsd !== 'No aplica') {
+                          methodText = mUsd;
+                        } else if (mBs && mBs !== 'N/A' && mBs !== 'No aplica') {
+                          methodText = mBs;
+                        } else {
+                          methodText = t.description.split(' - ')[2] || 'Efectivo';
+                        }
+                      }
+
                       return (
-                        <div key={idx} style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '20px', borderLeft: t.metadata?.didWash ? '4px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)' }}>
+                        <div key={idx} style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '20px', borderLeft: t.metadata?.didWash ? '4px solid #007aff' : '1px solid rgba(255,255,255,0.1)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                               <span style={{ fontWeight: '900', fontSize: '15px', color: 'white' }}>{serviceName}</span>
-                              <span style={{ fontSize: '12px', color: 'var(--gold-primary)', fontWeight: '700' }}>{clientName}</span>
+                              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '800', marginTop: '2px' }}>
+                                <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{clientName}</span> · Costo Total: <span style={{ color: 'white' }}>${(commUsd / 0.4).toFixed(2)} USD</span> ({(commBs / 0.4).toFixed(2)} Bs)
+                              </span>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ color: '#32d74b', fontWeight: '950', fontSize: '16px' }}>{formatCurrency(commBs, '')} Bs</div>
-                              <div style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: '800' }}>+${formatCurrency(commUsd, '')} USD</div>
+                              <div style={{ color: '#32d74b', fontWeight: '950', fontSize: '16px' }}>+{formatCurrency(totalEarningsBs, '')} Bs</div>
+                              <div style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: '800' }}>+${formatCurrency(totalEarningsUsd, '')} USD</div>
                             </div>
                           </div>
                           
+                          {/* Desglose de ganancias reales del barbero */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', margin: '8px 0 12px 0', padding: '8px 12px', background: 'rgba(0,0,0,0.15)', borderRadius: '12px', fontSize: '11px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+                              <span>Comisión Servicio:</span>
+                              <span style={{ color: 'white', fontWeight: '700' }}>${commUsd.toFixed(2)} USD ({commBs.toFixed(2)} Bs)</span>
+                            </div>
+                            {prodCommUsd > 0 && (
+                              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+                                <span>Comisión Productos:</span>
+                                <span style={{ color: 'white', fontWeight: '700' }}>${prodCommUsd.toFixed(2)} USD ({prodCommBs.toFixed(2)} Bs)</span>
+                              </div>
+                            )}
+                            {tipUsd > 0 && (
+                              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#32d74b', fontWeight: '700' }}>
+                                <span>🍬 Propina:</span>
+                                <span>+${tipUsd.toFixed(2)} USD (+{tipBs.toFixed(2)} Bs)</span>
+                              </div>
+                            )}
+                          </div>
+
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px', marginTop: '4px' }}>
-                            <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '2px 8px', borderRadius: '6px', fontWeight: '700', border: '1px solid rgba(255,255,255,0.1)' }}>
-                              {method.toUpperCase()}
+                            <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '3px 10px', borderRadius: '20px', fontWeight: '700', border: '1px solid rgba(255,255,255,0.1)' }}>
+                              💳 {methodText.toUpperCase()}
                             </span>
                             {t.metadata?.didWash && (
-                              <span style={{ fontSize: '10px', background: 'var(--gold-primary)', color: 'black', padding: '2px 8px', borderRadius: '6px', fontWeight: '900' }}>LAVADO</span>
+                              <span style={{ fontSize: '10px', background: 'rgba(0,122,255,0.1)', color: '#007aff', padding: '3px 10px', borderRadius: '20px', fontWeight: '900', border: '1px solid rgba(0,122,255,0.2)' }}>💧 LAVADO</span>
                             )}
                           </div>
 
                           {(t.metadata?.extras?.length > 0 || t.metadata?.products_sold?.length > 0) && (
-                            <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', marginBottom: '12px' }}>
-                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', marginBottom: '4px', textTransform: 'uppercase' }}>Items Adicionales:</div>
+                            <div style={{ padding: '12px', background: 'rgba(0,0,0,0.25)', borderRadius: '14px', marginBottom: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Detalle de Venta:</div>
                               {t.metadata?.extras?.map((ex, eidx) => (
-                                <div key={eidx} style={{ fontSize: '11px', color: 'white', display: 'flex', justifyContent: 'space-between' }}>
-                                  <span>• {ex.service_extras?.name || 'Extra'}</span>
-                                  <span style={{ color: 'var(--gold-primary)' }}>+${ex.price}</span>
+                                <div key={eidx} style={{ fontSize: '11px', color: 'white', display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                                  <span style={{ color: 'var(--text-secondary)' }}>• {ex.service_extras?.name || 'Extra'} (Extra)</span>
+                                  <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>+${ex.price}</span>
                                 </div>
                               ))}
                               {t.metadata?.products_sold?.map((p, pidx) => (
-                                <div key={pidx} style={{ fontSize: '11px', color: 'white', display: 'flex', justifyContent: 'space-between' }}>
-                                  <span>• {p.name} (x{p.quantity})</span>
-                                  <span style={{ color: 'var(--gold-primary)' }}>+${p.price * p.quantity}</span>
+                                <div key={pidx} style={{ fontSize: '11px', color: 'white', display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                                  <span style={{ color: 'var(--text-secondary)' }}>• {p.name} (x{p.quantity})</span>
+                                  <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>+${p.price * p.quantity}</span>
                                 </div>
                               ))}
                             </div>
