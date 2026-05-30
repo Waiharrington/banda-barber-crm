@@ -86,13 +86,13 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate }) =
 
   const topBarber = getTopBarber();
 
-  // Get first 3 active barbers for team overview
+  // Get first 3 active barbers for team overview (monthly income podium)
   const teamOverview = (dbData?.staff || [])
     .filter(s => {
       const r = s.role?.toLowerCase() || '';
       return (r.includes('barbero') || r.includes('barber')) && !r.includes('archived');
     })
-    .sort((a, b) => (b.stats?.income || 0) - (a.stats?.income || 0))
+    .sort((a, b) => (b.stats?.monthlyIncome || 0) - (a.stats?.monthlyIncome || 0))
     .slice(0, 3);
 
   // Top Clientes
@@ -324,8 +324,34 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate }) =
         </div>
       )}
 
-      {/* Team Production Overview Ranking */}
-      {isAdmin && (
+      {/* Visual Podium Section for Top Barbers (Identical to Desktop) */}
+      {isAdmin && teamOverview.length >= 2 && (
+        <PodiumWidget 
+          title="Top Barberos" 
+          icon={<Trophy size={16} />}
+          data={teamOverview}
+          labelKey="name"
+          scoreKey={(item) => `$${(item.stats?.monthlyIncome || 0).toFixed(0)}`}
+          scoreLabel="ÚLTIMOS 30 DÍAS"
+        />
+      )}
+
+      {/* Visual Podium Section for Top Clients (Identical to Desktop) */}
+      {isAdmin && topClients.length >= 2 && (
+        <PodiumWidget 
+          title="Top Clientes" 
+          icon={<Users size={16} />}
+          data={topClients}
+          labelKey="name"
+          scoreKey={(item) => `$${(item.total_spent || 0).toFixed(0)}`}
+          scoreLabel="TOTAL CONSUMIDO"
+          isClient={true}
+          onNavigate={onNavigate}
+        />
+      )}
+
+      {/* Fallback list if podium data is too fresh */}
+      {isAdmin && teamOverview.length < 2 && (
         <div className="glass-card" style={{ padding: '20px', borderRadius: '24px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.04)' }}>
           <div style={{ fontWeight: '900', fontSize: '13px', color: '#ffffff', marginBottom: '16px', letterSpacing: '-0.3px', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Trophy size={14} color="var(--gold-primary)" /> TOP BARBEROS (ÚLTIMOS 30 DÍAS)
@@ -339,28 +365,6 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate }) =
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--gold-primary)' }}>${formatCurrency(st.stats?.monthlyIncome || 0)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Top Customers Overview Ranking (Ported from PC Dashboard) */}
-      {isAdmin && (
-        <div className="glass-card" style={{ padding: '20px', borderRadius: '24px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.04)' }}>
-          <div style={{ fontWeight: '900', fontSize: '13px', color: '#ffffff', marginBottom: '16px', letterSpacing: '-0.3px', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Users size={14} color="var(--gold-primary)" /> TOP CLIENTES (TOTAL CONSUMIDO)
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {topClients.map((c, idx) => (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: idx !== topClients.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none' }} onClick={() => onNavigate && onNavigate('clients', { clientId: c.id })}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '950', color: 'var(--gold-primary)', width: '16px' }}>{idx+1}.</span>
-                  <span style={{ fontSize: '13px', fontWeight: '800', color: 'white', textDecoration: 'underline' }}>{c.name}</span>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '13px', fontWeight: '900', color: '#32d74b' }}>${formatCurrency(c.total_spent || 0)}</span>
                 </div>
               </div>
             ))}
@@ -547,6 +551,113 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate }) =
           display: none;
         }
       `}</style>
+    </div>
+  );
+};
+
+// Premium visual podium component cloned and scaled for Mobile Screens
+const PodiumWidget = ({ title, icon, data, labelKey, scoreKey, scoreLabel, isClient, onNavigate }) => {
+  const podiumOrder = [data[1], data[0], data[2]].filter(Boolean);
+
+  return (
+    <div className="glass-card" style={{ padding: '20px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '32px' }}>
+        <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {icon}
+        </div>
+        <h3 style={{ fontSize: '14px', fontWeight: '900', color: 'white' }}>{title.split(' ')[0]} <span className="text-gold">{title.split(' ')[1]}</span></h3>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '8px', minHeight: '140px' }}>
+        {podiumOrder.map((item, idx) => {
+          const originalIdx = data.indexOf(item);
+          const isFirst = originalIdx === 0;
+          const isSecond = originalIdx === 1;
+          const isThird = originalIdx === 2;
+
+          return (
+            <div key={item.id || idx} style={{ 
+              flex: 1, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center'
+            }}>
+              <div style={{ position: 'relative', marginBottom: '8px' }}>
+                <div style={{ 
+                  width: isFirst ? '56px' : '44px', 
+                  height: isFirst ? '56px' : '44px', 
+                  borderRadius: '16px', 
+                  backgroundColor: 'var(--bg-tertiary)',
+                  border: isFirst ? '2.5px solid var(--gold-primary)' : '1.5px solid rgba(255,255,255,0.1)',
+                  overflow: 'hidden',
+                  boxShadow: isFirst ? 'var(--gold-glow)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item[labelKey]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <User size={isFirst ? 24 : 18} color="var(--gold-primary)" opacity={0.5} />
+                  )}
+                </div>
+                {isFirst && <Crown size={16} color="var(--gold-primary)" fill="var(--gold-primary)" style={{ position: 'absolute', top: '-11px', left: '50%', transform: 'translateX(-50%)' }} />}
+                <div style={{ 
+                  position: 'absolute', 
+                  bottom: '-6px', 
+                  left: '50%', 
+                  transform: 'translateX(-50%)',
+                  width: '18px', 
+                  height: '18px', 
+                  borderRadius: '50%', 
+                  backgroundColor: isFirst ? 'var(--gold-primary)' : isSecond ? '#C0C0C0' : '#CD7F32',
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  fontSize: '9px', 
+                  fontWeight: '900', 
+                  color: 'black'
+                }}>
+                  {originalIdx + 1}
+                </div>
+              </div>
+
+              <div 
+                style={{ textAlign: 'center', marginTop: '8px', cursor: isClient ? 'pointer' : 'default', width: '100%' }}
+                onClick={() => isClient && onNavigate && onNavigate('clients', { clientId: item.id })}
+              >
+                <div style={{ 
+                  fontWeight: '850', 
+                  fontSize: isFirst ? '11px' : '10px', 
+                  whiteSpace: 'nowrap', 
+                  overflow: 'hidden', 
+                  textOverflow: 'ellipsis',
+                  color: isClient ? 'var(--gold-primary)' : 'white',
+                  textDecoration: isClient ? 'underline' : 'none',
+                  textUnderlineOffset: '2px',
+                  maxWidth: '75px',
+                  margin: '0 auto'
+                }}>
+                  {item[labelKey].split(' ')[0]}
+                </div>
+                <div style={{ color: 'var(--gold-primary)', fontWeight: '950', fontSize: '12px', marginTop: '2px' }}>{scoreKey(item)}</div>
+                <div style={{ fontSize: '7px', fontWeight: '800', opacity: 0.4, letterSpacing: '0.3px', textTransform: 'uppercase' }}>{scoreLabel}</div>
+                
+                {/* Visual Podium Base */}
+                <div style={{ 
+                  width: '100%', 
+                  height: isFirst ? '40px' : isSecond ? '25px' : '15px', 
+                  background: 'linear-gradient(to top, rgba(212, 175, 55, 0.25), rgba(212, 175, 55, 0.08))',
+                  borderRadius: '6px 6px 0 0',
+                  marginTop: '8px',
+                  border: '1px solid rgba(212, 175, 55, 0.25)',
+                  borderBottom: 'none'
+                }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
