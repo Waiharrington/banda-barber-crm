@@ -106,11 +106,17 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         }
       }
       
-      if (!stats[serviceName]) {
-        stats[serviceName] = { usd: 0, count: 0 };
-      }
-      stats[serviceName].count += 1;
-      stats[serviceName].usd += t.amount || 0;
+      // Split multiple services (e.g. "Gravedad Cero + En órbita")
+      const individualServices = serviceName.split(/\s*[\+,\/]\s*/).map(s => s.trim()).filter(Boolean);
+      
+      individualServices.forEach(sName => {
+        if (!stats[sName]) {
+          stats[sName] = { usd: 0, count: 0 };
+        }
+        stats[sName].count += 1;
+        // Attribute proportional USD amount to each individual service
+        stats[sName].usd += (t.amount || 0) / individualServices.length;
+      });
     });
 
     const totalIncomeServices = Object.values(stats).reduce((acc, s) => acc + s.usd, 0) || 1;
