@@ -52,7 +52,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
   const [newExtraName, setNewExtraName] = useState('');
   const [newExtraPrice, setNewExtraPrice] = useState('2.00');
   const [newExtraCost, setNewExtraCost] = useState('0.50');
-  const [showAddItemInput, setShowAddItemInput] = useState(false);
+  const [selectedServiceDetail, setSelectedServiceDetail] = useState(null);
   const { showToast } = useNotifs();
 
   useEffect(() => {
@@ -597,78 +597,141 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {viewMode === 'grid' || isMobile ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {services.map(service => (
-                <div key={service.id} className="glass-card animate-slide-up" style={{ 
-                  borderRadius: '20px',
-                  padding: isMobile ? '20px' : '16px 24px',
-                  border: '1px solid rgba(255,255,255,0.05)',
-                  display: 'flex',
-                  flexDirection: isMobile ? 'column' : 'row',
-                  alignItems: isMobile ? 'stretch' : 'center',
-                  gap: isMobile ? '16px' : '24px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: isMobile ? 'none' : '200px', width: isMobile ? '100%' : 'auto' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(212, 175, 55, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {getCategoryIcon(service.category)}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{service.category}</div>
-                      <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{service.name}</h4>
-                      {service.description && (
-                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: '4px 0', maxWidth: isMobile ? '100%' : '250px', lineHeight: '1.4', fontStyle: 'italic' }}>{service.description}</p>
-                      )}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        <Clock size={12} /> {service.duration || 30} min
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {services.map(service => {
+                if (isMobile) {
+                  return (
+                    <div 
+                      key={service.id} 
+                      className="glass-card animate-slide-up" 
+                      onClick={() => setSelectedServiceDetail(service)}
+                      style={{ 
+                        borderRadius: '16px',
+                        padding: '12px 16px',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(212, 175, 55, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--gold-primary)' }}>
+                          {getCategoryIcon(service.category)}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{service.category}</div>
+                          <h4 style={{ fontSize: '14px', fontWeight: '700', color: 'white', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{service.name}</h4>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
+                        <div style={{ textAlign: 'right' }}>
+                          {rates?.usd > 0 ? (
+                            <>
+                              <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--gold-primary)' }}>
+                                {Math.round(service.price * rates.usd).toLocaleString()} Bs.
+                              </div>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                                ${service.price}
+                              </div>
+                            </>
+                          ) : (
+                            <div style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>
+                              ${service.price}
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
+                          <button 
+                            className="action-btn" 
+                            onClick={(e) => { e.stopPropagation(); handleEditClick(service); }} 
+                            style={{ width: '30px', height: '30px', borderRadius: '8px' }}
+                          >
+                            <Edit2 size={12} />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleDeleteService(service.id, service.name); }} 
+                            className="action-btn" 
+                            style={{ width: '30px', height: '30px', borderRadius: '8px', color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.1)' }}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  );
+                }
 
-                  <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
-                    {(service.included_items || []).map((item, idx) => (
-                      <span key={idx} style={{ fontSize: '10px', padding: '4px 10px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: isMobile ? 'space-between' : 'flex-start',
-                    gap: isMobile ? '16px' : '32px',
-                    width: isMobile ? '100%' : 'auto',
-                    borderTop: isMobile ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                    paddingTop: isMobile ? '16px' : '0',
-                    flexWrap: 'wrap'
+                // Desktop / non-mobile card
+                return (
+                  <div key={service.id} className="glass-card animate-slide-up" style={{ 
+                    borderRadius: '20px',
+                    padding: '16px 24px',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '24px'
                   }}>
-                    {service.strategy_type && (
-                      <div style={{ padding: '4px 12px', borderRadius: '20px', border: '1px solid rgba(212, 175, 55, 0.3)', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212, 175, 55, 0.05)' }}>
-                        {service.strategy_type}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: '200px' }}>
+                      <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(212, 175, 55, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        {getCategoryIcon(service.category)}
                       </div>
-                    )}
-                    
-                    <div style={{ textAlign: isMobile ? 'left' : 'right', minWidth: '100px' }}>
-                      <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)' }}>PRECIO</div>
-                      <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>${service.price}</div>
-                      {rates?.usd > 0 && (
-                        <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '700' }}>
-                          ≈ {Math.round(service.price * rates.usd).toLocaleString()} Bs.
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{service.category}</div>
+                        <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{service.name}</h4>
+                        {service.description && (
+                          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: '4px 0', maxWidth: '250px', lineHeight: '1.4', fontStyle: 'italic' }}>{service.description}</p>
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                          <Clock size={12} /> {service.duration || 30} min
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {(service.included_items || []).map((item, idx) => (
+                        <span key={idx} style={{ fontSize: '10px', padding: '4px 10px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '32px'
+                    }}>
+                      {service.strategy_type && (
+                        <div style={{ padding: '4px 12px', borderRadius: '20px', border: '1px solid rgba(212, 175, 55, 0.3)', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212, 175, 55, 0.05)' }}>
+                          {service.strategy_type}
                         </div>
                       )}
-                    </div>
+                      
+                      <div style={{ textAlign: 'right', minWidth: '100px' }}>
+                        <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)' }}>PRECIO</div>
+                        <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>${service.price}</div>
+                        {rates?.usd > 0 && (
+                          <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '700' }}>
+                            ≈ {Math.round(service.price * rates.usd).toLocaleString()} Bs.
+                          </div>
+                        )}
+                      </div>
 
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="action-btn" onClick={() => handleEditClick(service)} style={{ width: '36px', height: '36px' }}>
-                        <Edit2 size={16} />
-                      </button>
-                      <button onClick={() => handleDeleteService(service.id, service.name)} className="action-btn" style={{ width: '36px', height: '36px', color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.1)' }}>
-                        <Trash2 size={16} />
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="action-btn" onClick={() => handleEditClick(service)} style={{ width: '36px', height: '36px' }}>
+                          <Edit2 size={16} />
+                        </button>
+                        <button onClick={() => handleDeleteService(service.id, service.name)} className="action-btn" style={{ width: '36px', height: '36px', color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.1)' }}>
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="glass-card animate-fade-in" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.03)' }}>
@@ -925,6 +988,122 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   <Plus size={24} />
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+       {/* Details Modal */}
+      {selectedServiceDetail && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 3000, padding: '20px'
+        }}>
+          <div className="glass-card animate-scale-in" style={{
+            width: '100%', maxWidth: '440px',
+            padding: '24px', borderRadius: '28px',
+            border: '1px solid rgba(212,175,55,0.2)',
+            boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
+            position: 'relative'
+          }}>
+            <button 
+              onClick={() => setSelectedServiceDetail(null)} 
+              style={{ position: 'absolute', right: '20px', top: '20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <X size={18} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-primary)' }}>
+                {getCategoryIcon(selectedServiceDetail.category)}
+              </div>
+              <div>
+                <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{selectedServiceDetail.category}</span>
+                {selectedServiceDetail.strategy_type && (
+                  <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: '900', backgroundColor: 'rgba(212,175,55,0.1)', padding: '2px 8px', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', color: 'var(--gold-primary)' }}>
+                    {selectedServiceDetail.strategy_type}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <h3 style={{ fontSize: '22px', fontWeight: '800', color: 'white', marginBottom: '16px' }}>{selectedServiceDetail.name}</h3>
+
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '10px' }}>
+                <Clock size={14} color="var(--gold-primary)" />
+                <strong>Duración:</strong> {selectedServiceDetail.duration || 30} min
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '10px' }}>
+                <Scissors size={14} color="var(--gold-primary)" />
+                <strong>Comisión:</strong> {selectedServiceDetail.commission_barber}%
+              </div>
+            </div>
+
+            {selectedServiceDetail.description && (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase' }}>Guión de Venta / Descripción</div>
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', lineHeight: '1.5', margin: 0, padding: '12px', borderRadius: '12px', backgroundColor: 'rgba(0,0,0,0.2)', fontStyle: 'italic', border: '1px solid rgba(255,255,255,0.03)' }}>
+                  "{selectedServiceDetail.description}"
+                </p>
+              </div>
+            )}
+
+            {selectedServiceDetail.included_items && selectedServiceDetail.included_items.length > 0 && (
+              <div style={{ marginBottom: '24px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Checklist Incluido ({selectedServiceDetail.included_items.length})</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {selectedServiceDetail.included_items.map((item, idx) => (
+                    <span key={idx} style={{ fontSize: '11px', padding: '6px 12px', borderRadius: '8px', backgroundColor: 'rgba(212,175,55,0.05)', color: 'white', border: '1px solid rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Check size={12} color="var(--gold-primary)" strokeWidth={3} /> {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              borderTop: '1px solid rgba(255,255,255,0.08)', 
+              paddingTop: '20px',
+              marginBottom: '20px'
+            }}>
+              <div>
+                <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Precio Base</div>
+                <div style={{ fontSize: '24px', fontWeight: '900', color: 'white' }}>${selectedServiceDetail.price}</div>
+              </div>
+              {rates?.usd > 0 && (
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Precio en Bolívares</div>
+                  <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+                    {Math.round(selectedServiceDetail.price * rates.usd).toLocaleString()} Bs.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={() => {
+                  setSelectedServiceDetail(null);
+                  handleEditClick(selectedServiceDetail);
+                }} 
+                className="btn-gold" 
+                style={{ flex: 1, height: '44px', borderRadius: '12px' }}
+              >
+                Editar Servicio
+              </button>
+              <button 
+                onClick={() => setSelectedServiceDetail(null)} 
+                style={{ flex: 1, height: '44px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', fontWeight: '700', transition: 'background-color 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
