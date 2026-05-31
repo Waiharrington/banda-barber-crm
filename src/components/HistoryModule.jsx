@@ -196,11 +196,11 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <th style={{ padding: '20px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Fecha</th>
-                  <th style={{ padding: '20px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Cliente</th>
-                  <th style={{ padding: '20px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Servicio</th>
-                  <th style={{ padding: '20px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'right' }}>{isAdmin ? 'Total' : 'Ganancia'}</th>
-                  <th style={{ padding: '20px 24px', width: '60px' }}></th>
+                  <th style={{ padding: isMobile ? '12px 8px' : '20px 24px', fontSize: isMobile ? '10px' : '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Fecha</th>
+                  <th style={{ padding: isMobile ? '12px 8px' : '20px 24px', fontSize: isMobile ? '10px' : '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Cliente</th>
+                  <th style={{ padding: isMobile ? '12px 8px' : '20px 24px', fontSize: isMobile ? '10px' : '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Servicio</th>
+                  <th style={{ padding: isMobile ? '12px 8px' : '20px 24px', fontSize: isMobile ? '10px' : '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'right' }}>{isAdmin ? 'Total' : 'Ganancia'}</th>
+                  <th style={{ padding: isMobile ? '12px 4px' : '20px 24px', width: isMobile ? '30px' : '60px' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -218,27 +218,27 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                           transition: 'all 0.2s'
                         }}
                       >
-                        <td style={{ padding: '18px 24px', fontSize: '14px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                          {new Date(item.created_at).toLocaleDateString()}
+                        <td style={{ padding: isMobile ? '12px 8px' : '18px 24px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                          {new Date(item.created_at).toLocaleDateString([], {day: '2-digit', month: 'numeric'})}
                         </td>
-                        <td style={{ padding: '18px 24px' }}>
+                        <td style={{ padding: isMobile ? '12px 8px' : '18px 24px' }}>
                           <div 
                             onClick={(e) => {
                               e.stopPropagation();
                               onNavigate('clients', { clientId: item.clients?.id });
                             }}
                             className="client-link"
-                            style={{ fontSize: '15px', fontWeight: '700', color: 'white', cursor: 'pointer', display: 'inline-block', transition: '0.2s' }}
+                            style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '700', color: 'white', cursor: 'pointer', display: 'inline-block', transition: '0.2s' }}
                           >
                             {item.clients?.name}
                           </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.clients?.id_card}</div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{item.clients?.id_card}</div>
                         </td>
-                        <td style={{ padding: '18px 24px' }}>
-                          <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--gold-primary)' }}>{item.services?.name}</div>
+                        <td style={{ padding: isMobile ? '12px 8px' : '18px 24px' }}>
+                          <div style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '700', color: 'var(--gold-primary)' }}>{item.services?.name}</div>
                         </td>
-                        <td style={{ padding: '18px 24px', textAlign: 'right' }}>
-                          <div style={{ fontSize: '16px', fontWeight: '900', color: 'white' }}>
+                        <td style={{ padding: isMobile ? '12px 8px' : '18px 24px', textAlign: 'right' }}>
+                          <div style={{ fontSize: isMobile ? '13px' : '16px', fontWeight: '900', color: 'white' }}>
                             {(() => {
                               let val = 0;
                               if (!isAdmin) val = ((item.commission_earned || 0) + (item.tip_amount || 0));
@@ -253,7 +253,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                               return `${formatCurrency(val * rate)} Bs.`;
                             })()}
                           </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '750', marginTop: '2px' }}>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '750', marginTop: '2px' }}>
                             {(() => {
                               let val = 0;
                               if (!isAdmin) val = ((item.commission_earned || 0) + (item.tip_amount || 0));
@@ -268,9 +268,9 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                             })()}
                           </div>
                         </td>
-                        <td style={{ padding: '18px 24px', textAlign: 'right' }}>
+                        <td style={{ padding: isMobile ? '12px 4px' : '18px 24px', textAlign: 'right' }}>
                           <div style={{ color: isSelected ? 'var(--gold-primary)' : 'var(--text-muted)', transition: 'all 0.3s', transform: isSelected ? 'rotate(180deg)' : 'rotate(0)' }}>
-                            <ChevronDown size={18} />
+                            <ChevronDown size={isMobile ? 14 : 18} />
                           </div>
                         </td>
                       </tr>
