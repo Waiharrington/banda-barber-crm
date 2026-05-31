@@ -16,10 +16,11 @@ import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 
-const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpdate }) => {
+const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpdate, isMobile }) => {
   const { user } = useAuth();
   const isAdmin = user?.role?.startsWith('Admin');
   
+  const isMobileView = isMobile || (typeof window !== 'undefined' && window.innerWidth < 768);
   const { showToast } = useNotifs();
   const [activeTab, setActiveTab] = useState('rendimiento');
   const [loading, setLoading] = useState(true);
@@ -144,8 +145,8 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
       <div className="glass-card animate-slide-up" style={{
         width: '100%',
         maxWidth: '800px',
-        maxHeight: '90vh',
-        borderRadius: '32px',
+        maxHeight: isMobileView ? '95vh' : '90vh',
+        borderRadius: isMobileView ? '24px' : '32px',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -153,16 +154,16 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
       }}>
         
         {/* Header Section */}
-        <div style={{ padding: '32px 32px 24px', background: 'linear-gradient(to bottom, rgba(212,175,55,0.1), transparent)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ padding: isMobileView ? '24px 16px 16px' : '32px 32px 24px', background: 'linear-gradient(to bottom, rgba(212,175,55,0.1), transparent)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <button 
             onClick={onClose}
-            style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', cursor: 'pointer' }}
+            style={{ position: 'absolute', top: isMobileView ? '16px' : '24px', right: isMobileView ? '16px' : '24px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', cursor: 'pointer', zIndex: 10 }}
           >
             <X size={20} />
           </button>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <div style={{ width: '90px', height: '90px', borderRadius: '24px', backgroundColor: 'rgba(255,255,255,0.05)', overflow: 'hidden', border: '2px solid var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobileView ? '16px' : '24px' }}>
+            <div style={{ width: isMobileView ? '70px' : '90px', height: isMobileView ? '70px' : '90px', borderRadius: isMobileView ? '16px' : '24px', backgroundColor: 'rgba(255,255,255,0.05)', overflow: 'hidden', border: '2px solid var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               {staffMember.image_url ? (
                 <img src={staffMember.image_url} alt={staffMember.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
@@ -170,33 +171,33 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
               )}
             </div>
             <div>
-              <h2 style={{ fontSize: '28px', fontWeight: '900', color: 'white' }}>{staffMember.name}</h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--gold-primary)', fontWeight: '700', fontSize: '14px', marginTop: '4px' }}>
-                <Star size={16} fill="var(--gold-primary)" />
+              <h2 style={{ fontSize: isMobileView ? '22px' : '28px', fontWeight: '900', color: 'white', margin: 0 }}>{staffMember.name}</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--gold-primary)', fontWeight: '700', fontSize: isMobileView ? '12px' : '14px', marginTop: '4px' }}>
+                <Star size={14} fill="var(--gold-primary)" />
                 {staffMember.role?.split('|')[0] || 'Barbero'}
               </div>
             </div>
           </div>
 
           {/* Tabs */}
-          <div style={{ display: 'flex', gap: '16px', marginTop: '32px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobileView ? '8px' : '16px', marginTop: isMobileView ? '20px' : '32px' }}>
             <button 
               onClick={() => setActiveTab('rendimiento')}
-              style={{ padding: '12px 24px', borderRadius: '12px', background: activeTab === 'rendimiento' ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', color: activeTab === 'rendimiento' ? 'black' : 'white', fontWeight: '800', border: 'none', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}
+              style={{ padding: isMobileView ? '10px 8px' : '12px 24px', borderRadius: '12px', background: activeTab === 'rendimiento' ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', color: activeTab === 'rendimiento' ? 'black' : 'white', fontWeight: '800', border: 'none', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: isMobileView ? '11px' : '14px' }}
             >
-              <TrendingUp size={18} /> Rendimiento Histórico
+              <TrendingUp size={isMobileView ? 14 : 18} /> {isMobileView ? 'Rendimiento' : 'Rendimiento Histórico'}
             </button>
             <button 
               onClick={() => setActiveTab('inventario')}
-              style={{ padding: '12px 24px', borderRadius: '12px', background: activeTab === 'inventario' ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', color: activeTab === 'inventario' ? 'black' : 'white', fontWeight: '800', border: 'none', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px' }}
+              style={{ padding: isMobileView ? '10px 8px' : '12px 24px', borderRadius: '12px', background: activeTab === 'inventario' ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', color: activeTab === 'inventario' ? 'black' : 'white', fontWeight: '800', border: 'none', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: isMobileView ? '11px' : '14px' }}
             >
-              <Wrench size={18} /> Inventario Personal
+              <Wrench size={isMobileView ? 14 : 18} /> {isMobileView ? 'Inventario' : 'Inventario Personal'}
             </button>
           </div>
         </div>
 
         {/* Content Section */}
-        <div style={{ padding: '32px', overflowY: 'auto', flex: 1 }}>
+        <div style={{ padding: isMobileView ? '20px 16px' : '32px', overflowY: 'auto', flex: 1 }}>
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
               <Loader2 className="animate-spin" size={48} color="var(--gold-primary)" />
@@ -204,38 +205,38 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
           ) : activeTab === 'rendimiento' ? (
             <div className="animate-fade-in">
               {/* Top Stats Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '20px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(50,215,75,0.1)', color: '#32d74b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : 'repeat(3, 1fr)', gap: isMobileView ? '12px' : '16px', marginBottom: isMobileView ? '20px' : '32px' }}>
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: isMobileView ? '16px' : '24px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: isMobileView ? '12px' : '20px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(50,215,75,0.1)', color: '#32d74b', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Scissors size={24} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '900', letterSpacing: '1px', marginBottom: '4px' }}>COMISIONES SERVICIOS</div>
-                    <div style={{ fontSize: '24px', fontWeight: '900', color: 'white' }}>${stats.totalServiceComm.toFixed(2)}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '900', letterSpacing: '1px', marginBottom: '4px' }}>COMISIONES SERVICIOS</div>
+                    <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>${stats.totalServiceComm.toFixed(2)}</div>
                   </div>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '20px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(10,132,255,0.1)', color: '#0a84ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: isMobileView ? '16px' : '24px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: isMobileView ? '12px' : '20px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(10,132,255,0.1)', color: '#0a84ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <ShoppingBag size={24} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '900', letterSpacing: '1px', marginBottom: '4px' }}>COMISIONES PRODUCTOS</div>
-                    <div style={{ fontSize: '24px', fontWeight: '900', color: 'white' }}>${stats.totalProductComm.toFixed(2)}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '900', letterSpacing: '1px', marginBottom: '4px' }}>COMISIONES PRODUCTOS</div>
+                    <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>${stats.totalProductComm.toFixed(2)}</div>
                   </div>
                 </div>
-                <div style={{ background: 'rgba(212,175,55,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', gap: '20px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ background: 'rgba(212,175,55,0.02)', padding: isMobileView ? '16px' : '24px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', gap: isMobileView ? '12px' : '20px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <TrendingUp size={24} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '900', letterSpacing: '1px', marginBottom: '4px' }}>TOTAL PROPINAS</div>
-                    <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--gold-primary)' }}>${(stats.totalTips || 0).toFixed(2)}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '900', letterSpacing: '1px', marginBottom: '4px' }}>TOTAL PROPINAS</div>
+                    <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)' }}>${(stats.totalTips || 0).toFixed(2)}</div>
                   </div>
                 </div>
               </div>
 
               {/* Bottom Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '1fr 1fr', gap: isMobileView ? '16px' : '24px' }}>
                 {/* Time & Volume */}
                 <div style={{ background: 'rgba(212,175,55,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.1)' }}>
                   <h4 style={{ color: 'var(--gold-primary)', fontSize: '14px', fontWeight: '900', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -247,7 +248,7 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                     <span style={{ color: 'white', fontWeight: '900', fontSize: '18px' }}>{stats.totalAppointments}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Tiempo Promedio x Trabajo</span>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Tiempo Promedio</span>
                     <span style={{ color: 'white', fontWeight: '900', fontSize: '18px' }}>{stats.avgDurationMin > 0 ? `${stats.avgDurationMin} min` : 'N/A'}</span>
                   </div>
                 </div>
@@ -290,7 +291,7 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
 
               {showAddTool && (
                 <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', padding: '20px', borderRadius: '16px', marginBottom: '24px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                     
                     {newTool.ownership === 'Propia' ? (
                       <>
@@ -354,9 +355,9 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {tools.map(tool => (
-                    <div key={tool.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '16px 24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: tool.ownership === 'Asignada' ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div key={tool.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: isMobileView ? '12px 16px' : '16px 24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: isMobileView ? '12px' : '16px' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: tool.ownership === 'Asignada' ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <Wrench size={18} color={tool.ownership === 'Asignada' ? 'var(--gold-primary)' : 'white'} />
                         </div>
                         <div>
