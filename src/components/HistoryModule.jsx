@@ -250,7 +250,8 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                 val = (serviceBase + extras + products + tips);
                               }
                               const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
-                              return `${formatCurrency(val * rate)} Bs.`;
+                              const finalBs = val * rate;
+                              return isMobile ? `${Math.round(finalBs).toLocaleString()} Bs.` : `${formatCurrency(finalBs)} Bs.`;
                             })()}
                           </div>
                           <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '750', marginTop: '2px' }}>
