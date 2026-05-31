@@ -601,21 +601,22 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
               {services.map(service => (
                 <div key={service.id} className="glass-card animate-slide-up" style={{ 
                   borderRadius: '20px',
-                  padding: '16px 24px',
+                  padding: isMobile ? '20px' : '16px 24px',
                   border: '1px solid rgba(255,255,255,0.05)',
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: '24px'
+                  flexDirection: isMobile ? 'column' : 'row',
+                  alignItems: isMobile ? 'stretch' : 'center',
+                  gap: isMobile ? '16px' : '24px'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: '200px' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(212, 175, 55, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: isMobile ? 'none' : '200px', width: isMobile ? '100%' : 'auto' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(212, 175, 55, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {getCategoryIcon(service.category)}
                     </div>
-                    <div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{service.category}</div>
-                      <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', margin: '2px 0' }}>{service.name}</h4>
+                      <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{service.name}</h4>
                       {service.description && (
-                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: '4px 0', maxWidth: '250px', lineHeight: '1.4', fontStyle: 'italic' }}>{service.description}</p>
+                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: '4px 0', maxWidth: isMobile ? '100%' : '250px', lineHeight: '1.4', fontStyle: 'italic' }}>{service.description}</p>
                       )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                         <Clock size={12} /> {service.duration || 30} min
@@ -623,7 +624,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                     </div>
                   </div>
 
-                  <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
                     {(service.included_items || []).map((item, idx) => (
                       <span key={idx} style={{ fontSize: '10px', padding: '4px 10px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.05)' }}>
                         {item}
@@ -631,14 +632,23 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                     ))}
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: isMobile ? 'space-between' : 'flex-start',
+                    gap: isMobile ? '16px' : '32px',
+                    width: isMobile ? '100%' : 'auto',
+                    borderTop: isMobile ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                    paddingTop: isMobile ? '16px' : '0',
+                    flexWrap: 'wrap'
+                  }}>
                     {service.strategy_type && (
                       <div style={{ padding: '4px 12px', borderRadius: '20px', border: '1px solid rgba(212, 175, 55, 0.3)', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212, 175, 55, 0.05)' }}>
                         {service.strategy_type}
                       </div>
                     )}
                     
-                    <div style={{ textAlign: 'right', minWidth: '100px' }}>
+                    <div style={{ textAlign: isMobile ? 'left' : 'right', minWidth: '100px' }}>
                       <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)' }}>PRECIO</div>
                       <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>${service.price}</div>
                       {rates?.usd > 0 && (
