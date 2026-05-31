@@ -34,12 +34,14 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
     stock: 0, 
     price: 0, 
     cost_price: 0,
+    commission_pct: 10,
     category: 'Venta', 
     image_url: '',
     staff_id: null,
     cost_price_dirty: false,
     price_dirty: false,
-    stock_dirty: false
+    stock_dirty: false,
+    commission_pct_dirty: false
   });
 
   useEffect(() => {
@@ -81,7 +83,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
     }
   };
 
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('list'); // 'grid' or 'list'
   const [editingItem, setEditingItem] = useState(null);
   const [saving, setSaving] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -92,14 +94,15 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
     try {
       setSaving(true);
       // Sanitize object: Only send database-columns
-      const { cost_price_dirty, price_dirty, stock_dirty, ...cleanItem } = newItem;
+      const { cost_price_dirty, price_dirty, stock_dirty, commission_pct_dirty, ...cleanItem } = newItem;
       
       // Ensure empty strings are treated as 0
       const finalItem = {
         ...cleanItem,
         price: Number(cleanItem.price) || 0,
         cost_price: Number(cleanItem.cost_price) || 0,
-        stock: Number(cleanItem.stock) || 0
+        stock: Number(cleanItem.stock) || 0,
+        commission_pct: Number(cleanItem.commission_pct) || 0
       };
 
       const created = await dataService.addInventoryItem(finalItem);
@@ -115,7 +118,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
       }
 
       setShowAddForm(false);
-      setNewItem({ name: '', stock: 0, price: 0, cost_price: 0, category: 'Venta', image_url: '', cost_price_dirty: false, price_dirty: false, stock_dirty: false });
+      setNewItem({ name: '', stock: 0, price: 0, cost_price: 0, commission_pct: 10, category: 'Venta', image_url: '', cost_price_dirty: false, price_dirty: false, stock_dirty: false, commission_pct_dirty: false });
       fetchInventory();
       showToast('Producto agregado al almacén');
     } catch (error) {
@@ -277,6 +280,19 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                   placeholder="0.00" 
                   value={newItem.price === 0 && !newItem.price_dirty ? '' : newItem.price} 
                   onChange={(e) => setNewItem({...newItem, price: e.target.value === '' ? '' : Number(e.target.value), price_dirty: true})} 
+                  style={{ width: '100%', height: '48px' }} 
+                />
+              </div>
+            )}
+
+            {(newItem.category === 'Venta' || newItem.category === 'Accesorios') && (
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>COMISIÓN VENDEDOR (%)</label>
+                <input 
+                  type="number" 
+                  placeholder="10" 
+                  value={newItem.commission_pct === 10 && !newItem.commission_pct_dirty ? '' : newItem.commission_pct} 
+                  onChange={(e) => setNewItem({...newItem, commission_pct: e.target.value === '' ? '' : Number(e.target.value), commission_pct_dirty: true})} 
                   style={{ width: '100%', height: '48px' }} 
                 />
               </div>
@@ -809,6 +825,13 @@ const EditInventoryModal = ({ item, onClose, onSave }) => {
               <input type="number" className="astro-input" value={formData.price} onChange={(e) => setFormData({...formData, price: Number(e.target.value)})} style={{ width: '100%' }} />
             </div>
           </div>
+
+          {(formData.category === 'Venta' || formData.category === 'Accesorios') && (
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>COMISIÓN VENDEDOR (%)</label>
+              <input type="number" className="astro-input" value={formData.commission_pct ?? 10} onChange={(e) => setFormData({...formData, commission_pct: Number(e.target.value)})} style={{ width: '100%' }} />
+            </div>
+          )}
 
           <div>
             <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>FOTO DEL PRODUCTO</label>

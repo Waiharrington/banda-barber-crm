@@ -329,6 +329,12 @@ export const dataService = {
     return data;
   },
 
+  async updateAppointmentProductQuantity(id, quantity) {
+    const { data, error } = await supabase.from('appointment_products').update({ quantity }).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  },
+
   async getAppointmentProducts(appointmentId) {
     const { data, error } = await supabase.from('appointment_products').select('*, inventory(*)').eq('appointment_id', appointmentId);
     if (error) throw error;
@@ -674,9 +680,10 @@ export const dataService = {
         id,
         status,
         total_price,
-        services(price),
+        services(price, commission_barber),
         appointment_extras(price),
-        appointment_products(quantity, price)
+        appointment_products(quantity, price, inventory(id, name, commission_pct)),
+        appointment_staff(staff_id, commission_earned, product_commission, tip_amount)
       `)
       .eq('staff_id', staffId)
       .gte('created_at', today)
@@ -685,6 +692,7 @@ export const dataService = {
     if (error) throw error;
 
     let totalUsd = 0;
+    let earningsUsd = 0;
     let serviceCount = data.length;
 
     data.forEach(app => {
@@ -692,9 +700,22 @@ export const dataService = {
       const ePrice = app.appointment_extras?.reduce((sum, e) => sum + (e.price || 0), 0) || 0;
       const pPrice = app.appointment_products?.reduce((sum, p) => sum + ((p.price || 0) * (p.quantity || 1)), 0) || 0;
       totalUsd += (sPrice + ePrice + pPrice);
+
+      const myStaffRecord = app.appointment_staff?.find(as => String(as.staff_id) === String(staffId));
+      if (myStaffRecord) {
+        earningsUsd += Number(myStaffRecord.commission_earned || 0) + Number(myStaffRecord.product_commission || 0) + Number(myStaffRecord.tip_amount || 0);
+      } else {
+        const pct = app.services?.commission_barber ?? 40;
+        const serviceComm = sPrice * (pct / 100);
+        const productsComm = app.appointment_products?.reduce((sum, pr) => {
+          const pCommPct = typeof pr.inventory?.commission_pct === 'number' ? pr.inventory.commission_pct : 10;
+          return sum + ((pr.price || 0) * (pr.quantity || 1) * (pCommPct / 100));
+        }, 0) || 0;
+        earningsUsd += (serviceComm + productsComm);
+      }
     });
 
-    return { productionUsd: totalUsd, services: serviceCount };
+    return { productionUsd: totalUsd, services: serviceCount, earningsUsd: earningsUsd };
   },
 
   // Final Checkout Logic

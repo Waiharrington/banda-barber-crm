@@ -61,7 +61,7 @@ const BarberPanel = ({ isMobile, rates }) => {
     }
   };
 
-  const [stats, setStats] = useState({ production: 0, services: 0 });
+  const [stats, setStats] = useState({ production: 0, services: 0, earnings: 0 });
 
   useEffect(() => {
     loadStaff();
@@ -212,10 +212,10 @@ const BarberPanel = ({ isMobile, rates }) => {
             }
           }
         });
-        setStats({ production: earned, services: count });
+        setStats({ production: earned, services: count, earnings: earned });
       } else {
         const data = await dataService.getBarberDailyStats(selectedBarber.id);
-        setStats({ production: data.productionUsd, services: data.services });
+        setStats({ production: data.productionUsd, services: data.services, earnings: data.earningsUsd });
       }
     } catch (err) {
       console.error("Error loading stats:", err);
@@ -947,31 +947,49 @@ const BarberPanel = ({ isMobile, rates }) => {
         )}
 
         {/* Stats Overlay for the barber / assistant */}
-        <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', textAlign: 'center' }}>
+        <section style={{ display: 'grid', gridTemplateColumns: isAssistant ? '1fr 1fr' : '1fr 1fr 1fr', gap: '16px' }}>
+          <div className="glass-card" style={{ padding: '20px 16px', borderRadius: '24px', textAlign: 'center' }}>
             <TrendingUp size={24} color={isAssistant ? '#007aff' : "var(--gold-primary)"} style={{ margin: '0 auto 12px' }} />
             <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
               {isAssistant ? "Comisiones Hoy" : "Producción Hoy"}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '8px' }}>
-              <div style={{ fontSize: '24px', fontWeight: '900' }}>${stats.production.toFixed(2)}</div>
+              <div style={{ fontSize: '22px', fontWeight: '900' }}>${stats.production.toFixed(2)}</div>
               {rates?.usd > 0 && stats.production > 0 && (
-                <div style={{ fontSize: '12px', color: isAssistant ? '#007aff' : 'var(--gold-primary)', fontWeight: '800', marginTop: '2px' }}>
+                <div style={{ fontSize: '11px', color: isAssistant ? '#007aff' : 'var(--gold-primary)', fontWeight: '800', marginTop: '2px' }}>
                   {Math.round(stats.production * rates.usd).toLocaleString()} BS
                 </div>
               )}
             </div>
           </div>
-          <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', textAlign: 'center' }}>
+
+          {!isAssistant && (
+            <div className="glass-card animate-scale-in" style={{ padding: '20px 16px', borderRadius: '24px', textAlign: 'center', border: '1px solid rgba(50, 215, 75, 0.2)', background: 'linear-gradient(135deg, rgba(28,28,30,0.95), rgba(50,215,75,0.02))' }}>
+              <Award size={24} color="#32d74b" style={{ margin: '0 auto 12px' }} />
+              <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                Ganancia Hoy
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '8px' }}>
+                <div style={{ fontSize: '22px', fontWeight: '900', color: '#32d74b' }}>${stats.earnings.toFixed(2)}</div>
+                {rates?.usd > 0 && stats.earnings > 0 && (
+                  <div style={{ fontSize: '11px', color: '#32d74b', fontWeight: '800', marginTop: '2px' }}>
+                    {Math.round(stats.earnings * rates.usd).toLocaleString()} BS
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="glass-card" style={{ padding: '20px 16px', borderRadius: '24px', textAlign: 'center' }}>
             {isAssistant ? (
               <Droplets size={24} color="#007aff" style={{ margin: '0 auto 12px' }} />
             ) : (
-              <Award size={24} color="var(--gold-primary)" style={{ margin: '0 auto 12px' }} />
+              <Scissors size={24} color="var(--gold-primary)" style={{ margin: '0 auto 12px' }} />
             )}
             <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
               {isAssistant ? "Lavados" : "Servicios"}
             </div>
-            <div style={{ fontSize: '24px', fontWeight: '900', marginTop: '8px' }}>{stats.services}</div>
+            <div style={{ fontSize: '22px', fontWeight: '900', marginTop: '8px' }}>{stats.services}</div>
           </div>
         </section>
 

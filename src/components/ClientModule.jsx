@@ -46,7 +46,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
     hair_type: 'Normal', 
     scalp_type: 'Normal' 
   });
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
+  const [viewMode, setViewMode] = useState('table'); // 'grid' or 'table'
 
   const [creating, setCreating] = useState(false);
 

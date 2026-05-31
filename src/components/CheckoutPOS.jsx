@@ -55,7 +55,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const [tips, setTips] = useState([]); // Array of { id, staffId, amount }
   const [cart, setCart] = useState([]); // Sold products
   const [itemSalesAssociations, setItemSalesAssociations] = useState({}); // { itemId: staffId }
-  const [paymentMode, setPaymentMode] = useState('full_usd'); // or 'mixed'
+  const [paymentMode, setPaymentMode] = useState('full_bs'); // or 'mixed'
   const [cashUsd, setCashUsd] = useState(0);
   const [methodUsd, setMethodUsd] = useState('Efectivo');
   const [methodBs, setMethodBs] = useState('Pago Móvil');
@@ -137,12 +137,15 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
           const exists = mergedProducts.find(p => p.id === ap.inventory?.id);
           if (exists) {
             exists.quantity += ap.quantity;
+            if (ap.id) exists.dbIds.push(ap.id);
           } else {
             mergedProducts.push({
               id: ap.inventory?.id,
               name: ap.inventory?.name,
               price: ap.price,
-              quantity: ap.quantity
+              quantity: ap.quantity,
+              commission_pct: ap.inventory?.commission_pct,
+              dbIds: ap.id ? [ap.id] : []
             });
           }
         });
@@ -307,14 +310,131 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
 
   const didWash = washCount > 0;
 
-  const handleAddToCart = (product) => {
-    const exists = cart.find(p => p.id === product.id);
-    if (exists) {
-      setCart(cart.map(p => p.id === product.id ? {...p, quantity: p.quantity + 1} : p));
-    } else {
-      setCart([...cart, {...product, quantity: 1}]);
+  const handleAddToCart = async (product) => {
+    if (!selectedApp) {
+      const exists = cart.find(p => p.id === product.id);
+      if (exists) {
+        setCart(cart.map(p => p.id === product.id ? {...p, quantity: p.quantity + 1} : p));
+      } else {
+        setCart([...cart, {...product, quantity: 1}]);
+      }
+      showToast(`${product.name} añadido`);
+      return;
     }
-    showToast(`${product.name} añadido`);
+
+    try {
+      setLoading(true);
+      // Check if product already exists in selectedApp's products
+      const existingProductRecord = selectedApp.appointment_products?.find(
+        ap => ap.inventory?.id === product.id
+      );
+
+      if (existingProductRecord) {
+        await dataService.updateAppointmentProductQuantity(
+          existingProductRecord.id,
+          (existingProductRecord.quantity || 0) + 1
+        );
+      } else {
+        await dataService.addProductToAppointment(
+          selectedApp.id,
+          product.id,
+          1,
+          product.price
+        );
+      }
+
+      showToast(`${product.name} añadido a la cuenta.`);
+      await loadData();
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
+      const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
+      setSelectedApp(updatedSelected);
+    } catch (e) {
+      console.error(e);
+      showToast("Error al añadir producto", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveProduct = async (product) => {
+    if (!selectedApp) {
+      setCart(cart.filter(item => item.id !== product.id));
+      showToast("Producto eliminado del carrito");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      if (product.dbIds && product.dbIds.length > 0) {
+        for (const dbId of product.dbIds) {
+          await dataService.removeProductFromAppointment(dbId);
+        }
+      }
+      showToast(`${product.name} eliminado de la cuenta.`);
+      await loadData();
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
+      const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
+      setSelectedApp(updatedSelected);
+    } catch (e) {
+      console.error(e);
+      showToast("Error al eliminar producto", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleIncrementProduct = async (product) => {
+    if (!selectedApp) {
+      setCart(cart.map(p => p.id === product.id ? {...p, quantity: p.quantity + 1} : p));
+      return;
+    }
+    try {
+      setLoading(true);
+      if (product.dbIds && product.dbIds.length > 0) {
+        const record = selectedApp.appointment_products?.find(ap => ap.id === product.dbIds[0]);
+        if (record) {
+          await dataService.updateAppointmentProductQuantity(record.id, (record.quantity || 0) + 1);
+        }
+      }
+      await loadData();
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
+      const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
+      setSelectedApp(updatedSelected);
+    } catch (e) {
+      console.error(e);
+      showToast("Error al incrementar cantidad", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDecrementProduct = async (product) => {
+    if (product.quantity <= 1) {
+      handleRemoveProduct(product);
+      return;
+    }
+    if (!selectedApp) {
+      setCart(cart.map(p => p.id === product.id ? {...p, quantity: p.quantity - 1} : p));
+      return;
+    }
+    try {
+      setLoading(true);
+      if (product.dbIds && product.dbIds.length > 0) {
+        const record = selectedApp.appointment_products?.find(ap => ap.id === product.dbIds[0]);
+        if (record) {
+          await dataService.updateAppointmentProductQuantity(record.id, (record.quantity || 0) - 1);
+        }
+      }
+      await loadData();
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
+      const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
+      setSelectedApp(updatedSelected);
+    } catch (e) {
+      console.error(e);
+      showToast("Error al disminuir cantidad", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddExtra = async (extra) => {
@@ -533,42 +653,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             }
           });
 
-          // 4. Extras Commission Assignment
-          totalAppsInCheckout.forEach(app => {
-            app.appointment_extras?.forEach(ex => {
-              const assignedStaffId = itemSalesAssociations[ex.id] || app.staff_id;
-              if (!assignedStaffId) return;
- 
-              const staffObj = allStaff.find(s => s.id === assignedStaffId);
-              const role = staffObj?.role;
-              let pct = 40;
-              if (role === 'Barbero') pct = app.services?.commission_barber ?? 40;
-              else if (role === 'Asistente de Lavado') pct = app.services?.commission_washer ?? 10;
-              else if (role === 'Caja') pct = app.services?.commission_cashier ?? 0;
-              else if (role === 'Recepcionista') pct = app.services?.commission_receptionist ?? 0;
-              else pct = staffObj?.commission_pct ?? 40;
- 
-              const extraComm = (ex.price || 0) * (pct / 100);
- 
-              const existing = involved.find(i => i.staffId === assignedStaffId);
-              if (existing) {
-                existing.commissionEarned += extraComm;
-                existing.commissionBs += extraComm * fixedRate;
-              } else {
-                involved.push({
-                  staffId: assignedStaffId,
-                  name: staffObj?.name || 'Staff',
-                  role: staffObj?.role || 'Staff',
-                  commissionEarned: extraComm,
-                  commissionBs: extraComm * fixedRate,
-                  productCommissionEarned: 0,
-                  productCommissionBs: 0,
-                  tip: 0,
-                  tipBs: 0
-                });
-              }
-            });
-          });
+
  
           // 5. Products Commission Assignment (10% standard product commission)
           cart.forEach(p => {
@@ -576,7 +661,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             if (!assignedStaffId) return;
  
             const staffObj = allStaff.find(s => s.id === assignedStaffId);
-            const productComm = (p.price || 0) * (p.quantity || 1) * 0.10; // 10% commission
+            const commPct = typeof p.commission_pct === 'number' ? p.commission_pct : 10;
+            const productComm = (p.price || 0) * (p.quantity || 1) * (commPct / 100);
  
             const existing = involved.find(i => i.staffId === assignedStaffId);
             if (existing) {
@@ -615,6 +701,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       setCart([]);
       setTips([]);
       setCashUsd(0);
+      setPaymentMode('full_bs');
       loadData();
     } catch (err) {
       console.error("Error en checkout:", err);
@@ -1231,10 +1318,25 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   </button>
                 )}
                  {cart.map(p => (
-                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <button onClick={() => setCart(cart.filter(item => item.id !== p.id))} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}>[X]</button>
-                      {p.name} (x{p.quantity})
+                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <button onClick={() => handleRemoveProduct(p)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}>[X]</button>
+                      {p.name}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '8px', marginLeft: '6px' }}>
+                        <button 
+                          onClick={() => handleDecrementProduct(p)}
+                          style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                        >
+                          <Minus size={12} />
+                        </button>
+                        <span style={{ fontSize: '11px', fontWeight: '900', color: 'white', minWidth: '14px', textAlign: 'center' }}>{p.quantity}</span>
+                        <button 
+                          onClick={() => handleIncrementProduct(p)}
+                          style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                        >
+                          <Plus size={12} />
+                        </button>
+                      </div>
                       
                       {/* Staff Selector for Product Sale */}
                       <select
@@ -1250,13 +1352,14 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           padding: '4px 8px',
                           marginLeft: '8px',
                           cursor: 'pointer',
-                          outline: 'none'
+                          outline: 'none',
+                          maxWidth: '120px'
                         }}
                       >
                         <option value="" style={{ background: '#1c1c1e', color: 'white' }}>Sin Vendedor</option>
                         {allStaff.map(s => (
                           <option key={s.id} value={s.id} style={{ background: '#1c1c1e', color: 'white' }}>
-                            {s.name.split(' ')[0]} ({s.role?.split(' ')[0]})
+                            {s.name}
                           </option>
                         ))}
                       </select>
@@ -1274,8 +1377,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     appId: app.id
                   })) || []
                 ).map(extra => (
-                  <div key={extra.id} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--gold-primary)', alignItems: 'center' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div key={extra.id} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--gold-primary)', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <button onClick={() => handleRemoveExtra(extra.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}>[X]</button>
                       {extra.service_extras?.name}
                       
@@ -1293,13 +1396,14 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           padding: '4px 8px',
                           marginLeft: '8px',
                           cursor: 'pointer',
-                          outline: 'none'
+                          outline: 'none',
+                          maxWidth: '120px'
                         }}
                       >
                         <option value="" style={{ background: '#1c1c1e', color: 'white' }}>Sin Asignar</option>
                         {allStaff.map(s => (
                           <option key={s.id} value={s.id} style={{ background: '#1c1c1e', color: 'white' }}>
-                            {s.name.split(' ')[0]} ({s.role?.split(' ')[0]})
+                            {s.name}
                           </option>
                         ))}
                       </select>

@@ -48,6 +48,11 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   const [endDate, setEndDate] = useState('');
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   
+  // Payroll Date Filter States
+  const [payrollFilterDate, setPayrollFilterDate] = useState('this_week'); // 'this_week', 'last_week', 'custom'
+  const [payrollStartDate, setPayrollStartDate] = useState('');
+  const [payrollEndDate, setPayrollEndDate] = useState('');
+  
   // Custom Dialog State
   const [dialog, setDialog] = useState({
     isOpen: false,
@@ -1273,12 +1278,38 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       )}
 
       {activeTab === 'payroll' && (() => {
-        const startOfWeek = getStartOfWeek();
-        const weeklyTransactions = transactions.filter(t => new Date(t.created_at) >= startOfWeek);
+        let dateFilterStart;
+        let dateFilterEnd;
+
+        if (payrollFilterDate === 'this_week') {
+          dateFilterStart = getStartOfWeek();
+          dateFilterEnd = new Date();
+        } else if (payrollFilterDate === 'last_week') {
+          const startOfThisWeek = getStartOfWeek();
+          dateFilterStart = new Date(startOfThisWeek);
+          dateFilterStart.setDate(startOfThisWeek.getDate() - 7);
+          dateFilterEnd = new Date(startOfThisWeek);
+          dateFilterEnd.setMilliseconds(-1);
+        } else if (payrollFilterDate === 'custom') {
+          dateFilterStart = payrollStartDate ? new Date(payrollStartDate + 'T00:00:00') : getStartOfWeek();
+          dateFilterEnd = payrollEndDate ? new Date(payrollEndDate + 'T23:59:59') : new Date();
+        }
+
+        const weeklyTransactions = transactions.filter(t => {
+          const d = new Date(t.created_at);
+          return d >= dateFilterStart && d <= dateFilterEnd;
+        });
 
         const processedPayroll = staff.map(st => {
           const serviceTransactions = weeklyTransactions.filter(t => t.type === 'income' && t.metadata?.staffInvolved?.some(x => String(x.staffId) === String(st.id)));
-          const valesTransactions = transactions.filter(t => t.type === 'expense' && t.category === 'Vales Barberos' && String(t.metadata?.staffId) === String(st.id) && new Date(t.created_at) >= startOfWeek);
+          const valesTransactions = transactions.filter(t => {
+            const d = new Date(t.created_at);
+            return t.type === 'expense' && 
+                   t.category === 'Vales Barberos' && 
+                   String(t.metadata?.staffId) === String(st.id) && 
+                   d >= dateFilterStart && 
+                   d <= dateFilterEnd;
+          });
           const staffTransactions = [...serviceTransactions, ...valesTransactions].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
           
           const servicesCount = serviceTransactions.length;
@@ -1356,8 +1387,81 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
         return (
           <div className="animate-fade-in">
-             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '12px' : '0', marginBottom: '32px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '1px' }}>NÓMINA Y CORTE SEMANAL</h3>
+             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '1px', margin: 0 }}>NÓMINA Y CORTE SEMANAL</h3>
+              </div>
+
+              {/* DATE RANGE FILTER */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px', 
+                background: 'rgba(255, 255, 255, 0.03)', 
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                padding: '6px 12px',
+                borderRadius: '12px',
+                flexWrap: 'wrap'
+              }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>Filtro:</span>
+                <select
+                  value={payrollFilterDate}
+                  onChange={(e) => setPayrollFilterDate(e.target.value)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(0,0,0,0.4)',
+                    border: '1px solid rgba(212,175,55,0.3)',
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="this_week">Esta Semana (Actual)</option>
+                  <option value="last_week">Semana Pasada</option>
+                  <option value="custom">Rango Personalizado</option>
+                </select>
+
+                {payrollFilterDate === 'custom' && (
+                  <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Desde:</span>
+                    <input 
+                      type="date" 
+                      value={payrollStartDate}
+                      onChange={(e) => setPayrollStartDate(e.target.value)}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(0,0,0,0.3)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: 'white',
+                        fontSize: '11px',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    />
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Hasta:</span>
+                    <input 
+                      type="date" 
+                      value={payrollEndDate}
+                      onChange={(e) => setPayrollEndDate(e.target.value)}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(0,0,0,0.3)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: 'white',
+                        fontSize: '11px',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
               <div style={{ display: 'flex', gap: '12px', width: isMobile ? '100%' : 'auto' }}>
                 <button 
                   onClick={() => setIsConfiguringPayroll(true)} 
@@ -1406,7 +1510,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold-primary)' }}></div>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-primary)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Resultados Astro (Semanal)</span>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-primary)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+                    Resultados Astro ({
+                      payrollFilterDate === 'this_week' ? 'Semanal' :
+                      payrollFilterDate === 'last_week' ? 'Semana Pasada' : 'Personalizado'
+                    })
+                  </span>
                 </div>
                 <h4 style={{ fontSize: '20px', fontWeight: '900', color: 'white', margin: 0 }}>Rendimiento General de la Barbería</h4>
               </div>
