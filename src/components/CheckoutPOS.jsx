@@ -1361,13 +1361,16 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           fontSize: '9px',
                           fontWeight: '800',
                           borderRadius: '12px',
-                          padding: '2px 8px',
+                          padding: '1px 6px',
+                          height: '16px',
+                          lineHeight: '14px',
                           textAlign: 'center',
                           cursor: 'pointer',
                           outline: 'none',
                           maxWidth: '75px',
                           flexShrink: 0,
-                          transition: 'all 0.2s'
+                          transition: 'all 0.2s',
+                          marginLeft: '8px'
                         }}
                       >
                         <option value="" style={{ background: '#1c1c1e', color: 'white' }}>+ Vendedor</option>
@@ -1414,13 +1417,16 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           fontSize: '9px',
                           fontWeight: '800',
                           borderRadius: '12px',
-                          padding: '2px 8px',
+                          padding: '1px 6px',
+                          height: '16px',
+                          lineHeight: '14px',
                           textAlign: 'center',
                           cursor: 'pointer',
                           outline: 'none',
                           maxWidth: '75px',
                           flexShrink: 0,
-                          transition: 'all 0.2s'
+                          transition: 'all 0.2s',
+                          marginLeft: '8px'
                         }}
                       >
                         <option value="" style={{ background: '#1c1c1e', color: 'white' }}>+ Asignar</option>
