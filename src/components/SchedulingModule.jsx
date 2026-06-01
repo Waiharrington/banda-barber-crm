@@ -437,27 +437,31 @@ const SchedulingModule = ({ isMobile }) => {
                         )}
                       </div>
 
-                      {/* Column 2: Client & Service (stacked vertically but very compact) */}
-                      <div style={{ flex: 1.5, minWidth: 0, paddingLeft: '4px' }}>
+                      {/* Column 2: Client */}
+                      <div style={{ flex: 1, minWidth: 0, paddingLeft: '4px' }}>
                         <div style={{ fontWeight: '800', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {app.clients?.name?.split(' ')[0]} {app.clients?.name?.split(' ')[1] ? app.clients?.name?.split(' ')[1]?.charAt(0) + '.' : ''}
                         </div>
-                        <div style={{ color: 'var(--text-muted)', fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {app.services?.name}
+                      </div>
+
+                      {/* Column 3: Service (exactly in the middle space) */}
+                      <div style={{ flex: 1.2, minWidth: 0, paddingLeft: '4px', color: 'var(--text-secondary)', fontSize: '10px' }}>
+                        <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {app.services?.name || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin serv.</span>}
                         </div>
                       </div>
 
-                      {/* Column 3: Barber (Initial or very compact name) */}
-                      <div style={{ flexShrink: 0, width: '45px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingLeft: '2px' }}>
+                      {/* Column 4: Barber */}
+                      <div style={{ flexShrink: 0, width: '45px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingLeft: '2px' }}>
                         {app.staff?.name?.split(' ')[0]}
                       </div>
 
-                      {/* Column 4: Price */}
+                      {/* Column 5: Price */}
                       <div style={{ flexShrink: 0, width: '28px', fontWeight: '900', color: 'var(--gold-primary)', textAlign: 'right' }}>
                         ${app.total_price}
                       </div>
 
-                      {/* Column 5: Status Badge (micro sized) */}
+                      {/* Column 6: Status Badge */}
                       <div style={{ flexShrink: 0, width: '52px', textAlign: 'center' }}>
                         <span style={{ 
                           fontSize: '8px', fontWeight: '900', padding: '2px 5px', borderRadius: '4px', textTransform: 'uppercase',
@@ -468,7 +472,7 @@ const SchedulingModule = ({ isMobile }) => {
                         </span>
                       </div>
 
-                      {/* Column 6: Actions */}
+                      {/* Column 7: Actions */}
                       <div style={{ flexShrink: 0, display: 'flex', gap: '1px' }}>
                         <button onClick={() => handleEditAppointment(app)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '3px' }}><Pencil size={11} /></button>
                         <button onClick={() => handleManageAppointment(app.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '3px' }}><Trash2 size={11} /></button>
