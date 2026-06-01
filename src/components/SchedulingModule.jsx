@@ -415,60 +415,63 @@ const SchedulingModule = ({ isMobile }) => {
                   .map(app => (
                   isMobile ? (
                     <div key={app.id} style={{ 
-                      padding: '16px', 
-                      borderBottom: '1px solid rgba(255,255,255,0.04)',
-                      background: 'rgba(255,255,255,0.01)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '12px',
-                      opacity: app.status === 'Completado' ? 0.6 : 1
+                      padding: '10px 8px', 
+                      borderBottom: '1px solid rgba(255,255,255,0.03)',
+                      display: 'flex', 
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '4px',
+                      opacity: app.status === 'Completado' ? 0.6 : 1,
+                      fontSize: '11px',
+                      color: '#fff'
                     }}>
-                      {/* Top Row: Time, Date and Status */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <span style={{ fontWeight: '900', fontSize: '13px', color: 'white' }}>
-                            {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
-                          </span>
-                          {filterType !== 'day' && (
-                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '6px' }}>
-                              • {new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                            </span>
-                          )}
+                      {/* Column 1: Time (compact) */}
+                      <div style={{ flexShrink: 0, width: '48px', fontWeight: '800' }}>
+                        <div style={{ fontSize: '11px' }}>
+                          {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '').toLowerCase()}
                         </div>
+                        {filterType !== 'day' && (
+                          <div style={{ fontSize: '8px', color: 'var(--text-muted)' }}>
+                            {new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Column 2: Client & Service (stacked vertically but very compact) */}
+                      <div style={{ flex: 1.5, minWidth: 0, paddingLeft: '4px' }}>
+                        <div style={{ fontWeight: '800', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {app.clients?.name?.split(' ')[0]} {app.clients?.name?.split(' ')[1] ? app.clients?.name?.split(' ')[1]?.charAt(0) + '.' : ''}
+                        </div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {app.services?.name}
+                        </div>
+                      </div>
+
+                      {/* Column 3: Barber (Initial or very compact name) */}
+                      <div style={{ flexShrink: 0, width: '45px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingLeft: '2px' }}>
+                        {app.staff?.name?.split(' ')[0]}
+                      </div>
+
+                      {/* Column 4: Price */}
+                      <div style={{ flexShrink: 0, width: '28px', fontWeight: '900', color: 'var(--gold-primary)', textAlign: 'right' }}>
+                        ${app.total_price}
+                      </div>
+
+                      {/* Column 5: Status Badge (micro sized) */}
+                      <div style={{ flexShrink: 0, width: '52px', textAlign: 'center' }}>
                         <span style={{ 
-                          fontSize: '8px', fontWeight: '900', padding: '3px 8px', borderRadius: '20px', textTransform: 'uppercase',
+                          fontSize: '8px', fontWeight: '900', padding: '2px 5px', borderRadius: '4px', textTransform: 'uppercase',
                           backgroundColor: app.status === 'Agendado' ? 'rgba(212,175,55,0.1)' : app.status === 'En Silla' ? 'rgba(0,122,255,0.1)' : app.status === 'En Lavado' ? 'rgba(0,191,255,0.1)' : app.status === 'Por Pagar' ? 'rgba(50,215,75,0.1)' : app.status === 'Completado' ? 'rgba(142,142,147,0.1)' : 'rgba(255,69,58,0.1)',
                           color: app.status === 'Agendado' ? 'var(--gold-primary)' : app.status === 'En Silla' ? '#007aff' : app.status === 'En Lavado' ? '#00bfff' : app.status === 'Por Pagar' ? '#32d74b' : app.status === 'Completado' ? '#8e8e93' : '#ff453a'
                         }}>
-                          {app.status}
+                          {app.status === 'Agendado' ? 'Agenda' : app.status === 'En Silla' ? 'Silla' : app.status === 'En Lavado' ? 'Lavado' : app.status === 'Por Pagar' ? 'Cobro' : app.status === 'Completado' ? 'Listo' : 'Canc'}
                         </span>
                       </div>
 
-                      {/* Middle Row: Client, Service, Barber */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <User size={13} color="var(--gold-primary)" />
-                          <span style={{ fontWeight: '800', fontSize: '13px', color: 'white' }}>{app.clients?.name}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '2px' }}>
-                          <Scissors size={12} color="var(--text-muted)" />
-                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{app.services?.name}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '2px' }}>
-                          <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '7px', color: 'black', fontWeight: '950' }}>{app.staff?.name?.charAt(0)}</div>
-                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{app.staff?.name}</span>
-                        </div>
-                      </div>
-
-                      {/* Bottom Row: Price and Actions */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed rgba(255,255,255,0.03)', paddingTop: '10px' }}>
-                        <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '14px' }}>
-                          ${app.total_price}
-                        </div>
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                          <button onClick={() => handleEditAppointment(app)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '6px' }} className="hover-gold"><Pencil size={13} /></button>
-                          <button onClick={() => handleManageAppointment(app.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '6px' }} className="hover-red"><Trash2 size={13} /></button>
-                        </div>
+                      {/* Column 6: Actions */}
+                      <div style={{ flexShrink: 0, display: 'flex', gap: '1px' }}>
+                        <button onClick={() => handleEditAppointment(app)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '3px' }}><Pencil size={11} /></button>
+                        <button onClick={() => handleManageAppointment(app.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '3px' }}><Trash2 size={11} /></button>
                       </div>
                     </div>
                   ) : (
