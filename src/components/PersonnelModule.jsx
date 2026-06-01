@@ -1107,6 +1107,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
               )}
             </React.Fragment>
           ))}
+        </div>
+      )}
 
       {showCamera && (
         <AstroCamera 
