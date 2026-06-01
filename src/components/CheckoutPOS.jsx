@@ -1456,33 +1456,34 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
 
                 {/* Washing Section */}
                 {washEligibleCount > 0 && (
-                  <div className="glass-card animate-slide-up" style={{ padding: '24px', borderRadius: '24px', marginBottom: '24px', border: '1px solid rgba(10,132,255,0.1)', background: 'rgba(10,132,255,0.02)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(10,132,255,0.1)', color: '#0a84ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Droplets size={20} />
+                  <div className="glass-card animate-slide-up" style={{ padding: isMobile ? '12px 14px' : '24px', borderRadius: '16px', marginBottom: isMobile ? '16px' : '24px', border: '1px solid rgba(10,132,255,0.15)', background: 'rgba(10,132,255,0.02)' }}>
+                    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '8px', marginBottom: isMobile ? '10px' : '20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: isMobile ? '30px' : '40px', height: isMobile ? '30px' : '40px', borderRadius: '8px', background: 'rgba(10,132,255,0.1)', color: '#0a84ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Droplets size={isMobile ? 16 : 20} />
                         </div>
                         <div>
-                          <h4 style={{ fontSize: '15px', fontWeight: '800', color: 'white' }}>Lavados de Cabello</h4>
-                          <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Selecciona la cantidad de lavados realizados.</p>
+                          <h4 style={{ fontSize: isMobile ? '12px' : '15px', fontWeight: '800', color: 'white', margin: 0 }}>Lavados de Cabello</h4>
+                          <p style={{ fontSize: isMobile ? '9px' : '11px', color: 'var(--text-secondary)', margin: 0 }}>Selecciona la cantidad de lavados.</p>
                         </div>
                       </div>
                       
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '6px', width: isMobile ? '100%' : 'auto' }}>
                         {Array.from({ length: washEligibleCount + 1 }).map((_, idx) => (
                           <button
                             key={idx}
                             onClick={() => setWashCount(idx)}
                             style={{
-                              padding: '8px 16px',
-                              borderRadius: '10px',
+                              padding: isMobile ? '4px 8px' : '8px 16px',
+                              borderRadius: '8px',
                               border: 'none',
                               backgroundColor: washCount === idx ? '#0a84ff' : 'rgba(255,255,255,0.05)',
                               color: washCount === idx ? 'white' : 'var(--text-muted)',
                               fontWeight: '900',
-                              fontSize: '12px',
+                              fontSize: isMobile ? '10px' : '12px',
                               cursor: 'pointer',
-                              transition: '0.3s'
+                              transition: '0.2s',
+                              flex: isMobile ? 1 : 'none'
                             }}
                           >
                             {idx} {idx === 1 ? 'lavado' : 'lavados'}
@@ -1496,7 +1497,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                         <select 
                           value={selectedWasherId}
                           onChange={e => setSelectedWasherId(e.target.value)}
-                          style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
+                          style={{ width: '100%', padding: isMobile ? '8px 10px' : '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: isMobile ? '11px' : '13px' }}
                         >
                           <option value="">Seleccionar Asistente de Lavado</option>
                           {allStaff
@@ -1511,7 +1512,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           }
                         </select>
                         {allStaff.filter(s => s.role?.toLowerCase().includes('asistente')).length > 1 && !selectedWasherId && (
-                          <div style={{ marginTop: '8px', fontSize: '11px', color: '#ff9500', fontWeight: '800' }}>
+                          <div style={{ marginTop: '6px', fontSize: '9px', color: '#ff9500', fontWeight: '800' }}>
                             ⚠️ Hay múltiples asistentes. Por favor selecciona una.
                           </div>
                         )}
