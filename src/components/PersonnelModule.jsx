@@ -376,7 +376,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         </div>
       </div>
 
-      {showForm && (
+      {showForm && !isEditing && (
         <div className="glass-card animate-slide-up" style={{ 
           marginBottom: '32px', 
           padding: '32px', 
@@ -386,7 +386,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
           overflow: 'visible' 
         }}>
           <h3 style={{ marginBottom: '24px', fontSize: '22px', fontWeight: '800' }}>
-            {isEditing ? `Editando Perfil: ${formData.name}` : 'Nuevo integrante del equipo'}
+            Nuevo integrante del equipo
           </h3>
           
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px' }}>
@@ -644,7 +644,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
               <button className="btn-gold" onClick={handleSubmit} style={{ height: '56px', width: '100%', borderRadius: '16px', fontSize: '16px', fontWeight: '800', marginTop: '10px' }}>
                 <Check size={20} style={{ marginRight: '10px' }} />
-                {isEditing ? 'Actualizar Perfil de Miembro' : 'Confirmar y unir al equipo'}
+                Confirmar y unir al equipo
               </button>
             </div>
           </div>
@@ -688,137 +688,425 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
           </div>
 
           {staff.map(person => (
-            <div key={person.id} className="glass-card animate-slide-up" style={{ 
-              padding: '16px 24px', 
-              borderRadius: '20px',
-              border: '1px solid rgba(255,255,255,0.05)',
-              display: 'grid',
-              gridTemplateColumns: isMobile ? 'auto 1fr auto' : '80px 1.5fr 1fr 1.5fr 1fr auto',
-              alignItems: 'center',
-              gap: '20px',
-              transition: 'all 0.3s'
-            }}>
-              {/* Photo Column */}
-              <div style={{ 
-                width: '56px', 
-                height: '56px', 
-                borderRadius: '14px', 
-                backgroundColor: 'rgba(255,255,255,0.02)',
-                overflow: 'hidden',
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                border: '1px solid rgba(255,255,255,0.08)'
+            <React.Fragment key={person.id}>
+              <div className="glass-card animate-slide-up" style={{ 
+                padding: '16px 24px', 
+                borderRadius: '20px',
+                border: '1px solid rgba(255,255,255,0.05)',
+                display: 'grid',
+                gridTemplateColumns: isMobile ? 'auto 1fr auto' : '80px 1.5fr 1fr 1.5fr 1fr auto',
+                alignItems: 'center',
+                gap: '20px',
+                transition: 'all 0.3s'
               }}>
-                {person.image_url ? (
-                  <img src={person.image_url} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <span style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.5 }}>
-                    {person.name.substring(0, 1).toUpperCase()}
-                  </span>
-                )}
-              </div>
-              
-              {/* Name/Role Column */}
-              <div>
-                <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{person.name}</h4>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '700', marginTop: '2px' }}>
-                  {getRoleIcon(person.role?.split('|')[0]?.split(', ')[0])}
-                  {person.role?.split('|')[0]}
-                  {person.role?.split('|')[0]?.includes(', ') && (
-                    <span style={{ 
-                      padding: '2px 6px', 
-                      backgroundColor: 'rgba(212,175,55,0.1)', 
-                      borderRadius: '4px', 
-                      fontSize: '9px',
-                      marginLeft: '4px',
-                      border: '1px solid rgba(212,175,55,0.2)'
-                    }}>
-                      MULTI-ROL
+                {/* Photo Column */}
+                <div style={{ 
+                  width: '56px', 
+                  height: '56px', 
+                  borderRadius: '14px', 
+                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  overflow: 'hidden',
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  border: '1px solid rgba(255,255,255,0.08)'
+                }}>
+                  {person.image_url ? (
+                    <img src={person.image_url} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.5 }}>
+                      {person.name.substring(0, 1).toUpperCase()}
                     </span>
                   )}
                 </div>
-              </div>
-
-              {/* Phone Column */}
-              {!isMobile && (
-                <div style={{ color: person.phone ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '14px' }}>
-                  {person.phone ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Phone size={14} color="var(--gold-primary)" />
-                      {person.phone}
-                    </div>
-                  ) : 'Sin teléfono'}
-                </div>
-              )}
-
-              {/* Address Column */}
-              {!isMobile && (
-                <div style={{ color: person.address ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '13px' }}>
-                  {person.address ? (
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                      <MapPin size={14} color="var(--gold-primary)" style={{ marginTop: '2px' }} />
-                      <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                        {person.address}
-                      </span>
-                    </div>
-                  ) : 'Sin dirección'}
-                </div>
-              )}
-
-              {/* Access Column */}
-              {!isMobile && (
+                
+                {/* Name/Role Column */}
                 <div>
-                  {person.username ? (
-                    <div style={{ 
-                      display: 'inline-flex', 
-                      alignItems: 'center', 
-                      gap: '6px', 
-                      padding: '4px 10px', 
-                      backgroundColor: 'rgba(50, 215, 75, 0.08)', 
-                      color: '#32d74b', 
-                      borderRadius: '8px',
-                      fontSize: '11px',
-                      fontWeight: '800'
-                    }}>
-                      <Key size={12} />
-                      {person.username}
+                  <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{person.name}</h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '700', marginTop: '2px' }}>
+                    {getRoleIcon(person.role?.split('|')[0]?.split(', ')[0])}
+                    {person.role?.split('|')[0]}
+                    {person.role?.split('|')[0]?.includes(', ') && (
+                      <span style={{ 
+                        padding: '2px 6px', 
+                        backgroundColor: 'rgba(212,175,55,0.1)', 
+                        borderRadius: '4px', 
+                        fontSize: '9px',
+                        marginLeft: '4px',
+                        border: '1px solid rgba(212,175,55,0.2)'
+                      }}>
+                        MULTI-ROL
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Phone Column */}
+                {!isMobile && (
+                  <div style={{ color: person.phone ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '14px' }}>
+                    {person.phone ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Phone size={14} color="var(--gold-primary)" />
+                        {person.phone}
+                      </div>
+                    ) : 'Sin teléfono'}
+                  </div>
+                )}
+
+                {/* Address Column */}
+                {!isMobile && (
+                  <div style={{ color: person.address ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '13px' }}>
+                    {person.address ? (
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                        <MapPin size={14} color="var(--gold-primary)" style={{ marginTop: '2px' }} />
+                        <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {person.address}
+                        </span>
+                      </div>
+                    ) : 'Sin dirección'}
+                  </div>
+                )}
+
+                {/* Access Column */}
+                {!isMobile && (
+                  <div>
+                    {person.username ? (
+                      <div style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '6px', 
+                        padding: '4px 10px', 
+                        backgroundColor: 'rgba(50, 215, 75, 0.08)', 
+                        color: '#32d74b', 
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: '800'
+                      }}>
+                        <Key size={12} />
+                        {person.username}
+                      </div>
+                    ) : (
+                      <div style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '6px', 
+                        padding: '4px 10px', 
+                        backgroundColor: 'rgba(255, 69, 58, 0.08)', 
+                        color: '#ff453a', 
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: '800'
+                      }}>
+                        <Lock size={12} />
+                        SIN ACCESO
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Actions Column */}
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button className="action-btn" onClick={() => setProfileModalData(person)} title="Ver Perfil" style={{ color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)' }}>
+                    <User size={18} />
+                  </button>
+                  <button className="action-btn" onClick={() => handleEditClick(person)} title="Editar Miembro">
+                    <Edit2 size={18} />
+                  </button>
+                  <button className="action-btn" onClick={() => handleDeleteStaff(person.id, person.name)} style={{ color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.05)' }} title="Dar de baja">
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Inline Edit Form directly under the card being edited */}
+              {showForm && isEditing && editingId === person.id && (
+                <div className="glass-card animate-slide-up" style={{ 
+                  marginTop: '-8px',
+                  marginBottom: '24px', 
+                  marginLeft: isMobile ? '0' : '20px',
+                  padding: '32px', 
+                  borderRadius: '28px', 
+                  position: 'relative', 
+                  zIndex: 998,
+                  overflow: 'visible',
+                  border: '1px solid rgba(212,175,55,0.3)',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <h3 style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>
+                      Editar Perfil de <span className="text-gold">{formData.name}</span>
+                    </h3>
+                    <button 
+                      onClick={handleCloseForm}
+                      style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', color: 'white', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px' }}>
+                    {/* Photo Section */}
+                    <div style={{ position: 'relative', width: '120px' }}>
+                      <div 
+                        onClick={() => setShowCamera(true)}
+                        style={{ 
+                          width: '120px', 
+                          height: '120px', 
+                          backgroundColor: 'rgba(255,255,255,0.05)', 
+                          borderRadius: '24px', 
+                          border: '2px dashed var(--border-color)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          overflow: 'hidden',
+                          transition: 'all 0.3s'
+                        }}
+                      >
+                        {formData.image_url ? (
+                          <img src={formData.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ textAlign: 'center' }}>
+                            <Camera size={32} color="var(--text-muted)" />
+                            <div style={{ fontSize: '10px', marginTop: '4px', color: 'var(--text-muted)', fontWeight: '800' }}>FOTO</div>
+                          </div>
+                        )}
+                      </div>
+                      {formData.image_url && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setFormData({ ...formData, image_url: '' }); }}
+                          style={{ position: 'absolute', top: '-10px', right: '-10px', backgroundColor: '#ff453a', border: 'none', borderRadius: '50%', color: 'white', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 10 }}
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
                     </div>
-                  ) : (
-                    <div style={{ 
-                      display: 'inline-flex', 
-                      alignItems: 'center', 
-                      gap: '6px', 
-                      padding: '4px 10px', 
-                      backgroundColor: 'rgba(255, 69, 58, 0.08)', 
-                      color: '#ff453a', 
-                      borderRadius: '8px',
-                      fontSize: '11px',
-                      fontWeight: '800'
-                    }}>
-                      <Lock size={12} />
-                      SIN ACCESO
+
+                    {/* Fields Section */}
+                    <div style={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      {/* Basic Info */}
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+                        <div className="form-group">
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>NOMBRE COMPLETO</label>
+                          <div style={{ position: 'relative' }}>
+                            <User size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                            <input className="form-input" placeholder="Ej. Marco Silva" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                          </div>
+                        </div>
+                        <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '1px' }}>ROL EN EL EQUIPO</label>
+                          
+                          <AstroSelect 
+                            options={[
+                              ...Object.entries(allRolePresets)
+                                .filter(([_, v]) => v !== '__DELETED__')
+                                .map(([r]) => ({ value: r, label: r })),
+                              // Dynamic legacy multiple role support so old profiles don't break
+                              ...(formData.roles.length > 0 && !allRolePresets[formData.roles.join(', ')] ? [{ value: formData.roles.join(', '), label: formData.roles.join(', ') }] : []),
+                              { value: '__NEW_ROLE__', label: '+ CREAR NUEVO ROL...' }
+                            ]}
+                            value={isCreatingNewRole ? '__NEW_ROLE__' : formData.roles.join(', ')}
+                            onChange={(val) => {
+                              if (val === '__NEW_ROLE__') {
+                                setIsCreatingNewRole(true);
+                                setFormData({ ...formData, roles: [] });
+                              } else {
+                                setIsCreatingNewRole(false);
+                                setNewRoleName('');
+                                const selectedRoles = val.split(', ');
+                                let newPerms = [];
+                                if (selectedRoles.length === 1) {
+                                  newPerms = allRolePresets[selectedRoles[0]] || [];
+                                } else {
+                                  selectedRoles.forEach(r => {
+                                    const rolePerms = allRolePresets[r] || [];
+                                    newPerms = Array.from(new Set([...newPerms, ...rolePerms]));
+                                  });
+                                }
+                                setFormData({ ...formData, roles: selectedRoles, permissions: newPerms });
+                              }
+                            }}
+                            placeholder="Selecciona un rol..."
+                          />
+
+                          {isCreatingNewRole && (
+                            <div className="animate-slide-left" style={{ marginTop: '12px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>NOMBRE DEL NUEVO ROL</label>
+                                <button 
+                                  onClick={() => { 
+                                    setIsCreatingNewRole(false); 
+                                    setNewRoleName(''); 
+                                    setFormData({ ...formData, roles: ['Barbero'], permissions: allRolePresets['Barbero'] || [] });
+                                  }}
+                                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '10px', cursor: 'pointer', fontWeight: '800' }}
+                                >
+                                  DESCARTAR
+                                </button>
+                              </div>
+                              <div style={{ position: 'relative' }}>
+                                <Rocket size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                                <input 
+                                  className="form-input" 
+                                  placeholder="Ej. Gerente de Piso" 
+                                  value={newRoleName} 
+                                  onChange={e => setNewRoleName(e.target.value)} 
+                                  style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid var(--gold-primary)' }} 
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {formData.roles.includes('Asistente de Lavado') && (
+                          <div className="form-group animate-slide-right">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                              <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>TARIFA POR LAVADO ($)</label>
+                              {formData.washing_rate > 0 && (
+                                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
+                                  ≈ {(formData.washing_rate * exchangeRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs.
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ position: 'relative' }}>
+                              <Droplets size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                              <input 
+                                className="form-input" 
+                                type="number" 
+                                step="0.01" 
+                                placeholder="Ej. 2.00" 
+                                value={formData.washing_rate} 
+                                onChange={e => setFormData({...formData, washing_rate: e.target.value})} 
+                                style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.3)' }} 
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Permissions Section */}
+                      <div style={{ padding: '24px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                          <Key size={18} color="var(--gold-primary)" />
+                          <label style={{ fontSize: '12px', fontWeight: '900', color: 'white', letterSpacing: '1px' }}>MÓDULOS ACCESIBLES</label>
+                        </div>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: '12px' }}>
+                          {availableModules.map(mod => (
+                            <div 
+                              key={mod.id} 
+                              onClick={() => {
+                                const newPerms = formData.permissions.includes(mod.id)
+                                  ? formData.permissions.filter(p => p !== mod.id)
+                                  : [...formData.permissions, mod.id];
+                                setFormData({ ...formData, permissions: newPerms });
+                              }}
+                              style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '10px', 
+                                padding: '12px', 
+                                borderRadius: '12px', 
+                                backgroundColor: formData.permissions.includes(mod.id) ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.03)',
+                                border: `1px solid ${formData.permissions.includes(mod.id) ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)'}`,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <div style={{ 
+                                width: '18px', 
+                                height: '18px', 
+                                borderRadius: '4px', 
+                                border: '1px solid var(--gold-primary)', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                backgroundColor: formData.permissions.includes(mod.id) ? 'var(--gold-primary)' : 'transparent'
+                              }}>
+                                {formData.permissions.includes(mod.id) && <Check size={14} color="black" strokeWidth={3} />}
+                              </div>
+                              <span style={{ fontSize: '13px', fontWeight: '600', color: formData.permissions.includes(mod.id) ? 'white' : 'var(--text-secondary)' }}>{mod.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Contact Info */}
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: '16px' }}>
+                        <div className="form-group">
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>TELÉFONO</label>
+                          <div style={{ position: 'relative' }}>
+                            <Phone size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                            <input className="form-input" placeholder="+58 412..." value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                          </div>
+                        </div>
+                        <div className="form-group">
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>DIRECCIÓN DE HABITACIÓN</label>
+                          <div style={{ position: 'relative' }}>
+                            <MapPin size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                            <input className="form-input" placeholder="Av. Principal, Edif..." value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Login Credentials */}
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', padding: '20px', backgroundColor: 'rgba(212,175,55,0.03)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.1)' }}>
+                        <div className="form-group">
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>USUARIO DE ACCESO</label>
+                          <div style={{ position: 'relative' }}>
+                            <Key size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                            <input className="form-input" placeholder="usuario.barbero" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.2)' }} />
+                          </div>
+                        </div>
+                        <div className="form-group">
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>CONTRASEÑA</label>
+                          <div style={{ position: 'relative' }}>
+                            <Lock size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                            <input 
+                              className="form-input" 
+                              type={showPassword ? "text" : "password"} 
+                              placeholder="••••••••" 
+                              value={formData.password} 
+                              onChange={e => setFormData({...formData, password: e.target.value})} 
+                              style={{ width: '100%', height: '50px', paddingLeft: '48px', paddingRight: '48px', border: '1px solid rgba(212,175,55,0.2)' }} 
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              style={{
+                                position: 'absolute',
+                                right: '16px',
+                                top: '16px',
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--gold-primary)',
+                                cursor: 'pointer',
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                opacity: 0.7,
+                                transition: 'opacity 0.2s'
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                              onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+                            >
+                              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button className="btn-gold" onClick={handleSubmit} style={{ height: '56px', width: '100%', borderRadius: '16px', fontSize: '16px', fontWeight: '800', marginTop: '10px' }}>
+                        <Check size={20} style={{ marginRight: '10px' }} />
+                        Actualizar Perfil de Miembro
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
-
-              {/* Actions Column */}
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                <button className="action-btn" onClick={() => setProfileModalData(person)} title="Ver Perfil" style={{ color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)' }}>
-                  <User size={18} />
-                </button>
-                <button className="action-btn" onClick={() => handleEditClick(person)} title="Editar Miembro">
-                  <Edit2 size={18} />
-                </button>
-                <button className="action-btn" onClick={() => handleDeleteStaff(person.id, person.name)} style={{ color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.05)' }} title="Dar de baja">
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            </div>
+            </React.Fragment>
           ))}
-        </div>
-      )}
 
       {showCamera && (
         <AstroCamera 
