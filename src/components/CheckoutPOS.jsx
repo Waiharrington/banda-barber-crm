@@ -1620,40 +1620,40 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '16px' }}>
-                  <span style={{ fontSize: '18px', fontWeight: '900' }}>TOTAL A PAGAR</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '12px' }}>
+                  <span style={{ fontSize: isMobile ? '13px' : '16px', fontWeight: '900' }}>TOTAL A PAGAR</span>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '32px', fontWeight: '950', color: 'var(--gold-primary)' }}>{formatCurrency(totalBs)} Bs.</div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Ref: ${formatCurrency(totalUsd)}</div>
+                    <div style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '950', color: 'var(--gold-primary)' }}>{formatCurrency(totalBs)} Bs.</div>
+                    <div style={{ fontSize: isMobile ? '11px' : '13px', color: 'var(--text-muted)' }}>Ref: ${formatCurrency(totalUsd)}</div>
                   </div>
                 </div>
               </div>
 
-              <div style={{ marginBottom: '32px' }}>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+              <div style={{ marginBottom: '24px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
                   <button 
                     onClick={() => { setPaymentMode('full_usd'); setCashUsd(totalUsd); }}
-                    style={{ flex: 1, height: '44px', borderRadius: '12px', border: paymentMode === 'full_usd' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)', background: paymentMode === 'full_usd' ? 'rgba(212,175,55,0.1)' : 'none', color: paymentMode === 'full_usd' ? 'var(--gold-primary)' : 'white', fontWeight: '800', cursor: 'pointer', fontSize: '10px' }}
+                    style={{ flex: 1, height: '38px', borderRadius: '10px', border: paymentMode === 'full_usd' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)', background: paymentMode === 'full_usd' ? 'rgba(212,175,55,0.1)' : 'none', color: paymentMode === 'full_usd' ? 'var(--gold-primary)' : 'white', fontWeight: '800', cursor: 'pointer', fontSize: '9px' }}
                   >TODO EN $</button>
                   <button 
                     onClick={() => { setPaymentMode('full_bs'); setCashUsd(0); }}
-                    style={{ flex: 1, height: '44px', borderRadius: '12px', border: paymentMode === 'full_bs' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)', background: paymentMode === 'full_bs' ? 'rgba(212,175,55,0.1)' : 'none', color: paymentMode === 'full_bs' ? 'var(--gold-primary)' : 'white', fontWeight: '800', cursor: 'pointer', fontSize: '10px' }}
+                    style={{ flex: 1, height: '38px', borderRadius: '10px', border: paymentMode === 'full_bs' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)', background: paymentMode === 'full_bs' ? 'rgba(212,175,55,0.1)' : 'none', color: paymentMode === 'full_bs' ? 'var(--gold-primary)' : 'white', fontWeight: '800', cursor: 'pointer', fontSize: '9px' }}
                   >TODO EN BS</button>
                   <button 
                     onClick={() => setPaymentMode('mixed')}
-                    style={{ flex: 1, height: '44px', borderRadius: '12px', border: paymentMode === 'mixed' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)', background: paymentMode === 'mixed' ? 'rgba(212,175,55,0.1)' : 'none', color: paymentMode === 'mixed' ? 'var(--gold-primary)' : 'white', fontWeight: '800', cursor: 'pointer', fontSize: '10px' }}
+                    style={{ flex: 1, height: '38px', borderRadius: '10px', border: paymentMode === 'mixed' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)', background: paymentMode === 'mixed' ? 'rgba(212,175,55,0.1)' : 'none', color: paymentMode === 'mixed' ? 'var(--gold-primary)' : 'white', fontWeight: '800', cursor: 'pointer', fontSize: '9px' }}
                   >PAGO MIXTO</button>
                 </div>
 
                 {paymentMode === 'full_usd' && (
-                  <div className="animate-slide-up" style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '20px', marginBottom: '16px' }}>
-                    <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '12px', display: 'block' }}>MÉTODO DE PAGO ($)</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className="animate-slide-up" style={{ padding: '16px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '16px', marginBottom: '12px' }}>
+                    <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>MÉTODO DE PAGO ($)</label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
                       {['Efectivo', 'Zelle', 'Binance', 'Zinli'].map(m => (
                         <button 
                           key={m}
                           onClick={() => setMethodUsd(m)}
-                          style={{ flex: 1, padding: '10px', borderRadius: '12px', border: methodUsd === m ? '1.5px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)', background: methodUsd === m ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)', color: methodUsd === m ? 'var(--gold-primary)' : 'white', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+                          style={{ flex: 1, padding: '8px', borderRadius: '10px', border: methodUsd === m ? '1.5px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)', background: methodUsd === m ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)', color: methodUsd === m ? 'var(--gold-primary)' : 'white', fontSize: '10px', fontWeight: '700', cursor: 'pointer' }}
                         >{m}</button>
                       ))}
                     </div>
@@ -1661,18 +1661,18 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                 )}
 
                 {paymentMode === 'full_bs' && (
-                  <div className="animate-slide-up" style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '20px', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <label style={{ fontSize: '12px', fontWeight: '800' }}>TOTAL EN BOLÍVARES (BS)</label>
-                      <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '20px' }}>{formatCurrency(totalBs)} BS</div>
+                  <div className="animate-slide-up" style={{ padding: '16px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '16px', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)' }}>TOTAL EN BOLÍVARES (BS)</label>
+                      <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '16px' }}>{formatCurrency(totalBs)} BS</div>
                     </div>
-                    <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '12px', display: 'block' }}>MÉTODO DE PAGO (BS)</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>MÉTODO DE PAGO (BS)</label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
                       {['Pago Móvil', 'Efectivo', 'Transferencia'].map(m => (
                         <button 
                           key={m}
                           onClick={() => setMethodBs(m)}
-                          style={{ flex: 1, padding: '10px', borderRadius: '12px', border: methodBs === m ? '1.5px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)', background: methodBs === m ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)', color: methodBs === m ? 'var(--gold-primary)' : 'white', fontSize: '10px', fontWeight: '700', cursor: 'pointer' }}
+                          style={{ flex: 1, padding: '8px', borderRadius: '10px', border: methodBs === m ? '1.5px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)', background: methodBs === m ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)', color: methodBs === m ? 'var(--gold-primary)' : 'white', fontSize: '9px', fontWeight: '700', cursor: 'pointer' }}
                         >{m}</button>
                       ))}
                     </div>
@@ -1680,38 +1680,38 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                 )}
 
                 {paymentMode === 'mixed' && (
-                  <div className="animate-slide-up" style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="animate-slide-up" style={{ padding: '16px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '12px', display: 'block' }}>1. PAGO EN DÓLARES ($)</label>
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                      <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>1. PAGO EN DÓLARES ($)</label>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
                         <input 
                           type="number" 
                           value={cashUsd} 
                           onChange={(e) => setCashUsd(e.target.value)}
-                          style={{ flex: 1, height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', textAlign: 'right', paddingRight: '12px' }} 
+                          style={{ flex: 1, height: '36px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', textAlign: 'right', paddingRight: '10px', fontSize: '12px' }} 
                         />
-                        <div style={{ display: 'flex', flex: 2, gap: '6px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', flex: 2, gap: '4px', flexWrap: 'wrap' }}>
                           {['Efectivo', 'Zelle', 'Binance', 'Zinli'].map(m => (
                             <button 
                               key={m}
                               onClick={() => setMethodUsd(m)}
-                              style={{ flex: '1 0 45%', padding: '8px', borderRadius: '10px', border: methodUsd === m ? '1.5px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)', background: methodUsd === m ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)', color: methodUsd === m ? 'var(--gold-primary)' : 'white', fontSize: '10px', fontWeight: '700', cursor: 'pointer' }}
+                              style={{ flex: '1 0 45%', padding: '6px', borderRadius: '8px', border: methodUsd === m ? '1.5px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)', background: methodUsd === m ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)', color: methodUsd === m ? 'var(--gold-primary)' : 'white', fontSize: '9px', fontWeight: '700', cursor: 'pointer' }}
                             >{m}</button>
                           ))}
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
-                      <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '12px', display: 'block' }}>2. RESTANTE EN BOLÍVARES (BS)</label>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '20px' }}>{formatCurrency(remainingBs)} BS</div>
-                        <div style={{ display: 'flex', flex: 1.5, gap: '6px', flexWrap: 'wrap', marginLeft: '20px' }}>
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px' }}>
+                      <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>2. RESTANTE EN BOLÍVARES (BS)</label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '16px' }}>{formatCurrency(remainingBs)} BS</div>
+                        <div style={{ display: 'flex', flex: 1.5, gap: '4px', flexWrap: 'wrap', marginLeft: '10px' }}>
                           {['Pago Móvil', 'Efectivo', 'Transfe'].map(m => (
                             <button 
                               key={m}
                               onClick={() => setMethodBs(m === 'Transfe' ? 'Transferencia' : m)}
-                              style={{ flex: '1 0 45%', padding: '8px', borderRadius: '10px', border: (methodBs === m || (m==='Transfe' && methodBs==='Transferencia')) ? '1.5px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)', background: (methodBs === m || (m==='Transfe' && methodBs==='Transferencia')) ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)', color: (methodBs === m || (m==='Transfe' && methodBs==='Transferencia')) ? 'var(--gold-primary)' : 'white', fontSize: '10px', fontWeight: '700', cursor: 'pointer' }}
+                              style={{ flex: '1 0 45%', padding: '6px', borderRadius: '8px', border: (methodBs === m || (m==='Transfe' && methodBs==='Transferencia')) ? '1.5px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)', background: (methodBs === m || (m==='Transfe' && methodBs==='Transferencia')) ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)', color: (methodBs === m || (m==='Transfe' && methodBs==='Transferencia')) ? 'var(--gold-primary)' : 'white', fontSize: '9px', fontWeight: '700', cursor: 'pointer' }}
                             >{m}</button>
                           ))}
                         </div>
@@ -1721,16 +1721,16 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                 <button 
                   onClick={handleCancelOrder}
                   disabled={loading}
                   style={{ 
                     flex: '1', 
-                    height: '64px', 
-                    borderRadius: '20px', 
-                    fontSize: '16px', 
-                    gap: '10px', 
+                    height: isMobile ? '44px' : '54px', 
+                    borderRadius: '14px', 
+                    fontSize: isMobile ? '12px' : '14px', 
+                    gap: '6px', 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center',
@@ -1744,16 +1744,16 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255, 69, 58, 0.2)'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255, 69, 58, 0.1)'}
                 >
-                  <XCircle size={22} /> CANCELAR
+                  <XCircle size={isMobile ? 16 : 20} /> CANCELAR
                 </button>
 
                 <button 
                   onClick={handleProcessCheckout}
                   disabled={loading}
                   className="btn-gold" 
-                  style={{ flex: '2', height: '64px', borderRadius: '20px', fontSize: '18px', gap: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ flex: '2', height: isMobile ? '44px' : '54px', borderRadius: '14px', fontSize: isMobile ? '13px' : '15px', gap: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <CheckCircle size={24} /> FINALIZAR COBRO
+                  <CheckCircle size={isMobile ? 18 : 22} /> FINALIZAR COBRO
                 </button>
               </div>
             </div>
