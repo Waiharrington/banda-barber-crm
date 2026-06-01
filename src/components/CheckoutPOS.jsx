@@ -1352,20 +1352,25 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                         value={itemSalesAssociations[p.id] || ''}
                         onChange={(e) => setItemSalesAssociations({ ...itemSalesAssociations, [p.id]: e.target.value })}
                         style={{
-                          background: 'rgba(255,255,255,0.05)',
-                          border: 'none',
+                          appearance: 'none',
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'none',
+                          background: 'rgba(212, 175, 55, 0.08)',
+                          border: '1px solid rgba(212, 175, 55, 0.3)',
                           color: 'var(--gold-primary)',
                           fontSize: '9px',
                           fontWeight: '800',
-                          borderRadius: '4px',
-                          padding: '1px 3px',
+                          borderRadius: '12px',
+                          padding: '2px 8px',
+                          textAlign: 'center',
                           cursor: 'pointer',
                           outline: 'none',
                           maxWidth: '75px',
-                          flexShrink: 0
+                          flexShrink: 0,
+                          transition: 'all 0.2s'
                         }}
                       >
-                        <option value="" style={{ background: '#1c1c1e', color: 'white' }}>Vendedor</option>
+                        <option value="" style={{ background: '#1c1c1e', color: 'white' }}>+ Vendedor</option>
                         {allStaff.map(s => (
                           <option key={s.id} value={s.id} style={{ background: '#1c1c1e', color: 'white' }}>
                             {s.name?.split(' ')[0]}
@@ -1400,20 +1405,25 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                         value={itemSalesAssociations[extra.id] || ''}
                         onChange={(e) => setItemSalesAssociations({ ...itemSalesAssociations, [extra.id]: e.target.value })}
                         style={{
-                          background: 'rgba(255,255,255,0.05)',
-                          border: 'none',
+                          appearance: 'none',
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'none',
+                          background: 'rgba(212, 175, 55, 0.08)',
+                          border: '1px solid rgba(212, 175, 55, 0.3)',
                           color: 'var(--gold-primary)',
                           fontSize: '9px',
                           fontWeight: '800',
-                          borderRadius: '4px',
-                          padding: '1px 3px',
+                          borderRadius: '12px',
+                          padding: '2px 8px',
+                          textAlign: 'center',
                           cursor: 'pointer',
                           outline: 'none',
                           maxWidth: '75px',
-                          flexShrink: 0
+                          flexShrink: 0,
+                          transition: 'all 0.2s'
                         }}
                       >
-                        <option value="" style={{ background: '#1c1c1e', color: 'white' }}>Asignar</option>
+                        <option value="" style={{ background: '#1c1c1e', color: 'white' }}>+ Asignar</option>
                         {allStaff.map(s => (
                           <option key={s.id} value={s.id} style={{ background: '#1c1c1e', color: 'white' }}>
                             {s.name?.split(' ')[0]}
