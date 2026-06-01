@@ -1236,32 +1236,34 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px', padding: '24px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '8px' : '12px', marginBottom: '24px', padding: isMobile ? '12px 10px' : '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '16px' }}>
                 {totalAppsInCheckout.map(app => {
                   const sPrice = app.services?.price || 0;
                   const isLinked = app.client_id !== selectedApp?.client_id;
                   return (
-                    <div key={app.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div key={app.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '8px' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: isMobile ? '11px' : '13px', flex: 1, minWidth: 0 }}>
                         {isLinked ? (
                           <button 
                             onClick={() => handleUnlinkApp(app.id)} 
-                            style={{ background: 'none', border: 'none', color: '#ff9500', cursor: 'pointer', fontWeight: '800' }}
+                            style={{ background: 'none', border: 'none', color: '#ff9500', cursor: 'pointer', fontWeight: '800', fontSize: '9px', padding: '2px', marginRight: '2px', flexShrink: 0 }}
                             title="Desenlazar cita"
                           >
-                            [Desenlazar]
+                            [Unlink]
                           </button>
                         ) : (
                           <button 
                             onClick={() => handleRemoveBundledService(app)} 
-                            style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}
+                            style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', padding: '2px', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}
                             title={app.services ? "Eliminar servicio" : "Eliminar extras"}
                           >
-                            [X]
+                            <XCircle size={isMobile ? 12 : 14} style={{ opacity: 0.8 }} />
                           </button>
                         )}
-                        {isLinked && <span style={{ color: 'var(--gold-primary)', fontWeight: '800', fontSize: '12px' }}>({app.clients?.name?.split(' ')[0]}):</span>}
-                        {app.services ? `Servicio: ${app.services.name}` : 'Extras'}
+                        {isLinked && <span style={{ color: 'var(--gold-primary)', fontWeight: '800', fontSize: '10px', flexShrink: 0 }}>({app.clients?.name?.split(' ')[0]}):</span>}
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'rgba(255,255,255,0.9)' }}>
+                          {app.services ? `Servicio: ${app.services.name}` : 'Extras'}
+                        </span>
                         {' • '}
                         <span 
                           onClick={() => handleOpenChangeBundledBarber(app)}
@@ -1272,22 +1274,26 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                             textDecoration: 'underline',
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '4px'
+                            gap: '1px',
+                            fontSize: '10px',
+                            flexShrink: 0
                           }}
                           title="Click para cambiar barbero"
                         >
                           {app.staff?.name?.split(' ')[0] || 'Caja'}
-                          <Edit3 size={10} />
+                          <Edit3 size={8} />
                         </span>
                       </span>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0px', flexShrink: 0 }}>
                         {app.services ? (
                           <>
-                            <span style={{ fontWeight: '700' }}>{(sPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${sPrice}</span>
+                            <span style={{ fontWeight: '800', fontSize: isMobile ? '12px' : '14px', color: 'white' }}>
+                              {isMobile ? `${Math.round(sPrice * fixedRate).toLocaleString('es-VE')} Bs.` : `${(sPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`}
+                            </span>
+                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: ${sPrice}</span>
                           </>
                         ) : (
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Monto en extras</span>
+                          <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Monto en extras</span>
                         )}
                       </div>
                     </div>
@@ -1299,42 +1305,45 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     onClick={() => setShowLinkModal(true)}
                     style={{ 
                       width: '100%', 
-                      padding: '12px', 
-                      borderRadius: '16px', 
+                      padding: '8px', 
+                      borderRadius: '10px', 
                       border: '1px dashed var(--gold-primary)', 
                       background: 'rgba(212,175,55,0.05)', 
                       color: 'var(--gold-primary)', 
                       fontWeight: '800', 
-                      fontSize: '13px', 
+                      fontSize: '10px', 
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '8px',
-                      marginTop: '8px'
+                      gap: '6px',
+                      marginTop: '2px',
+                      marginBottom: '4px'
                     }}
                   >
                     🔗 ENLAZAR OTRAS CITAS (PAGO GRUPAL)
                   </button>
                 )}
                  {cart.map(p => (
-                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <button onClick={() => handleRemoveProduct(p)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}>[X]</button>
-                      {p.name}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '8px', marginLeft: '6px' }}>
+                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '8px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: isMobile ? '11px' : '13px', flex: 1, minWidth: 0 }}>
+                      <button onClick={() => handleRemoveProduct(p)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', padding: '2px', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                        <XCircle size={isMobile ? 12 : 14} style={{ opacity: 0.8 }} />
+                      </button>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'rgba(255,255,255,0.9)' }}>{p.name}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: 'rgba(255,255,255,0.05)', padding: '1px 4px', borderRadius: '4px', flexShrink: 0 }}>
                         <button 
                           onClick={() => handleDecrementProduct(p)}
-                          style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                          style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', padding: '1px', display: 'flex', alignItems: 'center' }}
                         >
-                          <Minus size={12} />
+                          <Minus size={8} />
                         </button>
-                        <span style={{ fontSize: '11px', fontWeight: '900', color: 'white', minWidth: '14px', textAlign: 'center' }}>{p.quantity}</span>
+                        <span style={{ fontSize: '9px', fontWeight: '900', color: 'white', minWidth: '10px', textAlign: 'center' }}>{p.quantity}</span>
                         <button 
                           onClick={() => handleIncrementProduct(p)}
-                          style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                          style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', padding: '1px', display: 'flex', alignItems: 'center' }}
                         >
-                          <Plus size={12} />
+                          <Plus size={8} />
                         </button>
                       </div>
                       
@@ -1346,27 +1355,29 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           background: 'rgba(255,255,255,0.05)',
                           border: 'none',
                           color: 'var(--gold-primary)',
-                          fontSize: '11px',
+                          fontSize: '9px',
                           fontWeight: '800',
-                          borderRadius: '8px',
-                          padding: '4px 8px',
-                          marginLeft: '8px',
+                          borderRadius: '4px',
+                          padding: '1px 3px',
                           cursor: 'pointer',
                           outline: 'none',
-                          maxWidth: '120px'
+                          maxWidth: '75px',
+                          flexShrink: 0
                         }}
                       >
-                        <option value="" style={{ background: '#1c1c1e', color: 'white' }}>Sin Vendedor</option>
+                        <option value="" style={{ background: '#1c1c1e', color: 'white' }}>Vendedor</option>
                         {allStaff.map(s => (
                           <option key={s.id} value={s.id} style={{ background: '#1c1c1e', color: 'white' }}>
-                            {s.name}
+                            {s.name?.split(' ')[0]}
                           </option>
                         ))}
                       </select>
                     </span>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                      <span style={{ fontWeight: '700' }}>{(p.price * p.quantity * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${(p.price * p.quantity).toFixed(2)}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0px', flexShrink: 0 }}>
+                      <span style={{ fontWeight: '800', fontSize: isMobile ? '12px' : '14px', color: 'white' }}>
+                        {isMobile ? `${Math.round(p.price * p.quantity * fixedRate).toLocaleString('es-VE')} Bs.` : `${(p.price * p.quantity * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`}
+                      </span>
+                      <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: ${(p.price * p.quantity).toFixed(2)}</span>
                     </div>
                   </div>
                 ))}
@@ -1377,10 +1388,12 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     appId: app.id
                   })) || []
                 ).map(extra => (
-                  <div key={extra.id} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--gold-primary)', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <button onClick={() => handleRemoveExtra(extra.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer' }}>[X]</button>
-                      {extra.service_extras?.name}
+                  <div key={extra.id} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--gold-primary)', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '8px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: isMobile ? '11px' : '13px', flex: 1, minWidth: 0 }}>
+                      <button onClick={() => handleRemoveExtra(extra.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', padding: '2px', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+                        <XCircle size={isMobile ? 12 : 14} style={{ opacity: 0.8 }} />
+                      </button>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--gold-primary)' }}>{extra.service_extras?.name}</span>
                       
                       {/* Staff Selector for Extra */}
                       <select
@@ -1390,49 +1403,51 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           background: 'rgba(255,255,255,0.05)',
                           border: 'none',
                           color: 'var(--gold-primary)',
-                          fontSize: '11px',
+                          fontSize: '9px',
                           fontWeight: '800',
-                          borderRadius: '8px',
-                          padding: '4px 8px',
-                          marginLeft: '8px',
+                          borderRadius: '4px',
+                          padding: '1px 3px',
                           cursor: 'pointer',
                           outline: 'none',
-                          maxWidth: '120px'
+                          maxWidth: '75px',
+                          flexShrink: 0
                         }}
                       >
-                        <option value="" style={{ background: '#1c1c1e', color: 'white' }}>Sin Asignar</option>
+                        <option value="" style={{ background: '#1c1c1e', color: 'white' }}>Asignar</option>
                         {allStaff.map(s => (
                           <option key={s.id} value={s.id} style={{ background: '#1c1c1e', color: 'white' }}>
-                            {s.name}
+                            {s.name?.split(' ')[0]}
                           </option>
                         ))}
                       </select>
                     </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
                       {editingExtraPriceId === extra.id ? (
                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                          <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>$</span>
+                          <span style={{ position: 'absolute', left: '4px', fontSize: '8px', color: 'var(--gold-primary)', fontWeight: '800' }}>$</span>
                           <input 
                             type="number"
                             autoFocus
                             defaultValue={extra.price}
                             onBlur={(e) => handleUpdateExtraPrice(extra.id, e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleUpdateExtraPrice(extra.id, e.target.value)}
-                            style={{ width: '60px', height: '24px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--gold-primary)', borderRadius: '4px', color: 'white', paddingLeft: '14px', fontSize: '12px', fontWeight: '800', textAlign: 'right' }}
+                            style={{ width: '40px', height: '18px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--gold-primary)', borderRadius: '3px', color: 'white', paddingLeft: '10px', fontSize: '9px', fontWeight: '800', textAlign: 'right' }}
                           />
                         </div>
                       ) : (
                         <div 
                           onClick={() => setEditingExtraPriceId(extra.id)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', transition: 'all 0.2s' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '2px', cursor: 'pointer', padding: '1px 3px', borderRadius: '3px', transition: 'all 0.2s' }}
                           onMouseOver={(ev) => ev.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
                           onMouseOut={(ev) => ev.currentTarget.style.backgroundColor = 'transparent'}
                         >
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                            <span style={{ fontWeight: '700' }}>{(extra.price * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ref: ${extra.price}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0px' }}>
+                            <span style={{ fontWeight: '800', fontSize: isMobile ? '12px' : '14px' }}>
+                              {isMobile ? `${Math.round(extra.price * fixedRate).toLocaleString('es-VE')} Bs.` : `${(extra.price * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`}
+                            </span>
+                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: ${extra.price}</span>
                           </div>
-                          <Edit3 size={10} color="var(--gold-primary)" style={{ opacity: 0.6 }} />
+                          <Edit3 size={7} color="var(--gold-primary)" style={{ opacity: 0.6 }} />
                         </div>
                       )}
                     </div>
