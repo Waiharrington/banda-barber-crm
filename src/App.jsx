@@ -308,7 +308,7 @@ function App() {
       case 'reception': return <div className="p-container"><ReceptionModule isMobile={isMobile} /></div>;
       case 'checkout': return <div className="p-container"><CheckoutPOS isMobile={isMobile} rates={effectiveRates} onOpenSale={() => setIsSaleModalOpen(true)} onNavigate={handleTabChange} /></div>;
       case 'barber': return <div className="p-container"><BarberPanel isMobile={isMobile} /></div>;
-      case 'scheduling': return <div className="p-container"><SchedulingModule isMobile={isMobile} /></div>;
+      case 'scheduling': return <div className="p-container"><SchedulingModule isMobile={isMobile} rates={effectiveRates} /></div>;
       case 'services': return <div className="p-container"><ServicesModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
       case 'inventory': return <div className="p-container"><InventoryModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
       case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={effectiveRates} staff={dbData.staff} /></div>;

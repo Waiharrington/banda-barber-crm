@@ -23,7 +23,7 @@ import AstroDialog from './AstroDialog';
 import ScheduleModal from './ScheduleModal';
 import { useAuth } from '../context/AuthContext';
 
-const SchedulingModule = ({ isMobile }) => {
+const SchedulingModule = ({ isMobile, rates }) => {
   const { user } = useAuth();
   const { showToast } = useNotifs();
   const [appointments, setAppointments] = useState([]);
@@ -43,6 +43,7 @@ const SchedulingModule = ({ isMobile }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [clientSearchResults, setClientSearchResults] = useState([]);
+  const [selectedAppDetail, setSelectedAppDetail] = useState(null);
 
   const [newApp, setNewApp] = useState({
     clientId: '',
@@ -414,7 +415,7 @@ const SchedulingModule = ({ isMobile }) => {
                   .sort((a, b) => new Date(a.scheduled_at || a.created_at) - new Date(b.scheduled_at || b.created_at))
                   .map(app => (
                   isMobile ? (
-                    <div key={app.id} style={{ 
+                    <div key={app.id} onClick={() => setSelectedAppDetail(app)} style={{ 
                       padding: '10px 8px', 
                       borderBottom: '1px solid rgba(255,255,255,0.03)',
                       display: 'flex', 
@@ -423,7 +424,8 @@ const SchedulingModule = ({ isMobile }) => {
                       gap: '4px',
                       opacity: app.status === 'Completado' ? 0.6 : 1,
                       fontSize: '11px',
-                      color: '#fff'
+                      color: '#fff',
+                      cursor: 'pointer'
                     }}>
                       {/* Column 1: Time (compact) */}
                       <div style={{ flexShrink: 0, width: '48px', fontWeight: '800' }}>
@@ -438,7 +440,7 @@ const SchedulingModule = ({ isMobile }) => {
                       </div>
 
                       {/* Column 2: Client */}
-                      <div style={{ flex: 1, minWidth: 0, paddingLeft: '4px' }}>
+                      <div style={{ flex: 1, minWidth: 0, paddingLeft: '12px' }}>
                         <div style={{ fontWeight: '800', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {app.clients?.name?.split(' ')[0]} {app.clients?.name?.split(' ')[1] ? app.clients?.name?.split(' ')[1]?.charAt(0) + '.' : ''}
                         </div>
@@ -474,19 +476,20 @@ const SchedulingModule = ({ isMobile }) => {
 
                       {/* Column 7: Actions */}
                       <div style={{ flexShrink: 0, display: 'flex', gap: '1px' }}>
-                        <button onClick={() => handleEditAppointment(app)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '3px' }}><Pencil size={11} /></button>
-                        <button onClick={() => handleManageAppointment(app.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '3px' }}><Trash2 size={11} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); handleEditAppointment(app); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '3px' }}><Pencil size={11} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); handleManageAppointment(app.id); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '3px' }}><Trash2 size={11} /></button>
                       </div>
                     </div>
                   ) : (
-                    <div key={app.id} className="hover-item" style={{ 
+                    <div key={app.id} onClick={() => setSelectedAppDetail(app)} className="hover-item" style={{ 
                       padding: '16px 24px', 
                       borderBottom: '1px solid rgba(255,255,255,0.03)',
                       display: 'grid', 
                       gridTemplateColumns: '100px 1.5fr 1.5fr 1.5fr 80px 120px 60px', 
                       gap: '15px', 
                       alignItems: 'center',
-                      opacity: app.status === 'Completado' ? 0.6 : 1
+                      opacity: app.status === 'Completado' ? 0.6 : 1,
+                      cursor: 'pointer'
                     }}>
                       <div>
                         <div style={{ fontWeight: '900', fontSize: '14px' }}>{new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
@@ -521,8 +524,8 @@ const SchedulingModule = ({ isMobile }) => {
                       </div>
 
                       <div style={{ textAlign: 'right', display: 'flex', gap: '4px' }}>
-                        <button onClick={() => handleEditAppointment(app)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: '8px' }} className="hover-gold"><Pencil size={14} /></button>
-                        <button onClick={() => handleManageAppointment(app.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: '8px' }} className="hover-red"><Trash2 size={14} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); handleEditAppointment(app); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: '8px' }} className="hover-gold"><Pencil size={14} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); handleManageAppointment(app.id); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: '8px' }} className="hover-red"><Trash2 size={14} /></button>
                       </div>
                     </div>
                   )
@@ -705,6 +708,148 @@ const SchedulingModule = ({ isMobile }) => {
               <button onClick={() => { if (!newApp.clientId || !newApp.serviceId || !newApp.staffId) { showToast("Selecciona cliente, servicio y barbero", "error"); return; } setShowScheduleModal(true); }} className="btn-gold" style={{ width: '100%', height: '56px', borderRadius: '16px', marginTop: '10px' }}><Clock size={18} style={{ marginRight: '8px' }} /> {editingApp ? 'CONFIRMAR CAMBIOS' : 'SELECCIONAR HORARIO'}</button>
               <button onClick={() => setShowAddModal(false)} style={{ width: '100%', background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '14px', padding: '14px', fontWeight: '700' }}>CANCELAR</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Appointment Detail Modal */}
+      {selectedAppDetail && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div className="glass-card animate-scale-in animate-fade-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '24px', border: '1.5px solid rgba(212,175,55,0.3)', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
+            
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '16px' }}>
+              <div>
+                <span style={{ 
+                  fontSize: '9px', fontWeight: '900', padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase', marginBottom: '8px', display: 'inline-block',
+                  backgroundColor: selectedAppDetail.status === 'Agendado' ? 'rgba(212,175,55,0.1)' : selectedAppDetail.status === 'En Silla' ? 'rgba(0,122,255,0.1)' : selectedAppDetail.status === 'En Lavado' ? 'rgba(0,191,255,0.1)' : selectedAppDetail.status === 'Por Pagar' ? 'rgba(50,215,75,0.1)' : selectedAppDetail.status === 'Completado' ? 'rgba(142,142,147,0.1)' : 'rgba(255,69,58,0.1)',
+                  color: selectedAppDetail.status === 'Agendado' ? 'var(--gold-primary)' : selectedAppDetail.status === 'En Silla' ? '#007aff' : selectedAppDetail.status === 'En Lavado' ? '#00bfff' : selectedAppDetail.status === 'Por Pagar' ? '#32d74b' : selectedAppDetail.status === 'Completado' ? '#8e8e93' : '#ff453a'
+                }}>
+                  {selectedAppDetail.status}
+                </span>
+                <h3 style={{ fontSize: '20px', fontWeight: '900', color: 'white', margin: 0 }}>
+                  {selectedAppDetail.clients?.name}
+                </h3>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+                  Cédula: V-{selectedAppDetail.clients?.id_card || 'S/C'} • Celular: {selectedAppDetail.clients?.phone || 'S/N'}
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedAppDetail(null)} 
+                style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Date and Time block */}
+            <div style={{ display: 'flex', gap: '16px', background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={16} color="var(--gold-primary)" />
+                <span style={{ fontSize: '12px', fontWeight: '750', color: 'white' }}>
+                  {new Date(selectedAppDetail.scheduled_at || selectedAppDetail.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CalendarIcon size={16} color="var(--gold-primary)" />
+                <span style={{ fontSize: '12px', fontWeight: '750', color: 'white' }}>
+                  {new Date(selectedAppDetail.scheduled_at || selectedAppDetail.created_at).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+              </div>
+            </div>
+
+            {/* Service & Price */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+              {/* Primary Service */}
+              <div style={{ paddingBottom: '12px', borderBottom: '1px dashed rgba(255,255,255,0.05)' }}>
+                <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', marginBottom: '6px' }}>Servicio Principal</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Scissors size={14} color="var(--gold-primary)" />
+                    <span style={{ fontWeight: '800', color: 'white', fontSize: '13px' }}>
+                      {selectedAppDetail.services?.name || 'Venta directa sin servicio'}
+                    </span>
+                  </div>
+                  <span style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '13px' }}>
+                    ${selectedAppDetail.services?.price || 0}
+                  </span>
+                </div>
+                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 22px' }}>
+                  Atendido por: <span style={{ fontWeight: '750', color: 'white' }}>{selectedAppDetail.staff?.name || 'Caja'}</span>
+                </p>
+              </div>
+
+              {/* Extras (if any) */}
+              {selectedAppDetail.appointment_extras && selectedAppDetail.appointment_extras.length > 0 && (
+                <div style={{ paddingBottom: '12px', borderBottom: '1px dashed rgba(255,255,255,0.05)' }}>
+                  <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', marginBottom: '6px' }}>Servicios Extras</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {selectedAppDetail.appointment_extras.map(e => (
+                      <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingLeft: '8px' }}>
+                        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>• {e.service_extras?.name}</span>
+                        <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)' }}>+${e.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Products (if any) */}
+              {selectedAppDetail.appointment_products && selectedAppDetail.appointment_products.length > 0 && (
+                <div style={{ paddingBottom: '12px', borderBottom: '1px dashed rgba(255,255,255,0.05)' }}>
+                  <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', marginBottom: '6px' }}>Productos Vendidos</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {selectedAppDetail.appointment_products.map(p => (
+                      <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingLeft: '8px' }}>
+                        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>• {p.quantity}x {p.inventory?.name}</span>
+                        <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)' }}>+${(p.price * p.quantity).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Personnel Involved (appointment_staff records) */}
+              {selectedAppDetail.appointment_staff && selectedAppDetail.appointment_staff.length > 0 && (
+                <div style={{ paddingBottom: '12px', borderBottom: '1px dashed rgba(255,255,255,0.05)' }}>
+                  <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', marginBottom: '6px' }}>Comisiones & Propinas</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {selectedAppDetail.appointment_staff.map(as => {
+                      const hasServComm = as.commission_earned > 0;
+                      const hasProdComm = as.product_commission > 0;
+                      const hasTip = as.tip_amount > 0;
+                      return (
+                        <div key={as.id} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <span style={{ fontWeight: '800', color: 'white', fontSize: '12px' }}>{as.staff?.name}</span>
+                            <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: '700' }}>{as.staff?.role}</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '12px', fontSize: '10px', color: 'var(--text-muted)' }}>
+                            {hasServComm && <span>Com. Servicio: <strong style={{ color: 'var(--gold-primary)' }}>${as.commission_earned}</strong></span>}
+                            {hasProdComm && <span>Com. Producto: <strong style={{ color: 'var(--gold-primary)' }}>${as.product_commission}</strong></span>}
+                            {hasTip && <span>Propina: <strong style={{ color: '#32d74b' }}>${as.tip_amount}</strong></span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Total Block */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(212,175,55,0.08)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.2)' }}>
+              <div>
+                <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Total de la Cita</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Ref: ${selectedAppDetail.total_price}</span>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '20px', fontWeight: '950', color: 'var(--gold-primary)' }}>
+                  {rates?.usd > 0 ? `${Math.round(selectedAppDetail.total_price * rates.usd).toLocaleString('es-VE')} Bs.` : `${selectedAppDetail.total_price} USD`}
+                </span>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
