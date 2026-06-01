@@ -413,52 +413,112 @@ const SchedulingModule = ({ isMobile }) => {
                   })
                   .sort((a, b) => new Date(a.scheduled_at || a.created_at) - new Date(b.scheduled_at || b.created_at))
                   .map(app => (
-                  <div key={app.id} className="hover-item" style={{ 
-                    padding: '16px 24px', 
-                    borderBottom: '1px solid rgba(255,255,255,0.03)',
-                    display: 'grid', 
-                    gridTemplateColumns: isMobile ? '1fr' : '100px 1.5fr 1.5fr 1.5fr 80px 120px 60px', 
-                    gap: '15px', 
-                    alignItems: 'center',
-                    opacity: app.status === 'Completado' ? 0.6 : 1
-                  }}>
-                    <div>
-                      <div style={{ fontWeight: '900', fontSize: '14px' }}>{new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
-                      {filterType !== 'day' && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</div>}
-                    </div>
+                  isMobile ? (
+                    <div key={app.id} style={{ 
+                      padding: '16px', 
+                      borderBottom: '1px solid rgba(255,255,255,0.04)',
+                      background: 'rgba(255,255,255,0.01)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      opacity: app.status === 'Completado' ? 0.6 : 1
+                    }}>
+                      {/* Top Row: Time, Date and Status */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <span style={{ fontWeight: '900', fontSize: '13px', color: 'white' }}>
+                            {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                          </span>
+                          {filterType !== 'day' && (
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                              • {new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ 
+                          fontSize: '8px', fontWeight: '900', padding: '3px 8px', borderRadius: '20px', textTransform: 'uppercase',
+                          backgroundColor: app.status === 'Agendado' ? 'rgba(212,175,55,0.1)' : app.status === 'En Silla' ? 'rgba(0,122,255,0.1)' : app.status === 'En Lavado' ? 'rgba(0,191,255,0.1)' : app.status === 'Por Pagar' ? 'rgba(50,215,75,0.1)' : app.status === 'Completado' ? 'rgba(142,142,147,0.1)' : 'rgba(255,69,58,0.1)',
+                          color: app.status === 'Agendado' ? 'var(--gold-primary)' : app.status === 'En Silla' ? '#007aff' : app.status === 'En Lavado' ? '#00bfff' : app.status === 'Por Pagar' ? '#32d74b' : app.status === 'Completado' ? '#8e8e93' : '#ff453a'
+                        }}>
+                          {app.status}
+                        </span>
+                      </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'black', fontWeight: '900' }}>{app.staff?.name?.charAt(0)}</div>
-                      <div style={{ fontWeight: '700', fontSize: '13px' }}>{app.staff?.name}</div>
-                    </div>
+                      {/* Middle Row: Client, Service, Barber */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <User size={13} color="var(--gold-primary)" />
+                          <span style={{ fontWeight: '800', fontSize: '13px', color: 'white' }}>{app.clients?.name}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '2px' }}>
+                          <Scissors size={12} color="var(--text-muted)" />
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{app.services?.name}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '2px' }}>
+                          <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '7px', color: 'black', fontWeight: '950' }}>{app.staff?.name?.charAt(0)}</div>
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{app.staff?.name}</span>
+                        </div>
+                      </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Scissors size={14} color="var(--text-muted)" />
-                      <div style={{ fontSize: '13px' }}>{app.services?.name}</div>
+                      {/* Bottom Row: Price and Actions */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed rgba(255,255,255,0.03)', paddingTop: '10px' }}>
+                        <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '14px' }}>
+                          ${app.total_price}
+                        </div>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <button onClick={() => handleEditAppointment(app)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '6px' }} className="hover-gold"><Pencil size={13} /></button>
+                          <button onClick={() => handleManageAppointment(app.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '6px' }} className="hover-red"><Trash2 size={13} /></button>
+                        </div>
+                      </div>
                     </div>
+                  ) : (
+                    <div key={app.id} className="hover-item" style={{ 
+                      padding: '16px 24px', 
+                      borderBottom: '1px solid rgba(255,255,255,0.03)',
+                      display: 'grid', 
+                      gridTemplateColumns: '100px 1.5fr 1.5fr 1.5fr 80px 120px 60px', 
+                      gap: '15px', 
+                      alignItems: 'center',
+                      opacity: app.status === 'Completado' ? 0.6 : 1
+                    }}>
+                      <div>
+                        <div style={{ fontWeight: '900', fontSize: '14px' }}>{new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
+                        {filterType !== 'day' && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</div>}
+                      </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <User size={14} color="var(--text-muted)" />
-                      <div style={{ fontWeight: '700', fontSize: '13px' }}>{app.clients?.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'black', fontWeight: '900' }}>{app.staff?.name?.charAt(0)}</div>
+                        <div style={{ fontWeight: '700', fontSize: '13px' }}>{app.staff?.name}</div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Scissors size={14} color="var(--text-muted)" />
+                        <div style={{ fontSize: '13px' }}>{app.services?.name}</div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <User size={14} color="var(--text-muted)" />
+                        <div style={{ fontWeight: '700', fontSize: '13px' }}>{app.clients?.name}</div>
+                      </div>
+
+                      <div style={{ fontWeight: '900', color: 'var(--gold-primary)' }}>${app.total_price}</div>
+
+                      <div style={{ textAlign: 'center' }}>
+                        <span style={{ 
+                          fontSize: '9px', fontWeight: '900', padding: '4px 10px', borderRadius: '20px', textTransform: 'uppercase',
+                          backgroundColor: app.status === 'Agendado' ? 'rgba(212,175,55,0.1)' : app.status === 'En Silla' ? 'rgba(0,122,255,0.1)' : app.status === 'En Lavado' ? 'rgba(0,191,255,0.1)' : app.status === 'Por Pagar' ? 'rgba(50,215,75,0.1)' : app.status === 'Completado' ? 'rgba(142,142,147,0.1)' : 'rgba(255,69,58,0.1)',
+                          color: app.status === 'Agendado' ? 'var(--gold-primary)' : app.status === 'En Silla' ? '#007aff' : app.status === 'En Lavado' ? '#00bfff' : app.status === 'Por Pagar' ? '#32d74b' : app.status === 'Completado' ? '#8e8e93' : '#ff453a'
+                        }}>
+                          {app.status}
+                        </span>
+                      </div>
+
+                      <div style={{ textAlign: 'right', display: 'flex', gap: '4px' }}>
+                        <button onClick={() => handleEditAppointment(app)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: '8px' }} className="hover-gold"><Pencil size={14} /></button>
+                        <button onClick={() => handleManageAppointment(app.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: '8px' }} className="hover-red"><Trash2 size={14} /></button>
+                      </div>
                     </div>
-
-                    <div style={{ fontWeight: '900', color: 'var(--gold-primary)' }}>${app.total_price}</div>
-
-                    <div style={{ textAlign: 'center' }}>
-                      <span style={{ 
-                        fontSize: '9px', fontWeight: '900', padding: '4px 10px', borderRadius: '20px', textTransform: 'uppercase',
-                        backgroundColor: app.status === 'Agendado' ? 'rgba(212,175,55,0.1)' : app.status === 'En Silla' ? 'rgba(0,122,255,0.1)' : app.status === 'En Lavado' ? 'rgba(0,191,255,0.1)' : app.status === 'Por Pagar' ? 'rgba(50,215,75,0.1)' : app.status === 'Completado' ? 'rgba(142,142,147,0.1)' : 'rgba(255,69,58,0.1)',
-                        color: app.status === 'Agendado' ? 'var(--gold-primary)' : app.status === 'En Silla' ? '#007aff' : app.status === 'En Lavado' ? '#00bfff' : app.status === 'Por Pagar' ? '#32d74b' : app.status === 'Completado' ? '#8e8e93' : '#ff453a'
-                      }}>
-                        {app.status}
-                      </span>
-                    </div>
-
-                    <div style={{ textAlign: 'right', display: 'flex', gap: '4px' }}>
-                      <button onClick={() => handleEditAppointment(app)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: '8px' }} className="hover-gold"><Pencil size={14} /></button>
-                      <button onClick={() => handleManageAppointment(app.id)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: '8px' }} className="hover-red"><Trash2 size={14} /></button>
-                    </div>
-                  </div>
+                  )
                 ))}
               </div>
             )}
