@@ -261,55 +261,62 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                   className="glass-card list-item" 
                   onClick={() => setSelectedClient(client)}
                   style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'minmax(200px, 1.5fr) 120px 1fr 1fr 1fr auto',
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? 'minmax(120px, 1.5fr) 90px auto auto' : 'minmax(200px, 1.5fr) 120px 1fr 1fr 1fr auto',
+                    gap: isMobile ? '8px' : '0',
                     alignItems: 'center',
                     cursor: 'pointer',
-                    padding: '20px 24px',
+                    padding: isMobile ? '12px 14px' : '20px 24px',
                     borderRadius: '20px',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     backgroundColor: 'var(--bg-secondary)',
                     border: '1px solid var(--border-color)'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '16px', overflow: 'hidden' }}>
                     <div style={{ 
-                      width: '48px', 
-                      height: '48px', 
-                      borderRadius: '14px', 
+                      width: isMobile ? '36px' : '48px', 
+                      height: isMobile ? '36px' : '48px', 
+                      borderRadius: isMobile ? '10px' : '14px', 
                       backgroundColor: 'rgba(212,175,55,0.05)', 
                       display: 'flex', 
                       alignItems: 'center', 
                       justifyContent: 'center',
-                      border: '1px solid rgba(212,175,55,0.1)'
+                      border: '1px solid rgba(212,175,55,0.1)',
+                      flexShrink: 0
                     }}>
-                      <User size={20} color="var(--gold-primary)" />
+                      <User size={isMobile ? 16 : 20} color="var(--gold-primary)" />
                     </div>
-                    <span style={{ fontWeight: '700', fontSize: '16px' }}>{client.name}</span>
+                    <span style={{ fontWeight: '700', fontSize: isMobile ? '13px' : '16px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{client.name}</span>
                   </div>
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: '800', opacity: 0.8 }}>
-                    V-{client.id_card || '00.000.000'}
+                  {!isMobile && (
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: '800', opacity: 0.8 }}>
+                      V-{client.id_card || '00.000.000'}
+                    </div>
+                  )}
+                  <div style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: isMobile ? '11px' : '14px', fontWeight: '500' }}>
+                    <Phone size={isMobile ? 12 : 14} /> <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{client.phone}</span>
                   </div>
-                  <div style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '500' }}>
-                    <Phone size={14} /> {client.phone}
-                  </div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-                    Registrado: {client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'}
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
+                  {!isMobile && (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+                      Registrado: {client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'}
+                    </div>
+                  )}
+                  <div style={{ textAlign: isMobile ? 'right' : 'center' }}>
                     <span style={{ 
-                      padding: '6px 14px', 
+                      padding: isMobile ? '4px 8px' : '6px 14px', 
                       borderRadius: '10px', 
                       backgroundColor: 'rgba(212,175,55,0.05)', 
                       color: 'var(--gold-primary)',
-                      fontSize: '12px',
+                      fontSize: isMobile ? '10px' : '12px',
                       fontWeight: '700',
-                      letterSpacing: '0.3px'
+                      letterSpacing: '0.3px',
+                      whiteSpace: 'nowrap'
                     }}>
                       {client.total_visits || 0} VISITAS
                     </span>
                   </div>
-                  <ChevronRight size={20} color="var(--text-muted)" />
+                  <ChevronRight size={isMobile ? 16 : 20} color="var(--text-muted)" />
                 </div>
               ))}
             </div>
@@ -365,6 +372,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
         </>
       ) : (
         <ClientDetail 
+          isMobile={isMobile}
           client={selectedClient} 
           onBack={() => {
             setSelectedClient(null);
@@ -398,9 +406,10 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
   );
 };
 
-const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
+const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
   const { showToast } = useNotifs();
   const [showCollage, setShowCollage] = useState(false);
+  const [showAllHistory, setShowAllHistory] = useState(false);
   const [photoA, setPhotoA] = useState(null);
   const [photoB, setPhotoB] = useState(null);
   const [selectingFor, setSelectingFor] = useState(null); // 'A' or 'B'
@@ -601,7 +610,318 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
         </button>
       </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 300px) 1fr', gap: '32px' }}>
+      {isMobile ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Mobile: Combined User Info + Ficha Técnica Card */}
+          <div className="glass-card" style={{ padding: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* User Info Column */}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ width: '70px', height: '70px', borderRadius: '50%', backgroundColor: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', border: '2px solid var(--border-color)' }}>
+                  <User size={36} color="var(--gold-primary)" />
+                </div>
+                {isEditing ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <input className="form-input" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} placeholder="Nombre" style={{ width: '100%', fontSize: '12px', padding: '8px' }} />
+                    <input className="form-input" value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} placeholder="Teléfono" style={{ width: '100%', fontSize: '12px', padding: '8px' }} />
+                    <button className="btn-gold" onClick={() => { onUpdate(editData); setIsEditing(false); }} style={{ fontSize: '12px', padding: '8px' }}>Guardar</button>
+                    <button onClick={() => setIsEditing(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '11px' }}>Cancelar</button>
+                  </div>
+                ) : (
+                  <>
+                    <h3 style={{ fontSize: '15px', marginBottom: '4px', fontWeight: '800' }}>{client.name}</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '10px', marginBottom: '8px' }}>V-{client.id_card || '00.000.000'}</p>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', fontSize: '11px' }}>
+                      <Phone size={10} color="var(--gold-primary)" /> {client.phone}
+                    </p>
+                    <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '6px', borderRadius: '6px', fontSize: '11px' }}>
+                      <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>{history.length}</span> Visitas
+                    </div>
+                  </>
+                )}
+              </div>
+              {/* Ficha Técnica Column */}
+              <div>
+                <h4 style={{ marginBottom: '10px', fontSize: '13px', fontWeight: '800' }}>Ficha Técnica Capilar</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <DetailItem label="Cabello" value={client.hair_type || 'Normal'} />
+                  <DetailItem label="Cuero" value={client.scalp_type || 'Normal'} />
+                  <DetailItem label="Cumple" value={client.birth_date ? new Date(client.birth_date + 'T00:00:00').toLocaleDateString([], {day: '2-digit', month: 'short'}) : 'N/A'} />
+                  <DetailItem label="Registro" value={client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'} />
+                </div>
+                {!isEditing && (
+                  <button 
+                    onClick={() => setIsEditing(true)}
+                    style={{ width: '100%', marginTop: '10px', background: 'none', border: '1px solid var(--gold-primary)', color: 'var(--gold-primary)', padding: '5px', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '700' }}
+                  >
+                    Editar
+                  </button>
+                )}
+              </div>
+            </div>
+            {isEditing && (
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <input className="form-input" value={editData.id_card} onChange={e => setEditData({...editData, id_card: e.target.value})} placeholder="Cédula" style={{ width: '100%', fontSize: '12px', padding: '8px' }} />
+                <input className="form-input" value={editData.birth_date} onChange={e => setEditData({...editData, birth_date: e.target.value})} type="date" style={{ width: '100%', fontSize: '12px', padding: '8px' }} />
+                <AstroSelect 
+                  label="Tipo de Cabello"
+                  value={editData.hair_type}
+                  onChange={(val) => setEditData({...editData, hair_type: val})}
+                  options={[
+                    { label: 'Normal', value: 'Normal' },
+                    { label: 'Graso', value: 'Graso' },
+                    { label: 'Seco', value: 'Seco' },
+                    { label: 'Mixto', value: 'Mixto' }
+                  ]}
+                />
+                <AstroSelect 
+                  label="Cuero Cabelludo"
+                  value={editData.scalp_type}
+                  onChange={(val) => setEditData({...editData, scalp_type: val})}
+                  options={[
+                    { label: 'Sano', value: 'Sano' },
+                    { label: 'Sensible', value: 'Sensible' },
+                    { label: 'Irritado', value: 'Irritado' },
+                    { label: 'Caspa', value: 'Caspa' }
+                  ]}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Mobile: History (last 5 + show more) */}
+          <div className="glass-card">
+            <h4 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Calendar size={18} color="var(--gold-primary)" /> Historial de Servicios
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {loadingHistory ? (
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <Loader2 className="animate-spin" size={16} /> Cargando...
+                </div>
+              ) : history.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No hay historial registrado.</p>
+              ) : (
+                <>
+                  {(showAllHistory ? history : history.slice(0, 5)).map(h => (
+                    <HistoryItem 
+                      key={h.id} 
+                      date={new Date(h.created_at).toLocaleString('es-VE', { 
+                        day: 'numeric', 
+                        month: 'numeric', 
+                        year: 'numeric', 
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        hour12: true 
+                      })} 
+                      service={h.service_name || h.description.split(' - ')[0].replace('Servicio: ', '')} 
+                      price={h.amount} 
+                      onClick={() => setSelectedVisit(h)}
+                    />
+                  ))}
+                  {history.length > 5 && (
+                    <button 
+                      onClick={() => setShowAllHistory(!showAllHistory)}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px', 
+                        background: showAllHistory ? 'rgba(255,255,255,0.03)' : 'rgba(212,175,55,0.08)', 
+                        border: '1px solid var(--gold-primary)', 
+                        color: 'var(--gold-primary)', 
+                        borderRadius: '10px', 
+                        cursor: 'pointer',
+                        fontWeight: '700',
+                        fontSize: '13px',
+                        marginTop: '4px'
+                      }}
+                    >
+                      {showAllHistory ? '↑ Ver menos' : `↓ Ver más servicios (${history.length - 5})`}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile: Gallery */}
+          <div className="glass-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ImageIcon size={18} color="var(--gold-primary)" /> Galería de Trabajos
+              </h4>
+              <button 
+                onClick={() => setShowCollage(!showCollage)}
+                style={{ 
+                  background: showCollage ? 'var(--gold-primary)' : 'rgba(212,175,55,0.1)', 
+                  border: '1px solid var(--gold-primary)', 
+                  color: showCollage ? 'black' : 'var(--gold-primary)',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '800'
+                }}
+              >
+                <ColumnsIcon size={14} /> {showCollage ? 'Ver Galería' : 'Crear Comparativa'}
+              </button>
+            </div>
+
+            {showCollage ? (
+              <div className="animate-scale-in">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                  <div 
+                    onClick={() => setSelectingFor('A')}
+                    style={{ 
+                      aspectRatio: '1/1', 
+                      borderRadius: '16px', 
+                      overflow: 'hidden', 
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      border: selectingFor === 'A' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
+                      position: 'relative',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {photoA ? (
+                      <img src={photoA} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <ImageIcon size={32} color="rgba(255,255,255,0.05)" />
+                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)' }}>FOTO ANTES</span>
+                      </div>
+                    )}
+                    <div style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)' }}>ANTES</div>
+                  </div>
+
+                  <div 
+                    onClick={() => setSelectingFor('B')}
+                    style={{ 
+                      aspectRatio: '1/1', 
+                      borderRadius: '16px', 
+                      overflow: 'hidden', 
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      border: selectingFor === 'B' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
+                      position: 'relative',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {photoB ? (
+                      <img src={photoB} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <ImageIcon size={32} color="rgba(255,255,255,0.05)" />
+                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)' }}>FOTO DESPUÉS</span>
+                      </div>
+                    )}
+                    <div style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: 'rgba(0,0,0,0.7)', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)' }}>DESPUÉS</div>
+                  </div>
+                </div>
+
+                {photoA && photoB ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <BeforeAfterSlider 
+                      photoA={photoA} 
+                      photoB={photoB} 
+                      sliderPos={sliderPos} 
+                      setSliderPos={setSliderPos} 
+                    />
+                    <button 
+                      onClick={handleDownloadComparison}
+                      className="btn-gold" 
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                    >
+                      <Download size={18} /> Descargar Comparativa
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ padding: '12px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.02)', textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                    Selecciona dos fotos para generar el collage
+                  </div>
+                )}
+
+                {selectingFor && (
+                  <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+                    <div className="glass-card animate-scale-in" style={{ maxWidth: '600px', width: '100%', padding: '24px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
+                        <h4 style={{ fontWeight: '900' }}>Elegir Foto {selectingFor}</h4>
+                        <button onClick={() => setSelectingFor(null)} style={{ background: 'none', border: 'none', color: 'white' }}><X size={20} /></button>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
+                        {gallery
+                          .filter(img => selectingFor === 'A' ? img.type === 'Antes' : img.type === 'Después')
+                          .map((img, i) => (
+                          <div 
+                            key={i} 
+                            onClick={() => {
+                              if (selectingFor === 'A') setPhotoA(img.url);
+                              if (selectingFor === 'B') setPhotoB(img.url);
+                              setSelectingFor(null);
+                            }}
+                            style={{ 
+                              aspectRatio: '1/1', 
+                              borderRadius: '8px', 
+                              overflow: 'hidden', 
+                              cursor: 'pointer',
+                              border: (selectingFor === 'A' ? photoA === img.url : photoB === img.url) ? '3px solid var(--gold-primary)' : 'none'
+                            }}
+                          >
+                            <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
+                {gallery.map((img, i) => (
+                  <div key={i} style={{ aspectRatio: '1/1', backgroundColor: 'var(--bg-tertiary)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', position: 'relative' }} className="group">
+                    <img src={img.url || img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', padding: '8px', fontSize: '9px', fontWeight: '800', color: 'var(--gold-primary)' }}>
+                      {img.type || 'FOTO'}
+                    </div>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handlePhotoDelete(i); }}
+                      style={{ 
+                        position: 'absolute', top: '8px', right: '8px', 
+                        backgroundColor: 'rgba(255, 69, 58, 0.8)', 
+                        border: 'none', borderRadius: '8px', color: 'white', 
+                        padding: '6px', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+                        transition: '0.2s'
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ff453a'}
+                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 69, 58, 0.8)'}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+                <div 
+                  onClick={() => setShowCamera(true)}
+                  style={{ aspectRatio: '1/1', backgroundColor: 'rgba(212,175,55,0.02)', borderRadius: '12px', border: '2px dashed var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: '0.2s' }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(212,175,55,0.05)'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(212,175,55,0.02)'}
+                >
+                  <Camera size={24} color="var(--gold-primary)" />
+                </div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileSelect} 
+                  accept="image/*" 
+                  style={{ display: 'none' }} 
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 300px) 1fr', gap: '32px' }}>
         {/* Left Sidebar: Info */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div className="glass-card" style={{ textAlign: 'center' }}>
@@ -857,7 +1177,7 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
 
           <div className="glass-card">
             <h4 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Calendar size={18} color="var(--gold-primary)" /> Historial de Visitas
+              <Calendar size={18} color="var(--gold-primary)" /> {isMobile ? 'Historial de Servicios' : 'Historial de Visitas'}
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {loadingHistory ? (
@@ -867,27 +1187,49 @@ const ClientDetail = ({ client, onBack, onDelete, onUpdate }) => {
               ) : history.length === 0 ? (
                 <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No hay historial registrado.</p>
               ) : (
-                history.map(h => (
-                  <HistoryItem 
-                    key={h.id} 
-                    date={new Date(h.created_at).toLocaleString('es-VE', { 
-                      day: 'numeric', 
-                      month: 'numeric', 
-                      year: 'numeric', 
-                      hour: '2-digit', 
-                      minute: '2-digit', 
-                      hour12: true 
-                    })} 
-                    service={h.service_name || h.description.split(' - ')[0].replace('Servicio: ', '')} 
-                    price={h.amount} 
-                    onClick={() => setSelectedVisit(h)}
-                  />
-                ))
+                <>
+                  {(showAllHistory ? history : history.slice(0, 5)).map(h => (
+                    <HistoryItem 
+                      key={h.id} 
+                      date={new Date(h.created_at).toLocaleString('es-VE', { 
+                        day: 'numeric', 
+                        month: 'numeric', 
+                        year: 'numeric', 
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        hour12: true 
+                      })} 
+                      service={h.service_name || h.description.split(' - ')[0].replace('Servicio: ', '')} 
+                      price={h.amount} 
+                      onClick={() => setSelectedVisit(h)}
+                    />
+                  ))}
+                  {history.length > 5 && (
+                    <button 
+                      onClick={() => setShowAllHistory(!showAllHistory)}
+                      style={{ 
+                        width: '100%', 
+                        padding: '12px', 
+                        background: showAllHistory ? 'rgba(255,255,255,0.03)' : 'rgba(212,175,55,0.08)', 
+                        border: '1px solid var(--gold-primary)', 
+                        color: 'var(--gold-primary)', 
+                        borderRadius: '10px', 
+                        cursor: 'pointer',
+                        fontWeight: '700',
+                        fontSize: '13px',
+                        marginTop: '4px'
+                      }}
+                    >
+                      {showAllHistory ? '↑ Ver menos' : `↓ Ver más servicios (${history.length - 5})`}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
         </div>
       </div>
+      )}
 
       {showCamera && (
         <AstroCamera 

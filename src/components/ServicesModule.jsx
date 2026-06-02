@@ -43,6 +43,13 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
   const [viewMode, setViewMode] = useState('grid');
   const [isExtrasModalOpen, setIsExtrasModalOpen] = useState(false);
   const [isBillableExtrasModalOpen, setIsBillableExtrasModalOpen] = useState(false);
+  const [isCategoriesModalOpen, setIsCategoriesModalOpen] = useState(false);
+  const [isStrategiesModalOpen, setIsStrategiesModalOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [strategies, setStrategies] = useState([]);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newStrategyValue, setNewStrategyValue] = useState('');
+  const [newStrategyLabel, setNewStrategyLabel] = useState('');
   const [baseItems, setBaseItems] = useState([]);
   const [billableExtras, setBillableExtras] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
@@ -59,6 +66,8 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
     fetchServices();
     fetchBaseItems();
     fetchBillableExtras();
+    fetchCategories();
+    fetchStrategies();
   }, []);
 
   const fetchServices = async () => {
@@ -87,6 +96,74 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
       setBillableExtras(data?.filter(e => e.name !== 'SYSTEM_CONFIG_RATES') || []);
     } catch (e) {
       showToast('Error al cargar extras cobrables.', 'error');
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const data = await dataService.getServiceCategories();
+      setCategories(data || []);
+    } catch (e) {
+      showToast('Error al cargar categorías.', 'error');
+    }
+  };
+
+  const fetchStrategies = async () => {
+    try {
+      const data = await dataService.getServiceStrategies();
+      setStrategies(data || []);
+    } catch (e) {
+      showToast('Error al cargar estrategias.', 'error');
+    }
+  };
+
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    try {
+      await dataService.addServiceCategory(newCategoryName.trim());
+      setNewCategoryName('');
+      await fetchCategories();
+      showToast('Nueva categoría creada.');
+    } catch (e) {
+      showToast('Error al crear categoría.', 'error');
+    }
+  };
+
+  const handleDeleteCategory = async (name) => {
+    if (!window.confirm(`¿Estás seguro de eliminar la categoría "${name}"?`)) return;
+    try {
+      await dataService.deleteServiceCategory(name);
+      await fetchCategories();
+      showToast('Categoría eliminada.');
+    } catch (e) {
+      showToast('Error al eliminar categoría.', 'error');
+    }
+  };
+
+  const handleAddStrategy = async () => {
+    if (!newStrategyValue.trim() || !newStrategyLabel.trim()) {
+      showToast('Debe ingresar el valor y la etiqueta.', 'warning');
+      return;
+    }
+    try {
+      await dataService.addServiceStrategy(newStrategyValue.trim(), newStrategyLabel.trim());
+      setNewStrategyValue('');
+      setNewStrategyLabel('');
+      await fetchStrategies();
+      showToast('Nueva estrategia creada.');
+    } catch (e) {
+      showToast('Error al crear estrategia.', 'error');
+    }
+  };
+
+  const handleDeleteStrategy = async (value) => {
+    if (!window.confirm('¿Estás seguro de eliminar esta estrategia?')) return;
+    try {
+      await dataService.deleteServiceStrategy(value);
+      await fetchStrategies();
+      showToast('Estrategia eliminada.');
+    } catch (e) {
+      showToast('Error al eliminar estrategia.', 'error');
     }
   };
 
@@ -287,7 +364,13 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
           <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}><span className="text-gold">Servicios</span></h2>
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Define tu oferta y servicios adicionales.</p>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ 
+          display: isMobile ? 'grid' : 'flex', 
+          gridTemplateColumns: isMobile ? '1fr 1fr' : 'none',
+          gap: '12px', 
+          alignItems: 'center',
+          width: isMobile ? '100%' : 'auto'
+        }}>
           {/* View Toggles */}
           {!isMobile && (
             <div style={{ 
@@ -337,7 +420,15 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
             </div>
           )}
 
-          <button className="btn-gold" onClick={() => setIsBillableExtrasModalOpen(true)} style={{ backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212,175,55,0.2)' }}>
+          <button className="btn-gold" onClick={() => setIsCategoriesModalOpen(true)} style={{ backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212,175,55,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
+            <Settings size={18} style={{ marginRight: '8px' }} />
+            Categorías
+          </button>
+          <button className="btn-gold" onClick={() => setIsStrategiesModalOpen(true)} style={{ backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212,175,55,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
+            <Crown size={18} style={{ marginRight: '8px' }} />
+            Estrategias
+          </button>
+          <button className="btn-gold" onClick={() => setIsBillableExtrasModalOpen(true)} style={{ backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212,175,55,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
             <Rocket size={18} style={{ marginRight: '8px' }} />
             Extras
           </button>
@@ -366,7 +457,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                 setShowAddForm(true);
               }
             }} 
-            style={{ height: '48px', padding: '0 24px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
+            style={{ height: '48px', padding: isMobile ? '10px 8px' : '0 24px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: isMobile ? '100%' : 'auto', fontSize: isMobile ? '12px' : undefined }}
           >
             {showAddForm ? <X size={18} /> : <Plus size={18} />}
             {showAddForm ? 'Cancelar' : 'Nuevo Servicio'}
@@ -411,7 +502,9 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   placeholder="Describe los beneficios premium del servicio..." 
                   value={newService.description || ''} 
                   onChange={e => setNewService({...newService, description: e.target.value})} 
-                  style={{ width: '100%', height: '80px', paddingTop: '12px', resize: 'none', fontSize: '13px', lineHeight: '1.5' }} 
+                  onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
+                  ref={el => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }}
+                  style={{ width: '100%', minHeight: '80px', paddingTop: '12px', resize: 'none', fontSize: '13px', lineHeight: '1.5', overflow: 'hidden' }} 
                 />
               </div>
 
@@ -438,79 +531,20 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   label="CATEGORÍA"
                   value={newService.category}
                   onChange={val => setNewService({...newService, category: val})}
-                  options={[
-                    { label: 'Barbería', value: 'Barbería' },
-                    { label: 'Estilismo', value: 'Estilismo' },
-                    { label: 'Tratamientos', value: 'Tratamientos' }
-                  ]}
+                  options={categories.map(cat => ({ label: cat, value: cat }))}
                 />
                 <AstroSelect 
                   label="ESTRATEGIA"
                   value={newService.strategy_type}
                   onChange={val => setNewService({...newService, strategy_type: val})}
-                  options={[
-                    { label: 'MVP (Estrella)', value: 'MVP' },
-                    { label: 'Comodín Entrada', value: 'Entrada' },
-                    { label: 'Comodín Upsell', value: 'Upsell' },
-                    { label: 'Mantenimiento', value: 'Mantenimiento' },
-                    { label: 'Rápido', value: 'Rápido' },
-                    { label: 'Promo', value: 'Promo' }
-                  ]}
+                  options={strategies.map(strat => ({ label: strat.label, value: strat.value }))}
                 />
               </div>
             </div>
 
 
-            {/* Commissions Distribution */}
-            <div style={{ padding: '20px', borderRadius: '20px', backgroundColor: 'rgba(212,175,55,0.03)', border: '1px solid rgba(212,175,55,0.1)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>
-                <DollarSign size={14} /> DISTRIBUCIÓN DE COMISIONES (%)
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div className="form-group">
-                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>COMISIÓN BARBERO (%)</label>
-                  <input 
-                    className="form-input" 
-                    type="number" 
-                    value={newService.commission_barber === 0 ? '' : newService.commission_barber} 
-                    onChange={e => setNewService({...newService, commission_barber: e.target.value === '' ? '' : Number(e.target.value)})} 
-                    style={{ width: '100%', fontSize: '16px', fontWeight: '900', color: 'var(--gold-primary)', height: '54px' }} 
-                  />
-                </div>
-              </div>
-              
-              {/* Business Net Margin Indicator */}
-              {(newService.price > 0) && (
-                <div style={{ 
-                  marginTop: '20px', 
-                  padding: '16px', 
-                  borderRadius: '16px', 
-                  background: 'rgba(50, 215, 75, 0.05)', 
-                  border: '1px solid rgba(50, 215, 75, 0.2)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div>
-                    <div style={{ fontSize: '10px', fontWeight: '800', color: '#32d74b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Margen Real Astro</div>
-                    <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>
-                      ${((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)).toFixed(2)}
-                    </div>
-                  </div>
-                  {rates?.usd > 0 && (
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
-                      <div style={{ fontSize: '14px', fontWeight: '800', color: '#32d74b' }}>
-                        {Math.round(((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)) * rates.usd).toLocaleString()} Bs.
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
             {/* Right Column: Checklist */}
-            <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gridColumn: isMobile ? 'span 1' : 'span 2' }}>
+            <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>
                   <LayoutList size={16} /> CHECKLIST (INCLUIDO)
@@ -583,6 +617,54 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Commissions Distribution */}
+            <div style={{ padding: '20px', borderRadius: '20px', backgroundColor: 'rgba(212,175,55,0.03)', border: '1px solid rgba(212,175,55,0.1)', gridColumn: isMobile ? 'span 1' : 'span 2' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>
+                <DollarSign size={14} /> DISTRIBUCIÓN DE COMISIONES (%)
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="form-group">
+                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>COMISIÓN BARBERO (%)</label>
+                  <input 
+                    className="form-input" 
+                    type="number" 
+                    value={newService.commission_barber === 0 ? '' : newService.commission_barber} 
+                    onChange={e => setNewService({...newService, commission_barber: e.target.value === '' ? '' : Number(e.target.value)})} 
+                    style={{ width: '100%', fontSize: '16px', fontWeight: '900', color: 'var(--gold-primary)', height: '54px' }} 
+                  />
+                </div>
+              </div>
+              
+              {/* Business Net Margin Indicator */}
+              {(newService.price > 0) && (
+                <div style={{ 
+                  marginTop: '20px', 
+                  padding: '16px', 
+                  borderRadius: '16px', 
+                  background: 'rgba(50, 215, 75, 0.05)', 
+                  border: '1px solid rgba(50, 215, 75, 0.2)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '10px', fontWeight: '800', color: '#32d74b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Margen Real Astro</div>
+                    <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>
+                      ${((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)).toFixed(2)}
+                    </div>
+                  </div>
+                  {rates?.usd > 0 && (
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
+                      <div style={{ fontSize: '14px', fontWeight: '800', color: '#32d74b' }}>
+                        {Math.round(((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)) * rates.usd).toLocaleString()} Bs.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -707,7 +789,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
 
                           <div className="form-group">
                             <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)' }}>DESCRIPCIÓN</label>
-                            <textarea className="form-input" value={newService.description || ''} onChange={e => setNewService({...newService, description: e.target.value})} style={{ width: '100%', height: '60px', paddingTop: '8px' }} />
+                            <textarea className="form-input" value={newService.description || ''} onChange={e => setNewService({...newService, description: e.target.value})} onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }} ref={el => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} style={{ width: '100%', minHeight: '60px', paddingTop: '8px', resize: 'none', overflow: 'hidden' }} />
                           </div>
 
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -722,8 +804,8 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                           </div>
 
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <AstroSelect label="CATEGORÍA" value={newService.category} onChange={val => setNewService({...newService, category: val})} options={[{ label: 'Barbería', value: 'Barbería' }, { label: 'Estilismo', value: 'Estilismo' }, { label: 'Tratamientos', value: 'Tratamientos' }]} />
-                            <AstroSelect label="ESTRATEGIA" value={newService.strategy_type} onChange={val => setNewService({...newService, strategy_type: val})} options={[{ label: 'MVP', value: 'MVP' }, { label: 'Entrada', value: 'Entrada' }, { label: 'Upsell', value: 'Upsell' }]} />
+                            <AstroSelect label="CATEGORÍA" value={newService.category} onChange={val => setNewService({...newService, category: val})} options={categories.map(cat => ({ label: cat, value: cat }))} />
+                            <AstroSelect label="ESTRATEGIA" value={newService.strategy_type} onChange={val => setNewService({...newService, strategy_type: val})} options={strategies.map(strat => ({ label: strat.label, value: strat.value }))} />
                           </div>
 
                           <div className="form-group">
@@ -851,7 +933,9 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                                 placeholder="Describe los beneficios premium del servicio..." 
                                 value={newService.description || ''} 
                                 onChange={e => setNewService({...newService, description: e.target.value})} 
-                                style={{ width: '100%', height: '80px', paddingTop: '12px', resize: 'none', fontSize: '13px', lineHeight: '1.5' }} 
+                                onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
+                                ref={el => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }}
+                                style={{ width: '100%', minHeight: '80px', paddingTop: '12px', resize: 'none', fontSize: '13px', lineHeight: '1.5', overflow: 'hidden' }} 
                               />
                             </div>
 
@@ -878,78 +962,19 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                                 label="CATEGORÍA"
                                 value={newService.category}
                                 onChange={val => setNewService({...newService, category: val})}
-                                options={[
-                                  { label: 'Barbería', value: 'Barbería' },
-                                  { label: 'Estilismo', value: 'Estilismo' },
-                                  { label: 'Tratamientos', value: 'Tratamientos' }
-                                ]}
+                                options={categories.map(cat => ({ label: cat, value: cat }))}
                               />
                               <AstroSelect 
                                 label="ESTRATEGIA"
                                 value={newService.strategy_type}
                                 onChange={val => setNewService({...newService, strategy_type: val})}
-                                options={[
-                                  { label: 'MVP (Estrella)', value: 'MVP' },
-                                  { label: 'Comodín Entrada', value: 'Entrada' },
-                                  { label: 'Comodín Upsell', value: 'Upsell' },
-                                  { label: 'Mantenimiento', value: 'Mantenimiento' },
-                                  { label: 'Rápido', value: 'Rápido' },
-                                  { label: 'Promo', value: 'Promo' }
-                                ]}
+                                options={strategies.map(strat => ({ label: strat.label, value: strat.value }))}
                               />
                             </div>
                           </div>
 
-                          {/* Commissions Distribution */}
-                          <div style={{ padding: '20px', borderRadius: '20px', backgroundColor: 'rgba(212,175,55,0.03)', border: '1px solid rgba(212,175,55,0.1)' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>
-                              <DollarSign size={14} /> DISTRIBUCIÓN DE COMISIONES (%)
-                            </label>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                              <div className="form-group">
-                                <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>COMISIÓN BARBERO (%)</label>
-                                <input 
-                                  className="form-input" 
-                                  type="number" 
-                                  value={newService.commission_barber === 0 ? '' : newService.commission_barber} 
-                                  onChange={e => setNewService({...newService, commission_barber: e.target.value === '' ? '' : Number(e.target.value)})} 
-                                  style={{ width: '100%', fontSize: '16px', fontWeight: '900', color: 'var(--gold-primary)', height: '54px' }} 
-                                />
-                              </div>
-                            </div>
-                            
-                            {/* Business Net Margin Indicator */}
-                            {(newService.price > 0) && (
-                              <div style={{ 
-                                marginTop: '20px', 
-                                padding: '16px', 
-                                borderRadius: '16px', 
-                                background: 'rgba(50, 215, 75, 0.05)', 
-                                border: '1px solid rgba(50, 215, 75, 0.2)',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                              }}>
-                                <div>
-                                  <div style={{ fontSize: '10px', fontWeight: '800', color: '#32d74b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Margen Real Astro</div>
-                                  <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>
-                                    ${((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)).toFixed(2)}
-                                  </div>
-                                </div>
-                                {rates?.usd > 0 && (
-                                  <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
-                                    <div style={{ fontSize: '14px', fontWeight: '800', color: '#32d74b' }}>
-                                      {Math.round(((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)) * rates.usd).toLocaleString()} Bs.
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
                           {/* Right Column: Checklist */}
-                          <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gridColumn: 'span 2' }}>
+                          <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>
                                 <LayoutList size={16} /> CHECKLIST (INCLUIDO)
@@ -1022,6 +1047,54 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                                 </div>
                               ))}
                             </div>
+                          </div>
+
+                          {/* Commissions Distribution */}
+                          <div style={{ padding: '20px', borderRadius: '20px', backgroundColor: 'rgba(212,175,55,0.03)', border: '1px solid rgba(212,175,55,0.1)', gridColumn: 'span 2' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>
+                              <DollarSign size={14} /> DISTRIBUCIÓN DE COMISIONES (%)
+                            </label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                              <div className="form-group">
+                                <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>COMISIÓN BARBERO (%)</label>
+                                <input 
+                                  className="form-input" 
+                                  type="number" 
+                                  value={newService.commission_barber === 0 ? '' : newService.commission_barber} 
+                                  onChange={e => setNewService({...newService, commission_barber: e.target.value === '' ? '' : Number(e.target.value)})} 
+                                  style={{ width: '100%', fontSize: '16px', fontWeight: '900', color: 'var(--gold-primary)', height: '54px' }} 
+                                />
+                              </div>
+                            </div>
+                            
+                            {/* Business Net Margin Indicator */}
+                            {(newService.price > 0) && (
+                              <div style={{ 
+                                marginTop: '20px', 
+                                padding: '16px', 
+                                borderRadius: '16px', 
+                                background: 'rgba(50, 215, 75, 0.05)', 
+                                border: '1px solid rgba(50, 215, 75, 0.2)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                              }}>
+                                <div>
+                                  <div style={{ fontSize: '10px', fontWeight: '800', color: '#32d74b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Margen Real Astro</div>
+                                  <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>
+                                    ${((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)).toFixed(2)}
+                                  </div>
+                                </div>
+                                {rates?.usd > 0 && (
+                                  <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
+                                    <div style={{ fontSize: '14px', fontWeight: '800', color: '#32d74b' }}>
+                                      {Math.round(((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)) * rates.usd).toLocaleString()} Bs.
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -1404,6 +1477,178 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                 style={{ flex: 1, height: '44px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', fontWeight: '700', transition: 'background-color 0.2s' }}
                 onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Categorías */}
+      {isCategoriesModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 3000, padding: '20px'
+        }}>
+          <div className="glass-card animate-scale-in" style={{
+            width: '100%', maxWidth: '480px',
+            padding: '28px', borderRadius: '28px',
+            border: '1px solid rgba(212,175,55,0.2)',
+            boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
+            position: 'relative'
+          }}>
+            <button 
+              onClick={() => setIsCategoriesModalOpen(false)} 
+              style={{ position: 'absolute', right: '20px', top: '20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <X size={18} />
+            </button>
+
+            <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'white', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Settings size={20} color="var(--gold-primary)" /> Gestionar Categorías
+            </h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '20px' }}>Agrega o elimina las categorías disponibles para clasificar tus servicios.</p>
+
+            {/* Agregar Categoría */}
+            <div style={{ marginBottom: '24px', backgroundColor: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.5px' }}>NUEVA CATEGORÍA</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input 
+                  className="form-input" 
+                  placeholder="Ej. Manicura, Masajes" 
+                  value={newCategoryName} 
+                  onChange={e => setNewCategoryName(e.target.value)} 
+                  style={{ height: '44px', flex: 1 }} 
+                />
+                <button 
+                  onClick={handleAddCategory} 
+                  className="btn-gold" 
+                  style={{ height: '44px', width: '44px', borderRadius: '12px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                >
+                  <Plus size={24} />
+                </button>
+              </div>
+            </div>
+
+            {/* Listado de Categorías */}
+            <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+              {categories.map((cat, idx) => (
+                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ color: 'var(--gold-primary)' }}>
+                      {getCategoryIcon(cat)}
+                    </div>
+                    <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{cat}</span>
+                  </div>
+                  <button 
+                    onClick={() => handleDeleteCategory(cat)} 
+                    style={{ background: 'rgba(255,69,58,0.1)', border: 'none', color: '#ff453a', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px' }}>
+              <button 
+                onClick={() => setIsCategoriesModalOpen(false)} 
+                className="btn-gold" 
+                style={{ flex: 1, height: '44px', borderRadius: '12px' }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Estrategias */}
+      {isStrategiesModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 3000, padding: '20px'
+        }}>
+          <div className="glass-card animate-scale-in" style={{
+            width: '100%', maxWidth: '520px',
+            padding: '28px', borderRadius: '28px',
+            border: '1px solid rgba(212,175,55,0.2)',
+            boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
+            position: 'relative'
+          }}>
+            <button 
+              onClick={() => setIsStrategiesModalOpen(false)} 
+              style={{ position: 'absolute', right: '20px', top: '20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <X size={18} />
+            </button>
+
+            <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'white', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Crown size={20} color="var(--gold-primary)" /> Gestionar Estrategias de Venta
+            </h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '20px' }}>Configura los tipos de estrategias de venta cruzada y retención para tus servicios.</p>
+
+            {/* Agregar Estrategia */}
+            <div style={{ marginBottom: '24px', backgroundColor: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '12px', marginBottom: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.5px' }}>VALOR CLAVE</label>
+                  <input 
+                    className="form-input" 
+                    placeholder="Ej. VIP, Promo" 
+                    value={newStrategyValue} 
+                    onChange={e => setNewStrategyValue(e.target.value)} 
+                    style={{ height: '44px', width: '100%' }} 
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.5px' }}>ETIQUETA VISIBLE</label>
+                  <input 
+                    className="form-input" 
+                    placeholder="Ej. Servicio VIP Astro" 
+                    value={newStrategyLabel} 
+                    onChange={e => setNewStrategyLabel(e.target.value)} 
+                    style={{ height: '44px', width: '100%' }} 
+                  />
+                </div>
+              </div>
+              <button 
+                onClick={handleAddStrategy} 
+                className="btn-gold" 
+                style={{ height: '44px', width: '100%', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                <Plus size={18} /> Agregar Estrategia
+              </button>
+            </div>
+
+            {/* Listado de Estrategias */}
+            <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+              {strategies.map((strat, idx) => (
+                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{strat.label}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '900' }}>VALOR: {strat.value}</span>
+                  </div>
+                  <button 
+                    onClick={() => handleDeleteStrategy(strat.value)} 
+                    style={{ background: 'rgba(255,69,58,0.1)', border: 'none', color: '#ff453a', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px' }}>
+              <button 
+                onClick={() => setIsStrategiesModalOpen(false)} 
+                className="btn-gold" 
+                style={{ flex: 1, height: '44px', borderRadius: '12px' }}
               >
                 Cerrar
               </button>

@@ -268,11 +268,121 @@ export const dataService = {
   async getExtras() {
     const { data, error } = await supabase.from('service_extras').select('*').order('name');
     if (error) throw error;
-    // Filter out archived extras and system config items
+    // Filter out archived extras, system config items, categories, and strategies
     return data.filter(e => 
       !e.name?.startsWith('ARCHIVED|') && 
+      !e.name?.startsWith('SYSTEM_CATEGORY:') &&
+      !e.name?.startsWith('SYSTEM_STRATEGY:') &&
       e.name !== 'SYSTEM_CONFIG_RATES'
     );
+  },
+
+  // Categories
+  async getServiceCategories() {
+    const { data, error } = await supabase
+      .from('service_extras')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+    
+    const categories = data
+      .filter(e => e.name?.startsWith('SYSTEM_CATEGORY:'))
+      .map(e => e.name.replace('SYSTEM_CATEGORY:', ''));
+
+    if (categories.length === 0) {
+      // Seed default categories
+      const defaults = ['Barbería', 'Estilismo', 'Tratamientos'];
+      await Promise.all(
+        defaults.map(cat => 
+          supabase.from('service_extras').insert([{ name: 'SYSTEM_CATEGORY:' + cat, price: 0, cost: 0 }])
+        )
+      );
+      return defaults;
+    }
+    return categories;
+  },
+
+  async addServiceCategory(name) {
+    const { data, error } = await supabase
+      .from('service_extras')
+      .insert([{ name: 'SYSTEM_CATEGORY:' + name, price: 0, cost: 0 }])
+      .select()
+      .single();
+    if (error) throw error;
+    return name;
+  },
+
+  async deleteServiceCategory(name) {
+    const { error } = await supabase
+      .from('service_extras')
+      .delete()
+      .eq('name', 'SYSTEM_CATEGORY:' + name);
+    if (error) throw error;
+  },
+
+  // Strategies
+  async getServiceStrategies() {
+    const { data, error } = await supabase
+      .from('service_extras')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+
+    const strategies = data
+      .filter(e => e.name?.startsWith('SYSTEM_STRATEGY:'))
+      .map(e => {
+        const parts = e.name.replace('SYSTEM_STRATEGY:', '').split(':');
+        return {
+          value: parts[0] || '',
+          label: parts[1] || parts[0] || ''
+        };
+      });
+
+    if (strategies.length === 0) {
+      // Seed default strategies
+      const defaults = [
+        { value: 'MVP', label: 'MVP (Estrella)' },
+        { value: 'Entrada', label: 'Comodín Entrada' },
+        { value: 'Upsell', label: 'Comodín Upsell' },
+        { value: 'Mantenimiento', label: 'Mantenimiento' },
+        { value: 'Rápido', label: 'Rápido' },
+        { value: 'Promo', label: 'Promo' }
+      ];
+      await Promise.all(
+        defaults.map(strat => 
+          supabase.from('service_extras').insert([{ name: `SYSTEM_STRATEGY:${strat.value}:${strat.label}`, price: 0, cost: 0 }])
+        )
+      );
+      return defaults;
+    }
+    return strategies;
+  },
+
+  async addServiceStrategy(value, label) {
+    const { data, error } = await supabase
+      .from('service_extras')
+      .insert([{ name: `SYSTEM_STRATEGY:${value}:${label}`, price: 0, cost: 0 }])
+      .select()
+      .single();
+    if (error) throw error;
+    return { value, label };
+  },
+
+  async deleteServiceStrategy(value) {
+    const { data, error: selectError } = await supabase
+      .from('service_extras')
+      .select('name')
+      .order('name');
+    if (selectError) throw selectError;
+
+    const matching = data.filter(e => e.name?.startsWith(`SYSTEM_STRATEGY:${value}:`));
+    if (matching.length > 0) {
+      await Promise.all(
+        matching.map(e => 
+          supabase.from('service_extras').delete().eq('name', e.name)
+        )
+      );
+    }
   },
 
   async addExtra(extra) {

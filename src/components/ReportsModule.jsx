@@ -142,7 +142,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
       if (t.type !== 'income') return;
       const staffInvolved = t.metadata?.staffInvolved || [];
       staffInvolved.forEach(s => {
-        if (!s.role?.toLowerCase().includes('barbero')) return;
+        if (!s.role?.toLowerCase().includes('barber')) return;
         stats[s.name] = (stats[s.name] || 0) + 1;
       });
     });
