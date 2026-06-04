@@ -39,6 +39,21 @@ import { useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import TopBar from './components/TopBar';
 import NotificationsDrawer from './components/NotificationsDrawer';
+import { notificationService } from './services/notificationService';
+
+function getLastSundayDateString() {
+  const now = new Date();
+  const day = now.getDay(); // 0 is Sunday, 1 is Monday, ...
+  const lastSunday = new Date(now);
+  if (day !== 0) {
+    lastSunday.setDate(now.getDate() - day);
+  }
+  lastSunday.setHours(0, 0, 0, 0);
+  const yyyy = lastSunday.getFullYear();
+  const mm = String(lastSunday.getMonth() + 1).padStart(2, '0');
+  const dd = String(lastSunday.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 function App() {
   const { user } = useAuth();
@@ -157,6 +172,123 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const checkAutomaticWeeklyClose = async () => {
+    try {
+      const sundayStr = getLastSundayDateString();
+      
+      const { data, error } = await dataService.supabase
+        .from('transactions')
+        .select('id')
+        .eq('description', 'Cierre Semanal Automático')
+        .contains('metadata', { week_date: sundayStr });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        console.log(`Ejecutando cierre semanal automático para la semana finalizada en ${sundayStr}...`);
+        
+        const success = await dataService.triggerWeeklyClosing();
+        if (success) {
+          await dataService.addTransaction({
+            amount: 0,
+            type: 'expense',
+            description: 'Cierre Semanal Automático',
+            exchange_rate: 1,
+            metadata: { type: 'weekly_close', week_date: sundayStr }
+          });
+
+          notificationService.sendNotification(
+            '📉 Cierre Semanal Automático 🔒',
+            `El cierre semanal correspondiente al domingo ${sundayStr} se ha ejecutado y sincronizado automáticamente en Google Sheets.`
+          );
+        }
+      }
+    } catch (e) {
+      console.error('Error en checkAutomaticWeeklyClose:', e);
+    }
+  };
+
+  const checkBirthdaysAndNotify = (clients) => {
+    try {
+      const today = new Date();
+      const todayMonth = today.getMonth() + 1;
+      const todayDay = today.getDate();
+      const todayStr = today.toISOString().split('T')[0];
+
+      const lastNotifiedDate = localStorage.getItem('astro_birthday_notified_date');
+      if (lastNotifiedDate === todayStr) return;
+
+      const birthdayClients = clients.filter(c => {
+        if (!c.birth_date) return false;
+        const parts = c.birth_date.split('-');
+        const m = parseInt(parts[1], 10);
+        const d = parseInt(parts[2], 10);
+        return m === todayMonth && d === todayDay;
+      });
+
+      if (birthdayClients.length > 0) {
+        const names = birthdayClients.map(c => c.name).join(', ');
+        notificationService.sendNotification(
+          '🎉 ¡Cumpleaños de Clientes hoy! 🎂',
+          `Hoy cumplen años: ${names}. ¡Recuerda felicitarlos o enviarles una promoción especial!`
+        );
+      }
+      localStorage.setItem('astro_birthday_notified_date', todayStr);
+    } catch (e) {
+      console.error('Error en checkBirthdaysAndNotify:', e);
+    }
+  };
+
+  const checkGoalsAndNotify = (computedStats) => {
+    try {
+      const dailyGoal = parseFloat(localStorage.getItem('astro_daily_goal') || '500');
+      const weeklyGoal = parseFloat(localStorage.getItem('astro_weekly_goal') || '3000');
+      const monthlyGoal = parseFloat(localStorage.getItem('astro_monthly_goal') || '12000');
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      const lastSundayStr = getLastSundayDateString();
+      const currentMonthStr = todayStr.substring(0, 7);
+
+      // 1. Daily Goal
+      if (computedStats.income >= dailyGoal) {
+        const lastNotifiedDaily = localStorage.getItem('astro_goal_notified_daily');
+        if (lastNotifiedDaily !== todayStr) {
+          notificationService.sendNotification(
+            '🎯 ¡Meta Diaria Alcanzada! 🎉',
+            `¡Espectacular! Se ha alcanzado la meta diaria de $${dailyGoal} USD (Total hoy: $${computedStats.income.toFixed(2)} USD).`
+          );
+          localStorage.setItem('astro_goal_notified_daily', todayStr);
+        }
+      }
+
+      // 2. Weekly Goal
+      if (computedStats.weeklyIncome >= weeklyGoal) {
+        const lastNotifiedWeekly = localStorage.getItem('astro_goal_notified_weekly');
+        if (lastNotifiedWeekly !== lastSundayStr) {
+          notificationService.sendNotification(
+            '🏆 ¡Meta Semanal Alcanzada! 🌟',
+            `¡Increíble trabajo equipo! Se alcanzó la meta semanal de $${weeklyGoal} USD (Total semanal: $${computedStats.weeklyIncome.toFixed(2)} USD).`
+          );
+          localStorage.setItem('astro_goal_notified_weekly', lastSundayStr);
+        }
+      }
+
+      // 3. Monthly Goal
+      if (computedStats.monthlyIncome >= monthlyGoal) {
+        const lastNotifiedMonthly = localStorage.getItem('astro_goal_notified_monthly');
+        if (lastNotifiedMonthly !== currentMonthStr) {
+          notificationService.sendNotification(
+            '👑 ¡Objetivo Mensual Completado! 🚀',
+            `¡Histórico! Se ha completado el objetivo mensual de $${monthlyGoal} USD (Total mensual: $${computedStats.monthlyIncome.toFixed(2)} USD).`
+          );
+          localStorage.setItem('astro_goal_notified_monthly', currentMonthStr);
+        }
+      }
+    } catch (e) {
+      console.error('Error en checkGoalsAndNotify:', e);
+    }
+  };
+
   const fetchInitialData = async () => {
     try {
       const [c, s, st, t, ext, inv, apps, todayApps] = await Promise.all([
@@ -241,6 +373,19 @@ function App() {
           datasets: [{ label: 'Ventas ($)', data: dailyTotals, borderColor: '#d4af37', backgroundColor: 'rgba(212, 175, 55, 0.1)', fill: true, tension: 0.4 }]
         });
       }
+
+      // Automatic weekly close
+      await checkAutomaticWeeklyClose();
+
+      // Check birthdays
+      checkBirthdaysAndNotify(c);
+
+      // Check goals
+      checkGoalsAndNotify({
+        income: todayTransactions.filter(tr => tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0),
+        weeklyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= sevenDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
+        monthlyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= thirtyDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0)
+      });
     } catch (error) { console.error('Error fetching data:', error); }
   };
 

@@ -725,9 +725,21 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       await dataService.processFinalPayment(paymentData);
       
       // Enviar notificación Push y agregar a historial local
+      let paymentDetail = '';
+      if (paymentMode === 'full_usd') {
+        paymentDetail = `por un total de $${Number(paymentData.totalUsd).toFixed(2)} USD (${methodUsd})`;
+      } else if (paymentMode === 'full_bs') {
+        const amountBs = Number(paymentData.totalUsd) * Number(paymentData.fixedRate);
+        paymentDetail = `por un total de ${amountBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs. (${methodBs})`;
+      } else {
+        const cashPart = Number(cashUsd);
+        const transferPart = Number(paymentData.transferBs);
+        paymentDetail = `por un total mixto de $${cashPart.toFixed(2)} USD (${methodUsd}) y ${transferPart.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs. (${methodBs})`;
+      }
+
       notificationService.sendNotification(
         'Cobro Realizado 💸',
-        `Se completó el cobro de ${paymentData.clientName || 'Cliente'} por un total de $${Number(paymentData.totalUsd).toFixed(2)} USD.`
+        `Se completó el cobro de ${paymentData.clientName || 'Cliente'} ${paymentDetail}.`
       );
       
       triggerRocket();

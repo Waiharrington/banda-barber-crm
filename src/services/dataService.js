@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { notificationService } from './notificationService';
 
 export const dataService = {
   supabase,
@@ -28,6 +29,17 @@ export const dataService = {
       .select()
       .single();
     if (error) throw error;
+
+    // Notificar registro de nuevo cliente
+    try {
+      notificationService.sendNotification(
+        'Nuevo Cliente Registrado 👤',
+        `Se ha registrado a ${data.name || 'un nuevo cliente'} (Tlf: ${data.phone || 'No registrado'}) en el sistema.`
+      );
+    } catch (e) {
+      console.error('Error al enviar notificacion de cliente nuevo:', e);
+    }
+
     return data;
   },
 
