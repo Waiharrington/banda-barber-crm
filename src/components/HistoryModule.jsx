@@ -324,6 +324,26 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                         </div>
                                       ))}
                                       {(!item.appointment_extras?.length && !item.appointment_products?.length) && <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Ninguno</div>}
+                                      
+                                      {/* Total Propinas */}
+                                      {(() => {
+                                        const totalTips = item.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
+                                        if (totalTips > 0) {
+                                          const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
+                                          return (
+                                            <div style={{ marginTop: '12px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '12px' }}>
+                                              <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Propinas Recibidas</span>
+                                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
+                                                <span>Total Propinas ({item.appointment_staff?.filter(s => Number(s.tip_amount) > 0).length} pers.)</span>
+                                                <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>
+                                                  +{formatCurrency(totalTips * rate)} Bs. (Ref: +${formatCurrency(totalTips)})
+                                                </span>
+                                              </div>
+                                            </div>
+                                          )
+                                        }
+                                        return null;
+                                      })()}
                                     </div>
                                   </div>
                                 </div>
@@ -333,28 +353,78 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                   <SectionHeader icon={<TrendingUp size={14} />} title="Liquidación" />
                                   <div className="glass-card" style={{ padding: '20px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(212,175,55,0.1)', marginBottom: '24px' }}>
                                     {user.role !== 'Asistente de Lavado' && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Monto de Venta (Serv + Ext + Prod)</span>
-                                      <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '16px', fontWeight: '900', color: 'white' }}>
-                                            {(() => {
-                                              const serviceBase = Number(item.services?.price || 0);
-                                              const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
-                                              const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
-                                              const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
-                                              return `${formatCurrency((serviceBase + extras + products) * rate)} Bs.`;
-                                            })()}
-                                        </div>
-                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '750', marginTop: '2px' }}>
-                                            {(() => {
-                                              const serviceBase = Number(item.services?.price || 0);
-                                              const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
-                                              const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
-                                              return `Ref: $${formatCurrency(serviceBase + extras + products)}`;
-                                            })()}
+                                    <>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Venta Bruta (Serv + Ext + Prod)</span>
+                                        <div style={{ textAlign: 'right' }}>
+                                          <div style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>
+                                              {(() => {
+                                                const serviceBase = Number(item.services?.price || 0);
+                                                const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+                                                const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
+                                                const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
+                                                return `${formatCurrency((serviceBase + extras + products) * rate)} Bs.`;
+                                              })()}
+                                          </div>
+                                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '750', marginTop: '2px' }}>
+                                              {(() => {
+                                                const serviceBase = Number(item.services?.price || 0);
+                                                const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+                                                const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
+                                                return `Ref: $${formatCurrency(serviceBase + extras + products)}`;
+                                              })()}
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
+
+                                      {/* Total Propinas Separador */}
+                                      {(() => {
+                                        const totalTips = item.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
+                                        if (totalTips > 0) {
+                                          const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
+                                          return (
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px dashed rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
+                                              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Propinas Totales</span>
+                                              <div style={{ textAlign: 'right' }}>
+                                                <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--gold-primary)' }}>
+                                                  +{formatCurrency(totalTips * rate)} Bs.
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginTop: '2px' }}>
+                                                  Ref: +${formatCurrency(totalTips)}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+                                        return <div style={{ borderBottom: '1px dashed rgba(255,255,255,0.1)', marginBottom: '12px' }}></div>;
+                                      })()}
+
+                                      {/* TOTAL COBRADO */}
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                        <span style={{ fontSize: '14px', color: 'white', fontWeight: '900' }}>TOTAL COBRADO</span>
+                                        <div style={{ textAlign: 'right' }}>
+                                          <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+                                              {(() => {
+                                                const serviceBase = Number(item.services?.price || 0);
+                                                const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+                                                const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
+                                                const tips = item.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
+                                                const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
+                                                return `${formatCurrency((serviceBase + extras + products + tips) * rate)} Bs.`;
+                                              })()}
+                                          </div>
+                                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '750', marginTop: '2px' }}>
+                                              {(() => {
+                                                const serviceBase = Number(item.services?.price || 0);
+                                                const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+                                                const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
+                                                const tips = item.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
+                                                return `Ref: $${formatCurrency(serviceBase + extras + products + tips)}`;
+                                              })()}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </>
                                     )}
                                     
                                     {isAdmin ? (
@@ -391,6 +461,37 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                         }) : (
                                           <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>No hay personal registrado en esta venta.</div>
                                         )}
+                                        {/* GANANCIA ASTRO */}
+                                        <div style={{ marginTop: '16px', padding: '12px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>Ganancia Astro</span>
+                                            <div style={{ textAlign: 'right' }}>
+                                              <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+                                                {(() => {
+                                                  const serviceBase = Number(item.services?.price || 0);
+                                                  const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+                                                  const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
+                                                  const totalVenta = serviceBase + extras + products;
+                                                  const commissions = item.appointment_staff?.reduce((sum, s) => sum + Number(s.commission_earned || 0), 0) || 0;
+                                                  const astroProfit = totalVenta - commissions;
+                                                  const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
+                                                  return `+${formatCurrency(astroProfit * rate)} Bs.`;
+                                                })()}
+                                              </div>
+                                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800' }}>
+                                                {(() => {
+                                                  const serviceBase = Number(item.services?.price || 0);
+                                                  const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+                                                  const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
+                                                  const totalVenta = serviceBase + extras + products;
+                                                  const commissions = item.appointment_staff?.reduce((sum, s) => sum + Number(s.commission_earned || 0), 0) || 0;
+                                                  const astroProfit = totalVenta - commissions;
+                                                  return `Ref: +$${formatCurrency(astroProfit)}`;
+                                                })()}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
                                       </div>
                                     ) : (
                                       <>

@@ -21,6 +21,7 @@ import {
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import AstroSelect from './AstroSelect';
+import { notificationService } from '../services/notificationService';
 import AstroDialog from './AstroDialog';
 import NewClientModal from './NewClientModal';
 import { UserPlus } from 'lucide-react';
@@ -152,15 +153,36 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       });
       setCart(mergedProducts);
 
-      // 2. Initialize tips for all unique staff in the bundle
+      // 2. Initialize tips for all unique staff in the bundle, preserving existing values
       const uniqueStaffIds = Array.from(new Set(totalAppsInCheckout.map(a => a.staff_id).filter(Boolean)));
-      const initialTips = uniqueStaffIds.map((staffId, idx) => ({
-        id: (Date.now() + idx).toString(),
-        staffId: staffId,
-        amount: 0,
-        currency: 'USD'
-      }));
-      setTips(initialTips);
+      setTips(prevTips => {
+        const existingMap = {};
+        prevTips.forEach(t => {
+          if (t.staffId) existingMap[t.staffId] = t;
+        });
+
+        const newTips = uniqueStaffIds.map((staffId, idx) => {
+          const existing = existingMap[staffId];
+          if (existing) {
+            return existing;
+          }
+          return {
+            id: (Date.now() + idx).toString(),
+            staffId: staffId,
+            amount: 0,
+            currency: 'USD'
+          };
+        });
+
+        // Preservar propinas agregadas manualmente para staff que no sea el principal de las citas
+        prevTips.forEach(t => {
+          if (t.staffId && !uniqueStaffIds.includes(t.staffId)) {
+            newTips.push(t);
+          }
+        });
+
+        return newTips;
+      });
 
       // 3. Auto-detect washing count
       const washEligibleCount = totalAppsInCheckout.filter(app => 
@@ -176,59 +198,60 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
 
       let currentWasherId = '';
       if (existingWasherRecord) {
-        setSelectedWasherId(existingWasherRecord.staff_id);
         currentWasherId = existingWasherRecord.staff_id;
       } else {
         // Default wash assistant selection (ONLY if exactly one is available)
         const washers = allStaff.filter(s => s.role?.toLowerCase().includes('asistente'));
         if (washers.length === 1) {
-          setSelectedWasherId(washers[0].id);
           currentWasherId = washers[0].id;
-        } else {
-          setSelectedWasherId('');
         }
       }
 
+      // Use functional update to avoid needing selectedWasherId in deps
+      setSelectedWasherId(prev => prev !== currentWasherId ? currentWasherId : prev);
+
       // 4. Initialize item sales associations intelligently
-      const newAssociations = { ...itemSalesAssociations };
-      let changed = false;
+      // Use functional update to avoid needing itemSalesAssociations in deps
+      const finalWasherId = currentWasherId;
+      setItemSalesAssociations(prev => {
+        const newAssociations = { ...prev };
+        let changed = false;
 
-      totalAppsInCheckout.forEach(app => {
-        // Products default association
-        app.appointment_products?.forEach(ap => {
-          const itemId = ap.inventory?.id;
-          if (itemId && !newAssociations[itemId]) {
-            newAssociations[itemId] = app.staff_id || '';
-            changed = true;
-          }
-        });
-
-        // Extras default association
-        app.appointment_extras?.forEach(ex => {
-          const itemId = ex.id;
-          if (itemId && !newAssociations[itemId]) {
-            const isWashExtra = ex.service_extras?.name?.toLowerCase().includes('lavado');
-            if (isWashExtra && currentWasherId) {
-              newAssociations[itemId] = currentWasherId;
-            } else {
+        totalAppsInCheckout.forEach(app => {
+          // Products default association
+          app.appointment_products?.forEach(ap => {
+            const itemId = ap.inventory?.id;
+            if (itemId && !newAssociations[itemId]) {
               newAssociations[itemId] = app.staff_id || '';
+              changed = true;
             }
-            changed = true;
-          }
-        });
-      });
+          });
 
-      if (changed) {
-        setItemSalesAssociations(newAssociations);
-      }
-    } else if (!isDirectSale) {
+          // Extras default association
+          app.appointment_extras?.forEach(ex => {
+            const itemId = ex.id;
+            if (itemId && !newAssociations[itemId]) {
+              const isWashExtra = ex.service_extras?.name?.toLowerCase().includes('lavado');
+              if (isWashExtra && finalWasherId) {
+                newAssociations[itemId] = finalWasherId;
+              } else {
+                newAssociations[itemId] = app.staff_id || '';
+              }
+              changed = true;
+            }
+          });
+        });
+
+        return changed ? newAssociations : prev;
+      });
+    } else if (!selectedApp && !isDirectSale) {
       setCart([]);
       setTips([]);
       setWashCount(0);
-      setSelectedWasherId('');
-      setItemSalesAssociations({});
+      setSelectedWasherId(prev => prev === '' ? prev : '');
+      setItemSalesAssociations(prev => Object.keys(prev).length === 0 ? prev : {});
     }
-  }, [totalAppsInCheckout, isDirectSale, allStaff, itemSalesAssociations, selectedWasherId]);
+  }, [totalAppsInCheckout, isDirectSale, allStaff, selectedApp]);
 
   const loadData = async () => {
     try {
@@ -249,7 +272,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       );
 
       setPendingServices(filtered);
-      setInventory(inv.filter(i => i.stock > 0 && i.category === 'Venta'));
+      setInventory(inv.filter(i => i.category === 'Venta'));
       setAllExtras(ext?.filter(e => e.name !== 'SYSTEM_CONFIG_RATES') || []);
       setAllServices(srv || []);
       setAllClients(cls || []);
@@ -546,6 +569,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
           const includesWashing = app.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || false;
           return {
             id: app.id,
+            staff_id: app.staff_id,
             clientName: app.clients?.name || 'Cliente',
             clientCedula: app.clients?.id_card || 'S/C',
             barberName: app.staff?.name || 'Barbero',
@@ -553,7 +577,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             servicePrice: servicePrice,
             extrasPrice: appExtrasTotal,
             totalPrice: servicePrice + appExtrasTotal,
-            didWash: includesWashing || (washCount > 0)
+            didWash: includesWashing || (washCount > 0),
+            extras: app.appointment_extras?.map(e => e.service_extras?.name).filter(Boolean).join(', ') || ''
           };
         }),
         staffInvolved: (() => {
@@ -685,12 +710,25 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
 
           return involved;
         })(),
-        products: cart,
+        products: cart.map(p => {
+          const sellerId = itemSalesAssociations[p.id];
+          const seller = allStaff.find(s => s.id === sellerId);
+          return {
+            ...p,
+            sellerName: seller ? seller.name : 'Venta Directa'
+          };
+        }),
         methodUsd: methodUsd,
         methodBs: methodBs
       };
 
       await dataService.processFinalPayment(paymentData);
+      
+      // Enviar notificación Push y agregar a historial local
+      notificationService.sendNotification(
+        'Cobro Realizado 💸',
+        `Se completó el cobro de ${paymentData.clientName || 'Cliente'} por un total de $${Number(paymentData.totalUsd).toFixed(2)} USD.`
+      );
       
       triggerRocket();
       showToast("¡Venta completada con éxito!", "success");
@@ -749,6 +787,18 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         total_price: selectedServiceForBarber.price
       });
       
+      // MIGRAR ITEMS EN CART (Extras o Productos) A LA NUEVA CITA
+      if (!selectedApp && cart && cart.length > 0) {
+        for (const item of cart) {
+          if (item.type === 'extra') {
+            const realExtraId = item.id.replace('extra_', '');
+            await dataService.addExtraToAppointment(newApp.id, realExtraId, item.price);
+          } else {
+            await dataService.addProductToAppointment(newApp.id, item.id, item.quantity, item.price);
+          }
+        }
+      }
+
       await loadData();
       const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
       
@@ -1753,7 +1803,15 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   className="btn-gold" 
                   style={{ flex: '2', height: isMobile ? '44px' : '54px', borderRadius: '14px', fontSize: isMobile ? '13px' : '15px', gap: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <CheckCircle size={isMobile ? 18 : 22} /> FINALIZAR COBRO
+                  {loading ? (
+                    <>
+                      <RefreshCcw className="animate-spin" size={isMobile ? 18 : 22} /> PROCESANDO...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle size={isMobile ? 18 : 22} /> FINALIZAR COBRO
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -1783,16 +1841,38 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
               <input type="text" placeholder="Buscar producto..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '14px 48px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'white' }} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
-              {inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase())).map(item => (
-                <button key={item.id} onClick={() => handleAddToCart(item)} style={{ padding: '16px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', textAlign: 'center', cursor: 'pointer' }} className="hover-item">
-                  {item.image_url && <img src={item.image_url} style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '12px', marginBottom: '10px' }} alt="" />}
-                  <div style={{ fontWeight: '800', fontSize: '13px', marginBottom: '4px', color: 'white' }}>{item.name}</div>
-                  <div style={{ color: 'var(--gold-primary)', fontWeight: '900' }}>
-                    <div>${item.price}</div>
-                    {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ {Math.round(item.price * rates.usd).toLocaleString()} Bs.</div>}
-                  </div>
-                </button>
-              ))}
+              {inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase())).map(item => {
+                const isOutOfStock = (item.stock || 0) <= 0;
+                return (
+                  <button 
+                    key={item.id} 
+                    onClick={() => !isOutOfStock && handleAddToCart(item)} 
+                    disabled={isOutOfStock}
+                    style={{ 
+                      padding: '16px', 
+                      borderRadius: '20px', 
+                      border: isOutOfStock ? '1px dashed rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.05)', 
+                      background: 'rgba(255,255,255,0.02)', 
+                      textAlign: 'center', 
+                      cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                      opacity: isOutOfStock ? 0.6 : 1
+                    }} 
+                    className="hover-item"
+                  >
+                    {item.image_url && <img src={item.image_url} style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '12px', marginBottom: '10px', filter: isOutOfStock ? 'grayscale(100%)' : 'none' }} alt="" />}
+                    <div style={{ fontWeight: '800', fontSize: '13px', marginBottom: '4px', color: isOutOfStock ? 'var(--text-muted)' : 'white' }}>{item.name}</div>
+                    
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: isOutOfStock ? '#ff453a' : '#30d158', marginBottom: '8px' }}>
+                      {isOutOfStock ? 'Agotado (Sin Stock)' : `Stock: ${item.stock}`}
+                    </div>
+
+                    <div style={{ color: 'var(--gold-primary)', fontWeight: '900' }}>
+                      <div>${item.price}</div>
+                      {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ {Math.round(item.price * rates.usd).toLocaleString()} Bs.</div>}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

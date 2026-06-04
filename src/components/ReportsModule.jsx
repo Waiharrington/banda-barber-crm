@@ -14,7 +14,12 @@ import { dataService } from '../services/dataService';
 const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState('all'); // 'today', 'week', 'month', 'all'
+  const [dateRange, setDateRange] = useState('all'); // 'today', 'week', 'month', 'custom', 'all'
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [selectedService, setSelectedService] = useState('all');
+  const [selectedStaff, setSelectedStaff] = useState('all');
+  const [chartGranularity, setChartGranularity] = useState('day'); // 'day', 'week', 'month'
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   
@@ -34,23 +39,76 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     }
   };
 
+  // Obtener lista única de servicios de las transacciones para el filtro
+  const uniqueServicesList = (() => {
+    const list = new Set();
+    transactions.forEach(t => {
+      if (t.type !== 'income') return;
+      let serviceName = t.metadata?.serviceName;
+      if (!serviceName) {
+        const parts = t.description.split(' - ');
+        if (parts.length >= 3 && parts[2].includes('Servi:')) {
+          serviceName = parts[2].replace('Servi: ', '');
+        } else {
+          serviceName = 'Corte Basico';
+        }
+      }
+      serviceName.split(/\s*[\+,\/]\s*/).map(s => s.trim()).filter(Boolean).forEach(s => list.add(s));
+    });
+    return Array.from(list).sort();
+  })();
+
   const filteredTransactions = transactions.filter(t => {
-    if (dateRange === 'all') return true;
-    const now = new Date();
+    // 1. Rango de Fecha
     const tDate = new Date(t.created_at);
+    const now = new Date();
+    
     if (dateRange === 'today') {
-      return tDate.toDateString() === now.toDateString();
-    }
-    if (dateRange === 'week') {
+      if (tDate.toDateString() !== now.toDateString()) return false;
+    } else if (dateRange === 'week') {
       const weekAgo = new Date();
       weekAgo.setDate(now.getDate() - 7);
-      return tDate >= weekAgo;
-    }
-    if (dateRange === 'month') {
+      if (tDate < weekAgo) return false;
+    } else if (dateRange === 'month') {
       const monthAgo = new Date();
       monthAgo.setMonth(now.getMonth() - 1);
-      return tDate >= monthAgo;
+      if (tDate < monthAgo) return false;
+    } else if (dateRange === 'custom') {
+      if (customStartDate) {
+        const start = new Date(customStartDate + 'T00:00:00');
+        if (tDate < start) return false;
+      }
+      if (customEndDate) {
+        const end = new Date(customEndDate + 'T23:59:59');
+        if (tDate > end) return false;
+      }
     }
+
+    // 2. Filtro de Servicio
+    if (selectedService !== 'all') {
+      let serviceName = t.metadata?.serviceName;
+      if (!serviceName) {
+        const parts = t.description.split(' - ');
+        if (parts.length >= 3 && parts[2].includes('Servi:')) {
+          serviceName = parts[2].replace('Servi: ', '');
+        } else {
+          serviceName = 'Corte Basico';
+        }
+      }
+      const individualServices = serviceName.split(/\s*[\+,\/]\s*/).map(s => s.trim().toLowerCase()).filter(Boolean);
+      if (!individualServices.includes(selectedService.toLowerCase())) return false;
+    }
+
+    // 3. Filtro de Personal (Barberos, Líderes y Asistentes)
+    if (selectedStaff !== 'all') {
+      const staffInvolved = t.metadata?.staffInvolved || [];
+      const isInvolved = staffInvolved.some(s => 
+        String(s.staffId) === String(selectedStaff) || 
+        s.name.trim().toLowerCase() === selectedStaff.trim().toLowerCase()
+      );
+      if (!isInvolved) return false;
+    }
+
     return true;
   });
 
@@ -193,17 +251,35 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
 
   const maxDayCount = Math.max(...daysFlow.map(d => d.count)) || 1;
 
-  // 4. REF $ OVER TIME (Line Chart)
+  // 4. REF $ OVER TIME (Line Chart with Custom Granularity)
   const timelineData = (() => {
     const groups = {};
-    filteredTransactions.forEach(t => {
-      if (t.type !== 'income') return groupTimelinePlaceholder();
-      const dateStr = new Date(t.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' });
-      groups[dateStr] = (groups[dateStr] || 0) + t.amount;
+    const incomeTransactions = filteredTransactions.filter(t => t.type === 'income');
+    
+    if (incomeTransactions.length === 0) return groupTimelinePlaceholder();
+    
+    incomeTransactions.forEach(t => {
+      const tDate = new Date(t.created_at);
+      let dateKey = '';
+
+      if (chartGranularity === 'day') {
+        dateKey = tDate.toLocaleDateString('es-VE', { day: '2-digit', month: 'short' });
+      } else if (chartGranularity === 'week') {
+        const day = tDate.getDay();
+        const diff = tDate.getDate() - day + (day === 0 ? -6 : 1); // Lunes como primer día
+        const monday = new Date(tDate);
+        monday.setDate(diff);
+        dateKey = `Sem ${monday.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit' })}`;
+      } else if (chartGranularity === 'month') {
+        dateKey = tDate.toLocaleDateString('es-VE', { month: 'short', year: '2-digit' });
+      }
+      
+      groups[dateKey] = (groups[dateKey] || 0) + t.amount;
     });
+
     const list = Object.entries(groups).map(([date, amount]) => ({ date, amount }));
     if (list.length < 2) return groupTimelinePlaceholder();
-    return list.slice(-5);
+    return list.slice(-7);
   })();
 
   function groupTimelinePlaceholder() {
@@ -220,7 +296,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   const timelineHeight = 110;
   const timelineWidth = 360;
   const timelinePoints = timelineData.map((d, i) => {
-    const x = 35 + i * 70;
+    const x = 35 + i * (300 / (timelineData.length - 1 || 1));
     const y = 130 - (d.amount / maxTimelineAmount) * timelineHeight;
     return { x, y, amount: d.amount, date: d.date };
   });
@@ -295,37 +371,12 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Auditoría y rendimiento operativo.</p>
         </div>
         
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <div style={{ position: 'relative' }}>
-            <select 
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              style={{
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                border: '1px solid var(--border-color)',
-                color: 'white',
-                padding: '10px 40px 10px 16px',
-                borderRadius: '12px',
-                fontSize: '14px',
-                fontWeight: '600',
-                appearance: 'none',
-                cursor: 'pointer',
-                outline: 'none'
-              }}
-            >
-              <option value="today">Hoy</option>
-              <option value="week">Esta Semana</option>
-              <option value="month">Este Mes</option>
-              <option value="all">Histórico Total</option>
-            </select>
-            <ChevronDown size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
-          </div>
-          
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           <button style={{ 
             backgroundColor: 'var(--bg-tertiary)', 
             border: '1px solid var(--border-color)', 
             color: 'white', 
-            padding: '0 16px', 
+            padding: '10px 16px', 
             borderRadius: '12px', 
             display: 'flex', 
             alignItems: 'center', 
@@ -337,6 +388,188 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
             <Download size={16} /> PDF
           </button>
         </div>
+      </div>
+
+      {/* FILTER CONTROL BAR (Looker Studio Style) */}
+      <div className="glass-card" style={{
+        padding: '20px',
+        borderRadius: '20px',
+        marginBottom: '32px',
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
+        gap: '16px',
+        border: '1px solid rgba(212,175,55,0.15)',
+        background: 'rgba(255, 255, 255, 0.01)'
+      }}>
+        {/* Date Range Selector */}
+        <div>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>Rango de Fecha</label>
+          <div style={{ position: 'relative' }}>
+            <select 
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              style={{
+                width: '100%',
+                backgroundColor: 'rgba(0,0,0,0.3)',
+                border: '1px solid var(--border-color)',
+                color: 'white',
+                padding: '11px 40px 11px 16px',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: '600',
+                appearance: 'none',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+            >
+              <option value="today">Hoy</option>
+              <option value="week">Esta Semana</option>
+              <option value="month">Este Mes</option>
+              <option value="custom">Rango Personalizado</option>
+              <option value="all">Histórico Total</option>
+            </select>
+            <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
+          </div>
+        </div>
+
+        {/* Service Selector */}
+        <div>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>Servicio</label>
+          <div style={{ position: 'relative' }}>
+            <select 
+              value={selectedService}
+              onChange={(e) => setSelectedService(e.target.value)}
+              style={{
+                width: '100%',
+                backgroundColor: 'rgba(0,0,0,0.3)',
+                border: '1px solid var(--border-color)',
+                color: 'white',
+                padding: '11px 40px 11px 16px',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: '600',
+                appearance: 'none',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+            >
+              <option value="all">Todos los Servicios</option>
+              {uniqueServicesList.map((s, idx) => (
+                <option key={idx} value={s}>{s}</option>
+              ))}
+            </select>
+            <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
+          </div>
+        </div>
+
+        {/* Staff Selector */}
+        <div>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>Miembro del Equipo</label>
+          <div style={{ position: 'relative' }}>
+            <select 
+              value={selectedStaff}
+              onChange={(e) => setSelectedStaff(e.target.value)}
+              style={{
+                width: '100%',
+                backgroundColor: 'rgba(0,0,0,0.3)',
+                border: '1px solid var(--border-color)',
+                color: 'white',
+                padding: '11px 40px 11px 16px',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: '600',
+                appearance: 'none',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+            >
+              <option value="all">Todo el Personal</option>
+              {staff.map((s) => (
+                <option key={s.id} value={s.id}>{s.name} ({s.role?.split('|')[0]})</option>
+              ))}
+            </select>
+            <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
+          </div>
+        </div>
+
+        {/* Chart Granularity Selector */}
+        <div>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>Agrupamiento Histórico</label>
+          <div style={{ position: 'relative' }}>
+            <select 
+              value={chartGranularity}
+              onChange={(e) => setChartGranularity(e.target.value)}
+              style={{
+                width: '100%',
+                backgroundColor: 'rgba(0,0,0,0.3)',
+                border: '1px solid var(--border-color)',
+                color: 'white',
+                padding: '11px 40px 11px 16px',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: '600',
+                appearance: 'none',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+            >
+              <option value="day">Por Día</option>
+              <option value="week">Por Semana</option>
+              <option value="month">Por Mes</option>
+            </select>
+            <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
+          </div>
+        </div>
+
+        {/* Custom Date Picker Fields (Only visible when "custom" is selected) */}
+        {dateRange === 'custom' && (
+          <div className="animate-fade-in" style={{
+            gridColumn: isMobile ? 'span 1' : 'span 4',
+            display: 'flex',
+            gap: '16px',
+            marginTop: '8px',
+            background: 'rgba(0,0,0,0.2)',
+            padding: '16px',
+            borderRadius: '12px'
+          }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '6px' }}>Fecha Inicial (Desde)</label>
+              <input 
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                style={{
+                  width: '100%',
+                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  border: '1px solid var(--border-color)',
+                  color: 'white',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  outline: 'none',
+                  fontSize: '12px'
+                }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '6px' }}>Fecha Final (Hasta)</label>
+              <input 
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                style={{
+                  width: '100%',
+                  backgroundColor: 'rgba(0,0,0,0.3)',
+                  border: '1px solid var(--border-color)',
+                  color: 'white',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  outline: 'none',
+                  fontSize: '12px'
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* TOP METRICS GRID (Looker Studio Box Layout) */}
@@ -374,6 +607,9 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
               border: '1px solid rgba(255, 255, 255, 0.08)', 
               borderRadius: '12px', 
               textAlign: 'center',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              display: 'flex',
+              alignItems: 'center',
               boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
               display: 'flex',
               alignItems: 'center',

@@ -150,6 +150,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       showToast("Ingresa un monto válido para el vale", "warning");
       return;
     }
+    
+    if (valeModal.maxBalance !== undefined && Number(valeModal.amountBs) > valeModal.maxBalance) {
+      showToast(`No puedes dar un vale mayor al saldo disponible (${valeModal.maxBalance} Bs)`, "warning");
+      return;
+    }
+
     try {
       setLoading(true);
       const amountBs = Number(valeModal.amountBs);
@@ -796,7 +802,10 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
             <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>EFECTIVO ($)</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: '#32d74b' }}>
-              ${formatCurrency(transactions.filter(t => t.metadata?.cash_usd || t.metadata?.cashUsd).reduce((acc, t) => acc + Number(t.metadata?.cash_usd || t.metadata?.cashUsd || 0), 0), '')}
+              {formatCurrency(transactions.filter(t => t.metadata?.cash_usd || t.metadata?.cashUsd).reduce((acc, t) => acc + Number(t.metadata?.cash_usd || t.metadata?.cashUsd || 0), 0) * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'white', marginTop: '4px' }}>
+              REF: ${formatCurrency(transactions.filter(t => t.metadata?.cash_usd || t.metadata?.cashUsd).reduce((acc, t) => acc + Number(t.metadata?.cash_usd || t.metadata?.cashUsd || 0), 0), '')}
             </div>
           </div>
           <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
@@ -804,17 +813,26 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)' }}>
               {formatCurrency(transactions.filter(t => t.metadata?.transfer_bs || t.metadata?.transferBs).reduce((acc, t) => acc + Number(t.metadata?.transfer_bs || t.metadata?.transferBs || 0), 0), '')} <span style={{fontSize: '12px'}}>BS</span>
             </div>
+            <div style={{ fontSize: '11px', color: 'white', marginTop: '4px' }}>
+              REF: ${formatCurrency(transactions.filter(t => t.metadata?.transfer_bs || t.metadata?.transferBs).reduce((acc, t) => acc + Number(t.metadata?.transfer_bs || t.metadata?.transferBs || 0), 0) / (rates?.usd || 550), '')}
+            </div>
           </div>
           <div style={{ padding: '20px', backgroundColor: 'rgba(255,69,58,0.05)', borderRadius: '20px' }}>
             <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>COMISIONES DEUDA</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: '#ff453a' }}>
-              ${(totalIncome * 0.4).toFixed(2)} {/* Placeholder for real aggregated commission logic */}
+              {formatCurrency((totalIncome * 0.4) * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'white', marginTop: '4px' }}>
+              REF: ${(totalIncome * 0.4).toFixed(2)}
             </div>
           </div>
           <div style={{ padding: '20px', backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: '20px', border: '1px solid var(--gold-primary)' }}>
             <div style={{ fontSize: '10px', fontWeight: '900', color: 'black', backgroundColor: 'var(--gold-primary)', display: 'inline-block', padding: '2px 6px', borderRadius: '4px', marginBottom: '4px' }}>NETO REAL</div>
             <div style={{ fontSize: '24px', fontWeight: '950', color: 'white' }}>
-              ${formatCurrency(totalIncome - totalExpense, '')}
+              {formatCurrency((totalIncome - totalExpense) * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
+            </div>
+            <div style={{ fontSize: '12px', color: 'white', marginTop: '4px' }}>
+              REF: ${formatCurrency(totalIncome - totalExpense, '')}
             </div>
           </div>
         </div>
@@ -1111,9 +1129,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     fontWeight: '800', 
                     color: t.type === 'income' ? '#32d74b' : '#ff453a' 
                   }}>
-                    {t.type === 'income' ? '+' : '-'}${t.amount.toFixed(2)}
+                    {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount * (t.exchange_rate || rates?.usd || 550), '')} BS
                   </div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t.category}</div>
+                  <div style={{ fontSize: '11px', color: 'white', marginTop: '2px' }}>
+                    REF: ${t.amount.toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px' }}>{t.category}</div>
                 </div>
               </div>
             ))}
@@ -1185,7 +1206,10 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                             color: t.type === 'income' ? '#32d74b' : '#ff453a',
                             fontSize: '15px'
                           }}>
-                            {t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount, '')}
+                            {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount * (t.exchange_rate || rates?.usd || 550), '')} BS
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'white' }}>
+                            REF: ${formatCurrency(t.amount, '')}
                           </div>
                         </td>
                       </tr>
@@ -1201,63 +1225,163 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                               border: '1px solid rgba(212,175,55,0.1)',
                               borderTop: 'none'
                             }}>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '32px' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1.2fr', gap: '32px' }}>
+                                {/* Detalles del Cliente */}
                                 <div>
-                                  <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', textTransform: 'uppercase' }}>Detalle de Liquidación</div>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {t.metadata?.staffInvolved?.map((s, idx) => {
-                                      const computedBs = s.commissionBs || (s.commissionEarned * (t.exchange_rate || t.metadata?.fixedRate || 0));
-                                      return (
-                                        <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '2px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px' }}>
-                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '12px', fontWeight: '800', color: 'white' }}>{s.name}</span>
-                                            <div style={{ textAlign: 'right' }}>
-                                              <div style={{ fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)' }}>+${formatCurrency(s.commissionEarned || 0, '')}</div>
-                                              {computedBs > 0 && <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>≈ {formatCurrency(computedBs, '')} BS</div>}
-                                            </div>
-                                          </div>
-                                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                                            {s.role?.split('|')[0] || 'Personal'}
-                                          </span>
-                                        </div>
-                                      );
-                                    })}
-                                    {!t.metadata?.staffInvolved && <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Operación manual / No vinculada a personal.</div>}
-                                  </div>
-                                </div>
-                                
-                                <div>
-                                  <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', textTransform: 'uppercase' }}>Información de Pago</div>
-                                  <div style={{ backgroundColor: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '12px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Efectivo USD:</span>
-                                      <span style={{ fontSize: '12px', fontWeight: '800' }}>${formatCurrency(t.metadata?.cash_usd || t.metadata?.cashUsd || (t.type === 'income' && !(t.metadata?.transfer_bs || t.metadata?.transferBs) ? t.amount : 0), '')}</span>
+                                  <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', textTransform: 'uppercase' }}>Detalles del Cliente</div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                      <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Nombre</span>
+                                      <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{clientName}</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Pago Móvil (Bs):</span>
-                                      <span style={{ fontSize: '12px', fontWeight: '800' }}>{formatCurrency(t.metadata?.transfer_bs || t.metadata?.transferBs || 0, '')} BS</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                      <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cédula</span>
+                                      <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{t.metadata?.clientCedula || 'No registrada'}</span>
                                     </div>
                                   </div>
                                 </div>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-                                  <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', textTransform: 'uppercase' }}>Resumen de Utilidad (Astro)</div>
-                                  <div style={{ backgroundColor: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.2)', padding: '16px', borderRadius: '12px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Ingreso Bruto:</span>
-                                      <span style={{ fontSize: '12px', fontWeight: '800', color: 'white' }}>${formatCurrency(t.amount, '')}</span>
+                                {/* Servicio y Extras */}
+                                <div>
+                                  <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', textTransform: 'uppercase' }}>Servicio y Extras</div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                      <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Servicio Base</span>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{serviceName}</span>
+                                        {serviceName !== 'N/A' && t.type === 'income' && (
+                                          <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--gold-primary)' }}>
+                                              {formatCurrency(Math.max(0, (t.amount - (t.metadata?.tips_total || 0) - (t.metadata?.extras?.reduce((acc, ex) => acc + (ex.price || 0), 0) || 0) - (t.metadata?.products_sold?.reduce((acc, pr) => acc + (pr.price || 0), 0) || 0))) * (t.exchange_rate || rates?.usd || 550), '')} BS
+                                            </span>
+                                            <div style={{ fontSize: '10px', color: 'white' }}>
+                                              REF: ${formatCurrency(Math.max(0, t.amount - (t.metadata?.tips_total || 0) - (t.metadata?.extras?.reduce((acc, ex) => acc + (ex.price || 0), 0) || 0) - (t.metadata?.products_sold?.reduce((acc, pr) => acc + (pr.price || 0), 0) || 0)), '')}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '1px dashed rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
-                                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Pago Personal:</span>
-                                      <span style={{ fontSize: '12px', fontWeight: '800', color: '#ff453a' }}>
-                                        -${formatCurrency(t.metadata?.staffInvolved?.reduce((acc, s) => acc + (s.commissionEarned || 0), 0) || 0, '')}
-                                      </span>
+                                    <div>
+                                      <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Extras / Productos</span>
+                                      {t.metadata?.extras?.map((ex, i) => (
+                                        <div key={`ex-${i}`} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
+                                          <span>{ex.name || ex.service_extras?.name}</span>
+                                          <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>+{formatCurrency(ex.price * (t.exchange_rate || rates?.usd || 550), '')} BS</span>
+                                            <div style={{ fontSize: '10px', color: 'white' }}>REF: ${formatCurrency(ex.price, '')}</div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                      {t.metadata?.products_sold?.map((pr, i) => (
+                                        <div key={`pr-${i}`} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
+                                          <span>{pr.name || pr.inventory?.name} ({pr.quantity}u)</span>
+                                          <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>+{formatCurrency(pr.price * (t.exchange_rate || rates?.usd || 550), '')} BS</span>
+                                            <div style={{ fontSize: '10px', color: 'white' }}>REF: ${formatCurrency(pr.price, '')}</div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                      {(!t.metadata?.extras?.length && !t.metadata?.products_sold?.length) && <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Ninguno</div>}
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                      <span style={{ fontSize: '12px', color: 'var(--gold-primary)', fontWeight: '900' }}>Ganancia Neta:</span>
-                                      <span style={{ fontSize: '14px', fontWeight: '900', color: '#32d74b' }}>
-                                        ${formatCurrency(t.amount - (t.metadata?.staffInvolved?.reduce((acc, s) => acc + (s.commissionEarned || 0), 0) || 0), '')}
-                                      </span>
+                                    {t.metadata?.tips_total > 0 && (
+                                      <div style={{ borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '12px' }}>
+                                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Propinas Recibidas</span>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                                          <span>Total Propinas</span>
+                                          <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>+{formatCurrency(t.metadata.tips_total * (t.exchange_rate || rates?.usd || 550), '')} BS</span>
+                                            <div style={{ fontSize: '10px', color: 'white' }}>REF: ${formatCurrency(t.metadata.tips_total, '')}</div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Liquidación */}
+                                <div>
+                                  <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', textTransform: 'uppercase' }}>Liquidación y Ganancias</div>
+                                  <div className="glass-card" style={{ padding: '20px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(212,175,55,0.1)', marginBottom: '24px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Venta Bruta (Serv + Ext + Prod)</span>
+                                      <div style={{ textAlign: 'right' }}>
+                                        <span style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>{formatCurrency((t.amount - (t.metadata?.tips_total || 0)) * (t.exchange_rate || rates?.usd || 550), '')} BS</span>
+                                        <div style={{ fontSize: '10px', color: 'white' }}>REF: ${formatCurrency(t.amount - (t.metadata?.tips_total || 0), '')}</div>
+                                      </div>
+                                    </div>
+                                    {t.metadata?.tips_total > 0 && (
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px dashed rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
+                                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Propinas Totales</span>
+                                        <div style={{ textAlign: 'right' }}>
+                                          <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--gold-primary)' }}>+{formatCurrency(t.metadata.tips_total * (t.exchange_rate || rates?.usd || 550), '')} BS</span>
+                                          <div style={{ fontSize: '10px', color: 'white' }}>REF: ${formatCurrency(t.metadata.tips_total, '')}</div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                      <span style={{ fontSize: '14px', color: 'white', fontWeight: '900' }}>TOTAL COBRADO</span>
+                                      <div style={{ textAlign: 'right' }}>
+                                        <span style={{ fontSize: '18px', fontWeight: '900', color: 'var(--gold-primary)' }}>{formatCurrency(t.amount * (t.exchange_rate || rates?.usd || 550), '')} BS</span>
+                                        <div style={{ fontSize: '12px', color: 'white' }}>REF: ${formatCurrency(t.amount, '')}</div>
+                                      </div>
+                                    </div>
+
+                                    {/* Información de pago */}
+                                    <div style={{ backgroundColor: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '12px', marginBottom: '16px' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Efectivo USD:</span>
+                                        <span style={{ fontSize: '11px', fontWeight: '800' }}>${formatCurrency(t.metadata?.cash_usd || t.metadata?.cashUsd || (t.type === 'income' && !(t.metadata?.transfer_bs || t.metadata?.transferBs) ? t.amount : 0), '')}</span>
+                                      </div>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Pago Móvil (Bs):</span>
+                                        <span style={{ fontSize: '11px', fontWeight: '800' }}>{formatCurrency(t.metadata?.transfer_bs || t.metadata?.transferBs || 0, '')} BS</span>
+                                      </div>
+                                    </div>
+
+                                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
+                                      <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', display: 'block' }}>Desglose de Personal</span>
+                                      {t.metadata?.staffInvolved?.length > 0 ? t.metadata.staffInvolved.map((s, idx) => (
+                                        <div key={idx} style={{ marginBottom: '8px', padding: '10px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)' }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                              <span style={{ fontSize: '13px', fontWeight: '700', color: 'white', display: 'block' }}>{s.name}</span>
+                                              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{s.role?.split('|')[0] || 'Personal'}</span>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                              <div style={{ fontSize: '13px', fontWeight: '900', color: 'var(--gold-primary)' }}>+{formatCurrency((s.commissionEarned || 0) * (t.exchange_rate || rates?.usd || 550), '')} BS Comisión</div>
+                                              <div style={{ fontSize: '10px', color: 'white' }}>REF: ${formatCurrency(s.commissionEarned || 0, '')}</div>
+                                              {s.tip > 0 && <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '4px' }}>+{formatCurrency(s.tip * (t.exchange_rate || rates?.usd || 550), '')} BS Propina (REF: <span style={{color: 'white'}}>${formatCurrency(s.tip, '')}</span>)</div>}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )) : (
+                                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>Operación manual / No vinculada a personal.</div>
+                                      )}
+                                    </div>
+
+                                    {/* GANANCIA ASTRO */}
+                                    <div style={{ marginTop: '16px', padding: '16px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                        <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>Ganancia Astro</span>
+                                        <div style={{ textAlign: 'right' }}>
+                                          <span style={{ fontSize: '16px', fontWeight: '950', color: '#32d74b' }}>
+                                            {formatCurrency(((t.amount - (t.metadata?.tips_total || 0)) - (t.metadata?.staffInvolved?.reduce((acc, s) => acc + (s.commissionEarned || 0), 0) || 0)) * (t.exchange_rate || rates?.usd || 550), '')} BS
+                                          </span>
+                                          <div style={{ fontSize: '12px', color: 'white', fontWeight: '700' }}>
+                                            REF: ${formatCurrency((t.amount - (t.metadata?.tips_total || 0)) - (t.metadata?.staffInvolved?.reduce((acc, s) => acc + (s.commissionEarned || 0), 0) || 0), '')}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div style={{ fontSize: '12px', color: 'white', display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px dashed rgba(212,175,55,0.2)', paddingTop: '12px', marginTop: '12px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                          <span>Venta Bruta:</span>
+                                          <span>{formatCurrency((t.amount - (t.metadata?.tips_total || 0)) * (t.exchange_rate || rates?.usd || 550), '')} BS</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff453a' }}>
+                                          <span>- Comisiones Pagadas:</span>
+                                          <span>{formatCurrency((t.metadata?.staffInvolved?.reduce((acc, s) => acc + (s.commissionEarned || 0), 0) || 0) * (t.exchange_rate || rates?.usd || 550), '')} BS</span>
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -1468,7 +1592,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   className="btn-gold" 
                   style={{ flex: isMobile ? 1 : 'none', padding: '8px 16px', fontSize: '12px', borderRadius: '10px' }}
                 >
-                  Configurar Vaca (Asistente)
+                  Configurar Salario (Asistente)
                 </button>
                 <button 
                   onClick={() => setWeeklyCloseModal({ isOpen: true, loading: false, success: false, error: null })} 
@@ -1667,7 +1791,8 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                             isOpen: true,
                             staff: st,
                             amountBs: '',
-                            paymentMethod: 'Efectivo ($)'
+                            paymentMethod: 'Efectivo ($)',
+                            maxBalance: st.balanceBs
                           });
                         }}
                         style={{ flex: 1, minWidth: '70px', padding: '10px', borderRadius: '10px', background: 'rgba(255, 69, 58, 0.1)', color: '#ff453a', border: '1px solid rgba(255, 69, 58, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer' }}
@@ -2039,10 +2164,10 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           {isConfiguringPayroll && (
             <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
               <div className="glass-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '32px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '24px' }}>Configuración <span className="text-gold">Vaca Asistente</span></h3>
+                <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '24px' }}>Configuración <span className="text-gold">Sueldo Asistente</span></h3>
                 <form onSubmit={handleSaveAssistantConfig} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Monto Semanal de la Vaca (USD $)</label>
+                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Monto Semanal del Salario (USD $)</label>
                     <input 
                       type="number" 
                       step="any"
@@ -2247,6 +2372,8 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 </h3>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '24px' }}>
                   Ingresa el monto del adelanto en Bolívares (Bs) para <span style={{ fontWeight: '800', color: 'white' }}>{valeModal.staff?.name}</span>. Este monto se descontará automáticamente de su pago semanal.
+                  <br /><br />
+                  <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--gold-primary)' }}>Saldo Disponible: {formatCurrency(valeModal.maxBalance || 0, '')} Bs.</span>
                 </p>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -2355,7 +2482,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                             
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px', marginTop: '12px' }}>
                               <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                                {displayDate ? new Date(displayDate).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }) : 'S/F'}
+                                {t.created_at ? new Date(t.created_at).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }) : 'S/F'}
                               </span>
                               <span style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px' }}>ID: {t.id.slice(0,8)}</span>
                             </div>
@@ -2382,12 +2509,19 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       const totalEarningsBs = commBs + prodCommBs;
                       const totalEarningsUsd = commUsd + prodCommUsd;
 
-                      // Identificación inteligente del método de pago real
+                      // Identificación inteligente del método de pago real basada en montos reales
                       let methodText = 'Efectivo';
-                      if (t.metadata?.mixed_payment || t.metadata?.isMixed) {
+                      const cashUsdAmount = Number(t.metadata?.cash_usd) || 0;
+                      const transferBsAmount = Number(t.metadata?.transfer_bs) || 0;
+
+                      if (t.metadata?.mixed_payment || (cashUsdAmount > 0 && transferBsAmount > 0)) {
                         const usdPart = t.metadata?.method_usd || 'Efectivo';
                         const bsPart = t.metadata?.method_bs || 'Pago Móvil';
                         methodText = `Mixto (${usdPart} + ${bsPart})`;
+                      } else if (transferBsAmount > 0 && cashUsdAmount === 0) {
+                        methodText = t.metadata?.method_bs || 'Pago Móvil';
+                      } else if (cashUsdAmount > 0 && transferBsAmount === 0) {
+                        methodText = t.metadata?.method_usd || 'Efectivo';
                       } else {
                         const mUsd = t.metadata?.method_usd;
                         const mBs = t.metadata?.method_bs;
@@ -2464,7 +2598,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
                             <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                              {displayDate ? new Date(displayDate).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }) : 'S/F'}
+                              {t.created_at ? new Date(t.created_at).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }) : 'S/F'}
                             </span>
                             <span style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px' }}>ID: {t.id.slice(0,8)}</span>
                           </div>

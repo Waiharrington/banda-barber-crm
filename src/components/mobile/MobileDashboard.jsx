@@ -15,9 +15,11 @@ import {
   Edit3,
   Gift,
   Cake,
-  Rocket
+  Rocket,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { notificationService } from '../../services/notificationService';
 
 const QUOTES = [
   { text: "Cada cabeza es un mundo.", creator: "Refrán Popular" },
@@ -38,10 +40,11 @@ const QUOTES = [
   { text: "El negocio de la belleza es el negocio de la felicidad.", creator: "Emprendimiento" }
 ];
 
-const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate }) => {
+const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onOpenNotifications }) => {
   const { user } = useAuth();
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [isEditingGoals, setIsEditingGoals] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [goals, setGoals] = useState({
     daily: parseFloat(localStorage.getItem('astro_daily_goal') || '500'),
     weekly: parseFloat(localStorage.getItem('astro_weekly_goal') || '3000'),
@@ -50,6 +53,16 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate }) =
 
   useEffect(() => {
     setQuoteIndex(Math.floor(Math.random() * QUOTES.length));
+
+    const updateUnread = () => {
+      const history = notificationService.getHistory();
+      const count = history.filter(n => !n.read).length;
+      setUnreadCount(count);
+    };
+
+    updateUnread();
+    window.addEventListener('astro_new_notification', updateUnread);
+    return () => window.removeEventListener('astro_new_notification', updateUnread);
   }, []);
 
   const handleSaveGoals = (newGoals) => {
@@ -175,18 +188,64 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate }) =
             Panel de <span className="text-gold">Control</span>
           </div>
         </div>
-        <div style={{
-          width: '42px',
-          height: '42px',
-          borderRadius: '50%',
-          border: '1.5px solid var(--gold-primary)',
-          background: 'rgba(212,175,55,0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'var(--gold-primary)'
-        }}>
-          <Crown size={20} />
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* Notification Bell */}
+          <button
+            onClick={onOpenNotifications}
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '50%',
+              border: '1.5px solid rgba(255, 255, 255, 0.1)',
+              background: 'rgba(255, 255, 255, 0.03)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: unreadCount > 0 ? 'var(--gold-primary)' : 'white',
+              position: 'relative',
+              cursor: 'pointer',
+              outline: 'none',
+              padding: 0
+            }}
+          >
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <div style={{
+                position: 'absolute',
+                top: '0px',
+                right: '0px',
+                backgroundColor: '#ff4d4d',
+                color: 'white',
+                fontSize: '8px',
+                fontWeight: '900',
+                borderRadius: '50%',
+                minWidth: '13px',
+                height: '13px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0 2px',
+                border: '1.5px solid var(--bg-primary)'
+              }}>
+                {unreadCount}
+              </div>
+            )}
+          </button>
+
+          {/* Crown */}
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '50%',
+            border: '1.5px solid var(--gold-primary)',
+            background: 'rgba(212,175,55,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--gold-primary)'
+          }}>
+            <Crown size={20} />
+          </div>
         </div>
       </div>
 

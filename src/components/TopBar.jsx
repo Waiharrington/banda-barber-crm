@@ -1,19 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, 
   Plus, 
-  RefreshCw
+  RefreshCw,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { notificationService } from '../services/notificationService';
 
 const TopBar = ({ 
   rates, 
   onOpenSale, 
   isStoreOpen = true, 
   activeRateType,
-  onToggleRateType
+  onToggleRateType,
+  onOpenNotifications
 }) => {
   const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const updateUnread = () => {
+      const history = notificationService.getHistory();
+      const count = history.filter(n => !n.read).length;
+      setUnreadCount(count);
+    };
+
+    updateUnread();
+    window.addEventListener('astro_new_notification', updateUnread);
+    return () => window.removeEventListener('astro_new_notification', updateUnread);
+  }, []);
   
   return (
     <div style={{ 
@@ -165,6 +181,50 @@ const TopBar = ({
             </span>
           </div>
         </div>
+
+        {/* Premium Notification Bell Button */}
+        <button
+          onClick={onOpenNotifications}
+          style={{
+            width: '52px',
+            height: '52px',
+            borderRadius: '16px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            position: 'relative',
+            color: unreadCount > 0 ? 'var(--gold-primary)' : 'white',
+            transition: 'all 0.2s',
+            boxShadow: unreadCount > 0 ? '0 0 15px rgba(212,175,55,0.1)' : 'none'
+          }}
+        >
+          <Bell size={20} />
+          {unreadCount > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '10px',
+              right: '10px',
+              backgroundColor: '#ff4d4d',
+              color: 'white',
+              fontSize: '9px',
+              fontWeight: '900',
+              borderRadius: '50%',
+              minWidth: '16px',
+              height: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0 2px',
+              border: '2px solid var(--bg-primary)',
+              animation: 'pulse 2s infinite'
+            }}>
+              {unreadCount}
+            </div>
+          )}
+        </button>
         
         <button 
           className="btn-gold" 

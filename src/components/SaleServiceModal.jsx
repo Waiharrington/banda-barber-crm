@@ -353,13 +353,17 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {filteredProducts.slice(0, 5).map(p => {
                     const selected = selectedProducts.find(sp => sp.id === p.id);
+                    const isOutOfStock = (p.stock || 0) <= 0;
                     return (
-                      <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                      <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)', opacity: isOutOfStock ? 0.6 : 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <Package size={14} color="var(--gold-primary)" />
+                          <Package size={14} color={isOutOfStock ? "var(--text-muted)" : "var(--gold-primary)"} />
                           <div>
-                            <div style={{ fontSize: '13px', fontWeight: '700' }}>{p.name}</div>
+                            <div style={{ fontSize: '13px', fontWeight: '700', color: isOutOfStock ? 'var(--text-muted)' : 'white' }}>{p.name}</div>
                             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>${p.price}</div>
+                            <div style={{ fontSize: '10px', fontWeight: '800', color: isOutOfStock ? '#ff453a' : '#30d158', marginTop: '2px' }}>
+                              {isOutOfStock ? 'Agotado (Sin Stock)' : `Stock: ${p.stock}`}
+                            </div>
                           </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -367,10 +371,25 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
                             <>
                               <button onClick={() => updateProductQuantity(p, -1)} style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer' }}><MinusCircle size={18} /></button>
                               <span style={{ fontWeight: '800', fontSize: '13px', minWidth: '12px', textAlign: 'center' }}>{selected.quantity}</span>
-                              <button onClick={() => updateProductQuantity(p, 1)} style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer' }}><PlusCircle size={18} /></button>
+                              <button onClick={() => updateProductQuantity(p, 1)} style={{ background: 'none', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer' }} disabled={isOutOfStock || (selected.quantity >= p.stock)}><PlusCircle size={18} /></button>
                             </>
                           ) : (
-                            <button onClick={() => updateProductQuantity(p, 1)} style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(212,175,55,0.2)', background: 'none', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>AÑADIR</button>
+                            <button 
+                              onClick={() => !isOutOfStock && updateProductQuantity(p, 1)} 
+                              disabled={isOutOfStock}
+                              style={{ 
+                                padding: '6px 12px', 
+                                borderRadius: '8px', 
+                                border: isOutOfStock ? '1px dashed rgba(255,255,255,0.1)' : '1px solid rgba(212,175,55,0.2)', 
+                                background: 'none', 
+                                color: isOutOfStock ? 'var(--text-muted)' : 'var(--gold-primary)', 
+                                fontSize: '11px', 
+                                fontWeight: '800', 
+                                cursor: isOutOfStock ? 'not-allowed' : 'pointer' 
+                              }}
+                            >
+                              {isOutOfStock ? 'SIN STOCK' : 'AÑADIR'}
+                            </button>
                           )}
                         </div>
                       </div>

@@ -8,9 +8,9 @@ export const dataService = {
       .from('clients')
       .select('*, appointments(status, total_price)')
       .order('name');
-    
+
     if (error) throw error;
-    
+
     return data.map(client => {
       const validApps = client.appointments?.filter(a => ['Completado', 'En Silla', 'Por Pagar'].includes(a.status)) || [];
       return {
@@ -36,7 +36,7 @@ export const dataService = {
       .from('clients')
       .select('id, name')
       .eq('id_card', idCard);
-    
+
     if (error) throw error;
     return data.length > 0 ? data[0] : null;
   },
@@ -58,27 +58,27 @@ export const dataService = {
       .from('appointments')
       .select('id')
       .eq('client_id', id);
-    
+
     if (apps && apps.length > 0) {
       const appIds = apps.map(a => a.id);
-      
+
       // 2. Delete dependencies of those appointments
       await Promise.all([
         supabase.from('appointment_staff').delete().in('appointment_id', appIds),
         supabase.from('appointment_extras').delete().in('appointment_id', appIds),
         supabase.from('appointment_products').delete().in('appointment_id', appIds)
       ]);
-      
+
       // 3. Delete appointments
       await supabase.from('appointments').delete().in('id', appIds);
     }
-    
+
     // 4. Finally delete the client
     const { error } = await supabase
       .from('clients')
       .delete()
       .eq('id', id);
-      
+
     if (error) throw error;
   },
 
@@ -205,7 +205,7 @@ export const dataService = {
       .select('role')
       .eq('id', id)
       .single();
-    
+
     if (!member) return;
 
     // 2. Archive instead of delete
@@ -213,7 +213,7 @@ export const dataService = {
       .from('staff')
       .update({ role: `ARCHIVED|${member.role}` })
       .eq('id', id);
-      
+
     if (error) throw error;
   },
 
@@ -224,7 +224,7 @@ export const dataService = {
       .from('services')
       .select('*')
       .order('name');
-    
+
     if (error) throw error;
     // Filter out archived services
     return data.filter(s => !s.name?.startsWith('ARCHIVED|'));
@@ -269,8 +269,8 @@ export const dataService = {
     const { data, error } = await supabase.from('service_extras').select('*').order('name');
     if (error) throw error;
     // Filter out archived extras, system config items, categories, and strategies
-    return data.filter(e => 
-      !e.name?.startsWith('ARCHIVED|') && 
+    return data.filter(e =>
+      !e.name?.startsWith('ARCHIVED|') &&
       !e.name?.startsWith('SYSTEM_CATEGORY:') &&
       !e.name?.startsWith('SYSTEM_STRATEGY:') &&
       e.name !== 'SYSTEM_CONFIG_RATES'
@@ -284,7 +284,7 @@ export const dataService = {
       .select('*')
       .order('name');
     if (error) throw error;
-    
+
     const categories = data
       .filter(e => e.name?.startsWith('SYSTEM_CATEGORY:'))
       .map(e => e.name.replace('SYSTEM_CATEGORY:', ''));
@@ -293,7 +293,7 @@ export const dataService = {
       // Seed default categories
       const defaults = ['Barbería', 'Estilismo', 'Tratamientos'];
       await Promise.all(
-        defaults.map(cat => 
+        defaults.map(cat =>
           supabase.from('service_extras').insert([{ name: 'SYSTEM_CATEGORY:' + cat, price: 0, cost: 0 }])
         )
       );
@@ -349,7 +349,7 @@ export const dataService = {
         { value: 'Promo', label: 'Promo' }
       ];
       await Promise.all(
-        defaults.map(strat => 
+        defaults.map(strat =>
           supabase.from('service_extras').insert([{ name: `SYSTEM_STRATEGY:${strat.value}:${strat.label}`, price: 0, cost: 0 }])
         )
       );
@@ -378,7 +378,7 @@ export const dataService = {
     const matching = data.filter(e => e.name?.startsWith(`SYSTEM_STRATEGY:${value}:`));
     if (matching.length > 0) {
       await Promise.all(
-        matching.map(e => 
+        matching.map(e =>
           supabase.from('service_extras').delete().eq('name', e.name)
         )
       );
@@ -520,7 +520,7 @@ export const dataService = {
       .eq('client_id', clientId)
       .in('status', ['Completado', 'En Silla', 'Por Pagar'])
       .order('created_at', { ascending: false });
-    
+
     if (appError) throw appError;
 
     // 2. Fetch related transactions to get payment methods
@@ -528,13 +528,13 @@ export const dataService = {
       .from('transactions')
       .select('*')
       .contains('metadata', { client_id: clientId });
-    
+
     if (txError) console.error('Error fetching TXs for history:', txError);
 
     return apps.map(app => {
       // Find the specific transaction for this appointment if it exists
       const relatedTx = txs?.find(t => t.metadata?.appointment_id === app.id);
-      
+
       return {
         id: app.id,
         created_at: app.created_at,
@@ -566,7 +566,7 @@ export const dataService = {
         )
       `)
       .eq('staff_id', staffId);
-    
+
     if (error) throw error;
     return data;
   },
@@ -630,7 +630,7 @@ export const dataService = {
     if (error) throw error;
     return data;
   },
-  
+
   // Inventory Movements
   async logInventoryMovement(movement) {
     const { data, error } = await supabase
@@ -676,9 +676,9 @@ export const dataService = {
       services(name, price),
       staff(name)
     `)
-    .gte('created_at', today)
-    .order('created_at', { ascending: true });
-    
+      .gte('created_at', today)
+      .order('created_at', { ascending: true });
+
     if (error) throw error;
     return data;
   },
@@ -730,14 +730,14 @@ export const dataService = {
       .from('appointment_staff')
       .select('id, staff(role)')
       .eq('appointment_id', appointmentId);
-      
+
     if (staffList) {
       const toDelete = staffList.filter(s => s.staff?.role?.includes('Asistente de Lavado')).map(s => s.id);
       if (toDelete.length > 0) {
         await supabase.from('appointment_staff').delete().in('id', toDelete);
       }
     }
-    
+
     // Insert the new assistant record
     const { data, error } = await supabase
       .from('appointment_staff')
@@ -750,7 +750,7 @@ export const dataService = {
       }])
       .select()
       .single();
-      
+
     if (error) throw error;
     return data;
   },
@@ -798,7 +798,7 @@ export const dataService = {
       .eq('staff_id', staffId)
       .gte('created_at', today)
       .in('status', ['En Silla', 'Por Pagar', 'Completado']);
-    
+
     if (error) throw error;
 
     let totalUsd = 0;
@@ -842,7 +842,7 @@ export const dataService = {
     // 2. Register commissioners (Staff involved)
     if (paymentRecord.staffInvolved && paymentRecord.staffInvolved.length > 0) {
       const primaryAppId = paymentRecord.appointmentId || paymentRecord.appointmentIds?.[0] || null;
-      
+
       // Delete any temporary/placeholder staff records for these appointments to prevent duplicates
       if (paymentRecord.appointmentIds && paymentRecord.appointmentIds.length > 0) {
         await supabase.from('appointment_staff').delete().in('appointment_id', paymentRecord.appointmentIds);
@@ -887,7 +887,7 @@ export const dataService = {
 
     // 4. Create Financial Transaction
     await this.addTransaction({
-      description: paymentRecord.appointmentId 
+      description: paymentRecord.appointmentId
         ? `VENTA FINAL - Cliente: ${paymentRecord.clientName} - Servi: ${paymentRecord.serviceName}`
         : `VENTA DIRECTA PRODUCTOS - Cliente: ${paymentRecord.clientName}`,
       amount: Number(paymentRecord.totalUsd),
@@ -895,7 +895,7 @@ export const dataService = {
       category: 'Ventas Astro',
       exchange_rate: Number(paymentRecord.fixedRate),
       currency: 'USD',
-      metadata: { 
+      metadata: {
         appointment_id: paymentRecord.appointmentId || null,
         client_id: paymentRecord.clientId || null,
         mixed_payment: paymentRecord.isMixed,
@@ -921,8 +921,8 @@ export const dataService = {
 
   async syncTransactionToSheets(paymentRecord) {
     // URL de la Web App de Google Apps Script configurada
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwQ3ro99kB2GUSTvM1lZIGTIFqxYQSWelgTxOLacz9bUMa2t44IyhhaTubOwUDXMgAM/exec"; 
-    
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyPChI_N5RSqDEGPdzPDsA87Z55tgIf9wcRjNgbYjD2JW408F9mOiLku4LqnGL9gFJA/exec";
+
     if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return; // Si no está configurada, ignorar
 
     try {
@@ -946,9 +946,13 @@ export const dataService = {
         metodoPagoBs = `${paymentRecord.methodBs || 'Pago Móvil'} (Bs)`;
       }
 
-      // If we have distinct appointments, log each one as a separate row!
+      const loggedTips = new Set();
+      let rowLogged = false;
+
+      // 1. If we have distinct appointments, log each one as a separate row!
       if (paymentRecord.appointments && paymentRecord.appointments.length > 0) {
         for (const app of paymentRecord.appointments) {
+          rowLogged = true;
           let appMontoUsdText = '';
           let appMontoBsText = '';
           const appTotalUsdVal = Number(app.totalPrice) || 0;
@@ -958,32 +962,38 @@ export const dataService = {
             const proportion = totalUsdVal > 0 ? (appTotalUsdVal / totalUsdVal) : 0;
             const appCashUsd = cashUsdVal * proportion;
             const appTransferBs = transferBsVal * proportion;
-            appMontoUsdText = `${appCashUsd.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
-            appMontoBsText = `${appTransferBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+            appMontoUsdText = `${appCashUsd.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
+            appMontoBsText = `${appTransferBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
           } else if (cashUsdVal > 0 || (paymentRecord.methodUsd && paymentRecord.methodUsd !== 'N/A' && (!paymentRecord.methodBs || paymentRecord.methodBs === 'N/A'))) {
-            appMontoUsdText = `${appTotalUsdVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
-            appMontoBsText = `${(appTotalUsdVal * fixedRateVal).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+            appMontoUsdText = `${appTotalUsdVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
+            appMontoBsText = `${(appTotalUsdVal * fixedRateVal).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
           } else {
-            appMontoUsdText = `${appTotalUsdVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
-            appMontoBsText = `${(appTotalUsdVal * fixedRateVal).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+            appMontoUsdText = `${appTotalUsdVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
+            appMontoBsText = `${(appTotalUsdVal * fixedRateVal).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
           }
 
           const staffTips = paymentRecord.staffInvolved?.find(si => si.staffId === app.staff_id || si.name === app.barberName);
-          const appTipUsd = staffTips ? (Number(staffTips.tip) || 0) : 0;
+          let appTipUsd = 0;
+          if (staffTips && !loggedTips.has(staffTips.staffId || staffTips.name)) {
+            appTipUsd = Number(staffTips.tip) || 0;
+            loggedTips.add(staffTips.staffId || staffTips.name);
+          }
           const appTipBs = appTipUsd * fixedRateVal;
 
           const payload = {
-            fecha: new Date().toLocaleDateString('es-VE'),
+            fecha: new Date().toLocaleString('es-VE'),
             cliente: app.clientName || 'Cliente',
             cedula: app.clientCedula || 'S/C',
             barbero: app.barberName || 'Barbero',
             servicio: app.serviceName || 'Servicio',
+            extra: app.extras || '',
+            tipoRegistro: 'Servicio',
             metodoPagoUsd: metodoPagoUsd,
             metodoPagoBs: metodoPagoBs,
             lavado: app.didWash ? 1 : 0,
             montoBs: appMontoBsText,
             montoUsd: appMontoUsdText,
-            tasa: `${fixedRateVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`,
+            tasa: `${fixedRateVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs./$`,
             propina: appTipBs,
             vale: 0
           };
@@ -997,36 +1007,41 @@ export const dataService = {
             body: JSON.stringify(payload)
           });
         }
+      }
 
-        // Check if there are also products sold in the transaction
-        const productsTotalUsd = paymentRecord.products?.reduce((sum, p) => sum + (Number(p.price || 0) * (p.quantity || 1)), 0) || 0;
-        if (productsTotalUsd > 0) {
+      // 2. Check if there are also products sold in the transaction and log each one as a separate row
+      if (paymentRecord.products && paymentRecord.products.length > 0) {
+        rowLogged = true;
+        for (const p of paymentRecord.products) {
+          const prodTotalUsd = Number(p.price || 0) * (p.quantity || 1);
           let prodMontoUsdText = '';
           let prodMontoBsText = '';
 
           if (paymentRecord.isMixed || (cashUsdVal > 0 && transferBsVal > 0)) {
-            const proportion = totalUsdVal > 0 ? (productsTotalUsd / totalUsdVal) : 0;
+            const proportion = totalUsdVal > 0 ? (prodTotalUsd / totalUsdVal) : 0;
             const prodCashUsd = cashUsdVal * proportion;
             const prodTransferBs = transferBsVal * proportion;
-            prodMontoUsdText = `${prodCashUsd.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
-            prodMontoBsText = `${prodTransferBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+            prodMontoUsdText = `${prodCashUsd.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
+            prodMontoBsText = `${prodTransferBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
           } else {
-            prodMontoUsdText = `${productsTotalUsd.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
-            prodMontoBsText = `${(productsTotalUsd * fixedRateVal).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+            prodMontoUsdText = `${prodTotalUsd.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
+            prodMontoBsText = `${(prodTotalUsd * fixedRateVal).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
           }
 
           const payload = {
-            fecha: new Date().toLocaleDateString('es-VE'),
+            fecha: new Date().toLocaleString('es-VE'),
             cliente: paymentRecord.clientName || 'Cliente General',
             cedula: paymentRecord.clientCedula || 'S/C',
-            barbero: 'Venta Directa',
-            servicio: 'Venta de Productos',
+            barbero: p.sellerName || 'Venta Directa',
+            servicio: p.name || 'Producto',
+            extra: '',
+            tipoRegistro: 'Producto',
             metodoPagoUsd: metodoPagoUsd,
             metodoPagoBs: metodoPagoBs,
             lavado: 0,
             montoBs: prodMontoBsText,
             montoUsd: prodMontoUsdText,
-            tasa: `${fixedRateVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`,
+            tasa: `${fixedRateVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs./$`,
             propina: 0,
             vale: 0
           };
@@ -1040,45 +1055,49 @@ export const dataService = {
             body: JSON.stringify(payload)
           });
         }
-      } else {
-        // Fallback for single/direct transactions
+      }
+
+      // 3. Fallback for single/direct transactions if nothing else was logged
+      if (!rowLogged) {
         let barberoObj = paymentRecord.staffInvolved?.find(s => {
           const roleLower = s.role?.toLowerCase() || '';
           return roleLower.includes('barber') || roleLower.includes('estilista') || roleLower.includes('socio');
         });
-        
+
         if (!barberoObj && paymentRecord.staffInvolved && paymentRecord.staffInvolved.length > 0) {
           barberoObj = paymentRecord.staffInvolved[0];
         }
-        
+
         const barbero = barberoObj ? barberoObj.name.trim() : 'Venta Directa';
-        
+
         let finalMontoUsdText = '';
         let finalMontoBsText = '';
 
         if (paymentRecord.isMixed || (cashUsdVal > 0 && transferBsVal > 0)) {
-          finalMontoUsdText = `${cashUsdVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
-          finalMontoBsText = `${transferBsVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+          finalMontoUsdText = `${cashUsdVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
+          finalMontoBsText = `${transferBsVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
         } else if (cashUsdVal > 0 || (paymentRecord.methodUsd && paymentRecord.methodUsd !== 'N/A' && (!paymentRecord.methodBs || paymentRecord.methodBs === 'N/A'))) {
-          finalMontoUsdText = `${totalUsdVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
-          finalMontoBsText = `${(totalUsdVal * fixedRateVal).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+          finalMontoUsdText = `${totalUsdVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
+          finalMontoBsText = `${(totalUsdVal * fixedRateVal).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
         } else {
-          finalMontoUsdText = `${totalUsdVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$`;
-          finalMontoBsText = `${(totalUsdVal * fixedRateVal).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.`;
+          finalMontoUsdText = `${totalUsdVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
+          finalMontoBsText = `${(totalUsdVal * fixedRateVal).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
         }
 
         const payload = {
-          fecha: new Date().toLocaleDateString('es-VE'),
+          fecha: new Date().toLocaleString('es-VE'),
           cliente: paymentRecord.clientName || 'Cliente General',
           cedula: paymentRecord.clientCedula || 'S/C',
           barbero: barbero,
           servicio: paymentRecord.serviceName || 'Productos',
+          extra: paymentRecord.extras?.map(e => e.service_extras?.name || e.name || e).filter(Boolean).join(', ') || '',
+          tipoRegistro: paymentRecord.serviceName ? 'Servicio' : 'Producto',
           metodoPagoUsd: metodoPagoUsd,
           metodoPagoBs: metodoPagoBs,
           lavado: paymentRecord.didWash ? 1 : 0,
           montoBs: finalMontoBsText,
           montoUsd: finalMontoUsdText,
-          tasa: `${fixedRateVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`
+          tasa: `${fixedRateVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs./$`
         };
 
         await fetch(WEBHOOK_URL, {
@@ -1093,25 +1112,26 @@ export const dataService = {
       // Sincronizar propina de asistente (lavador) si existe
       const assistantStaff = paymentRecord.staffInvolved?.find(s => s.role?.toLowerCase().includes('asistente') || s.role?.toLowerCase().includes('lavado') || s.role?.toLowerCase().includes('operaciones'));
       const assistantTipUsd = assistantStaff ? (Number(assistantStaff.tip) || 0) : 0;
-      
+
       if (assistantTipUsd > 0) {
         const assistantTipBs = assistantTipUsd * fixedRateVal;
         const assistantPayload = {
-          fecha: new Date().toLocaleDateString('es-VE'),
+          fecha: new Date().toLocaleString('es-VE'),
           cliente: paymentRecord.clientName || 'Cliente General',
           cedula: paymentRecord.clientCedula || 'S/C',
           barbero: assistantStaff.name || 'Alexandra',
           servicio: 'Propina Asistente',
+          tipoRegistro: 'Propina',
           metodoPagoUsd: metodoPagoUsd,
           metodoPagoBs: metodoPagoBs,
           lavado: 0,
           montoBs: "0,00Bs.",
           montoUsd: "0,00$",
-          tasa: `${fixedRateVal.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`,
+          tasa: `${fixedRateVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs./$`,
           propina: assistantTipBs,
           vale: 0
         };
-        
+
         await fetch(WEBHOOK_URL, {
           method: 'POST',
           mode: 'cors',
@@ -1129,7 +1149,7 @@ export const dataService = {
   },
 
   async syncValeToSheets(valePayload) {
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwQ3ro99kB2GUSTvM1lZIGTIFqxYQSWelgTxOLacz9bUMa2t44IyhhaTubOwUDXMgAM/exec"; 
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyPChI_N5RSqDEGPdzPDsA87Z55tgIf9wcRjNgbYjD2JW408F9mOiLku4LqnGL9gFJA/exec";
     if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return;
     try {
       await fetch(WEBHOOK_URL, {
@@ -1140,6 +1160,7 @@ export const dataService = {
         },
         body: JSON.stringify({
           ...valePayload,
+          tipoRegistro: 'Vale',
           propina: 0
         })
       });
@@ -1149,7 +1170,7 @@ export const dataService = {
   },
 
   async triggerWeeklyClosing() {
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwQ3ro99kB2GUSTvM1lZIGTIFqxYQSWelgTxOLacz9bUMa2t44IyhhaTubOwUDXMgAM/exec";
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyPChI_N5RSqDEGPdzPDsA87Z55tgIf9wcRjNgbYjD2JW408F9mOiLku4LqnGL9gFJA/exec";
     if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return false;
 
     try {
@@ -1174,10 +1195,10 @@ export const dataService = {
       const allRes = await fetch('https://ve.dolarapi.com/v1/dolares');
       if (!allRes.ok) throw new Error('Rates not available');
       const allData = await allRes.json();
-      
+
       const bcvRate = allData.find(r => r.fuente === 'oficial');
       const paraleloRate = allData.find(r => r.fuente === 'paralelo');
-      
+
       return {
         bcv: bcvRate?.promedio || 0,
         usdt: paraleloRate?.promedio || 0,
@@ -1197,7 +1218,7 @@ export const dataService = {
         .select('*')
         .eq('name', 'SYSTEM_CONFIG_RATES')
         .limit(1);
-      
+
       if (error || !data || data.length === 0) {
         // Create default if not exists
         const defaultRates = { name: 'SYSTEM_CONFIG_RATES', price: 58.00, cost: 58.50 };
@@ -1205,7 +1226,7 @@ export const dataService = {
         if (insertError) throw insertError;
         return { shop: newData[0].price, usdt: newData[0].cost };
       }
-      
+
       return { shop: data[0].price, usdt: data[0].cost };
     } catch (err) {
       console.error('Error getting global rates:', err);
@@ -1219,7 +1240,7 @@ export const dataService = {
       .update({ price: rates.shop, cost: rates.usdt })
       .eq('name', 'SYSTEM_CONFIG_RATES')
       .select();
-    
+
     if (error) throw error;
     if (!data || data.length === 0) {
       // If for some reason it was deleted, recreate it

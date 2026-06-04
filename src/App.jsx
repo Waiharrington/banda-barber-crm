@@ -38,9 +38,11 @@ import SchedulingModule from './components/SchedulingModule';
 import { useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import TopBar from './components/TopBar';
+import NotificationsDrawer from './components/NotificationsDrawer';
 
 function App() {
   const { user } = useAuth();
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('astro_active_tab') || 'dashboard');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
@@ -290,6 +292,7 @@ function App() {
             dbData={dbData} 
             rates={effectiveRates} 
             onNavigate={handleTabChange}
+            onOpenNotifications={() => setIsNotificationsOpen(true)}
           />
         ) : (
           <DashboardModule 
@@ -348,6 +351,10 @@ function App() {
           inventory={dbData.inventory || []}
           onUpdate={fetchInitialData} 
         />
+        <NotificationsDrawer 
+          isOpen={isNotificationsOpen} 
+          onClose={() => setIsNotificationsOpen(false)} 
+        />
       </MobileLayout>
     );
   }
@@ -379,6 +386,7 @@ function App() {
             onOpenSale={() => setIsReceptionModalOpen(true)}
             activeRateType={activeRateType}
             onToggleRateType={handleSetActiveRateType}
+            onOpenNotifications={() => setIsNotificationsOpen(true)}
           />
           {renderContent()}
         </div>
@@ -419,6 +427,10 @@ function App() {
         staffMember={dbData.staff.find(s => s.id === user?.id)} 
         inventory={dbData.inventory || []}
         onUpdate={fetchInitialData} 
+      />
+      <NotificationsDrawer 
+        isOpen={isNotificationsOpen} 
+        onClose={() => setIsNotificationsOpen(false)} 
       />
     </div>
   );
