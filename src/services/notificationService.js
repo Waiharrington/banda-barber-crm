@@ -106,6 +106,26 @@ class NotificationService {
     window.dispatchEvent(new Event('astro_new_notification'));
   }
 
+  // Enviar una notificación broadcast a través de Supabase Realtime
+  broadcastNotification(supabase, title, body, options = {}) {
+    try {
+      const channel = supabase.channel('astro-notifications');
+      channel.send({
+        type: 'broadcast',
+        event: 'crm-notification',
+        payload: {
+          title,
+          body,
+          recipientRole: options.recipientRole || null,
+          recipientId: options.recipientId || null,
+          senderId: options.senderId || null
+        }
+      });
+    } catch (e) {
+      console.error('Error broadcasting notification:', e);
+    }
+  }
+
   // Notificaciones por defecto iniciales
   getDefaultNotifications() {
     return [

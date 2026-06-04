@@ -23,6 +23,7 @@ import { Plus, ShoppingBag, Loader2 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import { notificationService } from '../services/notificationService';
 
 const BarberPanel = ({ isMobile, rates }) => {
   const { user } = useAuth();
@@ -241,9 +242,21 @@ const BarberPanel = ({ isMobile, rates }) => {
   const handleSendToWash = async (serviceId) => {
     try {
       setLoading(true);
+      const app = myServices.find(s => s.id === serviceId);
+      const clientName = app?.clients?.name || 'Cliente';
+
       await dataService.updateAppointmentStatus(serviceId, 'En Lavado');
       showToast("¡Cliente enviado a la estación de lavado!");
       triggerRocket();
+      
+      // Broadcast to wash assistants
+      notificationService.broadcastNotification(
+        supabase,
+        '💧 Nuevo Cliente para Lavado',
+        `Hey, te toca lavar a ${clientName}. (Enviado por: ${selectedBarber.name})`,
+        { recipientRole: 'Asistente' }
+      );
+
       loadMyWork();
       loadStats();
       loadCompletedToday();
@@ -257,8 +270,22 @@ const BarberPanel = ({ isMobile, rates }) => {
   const handleReturnToBarber = async (serviceId) => {
     try {
       setLoading(true);
+      const app = myServices.find(s => s.id === serviceId);
+      const clientName = app?.clients?.name || 'Cliente';
+      const barberId = app?.staff_id;
+      const barberName = app?.staff?.name || 'Barbero';
+
       await dataService.updateAppointmentStatus(serviceId, 'En Silla');
       showToast("¡Cliente enviado de regreso al barbero!");
+      
+      // Broadcast back to the specific barber
+      notificationService.broadcastNotification(
+        supabase,
+        '💈 Cliente de regreso del Lavado',
+        `Hey ${barberName}, te toca volver a atender a ${clientName}. (Lavado listo)`,
+        { recipientId: barberId, recipientRole: 'Barbero' }
+      );
+
       loadMyWork();
       loadStats();
       loadCompletedToday();
@@ -272,12 +299,24 @@ const BarberPanel = ({ isMobile, rates }) => {
   const handleAssistantSendToCheckout = async (serviceId) => {
     try {
       setLoading(true);
+      const app = myServices.find(s => s.id === serviceId);
+      const clientName = app?.clients?.name || 'Cliente';
+
       // Assign this assistant to the appointment
       await dataService.assignAssistantToAppointment(serviceId, selectedBarber.id);
       // Update status to 'Por Pagar' (sent to checkout)
       await dataService.updateAppointmentStatus(serviceId, 'Por Pagar');
       showToast("¡Lavado completado! Enviado a caja.");
       triggerConfetti();
+
+      // Broadcast to Admin / Caja
+      notificationService.broadcastNotification(
+        supabase,
+        '💳 Cliente enviado a Caja',
+        `El cliente ${clientName} terminó su lavado y fue enviado a caja.`,
+        { recipientRole: 'Admin' }
+      );
+
       loadMyWork();
       loadStats();
       loadCompletedToday();

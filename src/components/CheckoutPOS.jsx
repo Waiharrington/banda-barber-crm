@@ -742,6 +742,14 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         `Se completó el cobro de ${paymentData.clientName || 'Cliente'} ${paymentDetail}.`
       );
       
+      // Transmitir notificación en tiempo real a otros dispositivos (Admin)
+      notificationService.broadcastNotification(
+        dataService.supabase,
+        'Cobro Realizado 💸',
+        `Se completó el cobro de ${paymentData.clientName || 'Cliente'} ${paymentDetail}.`,
+        { recipientRole: 'Admin' }
+      );
+      
       triggerRocket();
       showToast("¡Venta completada con éxito!", "success");
       

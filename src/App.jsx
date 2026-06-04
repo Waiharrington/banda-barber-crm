@@ -104,6 +104,41 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Real-time Broadcast Notifications Subscription
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = dataService.supabase.channel('astro-notifications')
+      .on('broadcast', { event: 'crm-notification' }, ({ payload }) => {
+        const userRole = user?.role || '';
+        const roleName = userRole.split('|')[0];
+        
+        let shouldShow = false;
+
+        // 1. Admins see all notifications
+        if (roleName === 'Admin') {
+          shouldShow = true;
+        } 
+        // 2. Filter by recipient ID or role
+        else if (payload.recipientId && String(payload.recipientId) === String(user.id)) {
+          shouldShow = true;
+        } else if (payload.recipientRole === 'Barbero' && (roleName === 'Barbero' || userRole.startsWith('Barbero|'))) {
+          shouldShow = true;
+        } else if (payload.recipientRole === 'Asistente' && roleName.includes('Asistente')) {
+          shouldShow = true;
+        }
+
+        if (shouldShow) {
+          notificationService.sendNotification(payload.title, payload.body);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      dataService.supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   // Persist active rate type
   const handleSetActiveRateType = (type) => {
     setActiveRateType(type);
