@@ -733,6 +733,35 @@ export const dataService = {
       .select()
       .single();
     if (error) throw error;
+
+    // Notificar al barbero en tiempo real si el cliente pasa a la silla
+    if (newStatus === 'En Silla') {
+      try {
+        const { data: appDetails } = await supabase
+          .from('appointments')
+          .select('*, clients(name), services(name, included_items)')
+          .eq('id', id)
+          .single();
+
+        if (appDetails && appDetails.staff_id) {
+          const clientName = appDetails.clients?.name || 'Cliente';
+          const serviceName = appDetails.services?.name || 'Servicio';
+          const includedList = Array.isArray(appDetails.services?.included_items) && appDetails.services.included_items.length > 0
+            ? ` (Incluye: ${appDetails.services.included_items.join(', ')})`
+            : '';
+
+          notificationService.broadcastNotification(
+            supabase,
+            '💈 Nuevo Cliente en Silla',
+            `Hey, te toca atender a ${clientName} para el servicio: ${serviceName}${includedList}.`,
+            { recipientId: appDetails.staff_id, recipientRole: 'Barbero' }
+          );
+        }
+      } catch (e) {
+        console.error('Error al enviar notificacion de cliente en silla:', e);
+      }
+    }
+
     return data;
   },
 

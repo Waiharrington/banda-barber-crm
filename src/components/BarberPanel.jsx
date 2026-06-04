@@ -277,14 +277,6 @@ const BarberPanel = ({ isMobile, rates }) => {
 
       await dataService.updateAppointmentStatus(serviceId, 'En Silla');
       showToast("¡Cliente enviado de regreso al barbero!");
-      
-      // Broadcast back to the specific barber
-      notificationService.broadcastNotification(
-        supabase,
-        '💈 Cliente de regreso del Lavado',
-        `Hey ${barberName}, te toca volver a atender a ${clientName}. (Lavado listo)`,
-        { recipientId: barberId, recipientRole: 'Barbero' }
-      );
 
       loadMyWork();
       loadStats();
