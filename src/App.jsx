@@ -68,8 +68,9 @@ function App() {
   const [tabParams, setTabParams] = useState({});
   const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
   const [isReceptionModalOpen, setIsReceptionModalOpen] = useState(false);
-  
+
   // Multi-currency State
+
   const [currency, setCurrency] = useState('USD'); 
   const [rates, setRates] = useState({ bcv: 0, usdt: 0, updated_at: null });
   
@@ -449,6 +450,38 @@ function App() {
     }, 600);
   };
 
+  const handleCaptureFullPage = async () => {
+    try {
+      setIsTabLoading(true);
+      await new Promise(r => setTimeout(r, 300));
+
+      const { default: html2canvas } = await import('html2canvas');
+      const element = document.body;
+
+      const canvas = await html2canvas(element, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#121212',
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: document.documentElement.offsetWidth,
+        windowHeight: document.documentElement.scrollHeight,
+        height: document.documentElement.scrollHeight
+      });
+
+      const link = document.createElement('a');
+      link.download = `astro-barber-crm-${activeTab}-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (e) {
+      console.error('Error capturing screenshot:', e);
+      alert('Error al generar la captura de pantalla: ' + e.message);
+    } finally {
+      setIsTabLoading(false);
+    }
+  };
+
   const handleSeedData = async () => {
     if (!window.confirm('¿Quieres cargar datos de prueba para ver el CRM funcionando?')) return;
     try {
@@ -535,6 +568,30 @@ function App() {
           isOpen={isNotificationsOpen} 
           onClose={() => setIsNotificationsOpen(false)} 
         />
+        {/* Botón temporal de captura de pantalla completa */}
+        <button
+          onClick={handleCaptureFullPage}
+          style={{
+            position: 'fixed',
+            bottom: '80px',
+            right: '20px',
+            zIndex: 4000,
+            background: 'var(--gold-gradient)',
+            color: 'black',
+            border: 'none',
+            borderRadius: '50px',
+            padding: '10px 16px',
+            fontSize: '11px',
+            fontWeight: '900',
+            cursor: 'pointer',
+            boxShadow: 'var(--gold-glow)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
+          📸 Captura
+        </button>
       </MobileLayout>
     );
   }
@@ -612,6 +669,33 @@ function App() {
         isOpen={isNotificationsOpen} 
         onClose={() => setIsNotificationsOpen(false)} 
       />
+      {/* Botón temporal de captura de pantalla completa */}
+      <button
+        onClick={handleCaptureFullPage}
+        style={{
+          position: 'fixed',
+          bottom: '25px',
+          right: '25px',
+          zIndex: 4000,
+          background: 'var(--gold-gradient)',
+          color: 'black',
+          border: 'none',
+          borderRadius: '50px',
+          padding: '12px 22px',
+          fontSize: '13px',
+          fontWeight: '900',
+          cursor: 'pointer',
+          boxShadow: 'var(--gold-glow)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          transition: 'transform 0.2s',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+      >
+        📸 Captura Completa
+      </button>
     </div>
   );
 }
