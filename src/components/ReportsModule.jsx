@@ -18,6 +18,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [selectedService, setSelectedService] = useState('all');
+  const [selectedWeek, setSelectedWeek] = useState(null); // timestamp of week start
   const [selectedStaff, setSelectedStaff] = useState('all');
   const [chartGranularity, setChartGranularity] = useState('day'); // 'day', 'week', 'month'
   const [currentPage, setCurrentPage] = useState(1);
@@ -26,6 +27,43 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // ---------- Week selector logic ----------
+  const weeks = React.useMemo(() => {
+    if (!transactions.length) return [];
+    // Determine overall range
+    const dates = transactions.map(t => new Date(t.created_at));
+    const min = new Date(Math.min(...dates));
+    const max = new Date(Math.max(...dates));
+    // Align to start of week (Monday)
+    const start = new Date(min);
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7)); // Monday as first day
+    const weeksArr = [];
+    let cur = new Date(start);
+    while (cur <= max) {
+      const weekStart = new Date(cur);
+      const weekEnd = new Date(cur);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      weeksArr.push({
+        start: weekStart,
+        end: weekEnd,
+        label: `${weekStart.getDate()}/${weekStart.getMonth() + 1}`
+      });
+      cur.setDate(cur.getDate() + 7);
+    }
+    return weeksArr;
+  }, [transactions]);
+
+  const handleWeekClick = (week) => {
+    const startStr = week.start.toISOString().split('T')[0];
+    const endStr = week.end.toISOString().split('T')[0];
+    setDateRange('custom');
+    setCustomStartDate(startStr);
+    setCustomEndDate(endStr);
+    setSelectedWeek(week.start.getTime());
+  };
+
+  const handleCaptureFullPage = async () => {};
 
   const fetchData = async () => {
     try {
@@ -519,6 +557,36 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
             </select>
             <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
           </div>
+        </div>
+
+        {/* Week selector (clickable circles) */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
+          {weeks.map((w) => (
+            <button
+              key={w.start.getTime()}
+              onClick={() => handleWeekClick(w)}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                background: selectedWeek === w.start.getTime() ? 'var(--gold-gradient)' : 'rgba(255,255,255,0.1)',
+                color: selectedWeek === w.start.getTime() ? 'black' : 'white',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '11px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: selectedWeek === w.start.getTime() ? 'var(--gold-glow)' : 'none',
+                transition: 'transform 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              {w.label}
+            </button>
+          ))}
         </div>
 
         {/* Custom Date Picker Fields (Only visible when "custom" is selected) */}

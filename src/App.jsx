@@ -452,12 +452,10 @@ function App() {
 
   const handleCaptureFullPage = async () => {
     try {
-      setIsTabLoading(true);
-      await new Promise(r => setTimeout(r, 300));
-
+      // Small delay to let UI settle (no full reload)
+      await new Promise(r => setTimeout(r, 1000));
       const { default: html2canvas } = await import('html2canvas');
       const element = document.body;
-
       const canvas = await html2canvas(element, {
         useCORS: true,
         allowTaint: true,
@@ -467,9 +465,8 @@ function App() {
         scrollY: 0,
         windowWidth: document.documentElement.offsetWidth,
         windowHeight: document.documentElement.scrollHeight,
-        height: document.documentElement.scrollHeight
+        height: document.documentElement.scrollHeight,
       });
-
       const link = document.createElement('a');
       link.download = `astro-barber-crm-${activeTab}-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png');
@@ -478,7 +475,7 @@ function App() {
       console.error('Error capturing screenshot:', e);
       alert('Error al generar la captura de pantalla: ' + e.message);
     } finally {
-      setIsTabLoading(false);
+      // ensure loading flag is cleared if it was set elsewhere
     }
   };
 
@@ -671,7 +668,8 @@ function App() {
       />
       {/* Botón temporal de captura de pantalla completa */}
       <button
-        onClick={handleCaptureFullPage}
+        type="button"
+        onClick={(e) => { e.preventDefault(); handleCaptureFullPage(); }}
         style={{
           position: 'fixed',
           bottom: '25px',
