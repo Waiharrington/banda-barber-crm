@@ -420,17 +420,14 @@ const SchedulingModule = ({ isMobile, rates }) => {
         }
         @media (max-width: 1150px) {
           .premium-row-card {
-            grid-template-columns: 80px 1fr 1.3fr 1fr 50px 120px 85px !important;
-            gap: 10px !important;
+            gap: 12px !important;
             padding: 12px 14px !important;
           }
         }
         @media (max-width: 768px) {
           .premium-row-card {
-            grid-template-columns: 75px 1fr 1.2fr 1fr 45px 105px 85px !important;
-            gap: 6px !important;
+            gap: 8px !important;
             padding: 10px 12px !important;
-            font-size: 12px !important;
           }
         }
 
@@ -543,10 +540,9 @@ const SchedulingModule = ({ isMobile, rates }) => {
         .premium-row-card {
           padding: 16px 24px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-          display: grid;
-          grid-template-columns: 100px 1.2fr 2.5fr 1.2fr 70px 130px 90px;
-          gap: 16px;
+          display: flex;
           align-items: center;
+          gap: 16px;
           cursor: pointer;
           transition: all 0.25s ease, border-color 0.2s, background-color 0.2s, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
           background-color: transparent;
@@ -709,14 +705,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
             max-width: 100%;
           }
         }
-        @media (max-width: 768px) {
-          .premium-row-card {
-            grid-template-columns: 75px 1fr 1.2fr 1fr 45px 105px 85px !important;
-            gap: 6px !important;
-            padding: 10px 12px !important;
-            font-size: 12px !important;
-          }
-        }
+
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
@@ -1230,66 +1219,79 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                         </div>
                                       </div>
                                     </div>
-                              ) : (
-                                <div key={app.id} onClick={() => setSelectedAppDetail(app)} className="premium-row-card" style={{ 
-                                  animationDelay: `${idx * 40}ms`
-                                }}>
-                                  <div>
-                                    <div style={{ fontWeight: '900', fontSize: '14px', color: 'white', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>
-                                      {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
-                                    </div>
-                                    {filterType !== 'day' && (
-                                      <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>
-                                        {new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: 0 }}>
-                                    <div className="avatar-gradient-circle" style={{ overflow: 'hidden' }}>
-                                      {app.staff?.image_url ? (
-                                        <img src={app.staff.image_url} alt={app.staff.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                      ) : (
-                                        app.staff?.name?.charAt(0)
-                                      )}
-                                    </div>
-                                    <div style={{ fontWeight: '850', fontSize: '9px', color: 'var(--gold-primary)', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.3px', textAlign: 'center' }}>
-                                      {app.staff?.name?.split(' ')[0]}
-                                    </div>
-                                  </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                                    <Scissors size={14} color="var(--gold-primary)" style={{ opacity: 0.6, flexShrink: 0 }} />
-                                    <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {app.services?.name}
-                                    </div>
-                                  </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                                    <User size={14} color="rgba(255,255,255,0.4)" style={{ flexShrink: 0 }} />
-                                    <div style={{ fontWeight: '700', fontSize: '13px', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {app.clients?.name}
-                                    </div>
-                                  </div>
-                                  <div className="price-highlight-tag">
-                                    ${app.total_price}
-                                  </div>
-                                  <div>
-                                    <span className="status-glow-badge" style={{ 
-                                      backgroundColor: statusStyle.bg,
-                                      color: statusStyle.text,
-                                      border: `1px solid ${statusStyle.border}`
+                                  ) : (
+                                    <div key={app.id} onClick={() => setSelectedAppDetail(app)} className="premium-row-card" style={{ 
+                                      animationDelay: `${idx * 40}ms`
                                     }}>
-                                      <span className="blinking-dot" style={{ backgroundColor: statusStyle.dot }} />
-                                      {app.status}
-                                    </span>
+                                      {/* Left side: Barber avatar + name */}
+                                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flexShrink: 0, width: '60px' }}>
+                                        <div className="avatar-gradient-circle" style={{ overflow: 'hidden', width: '36px', height: '36px', minWidth: '36px', fontSize: '13px', margin: 0 }}>
+                                          {app.staff?.image_url ? (
+                                            <img src={app.staff.image_url} alt={app.staff.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                          ) : (
+                                            app.staff?.name?.charAt(0)
+                                          )}
+                                        </div>
+                                        <div style={{ fontWeight: '850', fontSize: '9px', color: 'var(--gold-primary)', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.3px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
+                                          {app.staff?.name?.split(' ')[0]}
+                                        </div>
+                                      </div>
+                                  {/* Middle side: Detailed info (2-line layout) */}
+                                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    {/* Top Row: Time, Client Name, Price */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                                        <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--gold-primary)', whiteSpace: 'nowrap' }}>
+                                          {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '').toLowerCase()}
+                                        </span>
+                                        {filterType !== 'day' && (
+                                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                            {new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                          </span>
+                                        )}
+                                        <span style={{ fontWeight: '800', color: '#fff', fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                          {app.clients?.name}
+                                        </span>
+                                      </div>
+                                      <span className="price-highlight-tag" style={{ fontSize: '15px', fontWeight: '950', color: 'var(--gold-primary)', flexShrink: 0, paddingLeft: '8px' }}>
+                                        ${app.total_price}
+                                      </span>
+                                    </div>
+                                    
+                                    {/* Bottom Row: Service Name, Status Badge */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '10px' }}>
+                                      <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                                        {app.services?.name || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin servicio</span>}
+                                      </div>
+                                      <div style={{ flexShrink: 0 }}>
+                                        <span className="status-glow-badge" style={{ 
+                                          fontSize: '9px', 
+                                          padding: '3px 8px', 
+                                          borderRadius: '6px',
+                                          backgroundColor: statusStyle.bg,
+                                          color: statusStyle.text,
+                                          border: `1px solid ${statusStyle.border}`,
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '4px'
+                                        }}>
+                                          <span className="blinking-dot" style={{ backgroundColor: statusStyle.dot, width: '4px', height: '4px', borderRadius: '50%', display: 'inline-block' }} />
+                                          {app.status}
+                                        </span>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
-                                    <button onClick={() => handleEditAppointment(app)} className="action-icon-btn edit" title="Editar detalles">
-                                      <Pencil size={13} />
+
+                                  {/* Right side: Action Buttons */}
+                                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                                    <button onClick={() => handleEditAppointment(app)} className="action-icon-btn edit" title="Editar detalles" style={{ padding: '8px', borderRadius: '8px' }}>
+                                      <Pencil size={14} />
                                     </button>
-                                    <button onClick={() => handleRescheduleAppointment(app)} className="action-icon-btn edit" title="Reagendar / Cambiar Hora">
-                                      <Clock size={13} />
+                                    <button onClick={() => handleRescheduleAppointment(app)} className="action-icon-btn edit" title="Reagendar / Cambiar Hora" style={{ padding: '8px', borderRadius: '8px' }}>
+                                      <Clock size={14} />
                                     </button>
-                                    <button onClick={() => handleManageAppointment(app.id)} className="action-icon-btn delete" title="Cancelar / Eliminar">
-                                      <Trash2 size={13} />
+                                    <button onClick={() => handleManageAppointment(app.id)} className="action-icon-btn delete" title="Cancelar / Eliminar" style={{ padding: '8px', borderRadius: '8px' }}>
+                                      <Trash2 size={14} />
                                     </button>
                                   </div>
                                 </div>
