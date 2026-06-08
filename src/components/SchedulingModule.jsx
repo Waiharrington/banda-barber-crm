@@ -1190,9 +1190,14 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                               {app.clients?.name}
                                             </span>
                                           </div>
-                                          <span className="price-highlight-tag" style={{ fontSize: '14px', fontWeight: '950', color: 'var(--gold-primary)', flexShrink: 0, paddingLeft: '8px' }}>
-                                            ${app.total_price}
-                                          </span>
+                                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0, paddingLeft: '8px' }}>
+                                            <span className="price-highlight-tag" style={{ fontSize: '14px', fontWeight: '950', color: 'var(--gold-primary)', lineHeight: '1.2' }}>
+                                              {rates?.usd > 0 ? `${Math.round(app.total_price * rates.usd).toLocaleString('es-VE')} Bs.` : `${app.total_price} USD`}
+                                            </span>
+                                            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.55)', fontWeight: '800', marginTop: '1px' }}>
+                                              Ref: ${app.total_price}
+                                            </span>
+                                          </div>
                                         </div>
                                         
                                         {/* Bottom Row: Service Name, Status Badge */}
@@ -1253,9 +1258,14 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                           {app.clients?.name}
                                         </span>
                                       </div>
-                                      <span className="price-highlight-tag" style={{ fontSize: '15px', fontWeight: '950', color: 'var(--gold-primary)', flexShrink: 0, paddingLeft: '8px' }}>
-                                        ${app.total_price}
-                                      </span>
+                                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0, paddingLeft: '8px' }}>
+                                        <span className="price-highlight-tag" style={{ fontSize: '15px', fontWeight: '950', color: 'var(--gold-primary)', lineHeight: '1.2' }}>
+                                          {rates?.usd > 0 ? `${Math.round(app.total_price * rates.usd).toLocaleString('es-VE')} Bs.` : `${app.total_price} USD`}
+                                        </span>
+                                        <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.55)', fontWeight: '800', marginTop: '1px' }}>
+                                          Ref: ${app.total_price}
+                                        </span>
+                                      </div>
                                     </div>
                                     
                                     {/* Bottom Row: Service Name, Status Badge */}
