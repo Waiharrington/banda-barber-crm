@@ -11,7 +11,7 @@
   
   --text-primary: #ffffff;
   --text-secondary: #aeaeb2;
-  --text-muted: #636366;
+  --text-muted: rgba(255, 255, 255, 0.55);
   
   --border-color: rgba(255, 255, 255, 0.1);
   --accent-color: #d4af37;
