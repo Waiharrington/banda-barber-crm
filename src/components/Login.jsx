@@ -752,6 +752,10 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           .l-mob-bottom .l-field {
             margin-bottom: var(--mob-fields-gap, 24px);
           }
+
+          .l-input {
+            font-size: 16px !important;
+          }
           .l-mob-bottom .l-row {
             margin-bottom: var(--mob-fields-gap, 24px);
           }
