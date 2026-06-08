@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNotifs } from '../context/NotificationContext';
 import { 
   Search, 
@@ -18,7 +19,8 @@ import {
   Download,
   Check,
   LayoutGrid,
-  Table as TableIcon
+  Table as TableIcon,
+  MessageCircle
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { supabase } from '../lib/supabase';
@@ -29,6 +31,21 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
   const { showToast } = useNotifs();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const getInitialBdayMessage = () => {
+    let msg = localStorage.getItem('astro_default_bday_message');
+    const isCorrupted = !msg || 
+      msg.includes('\uFFFD') || 
+      msg.includes('ï¿½') ||
+      /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/.test(msg);
+    if (isCorrupted) {
+      msg = `¡Hola {name}! ${String.fromCodePoint(0x1F389)} Te deseamos un muy feliz cumpleaños de parte de todo el equipo de Astro Barbershop. ${String.fromCodePoint(0x1F488)} ¡Que tengas un día excelente!`;
+      localStorage.setItem('astro_default_bday_message', msg);
+    }
+    return msg;
+  };
+
+  const [defaultBdayMessage, setDefaultBdayMessage] = useState(getInitialBdayMessage());
 
   useEffect(() => {
     if (initialClientId && clients.length > 0) {
@@ -159,6 +176,23 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                   <TableIcon size={16} /> Tabla
                 </button>
               </div>
+
+              <button 
+                className="btn-gold" 
+                onClick={() => setShowMessageModal(true)} 
+                style={{ 
+                  borderRadius: '12px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                <MessageCircle size={18} /> Mensaje Cumpleaños
+              </button>
 
               <button className="btn-gold" onClick={() => setShowAddForm(!showAddForm)} style={{ borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Plus size={18} /> {showAddForm ? 'Cancelar' : 'Nuevo Cliente'}
@@ -394,6 +428,156 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
         />
       )}
       
+      {/* Custom styled modal overlay to edit default birthday message */}
+      {createPortal(
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: showMessageModal ? 'blur(8px)' : 'blur(0px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          opacity: showMessageModal ? 1 : 0,
+          visibility: showMessageModal ? 'visible' : 'hidden',
+          pointerEvents: showMessageModal ? 'auto' : 'none',
+          transition: 'opacity 0.3s ease, backdrop-filter 0.3s ease, visibility 0.3s'
+        }}>
+          <div className="glass-card" style={{
+            width: '100%',
+            maxWidth: '460px',
+            background: 'linear-gradient(135deg, rgba(20, 20, 20, 0.95) 0%, rgba(10, 10, 10, 0.98) 100%)',
+            border: '1px solid rgba(212, 175, 55, 0.25)',
+            borderRadius: '24px',
+            padding: '24px',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.05)',
+            position: 'relative',
+            transform: showMessageModal ? 'scale(1) translateY(0)' : 'scale(0.9) translateY(20px)',
+            transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease',
+            opacity: showMessageModal ? 1 : 0
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <MessageCircle size={20} color="var(--gold-primary)" />
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: 'white' }}>
+                  Mensaje de Cumpleaños Predeterminado
+                </h3>
+              </div>
+              <button 
+                onClick={() => setShowMessageModal(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '28px',
+                  height: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)'
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Description */}
+            <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 16px 0' }}>
+              Define el mensaje que se cargará por defecto al enviar felicitaciones por WhatsApp desde el Dashboard.
+            </p>
+
+            <div style={{ 
+              backgroundColor: 'rgba(212, 175, 55, 0.1)', 
+              border: '1px solid rgba(212, 175, 55, 0.2)',
+              borderRadius: '12px',
+              padding: '12px',
+              fontSize: '12px',
+              color: 'var(--gold-primary)',
+              marginBottom: '16px',
+              lineHeight: '1.4'
+            }}>
+              <strong>💡 Consejo:</strong> Puedes incluir la palabra clave <code>{"{name}"}</code> en el texto y el sistema la reemplazará automáticamente con el nombre del cliente al enviar.
+            </div>
+
+            {/* Message Template Input */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '24px' }}>
+              <textarea 
+                value={defaultBdayMessage} 
+                onChange={(e) => setDefaultBdayMessage(e.target.value)}
+                rows={6}
+                style={{
+                  padding: '12px 14px',
+                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '12px',
+                  color: 'white',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  outline: 'none',
+                  resize: 'vertical',
+                  minHeight: '140px',
+                  lineHeight: '1.5'
+                }}
+              />
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={() => {
+                  localStorage.setItem('astro_default_bday_message', defaultBdayMessage);
+                  setShowMessageModal(false);
+                  showToast('Mensaje de cumpleaños guardado');
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '12px',
+                  backgroundColor: 'var(--gold-primary)',
+                  color: 'black',
+                  fontWeight: '850',
+                  fontSize: '13px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                Guardar Cambios
+              </button>
+              
+              <button 
+                onClick={() => {
+                  setDefaultBdayMessage(localStorage.getItem('astro_default_bday_message') || `¡Hola {name}! ${String.fromCodePoint(0x1F389)} Te deseamos un muy feliz cumpleaños de parte de todo el equipo de Astro Barbershop. ${String.fromCodePoint(0x1F488)} ¡Que tengas un día excelente!`);
+                  setShowMessageModal(false);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  color: 'white',
+                  fontWeight: '700',
+                  fontSize: '13px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       <style>{`
         .list-item:hover {
           border-color: var(--gold-primary);

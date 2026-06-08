@@ -44,10 +44,11 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-body {
-  background-color: var(--bg-primary);
+html, body {
+  background: radial-gradient(circle at center, #111111 0%, #050505 100%);
   color: var(--text-primary);
   min-height: 100vh;
+  overflow-y: auto;
   overflow-x: hidden;
 }
 
@@ -123,30 +124,104 @@ body {
 
 /* Advanced Animations */
 .animate-fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeInOnly 0.4s ease-out both;
 }
 
-.animate-slide-up {
-  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+.animate-fade-in > * {
+  opacity: 0;
+  animation: fadeInOnly 0.4s ease-out both;
 }
 
-.animate-scale-in {
-  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+.animate-fade-in > *:nth-child(1) { animation-delay: 0.04s; }
+.animate-fade-in > *:nth-child(2) { animation-delay: 0.1s; }
+.animate-fade-in > *:nth-child(3) { animation-delay: 0.16s; }
+.animate-fade-in > *:nth-child(4) { animation-delay: 0.22s; }
+.animate-fade-in > *:nth-child(5) { animation-delay: 0.28s; }
+.animate-fade-in > *:nth-child(6) { animation-delay: 0.34s; }
+.animate-fade-in > *:nth-child(7) { animation-delay: 0.4s; }
+.animate-fade-in > *:nth-child(8) { animation-delay: 0.46s; }
 
-@keyframes fadeIn {
+@keyframes fadeInOnly {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
+.animate-slide-up {
+  animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out both;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translate3d(0, 15px, 0);
+  }
+  to { 
+    opacity: 1; 
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { 
+    opacity: 0; 
+    transform: translate3d(0, 20px, 0); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translate3d(0, 0, 0); 
+  }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.94); }
-  to { opacity: 1; transform: scale(1); }
+  from { 
+    opacity: 0; 
+    transform: scale3d(0.96, 0.96, 1); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale3d(1, 1, 1); 
+  }
+}
+
+@keyframes scaleOut {
+  from { 
+    opacity: 1; 
+    transform: scale3d(1, 1, 1); 
+  }
+  to { 
+    opacity: 0; 
+    transform: scale3d(0.94, 0.94, 1); 
+  }
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeOutModal {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.modal-overlay-enter {
+  animation: fadeInModal 0.25s ease-out both;
+}
+
+.modal-overlay-exit {
+  animation: fadeOutModal 0.2s ease-in both;
+}
+
+.modal-card-enter {
+  animation: scaleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.modal-card-exit {
+  animation: scaleOut 0.2s cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 /* Input Styling (Apple style) */
@@ -403,6 +478,7 @@ input:focus, select:focus, textarea:focus {
   justify-content: center;
   z-index: 9999;
   transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .spinning-scissors {
@@ -431,4 +507,93 @@ input:focus, select:focus, textarea:focus {
 @keyframes pulseOpacity {
   0%, 100% { opacity: 0.4; transform: scale(0.98); }
   50% { opacity: 1; transform: scale(1); }
+}
+
+/* Sidebar scrollbar customization: completely hidden */
+.sidebar {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
+}
+.sidebar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+/* Sidebar Magnetic Glow Spotlight */
+.sidebar-glow-spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: radial-gradient(180px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(212, 175, 55, 0.08), transparent 80%);
+}
+
+.opacity-0 {
+  opacity: 0;
+}
+
+/* Staggered entry animation delays */
+.animate-stagger-1 { animation-delay: 0.05s !important; }
+.animate-stagger-2 { animation-delay: 0.1s !important; }
+.animate-stagger-3 { animation-delay: 0.15s !important; }
+.animate-stagger-4 { animation-delay: 0.2s !important; }
+.animate-stagger-5 { animation-delay: 0.25s !important; }
+.animate-stagger-6 { animation-delay: 0.3s !important; }
+.animate-stagger-7 { animation-delay: 0.35s !important; }
+.animate-stagger-8 { animation-delay: 0.4s !important; }
+.animate-stagger-9 { animation-delay: 0.45s !important; }
+.animate-stagger-10 { animation-delay: 0.5s !important; }
+
+/* Hide scrollbars globally across all elements while preserving scroll functionality */
+::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+* {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
+}
+
+
+
+/* --- Premium Interactive Transitions for Buttons, Tabs, and Modals --- */
+button, 
+input[type="submit"], 
+.action-btn,
+.btn-gold {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+button:hover, 
+input[type="submit"]:hover {
+  transform: translateY(-1.5px);
+  filter: brightness(1.12);
+}
+
+button:active, 
+input[type="submit"]:active {
+  transform: translateY(0px) scale(0.97);
+  filter: brightness(0.95);
+}
+
+/* Sidebar Specific Hover (prevents scale distortion on logo or icons) */
+.sidebar button:hover {
+  transform: translateX(3px) !important;
+}
+
+.sidebar button:active {
+  transform: scale(0.98) !important;
+}
+
+/* Prevent automatic browser zoom on input focus for mobile viewports */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }

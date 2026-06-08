@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Users, 
   Search, 
@@ -310,7 +311,7 @@ const ReceptionModule = ({ isMobile }) => {
   };
 
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '900px', margin: '0 auto', paddingBottom: '100px' }}>
+    <div className="animate-fade-in" style={{ maxWidth: '1400px', margin: '0 auto', paddingBottom: '100px' }}>
       <header style={{ marginBottom: '40px', textAlign: isMobile ? 'center' : 'left' }}>
         <h1 style={{ fontSize: '32px', fontWeight: '900' }}>Recepción <span className="text-gold">Astro</span></h1>
         <p style={{ color: 'var(--text-secondary)' }}>Módulo de atención y agendamiento rápido.</p>
@@ -546,7 +547,7 @@ const ReceptionModule = ({ isMobile }) => {
                           fontWeight: '900',
                           borderBottomLeftRadius: '8px'
                         }}>
-                          BUSY
+                          OCUPADO
                         </div>
                       )}
                       
@@ -791,11 +792,35 @@ const ReceptionModule = ({ isMobile }) => {
 };
 
 const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, onToggle, exchangeRate = 58 }) => {
-  if (!isOpen) return null;
-  
-  return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div className="glass-card animate-scale-in" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', borderRadius: '32px', border: '1px solid rgba(212,175,55,0.2)', padding: '32px' }}>
+  return createPortal(
+    <div style={{ 
+      position: 'fixed', 
+      inset: 0, 
+      backgroundColor: 'rgba(0,0,0,0.85)', 
+      backdropFilter: isOpen ? 'blur(10px)' : 'blur(0px)', 
+      zIndex: 99999, 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      padding: '20px',
+      opacity: isOpen ? 1 : 0,
+      visibility: isOpen ? 'visible' : 'hidden',
+      pointerEvents: isOpen ? 'auto' : 'none',
+      transition: 'opacity 0.3s ease, backdrop-filter 0.3s ease, visibility 0.3s'
+    }}>
+      <div className="glass-card" style={{ 
+        width: '100%', 
+        maxWidth: '600px', 
+        maxHeight: '90vh', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        borderRadius: '32px', 
+        border: '1px solid rgba(212,175,55,0.2)', 
+        padding: '32px',
+        transform: isOpen ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(15px)',
+        transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease',
+        opacity: isOpen ? 1 : 0
+      }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {icon}
@@ -884,7 +909,8 @@ const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, on
           LISTO
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

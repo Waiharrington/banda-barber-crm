@@ -25,7 +25,8 @@ import {
   Shield,
   Eye,
   EyeOff,
-  Plus
+  Plus,
+  Cake
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import AstroSelect from './AstroSelect';
@@ -78,7 +79,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     username: '',
     password: '',
     permissions: rolePresets['Barbero'],
-    washing_rate: 0
+    washing_rate: 0,
+    birth_date: ''
   });
 
   // Camera State
@@ -174,7 +176,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       username: person.username || '',
       password: person.password || '',
       permissions: perms,
-      washing_rate: person.washing_rate || 0
+      washing_rate: person.washing_rate || 0,
+      birth_date: person.birth_date || ''
     });
     setEditingId(person.id);
     setIsEditing(true);
@@ -195,7 +198,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       password: '',
       permissions: rolePresets['Barbero'],
       washing_rate: 0,
-      roles: ['Barbero']
+      roles: ['Barbero'],
+      birth_date: ''
     });
     setIsCreatingNewRole(false);
     setNewRoleName('');
@@ -300,7 +304,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         username: formData.username,
         password: formData.password,
         commission_pct: 40,
-        washing_rate: formData.washing_rate || 0
+        washing_rate: formData.washing_rate || 0,
+        birth_date: formData.birth_date || null
       };
 
       if (isEditing) {
@@ -576,13 +581,20 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                 </div>
               </div>
 
-              {/* Contact Info */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: '16px' }}>
+              {/* Contact & Birthday Info */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 2fr', gap: '16px' }}>
                 <div className="form-group">
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>TELÉFONO</label>
                   <div style={{ position: 'relative' }}>
                     <Phone size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
                     <input className="form-input" placeholder="+58 412..." value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>CUMPLEAÑOS</label>
+                  <div style={{ position: 'relative' }}>
+                    <Cake size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                    <input type="date" className="form-input" value={formData.birth_date} onChange={e => setFormData({...formData, birth_date: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
                   </div>
                 </div>
                 <div className="form-group">
@@ -750,6 +762,12 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         {person.phone}
                       </div>
                     ) : 'Sin teléfono'}
+                    {person.birth_date && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', fontSize: '11px', color: 'var(--gold-primary)' }}>
+                        <Cake size={12} fill="var(--gold-primary)" />
+                        <span>{new Date(person.birth_date + 'T00:00:00').toLocaleDateString([], { day: '2-digit', month: 'short' })}</span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1031,13 +1049,20 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         </div>
                       </div>
 
-                      {/* Contact Info */}
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: '16px' }}>
+                      {/* Contact & Birthday Info */}
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 2fr', gap: '16px' }}>
                         <div className="form-group">
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>TELÉFONO</label>
                           <div style={{ position: 'relative' }}>
                             <Phone size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
                             <input className="form-input" placeholder="+58 412..." value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                          </div>
+                        </div>
+                        <div className="form-group">
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>CUMPLEAÑOS</label>
+                          <div style={{ position: 'relative' }}>
+                            <Cake size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                            <input type="date" className="form-input" value={formData.birth_date} onChange={e => setFormData({...formData, birth_date: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
                           </div>
                         </div>
                         <div className="form-group">

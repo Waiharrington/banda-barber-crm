@@ -2,6 +2,19 @@ import React from 'react';
 import { Scissors } from 'lucide-react';
 
 const AstroLoader = ({ visible }) => {
+  React.useEffect(() => {
+    if (visible) {
+      const prevBodyOverflow = document.body.style.overflow;
+      const prevHtmlOverflow = document.documentElement.style.overflow;
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevBodyOverflow || '';
+        document.documentElement.style.overflow = prevHtmlOverflow || '';
+      };
+    }
+  }, [visible]);
+
   return (
     <div 
       className="astro-loader-container" 
@@ -15,14 +28,18 @@ const AstroLoader = ({ visible }) => {
       </div>
       <div className="loader-text">Astro Experience</div>
       
-      {/* Background glow behind scissors */}
+      {/* Background glow behind scissors - enlarged, multi-stop extra-soft gradient to avoid banding */}
       <div style={{
         position: 'absolute',
-        width: '300px',
-        height: '300px',
-        background: 'radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 70%)',
+        width: '600px',
+        height: '600px',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        background: 'radial-gradient(circle, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 30%, rgba(212,175,55,0.005) 55%, transparent 75%)',
         zIndex: -1,
-        filter: 'blur(40px)'
+        filter: 'blur(120px)',
+        pointerEvents: 'none'
       }} />
     </div>
   );

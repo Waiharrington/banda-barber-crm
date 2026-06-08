@@ -7,6 +7,11 @@ import {
   Plus, 
   ChevronLeft, 
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Sunrise,
+  Sun,
+  Moon,
   CheckCircle2,
   AlertCircle,
   Trash2,
@@ -14,7 +19,14 @@ import {
   Pencil,
   Filter,
   List,
-  Search
+  Search,
+  Sparkles,
+  DollarSign,
+  Loader2,
+  Check,
+  X,
+  Minus,
+  Package
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -22,6 +34,8 @@ import AstroSelect from './AstroSelect';
 import AstroDialog from './AstroDialog';
 import ScheduleModal from './ScheduleModal';
 import { useAuth } from '../context/AuthContext';
+import { ModalShield } from '../context/ModalContext';
+import AnimatedModal from './AnimatedModal';
 
 const SchedulingModule = ({ isMobile, rates }) => {
   const { user } = useAuth();
@@ -44,6 +58,26 @@ const SchedulingModule = ({ isMobile, rates }) => {
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [clientSearchResults, setClientSearchResults] = useState([]);
   const [selectedAppDetail, setSelectedAppDetail] = useState(null);
+  const [activeDetail, setActiveDetail] = useState(null);
+
+  useEffect(() => {
+    if (selectedAppDetail) {
+      setActiveDetail(selectedAppDetail);
+    }
+  }, [selectedAppDetail]);
+
+  const [collapsedGroups, setCollapsedGroups] = useState({
+    morning: true,
+    afternoon: true,
+    evening: true
+  });
+  const [expandedGroups, setExpandedGroups] = useState({
+    morning: false,
+    afternoon: false,
+    evening: false
+  });
+  const ITEMS_PER_GROUP = 5;
+  const [showFullCalendar, setShowFullCalendar] = useState(false);
 
   const [newApp, setNewApp] = useState({
     clientId: '',
@@ -111,10 +145,17 @@ const SchedulingModule = ({ isMobile, rates }) => {
       start.setHours(0, 0, 0, 0);
       
       let end = new Date(start);
-      if (filterType === 'day') end.setDate(start.getDate() + 1);
-      else if (filterType === 'week') end.setDate(start.getDate() + 7);
-      else if (filterType === 'fortnight') end.setDate(start.getDate() + 14);
-      else if (filterType === 'month') {
+      if (filterType === 'day') {
+        end.setDate(start.getDate() + 1);
+      } else if (filterType === 'week') {
+        const day = start.getDay();
+        const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+        start.setDate(diff);
+        end = new Date(start);
+        end.setDate(start.getDate() + 7);
+      } else if (filterType === 'fortnight') {
+        end.setDate(start.getDate() + 14);
+      } else if (filterType === 'month') {
         start.setDate(1);
         end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
         end.setHours(23, 59, 59, 999);
@@ -253,21 +294,482 @@ const SchedulingModule = ({ isMobile, rates }) => {
     if (filterType === 'day') return date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
     if (filterType === 'month') return date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
     
-    const end = new Date(date);
-    if (filterType === 'week') end.setDate(date.getDate() + 6);
-    else if (filterType === 'fortnight') end.setDate(date.getDate() + 13);
+    const start = new Date(date);
+    if (filterType === 'week') {
+      const day = start.getDay();
+      const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+      start.setDate(diff);
+    }
     
-    return `${date.getDate()} ${date.toLocaleDateString('es-ES', { month: 'short' })} - ${end.getDate()} ${end.toLocaleDateString('es-ES', { month: 'short' })}`;
+    const end = new Date(start);
+    if (filterType === 'week') end.setDate(start.getDate() + 6);
+    else if (filterType === 'fortnight') end.setDate(start.getDate() + 13);
+    
+    return `${start.getDate()} ${start.toLocaleDateString('es-ES', { month: 'short' })} - ${end.getDate()} ${end.toLocaleDateString('es-ES', { month: 'short' })}`;
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      'Agendado': { text: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)', border: 'rgba(212,175,55,0.25)', dot: 'var(--gold-primary)' },
+      'En Silla': { text: '#0a84ff', bg: 'rgba(10,132,255,0.1)', border: 'rgba(10,132,255,0.25)', dot: '#0a84ff' },
+      'En Lavado': { text: '#30d158', bg: 'rgba(48,209,88,0.1)', border: 'rgba(48,209,88,0.25)', dot: '#30d158' },
+      'Por Pagar': { text: '#bf5af2', bg: 'rgba(191,90,242,0.1)', border: 'rgba(191,90,242,0.25)', dot: '#bf5af2' },
+      'Completado': { text: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', dot: 'rgba(255,255,255,0.3)' },
+      'Cancelada': { text: '#ff453a', bg: 'rgba(255,69,58,0.1)', border: 'rgba(255,69,58,0.25)', dot: '#ff453a' }
+    };
+    return colors[status] || { text: 'white', bg: 'rgba(255,255,255,0.1)', border: 'rgba(255,255,255,0.15)', dot: 'white' };
+  };
+
+  const filteredApps = appointments.filter(app => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      (app.clients?.name || '').toLowerCase().includes(term) ||
+      (app.clients?.id_card || '').toLowerCase().includes(term) ||
+      (app.clients?.phone || '').toLowerCase().includes(term)
+    );
+  }).sort((a, b) => new Date(a.scheduled_at || a.created_at) - new Date(b.scheduled_at || b.created_at));
+
+  const totalEstimate = filteredApps.reduce((acc, app) => app.status !== 'Cancelada' ? acc + (Number(app.total_price) || 0) : acc, 0);
+  const activeStaffCount = new Set(filteredApps.map(app => app.staff_id).filter(Boolean)).size;
+
+  const morningApps = [];
+  const afternoonApps = [];
+  const eveningApps = [];
+
+  filteredApps.forEach(app => {
+    const dateObj = new Date(app.scheduled_at || app.created_at);
+    const hours = dateObj.getHours();
+    if (hours < 12) {
+      morningApps.push(app);
+    } else if (hours < 19) {
+      afternoonApps.push(app);
+    } else {
+      eveningApps.push(app);
+    }
+  });
+
+  const getWeekDays = (date) => {
+    const week = [];
+    for (let i = -3; i <= 3; i++) {
+      const d = new Date(date);
+      d.setDate(date.getDate() + i);
+      week.push(d);
+    }
+    return week;
   };
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+      
+      {/* Styles Injection for Premium Aesthetics */}
+      <style>{`
+        .scheduling-grid-container {
+          display: grid;
+          grid-template-columns: 320px 1fr;
+          gap: 24px;
+          align-items: start;
+        }
+        @media (max-width: 1150px) {
+          .scheduling-grid-container {
+            grid-template-columns: 1fr;
+          }
+        }
+        .scheduling-metrics-banner {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+          margin-bottom: 20px;
+          background: rgba(255, 255, 255, 0.02);
+          padding: 12px;
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        @media (max-width: 600px) {
+          .scheduling-metrics-banner {
+            grid-template-columns: 1fr;
+          }
+        }
+        @media (max-width: 1150px) {
+          .premium-row-card {
+            grid-template-columns: 80px 1fr 1.3fr 1fr 50px 115px 70px !important;
+            gap: 10px !important;
+            padding: 12px 14px !important;
+          }
+        }
+        @media (max-width: 768px) {
+          .premium-row-card {
+            grid-template-columns: 75px 1fr 1.2fr 1fr 45px 105px 70px !important;
+            gap: 6px !important;
+            padding: 10px 12px !important;
+            font-size: 12px !important;
+          }
+        }
+
+        .scheduling-aside {
+          position: sticky;
+          top: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          z-index: 10;
+        }
+        @media (max-width: 1150px) {
+          .scheduling-aside {
+            position: relative;
+            top: 0;
+            z-index: 1;
+          }
+        }
+
+        .premium-calendar-aside {
+          background: rgba(18, 18, 18, 0.4);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+          border-radius: 28px;
+          padding: 24px;
+          max-width: 340px;
+          width: 100%;
+          margin: 0 auto;
+        }
+        .premium-filter-segment-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          background-color: rgba(0, 0, 0, 0.25);
+          padding: 6px;
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .premium-filter-btn {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 18px;
+          border-radius: 16px;
+          border: none;
+          background: transparent;
+          color: rgba(255, 255, 255, 0.6);
+          font-weight: 700;
+          font-size: 13px;
+          cursor: pointer;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          text-align: left;
+        }
+        .premium-filter-btn:hover {
+          color: white;
+          background: rgba(255, 255, 255, 0.02);
+        }
+        .premium-filter-btn.active {
+          background: var(--gold-primary);
+          color: #121212;
+          box-shadow: 0 4px 15px rgba(212, 175, 55, 0.25);
+        }
+        .premium-search-box {
+          background: rgba(18, 18, 18, 0.4);
+          backdrop-filter: blur(15px);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          padding: 14px 22px;
+          margin-bottom: 24px;
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          transition: all 0.3s ease;
+        }
+        .premium-search-box:focus-within {
+          border-color: rgba(212, 175, 55, 0.4);
+          box-shadow: 0 0 20px rgba(212, 175, 55, 0.15), inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        .premium-search-input {
+          flex: 1;
+          background: none;
+          border: none;
+          color: white;
+          font-size: 14px;
+          font-weight: 700;
+          outline: none;
+        }
+        .premium-search-input::placeholder {
+          color: rgba(255, 255, 255, 0.35);
+        }
+        .appointment-list-wrapper {
+          background: rgba(18, 18, 18, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          border-radius: 28px;
+          overflow: hidden;
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+        .premium-row-card {
+          padding: 16px 24px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+          display: grid;
+          grid-template-columns: 100px 1.2fr 2.5fr 1.2fr 70px 130px 75px;
+          gap: 16px;
+          align-items: center;
+          cursor: pointer;
+          transition: all 0.25s ease;
+          background-color: transparent;
+        }
+        .premium-row-card:hover {
+          background-color: rgba(255, 255, 255, 0.02);
+          border-color: rgba(212, 175, 55, 0.12);
+          transform: scale(1.002);
+        }
+        .avatar-gradient-circle {
+          width: 36px;
+          height: 36px;
+          min-width: 36px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0.05) 100%);
+          border: 1.5px solid rgba(212, 175, 55, 0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 13px;
+          color: var(--gold-primary);
+          font-weight: 900;
+          line-height: 1;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 8px rgba(212,175,55,0.15);
+          flex-shrink: 0;
+        }
+        .status-glow-badge {
+          font-size: 10px;
+          font-weight: 850;
+          padding: 4px 12px;
+          border-radius: 20px;
+          text-transform: uppercase;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          letter-spacing: 0.5px;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .action-icon-btn {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          color: rgba(255, 255, 255, 0.3);
+          cursor: pointer;
+          padding: 8px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        }
+        .premium-row-card:hover .action-icon-btn {
+          color: rgba(255, 255, 255, 0.6);
+        }
+        .action-icon-btn.edit:hover {
+          color: var(--gold-primary);
+          border-color: rgba(212, 175, 55, 0.3);
+          background: rgba(212, 175, 55, 0.08);
+          box-shadow: 0 4px 10px rgba(212, 175, 55, 0.1);
+        }
+        .action-icon-btn.delete:hover {
+          color: #ff453a;
+          border-color: rgba(255, 69, 58, 0.3);
+          background: rgba(255, 69, 58, 0.08);
+          box-shadow: 0 4px 10px rgba(255, 69, 58, 0.1);
+        }
+        .blinking-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          display: inline-block;
+          animation: statusGlow 1.8s ease-in-out infinite;
+        }
+        @keyframes statusGlow {
+          0% { opacity: 0.4; transform: scale(0.9); }
+          50% { opacity: 1; transform: scale(1.1); }
+          100% { opacity: 0.4; transform: scale(0.9); }
+        }
+        .price-highlight-tag {
+          font-family: 'Outfit', var(--font-sans), system-ui;
+          font-weight: 950;
+          font-size: 15px;
+          color: #30d158;
+          text-shadow: 0 0 10px rgba(48, 209, 88, 0.15);
+        }
+        .date-navigator-card {
+          padding: 16px 24px;
+          margin-bottom: 20px;
+          border-radius: 24px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          background: rgba(18, 18, 18, 0.3);
+        }
+        @media (max-width: 600px) {
+          .date-navigator-card {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+          }
+          .date-navigator-card div:last-child {
+            width: 100%;
+            justify-content: flex-end;
+          }
+        }
+        .scheduling-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 30px;
+          gap: 16px;
+        }
+        @media (max-width: 600px) {
+          .scheduling-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          .scheduling-header button {
+            width: 100%;
+          }
+        }
+        @media (max-width: 768px) {
+          .premium-row-card {
+            grid-template-columns: 75px 1fr 1.2fr 1fr 45px 105px 70px !important;
+            gap: 6px !important;
+            padding: 10px 12px !important;
+            font-size: 12px !important;
+          }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+          animation: spin 0.9s linear infinite;
+          display: block;
+        }
+        @media (min-width: 1151px) {
+          .show-on-tablet {
+            display: none !important;
+          }
+        }
+        @media (max-width: 1150px) {
+          .hide-on-tablet {
+            display: none !important;
+          }
+        }
+
+        .premium-filter-tabs {
+          display: flex;
+          gap: 6px;
+          background: rgba(0, 0, 0, 0.25);
+          padding: 4px;
+          border-radius: 14px;
+          border: 1px solid rgba(255, 255, 255, 0.03);
+          margin-bottom: 20px;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .premium-tab-btn {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 8px 12px;
+          border-radius: 10px;
+          border: none;
+          background: transparent;
+          color: rgba(255, 255, 255, 0.6);
+          font-weight: 700;
+          font-size: 12px;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s ease;
+        }
+        .premium-tab-btn:hover {
+          color: white;
+        }
+        .premium-tab-btn.active {
+          background: var(--gold-primary);
+          color: #121212;
+          font-weight: 800;
+          box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+        }
+
+        .weekly-ribbon {
+          display: flex;
+          justify-content: space-between;
+          background: rgba(18, 18, 18, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          padding: 12px;
+          border-radius: 20px;
+          margin-bottom: 20px;
+          gap: 8px;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .weekly-ribbon::-webkit-scrollbar {
+          display: none;
+        }
+        .ribbon-day-btn {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 8px 4px;
+          border-radius: 12px;
+          border: none;
+          background: transparent;
+          color: rgba(255, 255, 255, 0.6);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          min-width: 42px;
+        }
+        .ribbon-day-btn:hover {
+          color: white;
+          background: rgba(255, 255, 255, 0.04);
+        }
+        .ribbon-day-btn.active {
+          background: var(--gold-primary);
+          color: #121212;
+          font-weight: 800;
+          box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);
+        }
+        .ribbon-day-btn.today {
+          border: 1px solid rgba(212, 175, 55, 0.45) !important;
+          background: rgba(212, 175, 55, 0.08);
+          color: var(--gold-primary);
+        }
+        .ribbon-day-btn.today.active {
+          border: none !important;
+          background: var(--gold-primary);
+          color: #121212;
+        }
+        .ribbon-day-name {
+          font-size: 9px;
+          font-weight: 900;
+          text-transform: uppercase;
+          margin-bottom: 4px;
+          letter-spacing: 0.5px;
+        }
+        .ribbon-day-num {
+          font-size: 14px;
+          font-weight: 800;
+        }
+        .ribbon-dot {
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          margin-top: 4px;
+        }
+      `}</style>
+
+      <header className="scheduling-header">
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: '900' }}>Agenda <span className="text-gold">Astro</span></h1>
+          <h1 style={{ fontSize: '32px', fontWeight: '950', letterSpacing: '-0.8px', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>Agenda <span className="text-gold">Astro</span></h1>
           <p style={{ color: 'var(--text-secondary)' }}>Gestión inteligente de citas y disponibilidad.</p>
         </div>
-        <button className="btn-gold" onClick={() => {
+        <button className="btn-gold" style={{ boxShadow: '0 5px 15px rgba(212, 175, 55, 0.25)' }} onClick={() => {
             setEditingApp(null);
             setNewApp({ clientId: '', serviceId: '', staffId: user?.id || '', time: '10:00', extras: [], products: [] });
             setClientSearchTerm('');
@@ -278,9 +780,10 @@ const SchedulingModule = ({ isMobile, rates }) => {
         </button>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '320px 1fr', gap: '24px', alignItems: 'start' }}>
+      <div className="scheduling-grid-container" style={{ gridTemplateColumns: isMobile ? '1fr' : undefined }}>
         {/* Left Side: Mini Calendar */}
-        <aside style={{ position: isMobile ? 'relative' : 'sticky', top: '20px' }}>
+        <aside className="scheduling-aside hide-on-tablet">
+          
           <MiniCalendar 
             selectedDate={selectedDate} 
             onDateSelect={(d) => {
@@ -290,9 +793,9 @@ const SchedulingModule = ({ isMobile, rates }) => {
             allAppointments={allAppointments}
           />
 
-          <div className="glass-card" style={{ marginTop: '20px', padding: '20px', borderRadius: '24px' }}>
+          <div className="premium-calendar-aside">
             <h4 style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1.5px', marginBottom: '16px', textTransform: 'uppercase' }}>Filtros de Vista</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="premium-filter-segment-list">
               {[
                 { id: 'day', label: 'Hoy / Día', icon: <Clock size={14} /> },
                 { id: 'week', label: 'Semanal', icon: <CalendarIcon size={14} /> },
@@ -302,23 +805,10 @@ const SchedulingModule = ({ isMobile, rates }) => {
                 <button
                   key={f.id}
                   onClick={() => setFilterType(f.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '12px 16px',
-                    borderRadius: '14px',
-                    border: 'none',
-                    background: filterType === f.id ? 'var(--gold-primary)' : 'rgba(255,255,255,0.03)',
-                    color: filterType === f.id ? 'black' : 'white',
-                    fontWeight: '800',
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s'
-                  }}
+                  className={`premium-filter-btn ${filterType === f.id ? 'active' : ''}`}
                 >
                   {f.icon}
-                  {f.label}
+                  <span>{f.label}</span>
                 </button>
               ))}
             </div>
@@ -327,14 +817,35 @@ const SchedulingModule = ({ isMobile, rates }) => {
 
         {/* Right Side: Appointments List */}
         <main>
-          <div className="glass-card" style={{ padding: '20px 24px', marginBottom: '20px', borderRadius: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="date-navigator-card">
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <div style={{ background: 'var(--gold-primary)', width: '32px', height: '32px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black' }}>
+              <div style={{ background: 'var(--gold-primary)', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212, 175, 55, 0.3)' }}>
                 <CalendarIcon size={16} />
               </div>
-              <h2 style={{ fontSize: '18px', fontWeight: '900', textTransform: 'capitalize' }}>{formatDateLabel(selectedDate)}</h2>
+              <h2 style={{ fontSize: '18px', fontWeight: '900', textTransform: 'capitalize', color: 'white', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>{formatDateLabel(selectedDate)}</h2>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                onClick={() => setShowFullCalendar(!showFullCalendar)} 
+                className="show-on-tablet" 
+                style={{ 
+                  background: showFullCalendar ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', 
+                  border: '1px solid rgba(255,255,255,0.08)', 
+                  borderRadius: '12px', 
+                  width: '38px', 
+                  height: '38px', 
+                  color: showFullCalendar ? 'black' : 'white', 
+                  cursor: 'pointer', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  transition: 'all 0.2s',
+                  marginRight: '4px'
+                }}
+              >
+                <CalendarIcon size={18} />
+              </button>
+              
               <button onClick={() => {
                 const d = new Date(selectedDate);
                 if (filterType === 'day') d.setDate(d.getDate() - 1);
@@ -342,7 +853,8 @@ const SchedulingModule = ({ isMobile, rates }) => {
                 else if (filterType === 'fortnight') d.setDate(d.getDate() - 14);
                 else if (filterType === 'month') d.setMonth(d.getMonth() - 1);
                 setSelectedDate(d);
-              }} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '10px', width: '36px', height: '36px', color: 'white', cursor: 'pointer' }}><ChevronLeft size={18} /></button>
+              }} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', width: '38px', height: '38px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(212,175,55,0.3)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}><ChevronLeft size={18} /></button>
+              
               <button onClick={() => {
                 const d = new Date(selectedDate);
                 if (filterType === 'day') d.setDate(d.getDate() + 1);
@@ -350,186 +862,351 @@ const SchedulingModule = ({ isMobile, rates }) => {
                 else if (filterType === 'fortnight') d.setDate(d.getDate() + 14);
                 else if (filterType === 'month') d.setMonth(d.getMonth() + 1);
                 setSelectedDate(d);
-              }} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '10px', width: '36px', height: '36px', color: 'white', cursor: 'pointer' }}><ChevronRight size={18} /></button>
+              }} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', width: '38px', height: '38px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(212,175,55,0.3)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}><ChevronRight size={18} /></button>
             </div>
-          
           </div>
 
-          <div className="glass-card" style={{ padding: '16px 24px', marginBottom: '20px', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <Search size={18} color="var(--text-muted)" />
+          {/* Collapsible Monthly Calendar for Tablets/Mobiles */}
+          {showFullCalendar && (
+            <div className="animate-scale-in show-on-tablet" style={{ marginBottom: '20px' }}>
+              <MiniCalendar 
+                selectedDate={selectedDate} 
+                onDateSelect={(d) => {
+                  setSelectedDate(d);
+                  setFilterType('day');
+                  setShowFullCalendar(false);
+                }} 
+                allAppointments={allAppointments}
+              />
+            </div>
+          )}
+
+          {/* Segmented Filter Tabs for Tablets/Mobiles */}
+          <div className="premium-filter-tabs show-on-tablet">
+            {[
+              { id: 'day', label: 'Hoy / Día', icon: <Clock size={13} /> },
+              { id: 'week', label: 'Semanal', icon: <CalendarIcon size={13} /> },
+              { id: 'fortnight', label: 'Quincenal', icon: <Filter size={13} /> },
+              { id: 'month', label: 'Mensual', icon: <List size={13} /> }
+            ].map(f => (
+              <button
+                key={f.id}
+                onClick={() => setFilterType(f.id)}
+                className={`premium-tab-btn ${filterType === f.id ? 'active' : ''}`}
+              >
+                {f.icon}
+                <span>{f.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Weekly Day Ribbon for Tablets/Mobiles (Only in Day mode) */}
+          {filterType === 'day' && (
+            <div className="weekly-ribbon show-on-tablet">
+              {getWeekDays(selectedDate).map((date, idx) => {
+                const isSelected = selectedDate.toDateString() === date.toDateString();
+                const isToday = new Date().toDateString() === date.toDateString();
+                const dateStr = date.toISOString().split('T')[0];
+                const hasApps = allAppointments.some(a => (a.scheduled_at || a.created_at).startsWith(dateStr));
+                const dayNamesShort = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+                
+                return (
+                  <button
+                    key={date.toISOString()}
+                    onClick={() => {
+                      setSelectedDate(date);
+                      setFilterType('day');
+                    }}
+                    className={`ribbon-day-btn ${isSelected ? 'active' : ''} ${isToday ? 'today' : ''}`}
+                  >
+                    <span className="ribbon-day-name">{isToday ? 'Hoy' : dayNamesShort[date.getDay()]}</span>
+                    <span className="ribbon-day-num">{date.getDate()}</span>
+                    {hasApps && (
+                      <span 
+                        className="ribbon-dot" 
+                        style={{ 
+                          backgroundColor: isSelected ? '#121212' : (isToday ? 'var(--gold-primary)' : 'var(--gold-primary)'),
+                          boxShadow: isSelected ? 'none' : '0 0 4px var(--gold-primary)'
+                        }} 
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Glowing Search Box */}
+          <div className="premium-search-box">
+            <Search size={18} color="var(--gold-primary)" />
             <input 
               type="text" 
               placeholder="Buscar por nombre, cédula o teléfono..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ 
-                flex: 1, 
-                background: 'none', 
-                border: 'none', 
-                color: 'white', 
-                fontSize: '15px', 
-                fontWeight: '700',
-                outline: 'none'
-              }}
+              className="premium-search-input"
             />
             {searchTerm && (
               <button 
                 onClick={() => setSearchTerm('')}
-                style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '24px', height: '24px', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '26px', height: '26px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#ff453a'}
+                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
               >
-                <XCircle size={14} />
+                <XCircle size={15} />
               </button>
             )}
           </div>
 
-          <div className="glass-card" style={{ padding: '0', overflow: 'hidden', borderRadius: '24px' }}>
+          <div className="appointment-list-wrapper" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
             {loading ? (
               <div style={{ padding: '100px', textAlign: 'center' }}>
-                <div className="animate-pulse" style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>Cargando agenda...</div>
+                <Loader2 className="animate-spin" size={32} color="var(--gold-primary)" style={{ margin: '0 auto', marginBottom: '16px' }} />
+                <div style={{ color: 'var(--text-muted)', fontWeight: '800', fontSize: '14px' }}>Cargando agenda de citas...</div>
               </div>
-            ) : appointments.filter(app => {
-                if (!searchTerm) return true;
-                const term = searchTerm.toLowerCase();
-                return (
-                  (app.clients?.name || '').toLowerCase().includes(term) ||
-                  (app.clients?.id_card || '').toLowerCase().includes(term) ||
-                  (app.clients?.phone || '').toLowerCase().includes(term)
-                );
-              }).length === 0 ? (
-              <div style={{ padding: '100px', textAlign: 'center' }}>
-                <Search size={48} color="rgba(255,255,255,0.05)" style={{ marginBottom: '16px' }} />
-                <div style={{ color: 'var(--text-muted)', fontSize: '14px' }}>No se encontraron citas que coincidan con la búsqueda</div>
+            ) : filteredApps.length === 0 ? (
+              <div style={{ padding: '80px', textAlign: 'center' }}>
+                <Search size={44} color="rgba(212,175,55,0.1)" style={{ marginBottom: '16px' }} />
+                <div style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: '700' }}>No se encontraron citas registradas</div>
               </div>
             ) : (
-              <div style={{ maxHeight: '700px', overflowY: 'auto' }}>
-                {appointments
-                  .filter(app => {
-                    if (!searchTerm) return true;
-                    const term = searchTerm.toLowerCase();
+              <div>
+                {/* Scrollable Group List with metrics inside */}
+                <div style={{ position: 'relative', maxHeight: '700px', overflowY: 'auto', paddingRight: '4px' }}>
+                  {/* Metrics Summary Banner - scrolls with content */}
+                  <div className="scheduling-metrics-banner" style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.03)' }}>
+                      <div style={{ background: 'rgba(212, 175, 55, 0.1)', color: 'var(--gold-primary)', borderRadius: '10px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <CalendarIcon size={18} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Citas</div>
+                        <div style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{filteredApps.length}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.03)' }}>
+                      <div style={{ background: 'rgba(46, 204, 113, 0.1)', color: '#2ecc71', borderRadius: '10px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <DollarSign size={18} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Estimado</div>
+                        <div style={{ fontSize: '16px', fontWeight: '800', color: '#2ecc71' }}>${totalEstimate}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.03)' }}>
+                      <div style={{ background: 'rgba(52, 152, 219, 0.1)', color: '#3498db', borderRadius: '10px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <User size={18} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Barberos</div>
+                        <div style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{activeStaffCount}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {[
+                    { key: 'morning', title: 'Mañana (12:00 AM - 11:59 AM)', apps: morningApps, icon: <Sunrise size={16} />, color: 'var(--gold-primary)' },
+                    { key: 'afternoon', title: 'Tarde (12:00 PM - 06:59 PM)', apps: afternoonApps, icon: <Sun size={16} />, color: '#f39c12' },
+                    { key: 'evening', title: 'Noche (07:00 PM - 11:59 PM)', apps: eveningApps, icon: <Moon size={16} />, color: '#9b59b6' }
+                  ].map(group => {
+                    if (group.apps.length === 0) return null;
+                    const isCollapsed = collapsedGroups[group.key];
                     return (
-                      (app.clients?.name || '').toLowerCase().includes(term) ||
-                      (app.clients?.id_card || '').toLowerCase().includes(term) ||
-                      (app.clients?.phone || '').toLowerCase().includes(term)
-                    );
-                  })
-                  .sort((a, b) => new Date(a.scheduled_at || a.created_at) - new Date(b.scheduled_at || b.created_at))
-                  .map(app => (
-                  isMobile ? (
-                    <div key={app.id} onClick={() => setSelectedAppDetail(app)} style={{ 
-                      padding: '10px 8px', 
-                      borderBottom: '1px solid rgba(255,255,255,0.03)',
-                      display: 'flex', 
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '4px',
-                      opacity: app.status === 'Completado' ? 0.6 : 1,
-                      fontSize: '11px',
-                      color: '#fff',
-                      cursor: 'pointer'
-                    }}>
-                      {/* Column 1: Time (compact) */}
-                      <div style={{ flexShrink: 0, width: '48px', fontWeight: '800' }}>
-                        <div style={{ fontSize: '11px' }}>
-                          {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '').toLowerCase()}
+                      <div key={group.key} style={{ 
+                        background: 'rgba(18, 18, 18, 0.3)',
+                        border: '1px solid rgba(255, 255, 255, 0.04)',
+                        borderRadius: '24px',
+                        padding: '16px',
+                        marginBottom: '16px',
+                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.25)'
+                      }}>
+                        {/* Group Header */}
+                        <div 
+                          onClick={() => setCollapsedGroups(prev => ({ ...prev, [group.key]: !prev[group.key] }))}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                            padding: '4px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{ color: group.color, display: 'flex', alignItems: 'center' }}>
+                              {group.icon}
+                            </span>
+                            <span style={{ fontWeight: '800', fontSize: '14px', color: '#fff', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>
+                              {group.title}
+                            </span>
+                            <span style={{
+                              fontSize: '10px',
+                              background: 'rgba(255, 255, 255, 0.06)',
+                              padding: '2px 8px',
+                              borderRadius: '20px',
+                              color: 'var(--text-muted)',
+                              fontWeight: '750'
+                            }}>
+                              {group.apps.length} {group.apps.length === 1 ? 'cita' : 'citas'}
+                            </span>
+                          </div>
+                          <div style={{ color: 'var(--text-muted)' }}>
+                            {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+                          </div>
                         </div>
-                        {filterType !== 'day' && (
-                          <div style={{ fontSize: '8px', color: 'var(--text-muted)' }}>
-                            {new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+
+                        {/* Group Cards List */}
+                        {!isCollapsed && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '14px' }}>
+                            {(expandedGroups[group.key] ? group.apps : group.apps.slice(0, ITEMS_PER_GROUP)).map(app => {
+                              const statusStyle = getStatusColor(app.status);
+                                  return isMobile ? (
+                                    <div key={app.id} onClick={() => setSelectedAppDetail(app)} style={{ 
+                                      padding: '12px 14px', 
+                                      borderBottom: '1px solid rgba(255,255,255,0.03)',
+                                      display: 'flex', 
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      gap: '6px',
+                                      opacity: 1,
+                                      fontSize: '12px',
+                                      color: '#fff',
+                                      cursor: 'pointer'
+                                    }}>
+                                  <div style={{ flexShrink: 0, width: '75px', fontWeight: '800' }}>
+                                    <div style={{ fontSize: '12px', color: 'white', whiteSpace: 'nowrap' }}>
+                                      {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '').toLowerCase()}
+                                    </div>
+                                    {filterType !== 'day' && (
+                                      <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                        {new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div style={{ flex: 1, minWidth: 0, paddingLeft: '8px' }}>
+                                    <div style={{ fontWeight: '800', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {app.clients?.name?.split(' ')[0]} {app.clients?.name?.split(' ')[1] ? app.clients?.name?.split(' ')[1]?.charAt(0) + '.' : ''}
+                                    </div>
+                                  </div>
+                                  <div style={{ flex: 1.2, minWidth: 0, paddingLeft: '4px', color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>
+                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {app.services?.name || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin serv.</span>}
+                                    </div>
+                                  </div>
+                                  <div className="price-highlight-tag" style={{ flexShrink: 0, width: '32px', textAlign: 'right', fontSize: '13px' }}>
+                                    ${app.total_price}
+                                  </div>
+                                  <div style={{ flexShrink: 0, width: '60px', textAlign: 'center' }}>
+                                    <span className="status-glow-badge" style={{ 
+                                      fontSize: '8px', 
+                                      padding: '3px 6px', 
+                                      borderRadius: '6px',
+                                      backgroundColor: statusStyle.bg,
+                                      color: statusStyle.text,
+                                      border: `1px solid ${statusStyle.border}`
+                                    }}>
+                                      <span className="blinking-dot" style={{ backgroundColor: statusStyle.dot }} />
+                                      {app.status === 'Agendado' ? 'Agenda' : app.status === 'En Silla' ? 'Silla' : app.status === 'En Lavado' ? 'Lavado' : app.status === 'Por Pagar' ? 'Cobro' : app.status === 'Completado' ? 'Listo' : 'Canc'}
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div key={app.id} onClick={() => setSelectedAppDetail(app)} className="premium-row-card" style={{ 
+                                  opacity: 1
+                                }}>
+                                  <div>
+                                    <div style={{ fontWeight: '900', fontSize: '14px', color: 'white', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>
+                                      {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                    </div>
+                                    {filterType !== 'day' && (
+                                      <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>
+                                        {new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                                    <div className="avatar-gradient-circle">
+                                      {app.staff?.name?.charAt(0)}
+                                    </div>
+                                    <div style={{ fontWeight: '750', fontSize: '13px', color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {app.staff?.name?.split(' ')[0]}
+                                    </div>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                    <Scissors size={14} color="var(--gold-primary)" style={{ opacity: 0.6, flexShrink: 0 }} />
+                                    <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {app.services?.name}
+                                    </div>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                    <User size={14} color="rgba(255,255,255,0.4)" style={{ flexShrink: 0 }} />
+                                    <div style={{ fontWeight: '700', fontSize: '13px', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {app.clients?.name}
+                                    </div>
+                                  </div>
+                                  <div className="price-highlight-tag">
+                                    ${app.total_price}
+                                  </div>
+                                  <div>
+                                    <span className="status-glow-badge" style={{ 
+                                      backgroundColor: statusStyle.bg,
+                                      color: statusStyle.text,
+                                      border: `1px solid ${statusStyle.border}`
+                                    }}>
+                                      <span className="blinking-dot" style={{ backgroundColor: statusStyle.dot }} />
+                                      {app.status}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
+                                    <button onClick={() => handleEditAppointment(app)} className="action-icon-btn edit">
+                                      <Pencil size={13} />
+                                    </button>
+                                    <button onClick={() => handleManageAppointment(app.id)} className="action-icon-btn delete">
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {/* Ver más / Ver menos button */}
+                            {group.apps.length > ITEMS_PER_GROUP && (
+                              <button
+                                onClick={() => setExpandedGroups(prev => ({ ...prev, [group.key]: !prev[group.key] }))}
+                                style={{
+                                  width: '100%',
+                                  marginTop: '8px',
+                                  padding: '10px',
+                                  borderRadius: '12px',
+                                  border: '1px solid rgba(212,175,55,0.2)',
+                                  background: 'rgba(212,175,55,0.05)',
+                                  color: 'var(--gold-primary)',
+                                  fontSize: '12px',
+                                  fontWeight: '800',
+                                  cursor: 'pointer',
+                                  letterSpacing: '0.5px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px',
+                                  transition: 'all 0.2s ease',
+                                  fontFamily: 'Outfit, var(--font-sans), system-ui'
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.12)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.05)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.2)'; }}
+                              >
+                                {expandedGroups[group.key] ? (
+                                  <><ChevronUp size={14} /> VER MENOS</>
+                                ) : (
+                                  <><ChevronDown size={14} /> VER {group.apps.length - ITEMS_PER_GROUP} MÁS</>
+                                )}
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
-
-                      {/* Column 2: Client */}
-                      <div style={{ flex: 1, minWidth: 0, paddingLeft: '12px' }}>
-                        <div style={{ fontWeight: '800', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {app.clients?.name?.split(' ')[0]} {app.clients?.name?.split(' ')[1] ? app.clients?.name?.split(' ')[1]?.charAt(0) + '.' : ''}
-                        </div>
-                      </div>
-
-                      {/* Column 3: Service (exactly in the middle space) */}
-                      <div style={{ flex: 1.2, minWidth: 0, paddingLeft: '4px', color: 'var(--text-secondary)', fontSize: '10px' }}>
-                        <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {app.services?.name || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin serv.</span>}
-                        </div>
-                      </div>
-
-                      {/* Column 4: Barber */}
-                      <div style={{ flexShrink: 0, width: '45px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingLeft: '2px' }}>
-                        {app.staff?.name?.split(' ')[0]}
-                      </div>
-
-                      {/* Column 5: Price */}
-                      <div style={{ flexShrink: 0, width: '28px', fontWeight: '900', color: 'var(--gold-primary)', textAlign: 'right' }}>
-                        ${app.total_price}
-                      </div>
-
-                      {/* Column 6: Status Badge */}
-                      <div style={{ flexShrink: 0, width: '52px', textAlign: 'center' }}>
-                        <span style={{ 
-                          fontSize: '8px', fontWeight: '900', padding: '2px 5px', borderRadius: '4px', textTransform: 'uppercase',
-                          backgroundColor: app.status === 'Agendado' ? 'rgba(212,175,55,0.1)' : app.status === 'En Silla' ? 'rgba(0,122,255,0.1)' : app.status === 'En Lavado' ? 'rgba(0,191,255,0.1)' : app.status === 'Por Pagar' ? 'rgba(50,215,75,0.1)' : app.status === 'Completado' ? 'rgba(142,142,147,0.1)' : 'rgba(255,69,58,0.1)',
-                          color: app.status === 'Agendado' ? 'var(--gold-primary)' : app.status === 'En Silla' ? '#007aff' : app.status === 'En Lavado' ? '#00bfff' : app.status === 'Por Pagar' ? '#32d74b' : app.status === 'Completado' ? '#8e8e93' : '#ff453a'
-                        }}>
-                          {app.status === 'Agendado' ? 'Agenda' : app.status === 'En Silla' ? 'Silla' : app.status === 'En Lavado' ? 'Lavado' : app.status === 'Por Pagar' ? 'Cobro' : app.status === 'Completado' ? 'Listo' : 'Canc'}
-                        </span>
-                      </div>
-
-                      {/* Column 7: Actions */}
-                      <div style={{ flexShrink: 0, display: 'flex', gap: '1px' }}>
-                        <button onClick={(e) => { e.stopPropagation(); handleEditAppointment(app); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '3px' }}><Pencil size={11} /></button>
-                        <button onClick={(e) => { e.stopPropagation(); handleManageAppointment(app.id); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '3px' }}><Trash2 size={11} /></button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div key={app.id} onClick={() => setSelectedAppDetail(app)} className="hover-item" style={{ 
-                      padding: '16px 24px', 
-                      borderBottom: '1px solid rgba(255,255,255,0.03)',
-                      display: 'grid', 
-                      gridTemplateColumns: '100px 1.5fr 1.5fr 1.5fr 80px 120px 60px', 
-                      gap: '15px', 
-                      alignItems: 'center',
-                      opacity: app.status === 'Completado' ? 0.6 : 1,
-                      cursor: 'pointer'
-                    }}>
-                      <div>
-                        <div style={{ fontWeight: '900', fontSize: '14px' }}>{new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
-                        {filterType !== 'day' && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</div>}
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'black', fontWeight: '900' }}>{app.staff?.name?.charAt(0)}</div>
-                        <div style={{ fontWeight: '700', fontSize: '13px' }}>{app.staff?.name}</div>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Scissors size={14} color="var(--text-muted)" />
-                        <div style={{ fontSize: '13px' }}>{app.services?.name}</div>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <User size={14} color="var(--text-muted)" />
-                        <div style={{ fontWeight: '700', fontSize: '13px' }}>{app.clients?.name}</div>
-                      </div>
-
-                      <div style={{ fontWeight: '900', color: 'var(--gold-primary)' }}>${app.total_price}</div>
-
-                      <div style={{ textAlign: 'center' }}>
-                        <span style={{ 
-                          fontSize: '9px', fontWeight: '900', padding: '4px 10px', borderRadius: '20px', textTransform: 'uppercase',
-                          backgroundColor: app.status === 'Agendado' ? 'rgba(212,175,55,0.1)' : app.status === 'En Silla' ? 'rgba(0,122,255,0.1)' : app.status === 'En Lavado' ? 'rgba(0,191,255,0.1)' : app.status === 'Por Pagar' ? 'rgba(50,215,75,0.1)' : app.status === 'Completado' ? 'rgba(142,142,147,0.1)' : 'rgba(255,69,58,0.1)',
-                          color: app.status === 'Agendado' ? 'var(--gold-primary)' : app.status === 'En Silla' ? '#007aff' : app.status === 'En Lavado' ? '#00bfff' : app.status === 'Por Pagar' ? '#32d74b' : app.status === 'Completado' ? '#8e8e93' : '#ff453a'
-                        }}>
-                          {app.status}
-                        </span>
-                      </div>
-
-                      <div style={{ textAlign: 'right', display: 'flex', gap: '4px' }}>
-                        <button onClick={(e) => { e.stopPropagation(); handleEditAppointment(app); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: '8px' }} className="hover-gold"><Pencil size={14} /></button>
-                        <button onClick={(e) => { e.stopPropagation(); handleManageAppointment(app.id); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.2)', cursor: 'pointer', padding: '8px' }} className="hover-red"><Trash2 size={14} /></button>
-                      </div>
-                    </div>
-                  )
-                ))}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -543,316 +1220,533 @@ const SchedulingModule = ({ isMobile, rates }) => {
         onCancel={() => setDialog({ isOpen: false, appointmentId: null })}
         customFooter={
           <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '20px' }}>
-            <button onClick={() => processAction('cancel')} style={{ flex: 1, padding: '14px', borderRadius: '14px', border: '1px solid #ff453a', background: 'rgba(255,69,58,0.1)', color: '#ff453a', fontWeight: '800' }}>MARCAR CANCELADA</button>
-            <button onClick={() => processAction('delete')} style={{ flex: 1, padding: '14px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'white', fontWeight: '800' }}>BORRAR PERMANENTE</button>
+            <button onClick={() => processAction('cancel')} style={{ flex: 1, padding: '14px', borderRadius: '14px', border: '1px solid #ff453a', background: 'rgba(255,69,58,0.1)', color: '#ff453a', fontWeight: '800', cursor: 'pointer' }}>MARCAR CANCELADA</button>
+            <button onClick={() => processAction('delete')} style={{ flex: 1, padding: '14px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'white', fontWeight: '800', cursor: 'pointer' }}>BORRAR PERMANENTE</button>
           </div>
         }
       />
 
-      {showScheduleModal && (
-        <ScheduleModal 
-          isOpen={showScheduleModal} onClose={() => setShowScheduleModal(false)} onSchedule={handleTimeSelected} defaultDate={selectedDate}
-          client={clients.find(c => c.id === newApp.clientId)} service={services.find(s => s.id === newApp.serviceId)} staff={staff.find(s => s.id === newApp.staffId)}
-        />
-      )}
+      <ScheduleModal 
+        isOpen={showScheduleModal} onClose={() => setShowScheduleModal(false)} onSchedule={handleTimeSelected} defaultDate={selectedDate}
+        client={clients.find(c => c.id === newApp.clientId)} service={services.find(s => s.id === newApp.serviceId)} staff={staff.find(s => s.id === newApp.staffId)}
+      />
 
-      {showAddModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div className="glass-card animate-scale-in" style={{ maxWidth: '550px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto', padding: '32px' }}>
-            <h2 style={{ marginBottom: '24px', fontWeight: '900' }}>{editingApp ? 'Editar Cita' : 'Nueva Cita'}</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* Client Search */}
-              <div style={{ position: 'relative' }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>CLIENTE</label>
-                <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
-                  <div style={{ position: 'relative', flex: 1 }}>
-                    <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} size={16} color="var(--text-muted)" />
-                    <input
-                      type="text"
-                      placeholder="Buscar por cédula o nombre..."
-                      value={clientSearchTerm}
-                      onChange={(e) => handleClientSearch(e.target.value)}
-                      style={{
-                        width: '100%',
-                        paddingLeft: '40px',
-                        height: '48px',
-                        fontSize: '14px',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: `1px solid ${newApp.clientId ? 'var(--gold-primary)' : 'rgba(255,255,255,0.1)'}`,
-                        borderRadius: '14px',
-                        color: 'white',
-                        outline: 'none',
-                        fontWeight: '700',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                    {newApp.clientId && (
-                      <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '900' }}>✓</span>
-                    )}
-                  </div>
-                  {clientSearchTerm && (
-                    <button
-                      onClick={() => { setClientSearchTerm(''); setClientSearchResults([]); setNewApp(prev => ({ ...prev, clientId: '' })); }}
-                      style={{ background: 'rgba(255,69,58,0.1)', color: '#ff453a', border: 'none', borderRadius: '12px', padding: '0 14px', fontSize: '11px', fontWeight: '900', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                    >LIMPIAR</button>
-                  )}
-                </div>
-                {clientSearchResults.length > 0 && (
-                  <div className="animate-scale-in" style={{
-                    position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
-                    background: 'rgba(18,18,22,0.98)',
-                    border: '1px solid rgba(212,175,55,0.2)', borderRadius: '14px',
-                    overflow: 'hidden', zIndex: 200, backdropFilter: 'blur(20px)',
-                    boxShadow: '0 16px 48px rgba(0,0,0,0.6)'
-                  }}>
-                    {clientSearchResults.map(c => (
-                      <div
-                        key={c.id}
-                        onClick={() => handleSelectClient(c)}
-                        style={{ padding: '12px 18px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(212,175,55,0.08)'}
-                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                      >
-                        <span style={{ fontWeight: '700', fontSize: '14px', color: 'white' }}>{c.name}</span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>V-{c.id_card}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <AstroSelect label="SERVICIO" placeholder="Selecciona servicio" value={newApp.serviceId} onChange={(val) => setNewApp({...newApp, serviceId: val})} options={services.map(s => ({ label: `${s.name} ($${s.price})`, value: s.id }))} />
-              <AstroSelect 
-                label="BARBERO" 
-                placeholder="Selecciona barbero" 
-                value={newApp.staffId} 
-                onChange={(val) => setNewApp({...newApp, staffId: val})} 
-                options={staff
-                  .filter(s => s.role?.toLowerCase().includes('barbero'))
-                  .map(s => ({ label: s.name, value: s.id }))
-                } 
-                disabled={user?.role === 'Barbero' || user?.role?.startsWith('Barbero|')}
-              />
+      <AnimatedModal isOpen={showAddModal}>
+        {(overlayClass, cardClass) => {
+          const selectedClient = clients.find(c => c.id === newApp.clientId);
+          const serviceVal = services.find(s => s.id === newApp.serviceId);
+          const servicePrice = serviceVal ? parseFloat(serviceVal.price || 0) : 0;
+          const extrasPrice = newApp.extras.reduce((acc, exId) => {
+            const ex = allExtras.find(e => e.id === exId);
+            return acc + (ex ? parseFloat(ex.price || 0) : 0);
+          }, 0);
+          const productsPrice = newApp.products.reduce((acc, p) => {
+            const pr = allProducts.find(prod => prod.id === p.id);
+            return acc + (pr ? parseFloat(pr.price || 0) * p.quantity : 0);
+          }, 0);
+          const totalEstimated = servicePrice + extrasPrice + productsPrice;
 
-              {/* Extras Selection */}
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>EXTRAS</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {allExtras.map(ex => (
-                    <button 
-                      key={ex.id}
-                      onClick={() => {
-                        const exists = newApp.extras.includes(ex.id);
-                        setNewApp({
-                          ...newApp,
-                          extras: exists ? newApp.extras.filter(id => id !== ex.id) : [...newApp.extras, ex.id]
-                        });
-                      }}
-                      style={{
-                        padding: '8px 14px',
-                        borderRadius: '12px',
-                        border: '1px solid',
-                        borderColor: newApp.extras.includes(ex.id) ? 'var(--gold-primary)' : 'rgba(255,255,255,0.1)',
-                        background: newApp.extras.includes(ex.id) ? 'rgba(212,175,55,0.1)' : 'transparent',
-                        color: newApp.extras.includes(ex.id) ? 'var(--gold-primary)' : 'white',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        transition: '0.2s'
-                      }}
-                    >
-                      {ex.name} (+${ex.price})
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Products Selection */}
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>PRODUCTOS ADICIONALES</label>
-                <AstroSelect 
-                  placeholder="Añadir producto..." 
-                  onChange={(val) => {
-                    const prod = allProducts.find(p => p.id === val);
-                    const exists = newApp.products.find(p => p.id === val);
-                    if (exists) return;
-                    setNewApp({
-                      ...newApp,
-                      products: [...newApp.products, { id: val, quantity: 1 }]
-                    });
-                  }} 
-                  options={allProducts.map(p => ({ label: `${p.name} ($${p.price})`, value: p.id }))} 
-                />
+          return (
+            <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(8,8,10,0.92)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', backdropFilter: 'blur(8px)' }}>
+              <div className={`glass-card ${cardClass}`} style={{ maxWidth: '480px', width: '100%', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.08)', maxHeight: '92vh', overflowY: 'auto', padding: '0px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+                {/* Gradient Accent Bar */}
+                <div style={{ height: '5px', background: 'linear-gradient(90deg, #d4af37 0%, #f39c12 50%, #d4af37 100%)', width: '100%', borderTopLeftRadius: '23px', borderTopRightRadius: '23px' }}></div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-                  {newApp.products.map(p => {
-                    const product = allProducts.find(pr => pr.id === p.id);
-                    if (!product) return null;
-                    return (
-                      <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '10px 16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>{p.quantity}x</span>
-                          <span style={{ fontSize: '13px', fontWeight: '500' }}>{product.name}</span>
-                        </div>
-                        <button 
-                          onClick={() => setNewApp({ ...newApp, products: newApp.products.filter(item => item.id !== p.id) })} 
-                          style={{ color: '#ff453a', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                <div style={{ padding: '30px' }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div style={{ width: '42px', height: '42px', borderRadius: '14px', background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <CalendarIcon color="var(--gold-primary)" size={20} />
                       </div>
-                    );
-                  })}
+                      <div>
+                        <h3 style={{ fontSize: '20px', fontWeight: '950', margin: 0, fontFamily: 'Outfit, sans-serif', color: 'white', letterSpacing: '-0.3px' }}>
+                          {editingApp ? 'Editar Cita' : 'Nueva Cita'}
+                        </h3>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          {editingApp ? 'Modifica los detalles del servicio' : 'Agenda un nuevo servicio'}
+                        </span>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setShowAddModal(false)} 
+                      style={{ background: 'rgba(255,255,255,0.04)', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,69,58,0.15)'; e.currentTarget.style.color = '#ff453a'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                    {/* Client Selector / Search */}
+                    <div style={{ position: 'relative' }}>
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>CLIENTE</label>
+                      {selectedClient ? (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)', padding: '12px 16px', borderRadius: '14px' }}>
+                          <div>
+                            <div style={{ fontWeight: '800', color: 'white', fontSize: '15px' }}>{selectedClient.name}</div>
+                            <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.85)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <span><strong style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>Cédula:</strong> V-{selectedClient.id_card}</span>
+                              {selectedClient.phone && (
+                                <>
+                                  <span style={{ color: 'rgba(255,255,255,0.3)' }}>•</span>
+                                  <span><strong style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>Cel:</strong> {selectedClient.phone}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => {
+                              setClientSearchTerm('');
+                              setClientSearchResults([]);
+                              setNewApp(prev => ({ ...prev, clientId: '' }));
+                            }}
+                            style={{ background: 'rgba(255,69,58,0.1)', color: '#ff453a', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: '0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,69,58,0.2)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,69,58,0.1)'}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
+                          <div style={{ position: 'relative', flex: 1 }}>
+                            <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} size={16} color="var(--text-muted)" />
+                            <input
+                              type="text"
+                              placeholder="Buscar por cédula o nombre..."
+                              value={clientSearchTerm}
+                              onChange={(e) => handleClientSearch(e.target.value)}
+                              style={{
+                                width: '100%',
+                                paddingLeft: '42px',
+                                height: '48px',
+                                fontSize: '13px',
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                borderRadius: '14px',
+                                color: 'white',
+                                outline: 'none',
+                                fontWeight: '700',
+                                boxSizing: 'border-box',
+                                transition: 'all 0.3s'
+                              }}
+                              onFocus={e => e.target.style.borderColor = 'rgba(212,175,55,0.4)'}
+                              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Search Results Dropdown */}
+                      {!selectedClient && clientSearchResults.length > 0 && (
+                        <div className="animate-scale-in" style={{
+                          position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
+                          background: 'rgba(18,18,22,0.98)',
+                          border: '1px solid rgba(212,175,55,0.2)', borderRadius: '14px',
+                          overflow: 'hidden', zIndex: 200, backdropFilter: 'blur(20px)',
+                          boxShadow: '0 16px 48px rgba(0,0,0,0.6)'
+                        }}>
+                          {clientSearchResults.map(c => (
+                            <div
+                              key={c.id}
+                              onClick={() => handleSelectClient(c)}
+                              style={{ padding: '12px 18px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: '0.2s' }}
+                              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(212,175,55,0.08)'}
+                              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            >
+                              <div>
+                                <div style={{ fontWeight: '700', fontSize: '13px', color: 'white' }}>{c.name}</div>
+                                {c.phone && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{c.phone}</div>}
+                              </div>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 'bold' }}>V-{c.id_card}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Service Selection */}
+                    <AstroSelect 
+                      label="SERVICIO" 
+                      placeholder="Selecciona servicio" 
+                      value={newApp.serviceId} 
+                      onChange={(val) => setNewApp({...newApp, serviceId: val})} 
+                      options={services.map(s => ({ label: `${s.name} ($${s.price})`, value: s.id }))} 
+                    />
+
+                    {/* Barber Selection */}
+                    <AstroSelect 
+                      label="BARBERO" 
+                      placeholder="Selecciona barbero" 
+                      value={newApp.staffId} 
+                      onChange={(val) => setNewApp({...newApp, staffId: val})} 
+                      options={staff
+                        .filter(s => s.role?.toLowerCase().includes('barbero'))
+                        .map(s => ({ label: s.name, value: s.id }))
+                      } 
+                      disabled={user?.role === 'Barbero' || user?.role?.startsWith('Barbero|')}
+                    />
+
+                    {/* Extras Selection */}
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>EXTRAS</label>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {allExtras.map(ex => {
+                          const isSelected = newApp.extras.includes(ex.id);
+                          return (
+                            <button 
+                              key={ex.id}
+                              onClick={() => {
+                                setNewApp({
+                                  ...newApp,
+                                  extras: isSelected ? newApp.extras.filter(id => id !== ex.id) : [...newApp.extras, ex.id]
+                                });
+                              }}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '8px 14px',
+                                borderRadius: '12px',
+                                border: '1px solid',
+                                borderColor: isSelected ? 'var(--gold-primary)' : 'rgba(255,255,255,0.08)',
+                                background: isSelected ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.02)',
+                                color: isSelected ? 'var(--gold-primary)' : 'rgba(255,255,255,0.8)',
+                                fontSize: '12px',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              {isSelected && <Check size={12} strokeWidth={3} />}
+                              <span>{ex.name} (+${ex.price})</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Products Selection */}
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PRODUCTOS ADICIONALES</label>
+                      <AstroSelect 
+                        placeholder="Añadir producto..." 
+                        onChange={(val) => {
+                          const exists = newApp.products.find(p => p.id === val);
+                          if (exists) return;
+                          setNewApp({
+                            ...newApp,
+                            products: [...newApp.products, { id: val, quantity: 1 }]
+                          });
+                        }} 
+                        options={allProducts.map(p => ({ label: `${p.name} ($${p.price})`, value: p.id }))} 
+                      />
+                      
+                      {newApp.products.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                          {newApp.products.map(p => {
+                            const product = allProducts.find(pr => pr.id === p.id);
+                            if (!product) return null;
+                            return (
+                              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <Package size={14} color="var(--gold-primary)" />
+                                  <span style={{ fontSize: '13px', fontWeight: '600', color: 'rgba(255,255,255,0.9)' }}>{product.name}</span>
+                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>(${product.price})</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '2px' }}>
+                                    <button 
+                                      onClick={() => {
+                                        const newQty = p.quantity - 1;
+                                        if (newQty <= 0) {
+                                          setNewApp({ ...newApp, products: newApp.products.filter(item => item.id !== p.id) });
+                                        } else {
+                                          setNewApp({ ...newApp, products: newApp.products.map(item => item.id === p.id ? { ...item, quantity: newQty } : item) });
+                                        }
+                                      }} 
+                                      style={{ width: '22px', height: '22px', borderRadius: '6px', border: 'none', background: 'rgba(255,255,255,0.05)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                    >
+                                      <Minus size={10} />
+                                    </button>
+                                    <span style={{ fontWeight: '700', fontSize: '12px', minWidth: '16px', textAlign: 'center' }}>{p.quantity}</span>
+                                    <button 
+                                      onClick={() => {
+                                        setNewApp({ ...newApp, products: newApp.products.map(item => item.id === p.id ? { ...item, quantity: p.quantity + 1 } : item) });
+                                      }} 
+                                      style={{ width: '22px', height: '22px', borderRadius: '6px', border: 'none', background: 'rgba(255,255,255,0.05)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                    >
+                                      <Plus size={10} />
+                                    </button>
+                                  </div>
+                                  <button 
+                                    onClick={() => setNewApp({ ...newApp, products: newApp.products.filter(item => item.id !== p.id) })} 
+                                    style={{ color: 'rgba(255,69,58,0.8)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                    onMouseEnter={e => e.currentTarget.style.color = '#ff453a'}
+                                    onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,69,58,0.8)'}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Live Total Cost Breakdown */}
+                    <div style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)', border: '1px solid rgba(212,175,55,0.15)', borderRadius: '16px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                      <div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', letterSpacing: '0.5px' }}>TOTAL ESTIMADO</div>
+                        <div style={{ fontSize: '24px', fontWeight: '950', color: 'var(--gold-primary)', fontFamily: 'Outfit, sans-serif', marginTop: '2px' }}>${totalEstimated.toFixed(2)}</div>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textAlign: 'right', lineHeight: '1.4' }}>
+                        {newApp.serviceId && <div>Servicio: ${servicePrice.toFixed(2)}</div>}
+                        {newApp.extras.length > 0 && <div>Extras: +${extrasPrice.toFixed(2)}</div>}
+                        {newApp.products.length > 0 && <div>Productos: +${productsPrice.toFixed(2)}</div>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '28px' }}>
+                    <button 
+                      onClick={() => { 
+                        if (!newApp.clientId || !newApp.serviceId || !newApp.staffId) { 
+                          showToast("Selecciona cliente, servicio y barbero", "error"); 
+                          return; 
+                        } 
+                        setShowScheduleModal(true); 
+                      }} 
+                      className="btn-gold" 
+                      style={{ width: '100%', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '14px', fontWeight: '800' }}
+                    >
+                      <Clock size={16} /> 
+                      {editingApp ? 'CONFIRMAR CAMBIOS' : 'SELECCIONAR HORARIO'}
+                    </button>
+                    <button 
+                      onClick={() => setShowAddModal(false)} 
+                      style={{ width: '100%', height: '48px', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)', borderRadius: '14px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = 'white'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.8)'; }}
+                    >
+                      CANCELAR
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              <button onClick={() => { if (!newApp.clientId || !newApp.serviceId || !newApp.staffId) { showToast("Selecciona cliente, servicio y barbero", "error"); return; } setShowScheduleModal(true); }} className="btn-gold" style={{ width: '100%', height: '56px', borderRadius: '16px', marginTop: '10px' }}><Clock size={18} style={{ marginRight: '8px' }} /> {editingApp ? 'CONFIRMAR CAMBIOS' : 'SELECCIONAR HORARIO'}</button>
-              <button onClick={() => setShowAddModal(false)} style={{ width: '100%', background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '14px', padding: '14px', fontWeight: '700' }}>CANCELAR</button>
             </div>
-          </div>
-        </div>
-      )}
+          );
+        }}
+      </AnimatedModal>
 
       {/* Appointment Detail Modal */}
-      {selectedAppDetail && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div className="glass-card animate-scale-in animate-fade-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '24px', border: '1.5px solid rgba(212,175,55,0.3)', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }}>
-            
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '16px' }}>
-              <div>
-                <span style={{ 
-                  fontSize: '9px', fontWeight: '900', padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase', marginBottom: '8px', display: 'inline-block',
-                  backgroundColor: selectedAppDetail.status === 'Agendado' ? 'rgba(212,175,55,0.1)' : selectedAppDetail.status === 'En Silla' ? 'rgba(0,122,255,0.1)' : selectedAppDetail.status === 'En Lavado' ? 'rgba(0,191,255,0.1)' : selectedAppDetail.status === 'Por Pagar' ? 'rgba(50,215,75,0.1)' : selectedAppDetail.status === 'Completado' ? 'rgba(142,142,147,0.1)' : 'rgba(255,69,58,0.1)',
-                  color: selectedAppDetail.status === 'Agendado' ? 'var(--gold-primary)' : selectedAppDetail.status === 'En Silla' ? '#007aff' : selectedAppDetail.status === 'En Lavado' ? '#00bfff' : selectedAppDetail.status === 'Por Pagar' ? '#32d74b' : selectedAppDetail.status === 'Completado' ? '#8e8e93' : '#ff453a'
-                }}>
-                  {selectedAppDetail.status}
-                </span>
-                <h3 style={{ fontSize: '20px', fontWeight: '900', color: 'white', margin: 0 }}>
-                  {selectedAppDetail.clients?.name}
-                </h3>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                  Cédula: V-{selectedAppDetail.clients?.id_card || 'S/C'} • Celular: {selectedAppDetail.clients?.phone || 'S/N'}
-                </p>
-              </div>
-              <button 
-                onClick={() => setSelectedAppDetail(null)} 
-                style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                &times;
-              </button>
-            </div>
+      <AnimatedModal isOpen={!!selectedAppDetail}>
+        {(overlayClass, cardClass) => {
+          if (!activeDetail) return null;
+          const statusStyle = getStatusColor(activeDetail.status);
+          const initials = activeDetail.clients?.name ? activeDetail.clients.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'W';
+          return (
+            <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,10,0.94)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+              <div className={`glass-card ${cardClass}`} style={{ maxWidth: '450px', width: '100%', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.06)', padding: '36px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 30px 60px rgba(0, 0, 0, 0.6)' }}>
+                
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ 
+                      width: '52px', 
+                      height: '52px', 
+                      borderRadius: '50%', 
+                      background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0.05) 100%)', 
+                      border: '1.5px solid rgba(212, 175, 55, 0.4)',
+                      boxShadow: '0 4px 15px rgba(212, 175, 55, 0.15)',
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      flexShrink: 0,
+                      fontSize: '18px',
+                      fontWeight: '900',
+                      color: 'var(--gold-primary)',
+                      fontFamily: 'Outfit, sans-serif'
+                    }}>
+                      {initials}
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '20px', fontWeight: '950', color: 'white', margin: 0, fontFamily: 'Outfit, sans-serif', letterSpacing: '-0.3px' }}>
+                        {activeDetail.clients?.name}
+                      </h3>
+                      <span className="status-glow-badge" style={{ 
+                        marginTop: '6px',
+                        display: 'inline-flex',
+                        backgroundColor: statusStyle.bg,
+                        color: statusStyle.text,
+                        border: `1px solid ${statusStyle.border}`
+                      }}>
+                        <span className="blinking-dot" style={{ backgroundColor: statusStyle.dot }} />
+                        {activeDetail.status}
+                      </span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedAppDetail(null)} 
+                    style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: '20px', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,69,58,0.15)'; e.currentTarget.style.color = '#ff453a'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+                  >
+                    &times;
+                  </button>
+                </div>
 
-            {/* Date and Time block */}
-            <div style={{ display: 'flex', gap: '16px', background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Clock size={16} color="var(--gold-primary)" />
-                <span style={{ fontSize: '12px', fontWeight: '750', color: 'white' }}>
-                  {new Date(selectedAppDetail.scheduled_at || selectedAppDetail.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CalendarIcon size={16} color="var(--gold-primary)" />
-                <span style={{ fontSize: '12px', fontWeight: '750', color: 'white' }}>
-                  {new Date(selectedAppDetail.scheduled_at || selectedAppDetail.created_at).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                </span>
-              </div>
-            </div>
+                <div style={{ marginBottom: '24px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, fontWeight: '700' }}>
+                    Cédula: <span style={{ color: 'white' }}>V-{activeDetail.clients?.id_card || 'S/C'}</span> • Celular: <span style={{ color: 'white' }}>{activeDetail.clients?.phone || 'S/N'}</span>
+                  </p>
+                </div>
 
-            {/* Service & Price */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
-              {/* Primary Service */}
-              <div style={{ paddingBottom: '12px', borderBottom: '1px dashed rgba(255,255,255,0.05)' }}>
-                <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', marginBottom: '6px' }}>Servicio Principal</label>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Scissors size={14} color="var(--gold-primary)" />
-                    <span style={{ fontWeight: '800', color: 'white', fontSize: '13px' }}>
-                      {selectedAppDetail.services?.name || 'Venta directa sin servicio'}
+                {/* Date and Time block */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', alignItems: 'center' }}>
+                    <Clock size={16} color="var(--gold-primary)" style={{ marginBottom: '2px' }} />
+                    <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Hora</span>
+                    <span style={{ fontSize: '13px', fontWeight: '900', color: 'white', fontFamily: 'Outfit, sans-serif' }}>
+                      {new Date(activeDetail.scheduled_at || activeDetail.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
                     </span>
                   </div>
-                  <span style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '13px' }}>
-                    ${selectedAppDetail.services?.price || 0}
-                  </span>
-                </div>
-                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 22px' }}>
-                  Atendido por: <span style={{ fontWeight: '750', color: 'white' }}>{selectedAppDetail.staff?.name || 'Caja'}</span>
-                </p>
-              </div>
-
-              {/* Extras (if any) */}
-              {selectedAppDetail.appointment_extras && selectedAppDetail.appointment_extras.length > 0 && (
-                <div style={{ paddingBottom: '12px', borderBottom: '1px dashed rgba(255,255,255,0.05)' }}>
-                  <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', marginBottom: '6px' }}>Servicios Extras</label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {selectedAppDetail.appointment_extras.map(e => (
-                      <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingLeft: '8px' }}>
-                        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>• {e.service_extras?.name}</span>
-                        <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)' }}>+${e.price}</span>
-                      </div>
-                    ))}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)', alignItems: 'center', textAlign: 'center' }}>
+                    <CalendarIcon size={16} color="var(--gold-primary)" style={{ marginBottom: '2px' }} />
+                    <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Fecha</span>
+                    <span style={{ fontSize: '13px', fontWeight: '900', color: 'white', whiteSpace: 'nowrap', fontFamily: 'Outfit, sans-serif' }}>
+                      {new Date(activeDetail.scheduled_at || activeDetail.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
                   </div>
                 </div>
-              )}
 
-              {/* Products (if any) */}
-              {selectedAppDetail.appointment_products && selectedAppDetail.appointment_products.length > 0 && (
-                <div style={{ paddingBottom: '12px', borderBottom: '1px dashed rgba(255,255,255,0.05)' }}>
-                  <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', marginBottom: '6px' }}>Productos Vendidos</label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {selectedAppDetail.appointment_products.map(p => (
-                      <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingLeft: '8px' }}>
-                        <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>• {p.quantity}x {p.inventory?.name}</span>
-                        <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)' }}>+${(p.price * p.quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Personnel Involved (appointment_staff records) */}
-              {selectedAppDetail.appointment_staff && selectedAppDetail.appointment_staff.length > 0 && (
-                <div style={{ paddingBottom: '12px', borderBottom: '1px dashed rgba(255,255,255,0.05)' }}>
-                  <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase', marginBottom: '6px' }}>Comisiones & Propinas</label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {selectedAppDetail.appointment_staff.map(as => {
-                      const hasServComm = as.commission_earned > 0;
-                      const hasProdComm = as.product_commission > 0;
-                      const hasTip = as.tip_amount > 0;
-                      return (
-                        <div key={as.id} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                            <span style={{ fontWeight: '800', color: 'white', fontSize: '12px' }}>{as.staff?.name}</span>
-                            <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: '700' }}>{as.staff?.role}</span>
-                          </div>
-                          <div style={{ display: 'flex', gap: '12px', fontSize: '10px', color: 'var(--text-muted)' }}>
-                            {hasServComm && <span>Com. Servicio: <strong style={{ color: 'var(--gold-primary)' }}>${as.commission_earned}</strong></span>}
-                            {hasProdComm && <span>Com. Producto: <strong style={{ color: 'var(--gold-primary)' }}>${as.product_commission}</strong></span>}
-                            {hasTip && <span>Propina: <strong style={{ color: '#32d74b' }}>${as.tip_amount}</strong></span>}
-                          </div>
+                {/* Service & Price */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginBottom: '24px' }}>
+                  {/* Primary Service */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                      <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--gold-primary)' }} />
+                      <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Servicio Principal</label>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                        <div style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', borderRadius: '10px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Scissors size={15} />
                         </div>
-                      );
-                    })}
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: '850', color: 'white', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {activeDetail.services?.name || 'Venta directa sin servicio'}
+                          </div>
+                          <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                            Atendido por: <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{activeDetail.staff?.name || 'Caja'}</strong>
+                          </p>
+                        </div>
+                      </div>
+                      <span style={{ fontWeight: '950', color: 'var(--gold-primary)', fontSize: '14px', fontFamily: 'Outfit, sans-serif' }}>
+                        ${activeDetail.services?.price || 0}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Extras (if any) */}
+                  {activeDetail.appointment_extras && activeDetail.appointment_extras.length > 0 && (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                        <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--gold-primary)' }} />
+                        <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Servicios Extras</label>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {activeDetail.appointment_extras.map(e => (
+                          <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.01)', padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>
+                              <Sparkles size={12} color="var(--gold-primary)" style={{ opacity: 0.7 }} />
+                              <span>{e.service_extras?.name}</span>
+                            </div>
+                            <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)', fontFamily: 'Outfit, sans-serif' }}>+${e.price}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Products (if any) */}
+                  {activeDetail.appointment_products && activeDetail.appointment_products.length > 0 && (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                        <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--gold-primary)' }} />
+                        <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Productos Vendidos</label>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {activeDetail.appointment_products.map(p => (
+                          <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.01)', padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>• {p.quantity}x {p.inventory?.name}</span>
+                            <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)', fontFamily: 'Outfit, sans-serif' }}>+${(p.price * p.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Personnel Involved (appointment_staff records) */}
+                  {activeDetail.appointment_staff && activeDetail.appointment_staff.length > 0 && (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                        <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--gold-primary)' }} />
+                        <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Comisiones & Propinas</label>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {activeDetail.appointment_staff.map(as => {
+                          const hasServComm = as.commission_earned > 0;
+                          const hasProdComm = as.product_commission > 0;
+                          const hasTip = as.tip_amount > 0;
+                          const cleanRole = as.staff?.role?.split('|')[0] || '';
+                          
+                          return (
+                            <div key={as.id} style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div className="avatar-gradient-circle" style={{ width: '32px', height: '32px', minWidth: '32px', fontSize: '12px', margin: 0 }}>
+                                {as.staff?.name?.charAt(0).toUpperCase()}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                  <span style={{ fontWeight: '800', color: 'white', fontSize: '13px' }}>{as.staff?.name}</span>
+                                  <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{cleanRole}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '10px', fontSize: '11px', flexWrap: 'wrap' }}>
+                                  {hasServComm && <span style={{ color: 'rgba(255,255,255,0.6)', fontWeight: '600' }}>Serv: <strong style={{ color: 'var(--gold-primary)' }}>${Number(as.commission_earned).toFixed(2)}</strong></span>}
+                                  {hasProdComm && <span style={{ color: 'rgba(255,255,255,0.6)', fontWeight: '600' }}>Prod: <strong style={{ color: 'var(--gold-primary)' }}>${Number(as.product_commission).toFixed(2)}</strong></span>}
+                                  {hasTip && <span style={{ color: 'rgba(255,255,255,0.6)', fontWeight: '600' }}>Propina: <strong style={{ color: '#30d158' }}>${Number(as.tip_amount).toFixed(2)}</strong></span>}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Total Block */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.02) 100%)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 8px 32px rgba(212,175,55,0.06)' }}>
+                  <div>
+                    <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', display: 'block', marginBottom: '2px', letterSpacing: '0.5px' }}>Total de la Cita</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Ref: ${activeDetail.total_price} USD</span>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '22px', fontWeight: '950', color: 'var(--gold-primary)', textShadow: '0 0 15px rgba(212,175,55,0.35)', fontFamily: 'Outfit, sans-serif' }}>
+                      {rates?.usd > 0 ? `${Math.round(activeDetail.total_price * rates.usd).toLocaleString('es-VE')} Bs.` : `${activeDetail.total_price} USD`}
+                    </span>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Total Block */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(212,175,55,0.08)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.2)' }}>
-              <div>
-                <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Total de la Cita</span>
-                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Ref: ${selectedAppDetail.total_price}</span>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '20px', fontWeight: '950', color: 'var(--gold-primary)' }}>
-                  {rates?.usd > 0 ? `${Math.round(selectedAppDetail.total_price * rates.usd).toLocaleString('es-VE')} Bs.` : `${selectedAppDetail.total_price} USD`}
-                </span>
               </div>
             </div>
-
-          </div>
-        </div>
-      )}
+          );
+        }}
+      </AnimatedModal>
     </div>
   );
 };
@@ -871,40 +1765,68 @@ const MiniCalendar = ({ selectedDate, onDateSelect, allAppointments }) => {
   for (let i = 1; i <= totalDays; i++) days.push(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i));
   
   return (
-    <div className="glass-card" style={{ padding: '24px', borderRadius: '24px' }}>
+    <div className="glass-card" style={{ maxWidth: '340px', width: '100%', margin: '0 auto', padding: '24px', borderRadius: '24px', border: '1px solid rgba(255, 255, 255, 0.04)', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><ChevronLeft size={16} /></button>
-        <span style={{ fontSize: '14px', fontWeight: '900', textTransform: 'uppercase' }}>{monthNames[currentMonth.getMonth()]}</span>
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><ChevronRight size={16} /></button>
+        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}><ChevronLeft size={16} /></button>
+        <span style={{ fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', color: 'white', fontFamily: 'Outfit, var(--font-sans), system-ui', letterSpacing: '0.5px' }}>{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</span>
+        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'white'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}><ChevronRight size={16} /></button>
       </header>
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
-        {["D", "L", "M", "M", "J", "V", "S"].map(d => <div key={d} style={{ fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px' }}>{d}</div>)}
+        {["D", "L", "M", "M", "J", "V", "S"].map(d => <div key={d} style={{ fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.6, marginBottom: '8px' }}>{d}</div>)}
         {days.map((date, idx) => {
           if (!date) return <div key={`empty-${idx}`} />;
           const isSelected = selectedDate.toDateString() === date.toDateString();
+          const isToday = new Date().toDateString() === date.toDateString();
           const dateStr = date.toISOString().split('T')[0];
           const hasApps = allAppointments.some(a => (a.scheduled_at || a.created_at).startsWith(dateStr));
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
           return (
             <button 
               key={date.toISOString()} onClick={() => onDateSelect(date)}
               style={{
-                aspectRatio: '1/1', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: isSelected ? '900' : '500',
-                background: isSelected ? 'var(--gold-primary)' : 'none', color: isSelected ? 'black' : 'white', transition: 'all 0.2s', position: 'relative'
+                width: '36px',
+                height: '36px',
+                margin: '4px auto',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '12px', 
+                border: isToday && !isSelected ? '1px solid rgba(212,175,55,0.45)' : 'none', 
+                cursor: 'pointer', 
+                fontSize: '12px', 
+                fontWeight: isSelected ? '900' : (isToday ? '800' : '600'),
+                background: isSelected ? 'var(--gold-primary)' : (isToday ? 'rgba(212,175,55,0.08)' : 'none'), 
+                color: isSelected ? '#121212' : (isToday ? 'var(--gold-primary)' : (isWeekend ? 'rgba(255, 255, 255, 0.4)' : 'white')), 
+                transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)', 
+                position: 'relative'
+              }}
+              onMouseEnter={(e) => {
+                if (!isSelected) {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected) {
+                  e.currentTarget.style.background = 'none';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }
               }}
             >
               {date.getDate()}
               {hasApps && (
                 <div style={{ 
-                  width: '5px', 
-                  height: '5px', 
+                  width: '4px', 
+                  height: '4px', 
                   borderRadius: '50%', 
-                  backgroundColor: isSelected ? 'black' : 'var(--gold-primary)',
+                  backgroundColor: isSelected ? '#121212' : 'var(--gold-primary)',
                   position: 'absolute',
-                  bottom: '6px',
+                  bottom: '4px',
                   left: '50%',
-                  transform: 'translateX(-50%)'
+                  transform: 'translateX(-50%)',
+                  boxShadow: isSelected ? 'none' : '0 0 5px var(--gold-primary)'
                 }} />
               )}
             </button>

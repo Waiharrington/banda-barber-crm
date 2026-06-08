@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Zap,
   TrendingUp,
@@ -16,10 +17,15 @@ import {
   Gift,
   Cake,
   Rocket,
-  Bell
+  Bell,
+  X,
+  MessageCircle,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { notificationService } from '../../services/notificationService';
+import { dataService } from '../../services/dataService';
+import { useNotifs } from '../../context/NotificationContext';
 
 const QUOTES = [
   { text: "Cada cabeza es un mundo.", creator: "Refrán Popular" },
@@ -42,6 +48,7 @@ const QUOTES = [
 
 const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onOpenNotifications }) => {
   const { user } = useAuth();
+  const { showToast } = useNotifs();
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [isEditingGoals, setIsEditingGoals] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -50,6 +57,11 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
     weekly: parseFloat(localStorage.getItem('astro_weekly_goal') || '3000'),
     monthly: parseFloat(localStorage.getItem('astro_monthly_goal') || '12000')
   });
+
+  const [whatsappModalData, setWhatsappModalData] = useState(null);
+  const [editedPhone, setEditedPhone] = useState('');
+  const [editedMessage, setEditedMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setQuoteIndex(Math.floor(Math.random() * QUOTES.length));
@@ -71,6 +83,51 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
     localStorage.setItem('astro_monthly_goal', newGoals.monthly);
     setGoals(newGoals);
     setIsEditingGoals(false);
+  };
+
+  const handleWhatsAppCongratulate = (person) => {
+    let template = localStorage.getItem('astro_default_bday_message');
+    const isCorrupted = !template || 
+      template.includes('\uFFFD') || 
+      template.includes('ï¿½') ||
+      /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/.test(template);
+    if (isCorrupted) {
+      template = `¡Hola {name}! ${String.fromCodePoint(0x1F389)} Te deseamos un muy feliz cumpleaños de parte de todo el equipo de Astro Barbershop. ${String.fromCodePoint(0x1F488)} ¡Que tengas un día excelente!`;
+      localStorage.setItem('astro_default_bday_message', template);
+    }
+    const whatsappMsg = template.replace('{name}', person.name);
+    setEditedPhone(person.phone || '');
+    setEditedMessage(whatsappMsg);
+    setWhatsappModalData(person);
+  };
+
+  const handleSendWhatsApp = async (isDirect = true) => {
+    if (!whatsappModalData) return;
+
+    const isRealClient = !whatsappModalData.isStaff && 
+      !String(whatsappModalData.id).startsWith('staff-') && 
+      !String(whatsappModalData.id).startsWith('client-');
+
+    if (isRealClient && editedPhone !== (whatsappModalData.phone || '')) {
+      setIsSaving(true);
+      try {
+        await dataService.updateClient(whatsappModalData.id, { phone: editedPhone });
+      } catch (err) {
+        console.error("Error al actualizar teléfono de cliente:", err);
+      } finally {
+        setIsSaving(false);
+      }
+    }
+
+    let url;
+    if (isDirect && editedPhone) {
+      url = `https://wa.me/${editedPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(editedMessage)}`;
+    } else {
+      url = `https://wa.me/?text=${encodeURIComponent(editedMessage)}`;
+    }
+
+    window.open(url, '_blank');
+    setWhatsappModalData(null);
   };
 
   const isBarber = user?.role === 'Barbero' || user?.role?.includes('Barbero|');
@@ -178,7 +235,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
     .slice(0, 3);
 
   return (
-    <div className="mobile-dashboard animate-fade-in" style={{ paddingBottom: '100px', fontFamily: "'Inter', sans-serif" }}>
+    <div className="mobile-dashboard animate-fade-in" style={{ paddingBottom: '100px', fontFamily: "'Inter', sans-serif", overflowX: 'hidden', position: 'relative' }}>
       
       {/* Hello Greeting Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -255,69 +312,98 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
         borderRadius: '28px', 
         padding: '24px 20px', 
         position: 'relative', 
-        overflow: 'hidden',
+        overflow: 'visible',
         marginBottom: '24px',
-        background: 'linear-gradient(135deg, rgba(20,20,20,0.9), rgba(10,10,10,0.6))',
-        border: '1px solid rgba(255,255,255,0.08)'
+        background: 'linear-gradient(135deg, rgba(20, 20, 20, 0.9) 0%, rgba(42, 34, 15, 0.65) 100%)',
+        border: '1px solid rgba(212, 175, 55, 0.35)',
+        boxShadow: '0 16px 45px rgba(0, 0, 0, 0.75), inset 0 0 35px rgba(212, 175, 55, 0.08)',
+        transition: 'all 0.3s ease'
       }}>
-        <div style={{ position: 'relative', zIndex: 5, maxWidth: '60%' }}>
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: '60%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
             <div style={{ width: '12px', height: '2px', backgroundColor: 'var(--gold-primary)' }} />
-            <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px', textTransform: 'uppercase' }}>PENSAMIENTO ASTRO</span>
+            <span style={{ fontSize: '10px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '1px', textTransform: 'uppercase' }}>PENSAMIENTO ASTRO</span>
             <button 
               onClick={() => setQuoteIndex((prev) => (prev + 1) % QUOTES.length)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
+              style={{ 
+                background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
+                transition: 'transform 0.2s ease, background-color 0.2s ease'
+              }}
+              title="Descubrir otro Pensamiento Astro"
             >
-              <Rocket size={12} color="var(--gold-primary)" />
+              <Rocket size={12} color="var(--gold-primary)" className="animate-pulse" />
             </button>
           </div>
-          <h2 style={{ fontSize: '15px', fontWeight: '950', lineHeight: '1.3', marginBottom: '12px', color: 'white' }}>
-            "{QUOTES[quoteIndex].text}"
+          <h2 style={{ 
+            fontSize: '17px', 
+            fontWeight: '700', 
+            lineHeight: '1.35', 
+            marginBottom: '12px', 
+            color: 'white',
+            fontFamily: "'Georgia', serif",
+            fontStyle: 'italic',
+            textShadow: '0 2px 12px rgba(0,0,0,0.6)',
+            textWrap: 'pretty'
+          }}>
+            “{QUOTES[quoteIndex].text}”
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '11px', fontWeight: '700' }}>
+          <p style={{ color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '800', opacity: 0.9, letterSpacing: '0.5px' }}>
             — {QUOTES[quoteIndex].creator}
           </p>
         </div>
 
-        {/* Floating Barber Chair Animation */}
+        {/* Visual Elements (Floating Chair - Identical to PC Dashboard) */}
         <div style={{ 
           position: 'absolute', 
           right: '-10px', 
           bottom: '-10px', 
           width: '45%', 
-          height: '100%',
+          height: '110%',
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'center',
-          zIndex: 2,
+          zIndex: 10,
           pointerEvents: 'none'
         }}>
+          {/* Soft Golden Glow behind the chair */}
+          <div style={{
+            position: 'absolute',
+            top: '45%',
+            left: '42%',
+            transform: 'translate(-50%, -50%)',
+            width: '200px',
+            height: '200px',
+            background: 'radial-gradient(circle, rgba(212, 175, 55, 0.14) 0%, rgba(212, 175, 55, 0.05) 35%, rgba(212, 175, 55, 0.01) 65%, transparent 100%)',
+            zIndex: 2,
+            pointerEvents: 'none'
+          }} />
+          <div className="chair-shadow" style={{ 
+            position: 'absolute', 
+            bottom: '8px', 
+            left: '42%', 
+            transform: 'translateX(-50%)', 
+            width: '80px', 
+            height: '16px', 
+            background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.65) 0%, transparent 70%)',
+            zIndex: 1,
+            animation: 'shadow-scale 8s infinite ease-in-out'
+          }} />
           <img 
             src="/barber-chair.png" 
             alt="Astro Chair" 
+            className="chair-float"
             style={{ 
               width: '100%', 
               height: 'auto',
-              maxHeight: '90%',
+              maxHeight: '115%',
               objectFit: 'contain',
-              filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.8)) drop-shadow(0 0 15px rgba(212, 175, 55, 0.25))',
-              animation: 'float 6s infinite ease-in-out'
+              zIndex: 3,
+              filter: 'drop-shadow(0 10px 25px rgba(0,0,0,0.7)) drop-shadow(0 0 15px rgba(212, 175, 55, 0.3))',
+              animation: 'float 8s infinite ease-in-out'
             }} 
           />
         </div>
-      </div>
-
-      {/* SIC PARVIS MAGNA Card */}
-      <div className="glass-card" style={{ 
-        marginBottom: '24px', 
-        padding: '16px', 
-        textAlign: 'center',
-        border: '1px solid rgba(212, 175, 55, 0.2)',
-        borderRadius: '20px',
-        backgroundColor: 'rgba(255,255,255,0.01)'
-      }}>
-        <div style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '900', letterSpacing: '4px', marginBottom: '4px' }}>"SIC PARVIS MAGNA"</div>
-        <div style={{ fontSize: '12px', fontWeight: '900', color: '#ffffff' }}>LA GRANDEZA NACE DE PEQUEÑOS COMIENZOS</div>
       </div>
 
       {/* Business Stats Cards */}
@@ -451,14 +537,55 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
                   Ningún cliente cumple años hoy.
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {todaysBirthdays.map(c => (
-                    <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', backgroundColor: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)', borderRadius: '10px', cursor: 'pointer' }} onClick={() => onNavigate && onNavigate('clients', { clientId: c.id })}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Gift size={14} color="var(--gold-primary)" />
-                        <span style={{ fontWeight: '800', color: 'white', fontSize: '12px', textDecoration: 'underline' }}>{c.name}</span>
+                    <div 
+                      key={c.id} 
+                      style={{ 
+                        display: 'flex', 
+                        flexWrap: 'wrap',
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        padding: '10px 12px', 
+                        backgroundColor: 'rgba(212,175,55,0.08)', 
+                        border: '1px solid rgba(212,175,55,0.2)', 
+                        borderRadius: '12px',
+                        gap: '8px 10px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '100px', flex: '1 1 0%' }}>
+                        <span 
+                          style={{ fontWeight: '800', color: 'white', fontSize: '13px', textDecoration: 'underline', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} 
+                          onClick={() => onNavigate && onNavigate('clients', { clientId: c.id })}
+                        >
+                          {c.name}
+                        </span>
+                        <span style={{ alignSelf: 'flex-start', fontSize: '8px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)', padding: '1px 4px', borderRadius: '3px' }}>
+                          CLIENTE
+                        </span>
                       </div>
-                      <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)', padding: '1px 6px', borderRadius: '3px' }}>¡FELICIDADES!</span>
+                      
+                      <div style={{ display: 'flex', flexShrink: 0, flexGrow: 1, justifyContent: 'flex-end' }}>
+                        <button 
+                          onClick={() => handleWhatsAppCongratulate(c)}
+                          style={{ 
+                            padding: '6px 12px', 
+                            borderRadius: '8px', 
+                            border: 'none', 
+                            backgroundColor: '#25d366', 
+                            color: 'black', 
+                            fontSize: '11px', 
+                            fontWeight: '850', 
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          <MessageCircle size={12} fill="black" /> Felicitar
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -599,6 +726,183 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
             </div>
           </div>
         </div>
+      )}
+      {/* WhatsApp Message Customization Modal Portal */}
+      {whatsappModalData && createPortal(
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(10px)',
+          zIndex: 10000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div className="glass-card" style={{
+            width: '100%',
+            maxWidth: '380px',
+            background: 'linear-gradient(135deg, rgba(20, 20, 20, 0.95) 0%, rgba(10, 10, 10, 0.98) 100%)',
+            border: '1px solid rgba(212, 175, 55, 0.25)',
+            borderRadius: '24px',
+            padding: '20px',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.05)',
+            position: 'relative'
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <MessageCircle size={18} color="var(--gold-primary)" />
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '900', color: 'white' }}>
+                  Felicitar a {whatsappModalData.name}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setWhatsappModalData(null)}
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '28px',
+                  height: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)'
+                }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Description */}
+            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: '0 0 14px 0' }}>
+              Personaliza el mensaje y el número. Al editar el teléfono, se guardará en la base de datos automáticamente.
+            </p>
+
+            {/* Phone Input */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
+              <label style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Número de Teléfono
+              </label>
+              <input 
+                type="text" 
+                value={editedPhone} 
+                onChange={(e) => setEditedPhone(e.target.value)}
+                placeholder="Ej: +584121234567"
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '10px',
+                  color: 'white',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
+            {/* Message Input */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '18px' }}>
+              <label style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Mensaje de Felicitación
+              </label>
+              <textarea 
+                value={editedMessage} 
+                onChange={(e) => setEditedMessage(e.target.value)}
+                rows={5}
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '10px',
+                  color: 'white',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  outline: 'none',
+                  resize: 'vertical',
+                  minHeight: '110px',
+                  lineHeight: '1.4'
+                }}
+              />
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button 
+                onClick={() => handleSendWhatsApp(true)}
+                disabled={isSaving || !editedPhone}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '10px',
+                  backgroundColor: editedPhone ? '#25d366' : 'rgba(255,255,255,0.05)',
+                  color: editedPhone ? 'black' : 'var(--text-muted)',
+                  fontWeight: '850',
+                  fontSize: '12px',
+                  border: 'none',
+                  cursor: (isSaving || !editedPhone) ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: editedPhone ? '0 4px 12px rgba(37, 211, 102, 0.25)' : 'none',
+                }}
+              >
+                <MessageCircle size={14} />
+                {isSaving ? 'Guardando...' : 'Enviar al Número Registrado'}
+              </button>
+
+              <button 
+                onClick={() => handleSendWhatsApp(false)}
+                disabled={isSaving}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  color: 'white',
+                  fontWeight: '700',
+                  fontSize: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
+              >
+                Elegir Contacto Manualmente
+              </button>
+
+              <button 
+                onClick={() => setWhatsappModalData(null)}
+                disabled={isSaving}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '10px',
+                  backgroundColor: 'transparent',
+                  color: 'var(--text-muted)',
+                  fontWeight: '600',
+                  fontSize: '12px',
+                  border: 'none',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       <style>{`

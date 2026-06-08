@@ -64,8 +64,6 @@ const NotificationsDrawer = ({ isOpen, onClose }) => {
     notificationService.clearHistory();
   };
 
-  if (!isOpen) return null;
-
   return (
     <div style={{
       position: 'fixed',
@@ -74,8 +72,10 @@ const NotificationsDrawer = ({ isOpen, onClose }) => {
       zIndex: 5000,
       display: 'flex',
       justifyContent: 'flex-end',
-      backdropFilter: 'blur(8px)',
-      animation: 'fadeIn 0.3s ease'
+      backdropFilter: isOpen ? 'blur(8px)' : 'blur(0px)',
+      opacity: isOpen ? 1 : 0,
+      pointerEvents: isOpen ? 'auto' : 'none',
+      transition: 'opacity 0.3s ease, backdrop-filter 0.3s ease'
     }}>
       {/* Click outside overlay to close */}
       <div onClick={onClose} style={{ flex: 1 }} />
@@ -91,7 +91,8 @@ const NotificationsDrawer = ({ isOpen, onClose }) => {
         borderRadius: '0',
         background: 'rgba(18, 18, 18, 0.98)',
         boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
-        animation: 'slideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+        transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
       }}>
         {/* Header */}
         <div style={{

@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { notificationService } from '../services/notificationService';
 
 const TopBar = ({ 
+  activeTab,
   rates, 
   onOpenSale, 
   isStoreOpen = true, 
@@ -36,57 +37,65 @@ const TopBar = ({
       display: 'flex', 
       justifyContent: 'space-between', 
       alignItems: 'center', 
-      marginBottom: '40px',
+      marginBottom: '20px',
       flexWrap: 'wrap',
-      gap: '20px'
+      gap: '12px'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{ position: 'relative' }}>
           <div style={{ 
-            width: '64px', 
-            height: '64px', 
-            borderRadius: '20px', 
+            width: '44px', 
+            height: '44px', 
+            borderRadius: '12px', 
             backgroundColor: 'var(--gold-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             boxShadow: 'var(--gold-glow)'
           }}>
-            <User color="black" size={32} />
+            <User color="black" size={22} />
           </div>
           <div style={{ 
             position: 'absolute', 
-            bottom: '-2px', 
-            right: '-2px', 
-            width: '18px', 
-            height: '18px', 
+            bottom: '-1px', 
+            right: '-1px', 
+            width: '12px', 
+            height: '12px', 
             borderRadius: '50%', 
             backgroundColor: isStoreOpen ? '#4caf50' : '#ff4d4d',
-            border: '3px solid var(--bg-primary)'
+            border: '2px solid var(--bg-primary)'
           }} />
         </div>
         <div>
-          <h1 style={{ fontSize: '28px', fontWeight: '950', letterSpacing: '-1px' }}>
-            ¡Hola, <span className="text-gold">{user?.name?.split(' ')[0] || 'Astro'}</span>!
-          </h1>
+          {activeTab === 'my-profile' ? (
+            <h1 style={{ fontSize: '22px', fontWeight: '950', letterSpacing: '-0.5px' }}>
+              Mi <span className="text-gold">Perfil</span>
+            </h1>
+          ) : (
+            <h1 style={{ fontSize: '22px', fontWeight: '950', letterSpacing: '-0.5px' }}>
+              ¡Hola, <span className="text-gold">{user?.name?.split(' ')[0] || 'Astro'}</span>!
+            </h1>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-            <span style={{ fontSize: '12px', fontWeight: '800', color: isStoreOpen ? '#4caf50' : '#ff4d4d', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: isStoreOpen ? '#4caf50' : '#ff4d4d', textTransform: 'uppercase', letterSpacing: '1px' }}>
               ● TIENDA ABIERTA
             </span>
-            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>|</span>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700' }}>PANEL CONTROL</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>|</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
+              {activeTab === 'my-profile' ? 'INFORMACIÓN PERSONAL' : 'PANEL CONTROL'}
+            </span>
           </div>
         </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {/* Rate Toggle Card */}
-        <div className="glass-card" style={{ padding: '8px', display: 'flex', alignItems: 'center', gap: '4px', borderRadius: '18px', border: '1px solid rgba(212,175,55,0.1)' }}>
+        <div className="glass-card" style={{ padding: '8px', display: 'flex', alignItems: 'center', gap: '4px', borderRadius: '14px', border: '1px solid rgba(212,175,55,0.1)' }}>
           {/* BCV Button */}
           <button
             onClick={() => onToggleRateType('bcv')}
             style={{
-              padding: '10px 18px',
+              padding: '6px 14px',
               borderRadius: '14px',
               border: 'none',
               cursor: 'pointer',
@@ -113,7 +122,7 @@ const TopBar = ({
               BCV
             </span>
             <span style={{ 
-              fontSize: '15px', 
+              fontSize: '13px', 
               fontWeight: '950', 
               color: activeRateType === 'bcv' ? 'var(--gold-primary)' : 'white'
             }}>
@@ -125,7 +134,7 @@ const TopBar = ({
           <button
             onClick={() => onToggleRateType('usdt')}
             style={{
-              padding: '10px 18px',
+              padding: '6px 14px',
               borderRadius: '14px',
               border: 'none',
               cursor: 'pointer',
@@ -152,7 +161,7 @@ const TopBar = ({
               USDT
             </span>
             <span style={{ 
-              fontSize: '15px', 
+              fontSize: '13px', 
               fontWeight: '950', 
               color: activeRateType === 'usdt' ? '#26a65b' : 'white'
             }}>
@@ -237,7 +246,7 @@ const TopBar = ({
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
-            fontSize: '15px'
+            fontSize: '13px'
           }}
         >
           <Plus size={20} /> Nueva Operación Astro
