@@ -332,9 +332,9 @@ const SchedulingModule = ({ isMobile, rates }) => {
     const colors = {
       'Agendado': { text: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)', border: 'rgba(212,175,55,0.25)', dot: 'var(--gold-primary)' },
       'En Silla': { text: '#0a84ff', bg: 'rgba(10,132,255,0.1)', border: 'rgba(10,132,255,0.25)', dot: '#0a84ff' },
-      'En Lavado': { text: '#30d158', bg: 'rgba(48,209,88,0.1)', border: 'rgba(48,209,88,0.25)', dot: '#30d158' },
+      'En Lavado': { text: '#64d2ff', bg: 'rgba(100,210,255,0.1)', border: 'rgba(100,210,255,0.25)', dot: '#64d2ff' },
       'Por Pagar': { text: '#bf5af2', bg: 'rgba(191,90,242,0.1)', border: 'rgba(191,90,242,0.25)', dot: '#bf5af2' },
-      'Completado': { text: 'rgba(255,255,255,0.5)', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', dot: 'rgba(255,255,255,0.3)' },
+      'Completado': { text: '#30d158', bg: 'rgba(48,209,88,0.15)', border: 'rgba(48,209,88,0.35)', dot: '#30d158' },
       'Cancelada': { text: '#ff453a', bg: 'rgba(255,69,58,0.1)', border: 'rgba(255,69,58,0.25)', dot: '#ff453a' }
     };
     return colors[status] || { text: 'white', bg: 'rgba(255,255,255,0.1)', border: 'rgba(255,255,255,0.15)', dot: 'white' };
