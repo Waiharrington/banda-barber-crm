@@ -752,6 +752,20 @@ const SchedulingModule = ({ isMobile, rates }) => {
         .premium-filter-tabs::-webkit-scrollbar {
           display: none;
         }
+        @media (max-width: 600px) {
+          .premium-filter-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow-x: visible;
+          }
+          .premium-tab-btn {
+            flex: unset !important;
+            width: 100%;
+            font-size: 11px !important;
+            padding: 9px 8px !important;
+            gap: 5px !important;
+          }
+        }
         .premium-tab-btn {
           flex: 1;
           display: flex;
