@@ -1121,10 +1121,18 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '100px', overflowX: 'hidden', maxWidth: '100%' }}>
-      <header style={{ marginBottom: '40px' }}>
-        <h1 style={{ fontSize: '32px', fontWeight: '900' }}>Caja <span className="text-gold">Astro Pro</span></h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Liquidación de servicios y venta de productos.</p>
-      </header>
+      {!isMobile && (
+        <header style={{ marginBottom: '32px' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: '900' }}>Caja <span className="text-gold">Astro Pro</span></h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Liquidación de servicios y venta de productos.</p>
+        </header>
+      )}
+      {isMobile && (
+        <header style={{ marginBottom: '14px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: '900', lineHeight: 1.2 }}>Caja <span className="text-gold">Astro Pro</span></h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '2px' }}>Liquidación de servicios y productos.</p>
+        </header>
+      )}
 
       <div className="checkout-pos-container">
         <div className="checkout-pos-grid">
