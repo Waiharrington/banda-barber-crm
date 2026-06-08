@@ -648,8 +648,8 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         marginBottom: '32px' 
       }}>
         {[
-          { label: "Total $", value: `$${totalIncome.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` },
-          { label: "TIKET PROMEDIO", value: `$${avgTicket.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, isGold: true },
+          { label: "Total Bs.", value: `${totalIncome.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.` },
+          { label: "TIKET PROMEDIO", value: `${avgTicket.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`, isGold: true },
           { label: "Promedio semanal", value: weeklyAvg.toString() },
           { label: "Servicios", value: totalServices.toString() },
           { label: "Lavados", value: totalLavados.toString() },
@@ -708,7 +708,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
             <div style={{ width: '12px', height: '6px', backgroundColor: 'var(--gold-primary)', borderRadius: '2px' }}></div>
-            <span style={{ fontSize: '11px', fontWeight: '900', color: '#b3b3b3', textTransform: 'uppercase', letterSpacing: '1px' }}>Ref $</span>
+            <span style={{ fontSize: '11px', fontWeight: '900', color: '#b3b3b3', textTransform: 'uppercase', letterSpacing: '1px' }}>Ref Bs.</span>
           </div>
           
           <div style={{ position: 'relative', height: '170px' }}>
@@ -737,7 +737,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
                   <g transform={`translate(${p.x}, ${p.y - 18})`}>
                     <rect x="-24" y="-8" width="48" height="15" rx="3" fill="#ffffff" />
                     <text x="0" y="3" fill="#000000" fontSize="9" fontWeight="950" textAnchor="middle">
-                      {p.amount >= 1000 ? `$${(p.amount/1000).toFixed(2)} mil` : `$${Math.round(p.amount)}`}
+                      {p.amount >= 1000 ? `${(p.amount/1000).toFixed(2)} mil Bs.` : `${Math.round(p.amount)} Bs.`}
                     </text>
                   </g>
                   
