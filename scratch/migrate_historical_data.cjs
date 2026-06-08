@@ -5,7 +5,7 @@ const fs = require('fs');
 const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY);
 
 async function migrate() {
-  const filePath = 'C:\\Users\\Waiha\\Downloads\\_Registro de Ingresos ASTRO - HISTORIAL.csv';
+  const filePath = 'C:\\Users\\Waiha\\Downloads\\_Registro de Ingresos ASTRO - HISTORIAL (1).csv';
   console.log('Reading CSV from:', filePath);
   
   if (!fs.existsSync(filePath)) {
@@ -65,9 +65,11 @@ async function migrate() {
       console.log('Error parsing date:', fechaStr);
     }
 
-    // Parse amount
-    const parsedAmount = parseFloat(montoStr.replace(/[^\d.,]/g, '').replace(',', '.'));
-    let amount = isNaN(parsedAmount) ? 0 : parsedAmount;
+    // Parse amount and multiply by 1000
+    let amount = 0;
+    if (montoStr && montoStr.trim() !== '') {
+      amount = parseFloat(montoStr.replace('Bs.', '').replace(',', '.')) * 1000;
+    }
 
     const staffInvolved = [];
     if (staffMap[barberoStr]) {

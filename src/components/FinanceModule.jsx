@@ -1208,9 +1208,11 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                           }}>
                             {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount * (t.exchange_rate || rates?.usd || 550), '')} BS
                           </div>
-                          <div style={{ fontSize: '11px', color: 'white' }}>
-                            REF: ${formatCurrency(t.amount, '')}
-                          </div>
+                          {!t.metadata?.isHistorical && (
+                            <div style={{ fontSize: '11px', color: 'white' }}>
+                              REF: ${formatCurrency(t.amount, '')}
+                            </div>
+                          )}
                         </td>
                       </tr>
                       
