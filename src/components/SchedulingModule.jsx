@@ -1825,7 +1825,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                 )}
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '4px' }}>
                                   <span style={{ fontWeight: '800', color: 'white', fontSize: '13px' }}>{as.staff?.name}</span>
                                   <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{cleanRole}</span>
                                 </div>
