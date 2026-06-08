@@ -590,3 +590,10 @@ input[type="submit"]:active {
 .sidebar button:active {
   transform: scale(0.98) !important;
 }
+
+/* Prevent automatic browser zoom on input focus for mobile viewports */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
