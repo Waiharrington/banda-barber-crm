@@ -900,7 +900,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
         </aside>
 
         {/* Right Side: Appointments List */}
-        <main className="animate-slide-up animate-stagger-2" style={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
+        <main className="animate-slide-up animate-stagger-2" style={{ minWidth: 0, maxWidth: '100%', boxSizing: 'border-box' }}>
           <div className="date-navigator-card">
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
               <div style={{ background: 'var(--gold-primary)', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212, 175, 55, 0.3)' }}>
