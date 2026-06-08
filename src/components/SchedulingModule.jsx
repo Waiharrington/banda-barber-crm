@@ -380,7 +380,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
   };
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
+    <div className="animate-fade-in" style={{ paddingBottom: '100px', overflowX: 'hidden', maxWidth: '100%' }}>
       
       {/* Styles Injection for Premium Aesthetics */}
       <style>{`
@@ -648,10 +648,14 @@ const SchedulingModule = ({ isMobile, rates }) => {
             align-items: flex-start;
             gap: 12px;
             padding: 12px 16px;
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
           }
           .date-navigator-card div:last-child {
             width: 100%;
             justify-content: flex-end;
+            flex-wrap: wrap;
           }
         }
         .scheduling-header {
@@ -660,6 +664,8 @@ const SchedulingModule = ({ isMobile, rates }) => {
           align-items: center;
           margin-bottom: 30px;
           gap: 16px;
+          max-width: 100%;
+          box-sizing: border-box;
         }
         @media (max-width: 600px) {
           .scheduling-header {
@@ -668,6 +674,30 @@ const SchedulingModule = ({ isMobile, rates }) => {
           }
           .scheduling-header button {
             width: 100%;
+          }
+          .premium-search-box {
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
+          }
+          .weekly-ribbon {
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
+          }
+          .premium-filter-tabs {
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
+          }
+          .scheduling-group-card {
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 100%;
+          }
+          .scheduling-metrics-banner {
+            box-sizing: border-box;
+            max-width: 100%;
           }
         }
         @media (max-width: 768px) {
