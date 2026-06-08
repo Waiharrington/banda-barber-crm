@@ -1164,51 +1164,55 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                       padding: '12px 14px', 
                                       borderBottom: '1px solid rgba(255,255,255,0.03)',
                                       display: 'flex', 
-                                      alignItems: 'center',
-                                      justifyContent: 'space-between',
+                                      flexDirection: 'column',
                                       gap: '6px',
-                                      fontSize: '12px',
                                       color: '#fff',
                                       cursor: 'pointer',
                                       animationDelay: `${idx * 40}ms`
                                     }}>
-                                  <div style={{ flexShrink: 0, width: '75px', fontWeight: '800' }}>
-                                    <div style={{ fontSize: '12px', color: 'white', whiteSpace: 'nowrap' }}>
-                                      {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '').toLowerCase()}
-                                    </div>
-                                    {filterType !== 'day' && (
-                                      <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                        {new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                      {/* Top Row: Time, Client Name, Price */}
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                                          <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)', whiteSpace: 'nowrap' }}>
+                                            {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '').toLowerCase()}
+                                          </span>
+                                          {filterType !== 'day' && (
+                                            <span style={{ fontSize: '9px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                              {new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                            </span>
+                                          )}
+                                          <span style={{ fontWeight: '800', color: '#fff', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {app.clients?.name}
+                                          </span>
+                                        </div>
+                                        <span className="price-highlight-tag" style={{ fontSize: '14px', fontWeight: '950', color: 'var(--gold-primary)', flexShrink: 0, paddingLeft: '8px' }}>
+                                          ${app.total_price}
+                                        </span>
                                       </div>
-                                    )}
-                                  </div>
-                                  <div style={{ flex: 1, minWidth: 0, paddingLeft: '8px' }}>
-                                    <div style={{ fontWeight: '800', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {app.clients?.name?.split(' ')[0]} {app.clients?.name?.split(' ')[1] ? app.clients?.name?.split(' ')[1]?.charAt(0) + '.' : ''}
+                                      
+                                      {/* Bottom Row: Service Name, Status Badge */}
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '10px' }}>
+                                        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                                          {app.services?.name || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin servicio</span>}
+                                        </div>
+                                        <div style={{ flexShrink: 0 }}>
+                                          <span className="status-glow-badge" style={{ 
+                                            fontSize: '8px', 
+                                            padding: '3px 6px', 
+                                            borderRadius: '6px',
+                                            backgroundColor: statusStyle.bg,
+                                            color: statusStyle.text,
+                                            border: `1px solid ${statusStyle.border}`,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                          }}>
+                                            <span className="blinking-dot" style={{ backgroundColor: statusStyle.dot, width: '4px', height: '4px', borderRadius: '50%', display: 'inline-block' }} />
+                                            {app.status === 'Agendado' ? 'Agenda' : app.status === 'En Silla' ? 'Silla' : app.status === 'En Lavado' ? 'Lavado' : app.status === 'Por Pagar' ? 'Cobro' : app.status === 'Completado' ? 'Listo' : 'Canc'}
+                                          </span>
+                                        </div>
+                                      </div>
                                     </div>
-                                  </div>
-                                  <div style={{ flex: 1.2, minWidth: 0, paddingLeft: '4px', color: 'rgba(255,255,255,0.6)', fontSize: '11px' }}>
-                                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {app.services?.name || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin serv.</span>}
-                                    </div>
-                                  </div>
-                                  <div className="price-highlight-tag" style={{ flexShrink: 0, width: '32px', textAlign: 'right', fontSize: '13px' }}>
-                                    ${app.total_price}
-                                  </div>
-                                  <div style={{ flexShrink: 0, width: '60px', textAlign: 'center' }}>
-                                    <span className="status-glow-badge" style={{ 
-                                      fontSize: '8px', 
-                                      padding: '3px 6px', 
-                                      borderRadius: '6px',
-                                      backgroundColor: statusStyle.bg,
-                                      color: statusStyle.text,
-                                      border: `1px solid ${statusStyle.border}`
-                                    }}>
-                                      <span className="blinking-dot" style={{ backgroundColor: statusStyle.dot }} />
-                                      {app.status === 'Agendado' ? 'Agenda' : app.status === 'En Silla' ? 'Silla' : app.status === 'En Lavado' ? 'Lavado' : app.status === 'Por Pagar' ? 'Cobro' : app.status === 'Completado' ? 'Listo' : 'Canc'}
-                                    </span>
-                                  </div>
-                                </div>
                               ) : (
                                 <div key={app.id} onClick={() => setSelectedAppDetail(app)} className="premium-row-card" style={{ 
                                   animationDelay: `${idx * 40}ms`
