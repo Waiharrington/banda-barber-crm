@@ -157,7 +157,7 @@ const DashboardModule = ({
       display: 'flex', 
       flexDirection: 'column',
       position: 'relative',
-      overflow: 'visible'
+      overflowX: 'hidden'
     }}>
       {/* Ambient glowing background orbs */}
       <div className="l-dashboard-orb l-orb-1" />

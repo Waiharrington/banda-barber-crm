@@ -49,6 +49,7 @@ html, body {
   color: var(--text-primary);
   min-height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* Scrollbar Styling */

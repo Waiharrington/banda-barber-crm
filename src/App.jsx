@@ -583,7 +583,7 @@ function App() {
   }
 
   return (
-    <div className="app-container" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'transparent', position: 'relative' }}>
+    <div className="app-container" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'transparent', position: 'relative', overflowX: 'hidden' }}>
       <AstroLoader visible={isAppLoading} />
       <Sidebar 
         activeTab={activeTab} 
@@ -672,34 +672,6 @@ function App() {
         isOpen={isNotificationsOpen} 
         onClose={() => setIsNotificationsOpen(false)} 
       />
-      {/* Botón temporal de captura de pantalla completa */}
-      <button
-        type="button"
-        onClick={(e) => { e.preventDefault(); handleCaptureFullPage(); }}
-        style={{
-          position: 'fixed',
-          bottom: '25px',
-          right: '25px',
-          zIndex: 4000,
-          background: 'var(--gold-gradient)',
-          color: 'black',
-          border: 'none',
-          borderRadius: '50px',
-          padding: '12px 22px',
-          fontSize: '13px',
-          fontWeight: '900',
-          cursor: 'pointer',
-          boxShadow: 'var(--gold-glow)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          transition: 'transform 0.2s',
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-      >
-        📸 Captura Completa
-      </button>
     </div>
   );
 }
