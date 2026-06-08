@@ -1806,7 +1806,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                         <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--gold-primary)' }} />
-                        <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Comisiones & Propinas</label>
+                        <label style={{ fontSize: '10px', fontWeight: '900', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Comisiones & Propinas</label>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {activeDetail.appointment_staff.map(as => {
@@ -1827,12 +1827,12 @@ const SchedulingModule = ({ isMobile, rates }) => {
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '4px' }}>
                                   <span style={{ fontWeight: '800', color: 'white', fontSize: '13px' }}>{as.staff?.name}</span>
-                                  <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{cleanRole}</span>
+                                  <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.7)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{cleanRole}</span>
                                 </div>
                                 <div style={{ display: 'flex', gap: '10px', fontSize: '11px', flexWrap: 'wrap' }}>
-                                  {hasServComm && <span style={{ color: 'rgba(255,255,255,0.6)', fontWeight: '600' }}>Serv: <strong style={{ color: 'var(--gold-primary)' }}>${Number(as.commission_earned).toFixed(2)}</strong></span>}
-                                  {hasProdComm && <span style={{ color: 'rgba(255,255,255,0.6)', fontWeight: '600' }}>Prod: <strong style={{ color: 'var(--gold-primary)' }}>${Number(as.product_commission).toFixed(2)}</strong></span>}
-                                  {hasTip && <span style={{ color: 'rgba(255,255,255,0.6)', fontWeight: '600' }}>Propina: <strong style={{ color: '#30d158' }}>${Number(as.tip_amount).toFixed(2)}</strong></span>}
+                                  {hasServComm && <span style={{ color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>Serv: <strong style={{ color: 'var(--gold-primary)' }}>${Number(as.commission_earned).toFixed(2)}</strong></span>}
+                                  {hasProdComm && <span style={{ color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>Prod: <strong style={{ color: 'var(--gold-primary)' }}>${Number(as.product_commission).toFixed(2)}</strong></span>}
+                                  {hasTip && <span style={{ color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>Propina: <strong style={{ color: '#30d158' }}>${Number(as.tip_amount).toFixed(2)}</strong></span>}
                                 </div>
                               </div>
                             </div>
