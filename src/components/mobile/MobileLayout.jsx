@@ -8,19 +8,24 @@ const MobileLayout = ({ children, activeTab, setActiveTab, onOpenSale }) => {
   const { logout } = useAuth();
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
       backgroundColor: 'var(--bg-primary)',
       color: 'white',
-      padding: '10px 20px 120px 20px',
-      position: 'relative'
+      position: 'relative',
+      overflow: 'hidden',
     }}>
-      {/* Global Brand Header */}
+      {/* Sticky Brand Header */}
       <header style={{ 
+        flexShrink: 0,
         height: '60px', 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between',
-        marginBottom: '20px'
+        padding: '0 20px',
+        backgroundColor: 'var(--bg-primary)',
+        zIndex: 100,
       }}>
         <div style={{ width: '40px' }} /> {/* Spacer */}
         <img src={logo} alt="Astro Barber" style={{ height: '30px', width: 'auto' }} />
@@ -32,7 +37,16 @@ const MobileLayout = ({ children, activeTab, setActiveTab, onOpenSale }) => {
         </button>
       </header>
       
-      {children}
+      {/* Scrollable Content Area */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        padding: '10px 20px 120px 20px',
+        WebkitOverflowScrolling: 'touch',
+      }}>
+        {children}
+      </div>
 
       <MobileBottomNav 
         activeTab={activeTab} 
@@ -42,7 +56,7 @@ const MobileLayout = ({ children, activeTab, setActiveTab, onOpenSale }) => {
 
       <style>{`
         body {
-          overflow-x: hidden;
+          overflow: hidden;
           background-color: var(--bg-primary);
         }
         * {

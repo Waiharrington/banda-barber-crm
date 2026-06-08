@@ -2040,30 +2040,34 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
                 <button 
                   onClick={handleCancelOrder}
                   disabled={loading}
                   style={{ 
                     flex: '1', 
+                    minWidth: 0,
                     height: isMobile ? '44px' : '54px', 
                     borderRadius: '14px', 
-                    fontSize: isMobile ? '12px' : '14px', 
-                    gap: '6px', 
+                    fontSize: isMobile ? '11px' : '14px', 
+                    gap: '4px', 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
                     backgroundColor: 'rgba(255, 69, 58, 0.1)',
                     border: '1.5px solid rgba(255, 69, 58, 0.4)',
                     color: '#ff453a',
                     fontWeight: '900',
                     cursor: 'pointer',
-                    transition: '0.3s'
+                    transition: '0.3s',
+                    padding: isMobile ? '0 10px' : '0 16px',
                   }}
                   onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255, 69, 58, 0.2)'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(255, 69, 58, 0.1)'}
                 >
-                  <XCircle size={isMobile ? 16 : 20} /> CANCELAR
+                  <XCircle size={isMobile ? 14 : 20} style={{ flexShrink: 0 }} /> {isMobile ? 'CANCELAR' : 'CANCELAR'}
                 </button>
 
                 <button 
