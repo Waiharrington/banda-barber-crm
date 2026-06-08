@@ -1120,7 +1120,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   }
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '100px' }}>
+    <div className="animate-fade-in" style={{ paddingBottom: '100px', overflowX: 'hidden', maxWidth: '100%' }}>
       <header style={{ marginBottom: '40px' }}>
         <h1 style={{ fontSize: '32px', fontWeight: '900' }}>Caja <span className="text-gold">Astro Pro</span></h1>
         <p style={{ color: 'var(--text-secondary)' }}>Liquidación de servicios y venta de productos.</p>
@@ -1287,44 +1287,44 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
           </div>
 
           {(selectedApp || isDirectSale) && (
-            <div className="glass-card animate-slide-up" style={{ borderRadius: '24px', display: 'flex', gap: '12px' }}>
+            <div className="glass-card animate-slide-up" style={{ borderRadius: isMobile ? '18px' : '24px', padding: isMobile ? '10px' : '16px', display: 'flex', gap: isMobile ? '8px' : '12px', width: '100%', boxSizing: 'border-box' }}>
               <button 
                 onClick={() => setShowProductModal(true)}
-                style={{ flex: 1, padding: '24px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.3)', background: 'linear-gradient(145deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02))', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', transition: 'all 0.3s ease', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}
+                style={{ flex: 1, padding: isMobile ? '14px 8px' : '24px', borderRadius: isMobile ? '14px' : '20px', border: '1px solid rgba(212,175,55,0.3)', background: 'linear-gradient(145deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02))', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isMobile ? '6px' : '12px', transition: 'all 0.3s ease', boxShadow: '0 4px 15px rgba(0,0,0,0.2)', minWidth: 0 }}
                 className="hover-item"
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(212,175,55,0.15)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)'; }}
               >
-                <div style={{ background: 'var(--gold-primary)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212,175,55,0.3)' }}>
-                  <ShoppingBag size={24} strokeWidth={2.5} />
+                <div style={{ background: 'var(--gold-primary)', width: isMobile ? '36px' : '48px', height: isMobile ? '36px' : '48px', borderRadius: isMobile ? '10px' : '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212,175,55,0.3)', flexShrink: 0 }}>
+                  <ShoppingBag size={isMobile ? 18 : 24} strokeWidth={2.5} />
                 </div>
-                <div style={{ fontWeight: '900', fontSize: '12px', letterSpacing: '1px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>PRODUCTOS</div>
+                <div style={{ fontWeight: '900', fontSize: isMobile ? '9px' : '12px', letterSpacing: '0.5px', textShadow: '0 2px 4px rgba(0,0,0,0.5)', textAlign: 'center' }}>PRODUCTOS</div>
               </button>
 
               <button 
                 onClick={() => setShowExtraModal(true)}
-                style={{ flex: 1, padding: '24px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.3)', background: 'linear-gradient(145deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02))', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', transition: 'all 0.3s ease', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}
+                style={{ flex: 1, padding: isMobile ? '14px 8px' : '24px', borderRadius: isMobile ? '14px' : '20px', border: '1px solid rgba(212,175,55,0.3)', background: 'linear-gradient(145deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02))', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isMobile ? '6px' : '12px', transition: 'all 0.3s ease', boxShadow: '0 4px 15px rgba(0,0,0,0.2)', minWidth: 0 }}
                 className="hover-item"
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(212,175,55,0.15)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)'; }}
               >
-                <div style={{ background: 'var(--gold-primary)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212,175,55,0.3)' }}>
-                  <Zap size={24} strokeWidth={2.5} />
+                <div style={{ background: 'var(--gold-primary)', width: isMobile ? '36px' : '48px', height: isMobile ? '36px' : '48px', borderRadius: isMobile ? '10px' : '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212,175,55,0.3)', flexShrink: 0 }}>
+                  <Zap size={isMobile ? 18 : 24} strokeWidth={2.5} />
                 </div>
-                <div style={{ fontWeight: '900', fontSize: '12px', letterSpacing: '1px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>EXTRAS</div>
+                <div style={{ fontWeight: '900', fontSize: isMobile ? '9px' : '12px', letterSpacing: '0.5px', textShadow: '0 2px 4px rgba(0,0,0,0.5)', textAlign: 'center' }}>EXTRAS</div>
               </button>
 
               <button 
                 onClick={() => setShowServiceModal(true)}
-                style={{ flex: 1, padding: '24px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.3)', background: 'linear-gradient(145deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02))', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', transition: 'all 0.3s ease', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}
+                style={{ flex: 1, padding: isMobile ? '14px 8px' : '24px', borderRadius: isMobile ? '14px' : '20px', border: '1px solid rgba(212,175,55,0.3)', background: 'linear-gradient(145deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02))', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isMobile ? '6px' : '12px', transition: 'all 0.3s ease', boxShadow: '0 4px 15px rgba(0,0,0,0.2)', minWidth: 0 }}
                 className="hover-item"
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(212,175,55,0.15)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)'; }}
               >
-                <div style={{ background: 'var(--gold-primary)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212,175,55,0.3)' }}>
-                  <Scissors size={24} strokeWidth={2.5} />
+                <div style={{ background: 'var(--gold-primary)', width: isMobile ? '36px' : '48px', height: isMobile ? '36px' : '48px', borderRadius: isMobile ? '10px' : '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212,175,55,0.3)', flexShrink: 0 }}>
+                  <Scissors size={isMobile ? 18 : 24} strokeWidth={2.5} />
                 </div>
-                <div style={{ fontWeight: '900', fontSize: '12px', letterSpacing: '1px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>SERVICIOS</div>
+                <div style={{ fontWeight: '900', fontSize: isMobile ? '9px' : '12px', letterSpacing: '0.5px', textShadow: '0 2px 4px rgba(0,0,0,0.5)', textAlign: 'center' }}>SERVICIOS</div>
               </button>
             </div>
           )}
@@ -1337,11 +1337,11 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
               <h3>Selecciona un cliente de la lista para cobrar</h3>
             </div>
           ) : (
-            <div className="glass-card animate-scale-in" style={{ borderRadius: '32px', padding: '32px', border: '1.5px solid rgba(212,175,55,0.3)', background: 'linear-gradient(135deg, var(--bg-secondary) 0%, rgba(28,28,30,1) 100%)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
-                <div>
-                  <h3 style={{ fontSize: '24px', fontWeight: '900' }}>{selectedApp ? 'Resumen de Cobro' : 'Venta Directa'}</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+            <div className="glass-card animate-scale-in" style={{ borderRadius: isMobile ? '20px' : '32px', padding: isMobile ? '16px' : '32px', border: '1.5px solid rgba(212,175,55,0.3)', background: 'linear-gradient(135deg, var(--bg-secondary) 0%, rgba(28,28,30,1) 100%)' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', gap: isMobile ? '12px' : '0', marginBottom: isMobile ? '16px' : '32px' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h3 style={{ fontSize: isMobile ? '18px' : '24px', fontWeight: '900' }}>{selectedApp ? 'Resumen de Cobro' : 'Venta Directa'}</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
                     {selectedApp ? (
                       <>
                         {selectedApp.clients.name} 
@@ -1354,29 +1354,29 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                         {selectedClient ? (
                           <div className="animate-scale-in" style={{ padding: '12px 16px', background: 'rgba(212,175,55,0.1)', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                              <div style={{ fontWeight: '800', fontSize: '16px' }}>{selectedClient.name}</div>
+                              <div style={{ fontWeight: '800', fontSize: isMobile ? '14px' : '16px' }}>{selectedClient.name}</div>
                               <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>V-{selectedClient.id_card}</div>
                             </div>
                             <button onClick={() => setSelectedClient(null)} style={{ background: 'none', border: 'none', color: '#ff453a', fontWeight: '800', cursor: 'pointer', fontSize: '11px' }}>CAMBIAR</button>
                           </div>
                         ) : (
                           <div style={{ position: 'relative' }}>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              <div style={{ position: 'relative', flex: 1 }}>
-                                <Search style={{ position: 'absolute', left: '12px', top: '12px' }} size={16} color="var(--text-muted)" />
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'nowrap' }}>
+                              <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                                <Search style={{ position: 'absolute', left: '10px', top: '12px' }} size={14} color="var(--text-muted)" />
                                 <input 
                                   type="text" 
-                                  placeholder="Cédula o nombre del cliente..." 
+                                  placeholder={isMobile ? 'Cédula o nombre...' : 'Cédula o nombre del cliente...'} 
                                   value={directSaleIdSearch}
                                   onChange={(e) => handleDirectSaleSearchInput(e.target.value)}
                                   onKeyDown={(e) => e.key === 'Enter' && handleDirectSaleIdSearch()}
-                                  style={{ width: '100%', paddingLeft: '40px', height: '40px', fontSize: '13px' }}
+                                  style={{ width: '100%', paddingLeft: '34px', height: '40px', fontSize: isMobile ? '12px' : '13px', boxSizing: 'border-box' }}
                                 />
                               </div>
-                              <button onClick={handleDirectSaleIdSearch} className="btn-gold" style={{ padding: '0 12px', height: '40px' }}>ENLAZAR</button>
+                              <button onClick={handleDirectSaleIdSearch} className="btn-gold" style={{ padding: '0 10px', height: '40px', flexShrink: 0, fontSize: isMobile ? '10px' : '12px' }}>{isMobile ? 'OK' : 'ENLAZAR'}</button>
                               <button 
                                 onClick={() => setShowNewClientModal(true)} 
-                                style={{ padding: '0 12px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                style={{ padding: '0 10px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}
                               >
                                 <UserPlus size={16} />
                               </button>
@@ -1385,7 +1385,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                             {/* Autocomplete Dropdown */}
                             {directSaleSearchResults.length > 0 && (
                               <div className="animate-scale-in" style={{ 
-                                position: 'absolute', top: '100%', left: 0, right: '110px', 
+                                position: 'absolute', top: '100%', left: 0, right: 0, 
                                 marginTop: '8px', background: 'rgba(28,28,30,0.95)', 
                                 border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', 
                                 overflow: 'hidden', zIndex: 10, backdropFilter: 'blur(10px)',
@@ -1411,13 +1411,13 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     )}
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '900' }}>TASA MANUAL ($)</label>
+                <div style={{ textAlign: isMobile ? 'left' : 'right', display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: isMobile ? 'center' : 'flex-end', gap: '8px', flexShrink: 0 }}>
+                  <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '900', whiteSpace: 'nowrap' }}>TASA MANUAL ($)</label>
                   <input 
                     type="number" 
                     value={fixedRate} 
                     onChange={(e) => setFixedRate(e.target.value)}
-                    style={{ width: '100px', textAlign: 'right', fontWeight: '900', color: 'var(--gold-primary)', background: 'none', border: '1px solid rgba(212,175,55,0.3)', marginLeft: '10px' }}
+                    style={{ width: isMobile ? '90px' : '100px', textAlign: 'right', fontWeight: '900', color: 'var(--gold-primary)', background: 'none', border: '1px solid rgba(212,175,55,0.3)', marginLeft: isMobile ? '0' : '10px' }}
                   />
                 </div>
               </div>

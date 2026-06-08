@@ -635,6 +635,8 @@ html, body, #root, .app-container, .main-content, .sidebar, .no-scrollbar {
 .checkout-pos-container {
   container-type: inline-size;
   container-name: checkout;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 .checkout-pos-grid {
