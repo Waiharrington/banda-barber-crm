@@ -67,10 +67,15 @@ const AstroSelect = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close on scroll/resize to avoid stale position
+  // Close on scroll/resize to avoid stale position,
+  // but NOT when scrolling inside the dropdown itself
   useEffect(() => {
     if (!isOpen) return;
-    const close = () => setIsOpen(false);
+    const close = (e) => {
+      // Ignore scroll events that happen inside the dropdown
+      if (e.target && e.target.closest && e.target.closest('.astro-select-dropdown')) return;
+      setIsOpen(false);
+    };
     window.addEventListener('scroll', close, true);
     window.addEventListener('resize', close);
     return () => {
