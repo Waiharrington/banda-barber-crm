@@ -1164,52 +1164,69 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                       padding: '12px 14px', 
                                       borderBottom: '1px solid rgba(255,255,255,0.03)',
                                       display: 'flex', 
-                                      flexDirection: 'column',
-                                      gap: '6px',
+                                      alignItems: 'center',
+                                      gap: '12px',
                                       color: '#fff',
                                       cursor: 'pointer',
                                       animationDelay: `${idx * 40}ms`
                                     }}>
-                                      {/* Top Row: Time, Client Name, Price */}
-                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
-                                          <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)', whiteSpace: 'nowrap' }}>
-                                            {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '').toLowerCase()}
-                                          </span>
-                                          {filterType !== 'day' && (
-                                            <span style={{ fontSize: '9px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                                              {new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                                            </span>
+                                      {/* Left side: Barber avatar + name */}
+                                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flexShrink: 0, width: '48px' }}>
+                                        <div className="avatar-gradient-circle" style={{ overflow: 'hidden', width: '32px', height: '32px', minWidth: '32px', fontSize: '11px', margin: 0 }}>
+                                          {app.staff?.image_url ? (
+                                            <img src={app.staff.image_url} alt={app.staff.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                          ) : (
+                                            app.staff?.name?.charAt(0)
                                           )}
-                                          <span style={{ fontWeight: '800', color: '#fff', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {app.clients?.name}
-                                          </span>
                                         </div>
-                                        <span className="price-highlight-tag" style={{ fontSize: '14px', fontWeight: '950', color: 'var(--gold-primary)', flexShrink: 0, paddingLeft: '8px' }}>
-                                          ${app.total_price}
-                                        </span>
+                                        <div style={{ fontWeight: '850', fontSize: '8px', color: 'var(--gold-primary)', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.3px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
+                                          {app.staff?.name?.split(' ')[0]}
+                                        </div>
                                       </div>
-                                      
-                                      {/* Bottom Row: Service Name, Status Badge */}
-                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '10px' }}>
-                                        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
-                                          {app.services?.name || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin servicio</span>}
-                                        </div>
-                                        <div style={{ flexShrink: 0 }}>
-                                          <span className="status-glow-badge" style={{ 
-                                            fontSize: '8px', 
-                                            padding: '3px 6px', 
-                                            borderRadius: '6px',
-                                            backgroundColor: statusStyle.bg,
-                                            color: statusStyle.text,
-                                            border: `1px solid ${statusStyle.border}`,
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '4px'
-                                          }}>
-                                            <span className="blinking-dot" style={{ backgroundColor: statusStyle.dot, width: '4px', height: '4px', borderRadius: '50%', display: 'inline-block' }} />
-                                            {app.status === 'Agendado' ? 'Agenda' : app.status === 'En Silla' ? 'Silla' : app.status === 'En Lavado' ? 'Lavado' : app.status === 'Por Pagar' ? 'Cobro' : app.status === 'Completado' ? 'Listo' : 'Canc'}
+
+                                      {/* Right side: Detailed info */}
+                                      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        {/* Top Row: Time, Client Name, Price */}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                                            <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)', whiteSpace: 'nowrap' }}>
+                                              {new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).replace(' ', '').toLowerCase()}
+                                            </span>
+                                            {filterType !== 'day' && (
+                                              <span style={{ fontSize: '9px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                                {new Date(app.scheduled_at || app.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                              </span>
+                                            )}
+                                            <span style={{ fontWeight: '800', color: '#fff', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                              {app.clients?.name}
+                                            </span>
+                                          </div>
+                                          <span className="price-highlight-tag" style={{ fontSize: '14px', fontWeight: '950', color: 'var(--gold-primary)', flexShrink: 0, paddingLeft: '8px' }}>
+                                            ${app.total_price}
                                           </span>
+                                        </div>
+                                        
+                                        {/* Bottom Row: Service Name, Status Badge */}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '10px' }}>
+                                          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                                            {app.services?.name || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin servicio</span>}
+                                          </div>
+                                          <div style={{ flexShrink: 0 }}>
+                                            <span className="status-glow-badge" style={{ 
+                                              fontSize: '8px', 
+                                              padding: '3px 6px', 
+                                              borderRadius: '6px',
+                                              backgroundColor: statusStyle.bg,
+                                              color: statusStyle.text,
+                                              border: `1px solid ${statusStyle.border}`,
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: '4px'
+                                            }}>
+                                              <span className="blinking-dot" style={{ backgroundColor: statusStyle.dot, width: '4px', height: '4px', borderRadius: '50%', display: 'inline-block' }} />
+                                              {app.status === 'Agendado' ? 'Agenda' : app.status === 'En Silla' ? 'Silla' : app.status === 'En Lavado' ? 'Lavado' : app.status === 'Por Pagar' ? 'Cobro' : app.status === 'Completado' ? 'Listo' : 'Canc'}
+                                            </span>
+                                          </div>
                                         </div>
                                       </div>
                                     </div>
