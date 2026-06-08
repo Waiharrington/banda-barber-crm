@@ -460,12 +460,10 @@ function App() {
 
   const handleCaptureFullPage = async () => {
     try {
-      setIsTabLoading(true);
-      await new Promise(r => setTimeout(r, 300));
-
+      // Small delay to let UI settle (no full reload)
+      await new Promise(r => setTimeout(r, 1000));
       const { default: html2canvas } = await import('html2canvas');
       const element = document.body;
-
       const canvas = await html2canvas(element, {
         useCORS: true,
         allowTaint: true,
@@ -475,9 +473,8 @@ function App() {
         scrollY: 0,
         windowWidth: document.documentElement.offsetWidth,
         windowHeight: document.documentElement.scrollHeight,
-        height: document.documentElement.scrollHeight
+        height: document.documentElement.scrollHeight,
       });
-
       const link = document.createElement('a');
       link.download = `astro-barber-crm-${activeTab}-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png');
@@ -486,7 +483,7 @@ function App() {
       console.error('Error capturing screenshot:', e);
       alert('Error al generar la captura de pantalla: ' + e.message);
     } finally {
-      setIsTabLoading(false);
+      // ensure loading flag is cleared if it was set elsewhere
     }
   };
 
@@ -675,6 +672,34 @@ function App() {
         isOpen={isNotificationsOpen} 
         onClose={() => setIsNotificationsOpen(false)} 
       />
+      {/* Botón temporal de captura de pantalla completa */}
+      <button
+        type="button"
+        onClick={(e) => { e.preventDefault(); handleCaptureFullPage(); }}
+        style={{
+          position: 'fixed',
+          bottom: '25px',
+          right: '25px',
+          zIndex: 4000,
+          background: 'var(--gold-gradient)',
+          color: 'black',
+          border: 'none',
+          borderRadius: '50px',
+          padding: '12px 22px',
+          fontSize: '13px',
+          fontWeight: '900',
+          cursor: 'pointer',
+          boxShadow: 'var(--gold-glow)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          transition: 'transform 0.2s',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+      >
+        📸 Captura Completa
+      </button>
     </div>
   );
 }

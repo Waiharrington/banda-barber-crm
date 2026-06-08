@@ -6,17 +6,7 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 async function run() {
-  const { data, error } = await supabase
-    .from('appointments')
-    .select(`
-      *,
-      clients(name),
-      services(name),
-      staff(name, role)
-    `)
-    .order('created_at', { ascending: false })
-    .limit(5);
-
+  const { data, error } = await supabase.from('staff').select('*');
   if (error) {
     console.error(error);
   } else {
