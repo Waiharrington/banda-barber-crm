@@ -596,6 +596,21 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   };
 
   const handleCancelOrder = () => {
+    // In direct sale mode there are no appointments — just reset and close panel
+    if (isDirectSale) {
+      setIsDirectSale(false);
+      setSelectedClient(null);
+      setSelectedApp(null);
+      setCart([]);
+      setTips([]);
+      setCashUsd(0);
+      setPaymentMode('full_bs');
+      setDirectSaleIdSearch('');
+      setDirectSaleSearchResults([]);
+      showToast('Venta directa cancelada', 'info');
+      return;
+    }
+
     if (totalAppsInCheckout.length === 0) return;
     
     setDialog({
