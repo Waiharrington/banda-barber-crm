@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import AstroDatePicker from './AstroDatePicker';
+import AstroSelect from './AstroSelect';
 
 const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   const [transactions, setTransactions] = useState([]);
