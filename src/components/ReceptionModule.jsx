@@ -311,7 +311,13 @@ const ReceptionModule = ({ isMobile }) => {
   };
 
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '1400px', margin: '0 auto', paddingBottom: '100px' }}>
+    <div className="animate-fade-in" style={{ 
+      maxWidth: '1400px', 
+      margin: '0 auto', 
+      paddingBottom: '100px',
+      '--text-muted': '#a1a1a6',
+      '--text-secondary': '#d1d1d6'
+    }}>
       <header style={{ marginBottom: '40px', textAlign: isMobile ? 'center' : 'left' }}>
         <h1 style={{ fontSize: '32px', fontWeight: '900' }}>Recepción <span className="text-gold">Astro</span></h1>
         <p style={{ color: 'var(--text-secondary)' }}>Módulo de atención y agendamiento rápido.</p>
@@ -588,7 +594,7 @@ const ReceptionModule = ({ isMobile }) => {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {upcomingAppointments.length === 0 ? (
-                  <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.1)', fontSize: '12px', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '16px' }}>No hay más citas para hoy</div>
+                  <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '12px', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '16px' }}>No hay más citas para hoy</div>
                 ) : (
                   upcomingAppointments.map(app => (
                     <div 
@@ -628,9 +634,9 @@ const ReceptionModule = ({ isMobile }) => {
           <div className="glass-card" style={{ borderRadius: '24px', background: 'linear-gradient(135deg, rgba(28,28,30,0.9), rgba(212,175,55,0.05))', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '40px 30px' }}>
             {!selectedClient ? (
               <>
-                <Search size={48} color="rgba(255,255,255,0.1)" style={{ marginBottom: '20px' }} />
+                <Search size={48} color="rgba(255,255,255,0.2)" style={{ marginBottom: '20px' }} />
                 <h3 style={{ color: 'var(--text-muted)' }}>Identifica al cliente</h3>
-                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.2)', marginTop: '8px' }}>Ingresa la Cédula para cargar su ficha técnica.</p>
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginTop: '8px' }}>Ingresa la Cédula para cargar su ficha técnica.</p>
               </>
             ) : selectedServices.length === 0 && selectedProducts.length === 0 && selectedExtras.length === 0 ? (
               <>
