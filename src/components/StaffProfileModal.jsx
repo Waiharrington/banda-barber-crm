@@ -14,7 +14,10 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
+import { useDialog } from '../context/DialogContext';
 import { useAuth } from '../context/AuthContext';
+import AstroSelect from './AstroSelect';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpdate, isMobile }) => {
   const { user } = useAuth();
@@ -22,8 +25,11 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
   
   const isMobileView = isMobile || (typeof window !== 'undefined' && window.innerWidth < 768);
   const { showToast } = useNotifs();
+  const { confirm } = useDialog();
   const [activeTab, setActiveTab] = useState('rendimiento');
   const [loading, setLoading] = useState(true);
+
+  useScrollLock(isOpen);
   
   // Stats State
   const [stats, setStats] = useState({
@@ -102,7 +108,7 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
   };
 
   const handleRemoveTool = async (toolId) => {
-    if (!window.confirm('¿Seguro que deseas eliminar esta herramienta del inventario del barbero?')) return;
+    if (!await confirm('¿Seguro que deseas eliminar esta herramienta del inventario del barbero?')) return;
     try {
       setLoading(true);
       const toolToRemove = tools.find(t => t.id === toolId);
@@ -306,41 +312,41 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                       </>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', gridColumn: 'span 2' }}>
-                        <label style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800', letterSpacing: '1px' }}>SELECCIONAR DEL ALMACÉN (HERRAMIENTAS LIBRES)</label>
-                        <select 
-                          className="form-input" 
+                        <AstroSelect 
+                          label="Seleccionar del almacén (herramientas libres)"
                           value={newTool.inventory_id} 
-                          onChange={e => setNewTool({...newTool, inventory_id: e.target.value})} 
-                          style={{ height: '44px', width: '100%', border: '1px solid var(--gold-primary)' }}
-                        >
-                          <option value="">-- Selecciona una herramienta del inventario --</option>
-                          {availableInventoryTools.map(item => (
-                            <option key={item.id} value={item.id}>{item.name}</option>
-                          ))}
-                        </select>
+                          onChange={(val) => setNewTool({...newTool, inventory_id: val})} 
+                          options={[
+                            { value: '', label: '-- Selecciona una herramienta del inventario --' },
+                            ...availableInventoryTools.map(item => ({ value: item.id, label: item.name }))
+                          ]}
+                        />
                       </div>
                     )}
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', letterSpacing: '1px' }}>PERTENENCIA</label>
-                      <select 
-                        className="form-input" 
+                      <AstroSelect 
+                        label="Pertenencia"
                         value={newTool.ownership} 
-                        onChange={e => setNewTool({...newTool, ownership: e.target.value})} 
-                        style={{ height: '44px', width: '100%', opacity: isAdmin ? 1 : 0.7, cursor: isAdmin ? 'pointer' : 'not-allowed' }}
+                        onChange={(val) => setNewTool({...newTool, ownership: val})} 
                         disabled={!isAdmin}
-                      >
-                        <option value="Propia">Propia del Barbero</option>
-                        {isAdmin && <option value="Asignada">Asignada (Astro)</option>}
-                      </select>
+                        options={[
+                          { value: 'Propia', label: 'Propia del Barbero' },
+                          ...(isAdmin ? [{ value: 'Asignada', label: 'Asignada (Astro)' }] : [])
+                        ]}
+                      />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', letterSpacing: '1px' }}>ESTADO</label>
-                      <select className="form-input" value={newTool.status} onChange={e => setNewTool({...newTool, status: e.target.value})} style={{ height: '44px', width: '100%' }}>
-                        <option value="Operativa">Operativa</option>
-                        <option value="En Mantenimiento">En Mantenimiento</option>
-                        <option value="Dañada">Dañada</option>
-                      </select>
+                      <AstroSelect 
+                        label="Estado"
+                        value={newTool.status} 
+                        onChange={(val) => setNewTool({...newTool, status: val})} 
+                        options={[
+                          { value: 'Operativa', label: 'Operativa' },
+                          { value: 'En Mantenimiento', label: 'En Mantenimiento' },
+                          { value: 'Dañada', label: 'Dañada' }
+                        ]}
+                      />
                     </div>
                   </div>
                   <button onClick={handleAddTool} style={{ width: '100%', background: 'white', color: 'black', border: 'none', borderRadius: '12px', height: '44px', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>Guardar Herramienta</button>

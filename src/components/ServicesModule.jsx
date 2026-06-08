@@ -6,36 +6,9 @@ import {
   LayoutGrid, Table, Eye, Info, Pencil
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
+import { useDialog } from '../context/DialogContext';
 import { useNotifs } from '../context/NotificationContext';
-
-const AstroSelect = ({ label, value, onChange, options }) => (
-  <div className="form-group" style={{ flex: 1 }}>
-    <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>{label}</label>
-    <div style={{ position: 'relative' }}>
-      <select 
-        value={value} 
-        onChange={e => onChange(e.target.value)}
-        style={{
-          width: '100%',
-          backgroundColor: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '12px',
-          padding: '12px 16px',
-          color: 'white',
-          fontSize: '14px',
-          appearance: 'none',
-          cursor: 'pointer',
-          outline: 'none'
-        }}
-      >
-        {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-      </select>
-      <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.5 }}>
-        <Zap size={14} />
-      </div>
-    </div>
-  </div>
-);
+import AstroSelect from './AstroSelect';
 
 const ServicesModule = ({ isMobile, currency, rates }) => {
   const [services, setServices] = useState([]);
@@ -61,6 +34,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
   const [newExtraCost, setNewExtraCost] = useState('0.50');
   const [selectedServiceDetail, setSelectedServiceDetail] = useState(null);
   const { showToast } = useNotifs();
+  const { confirm } = useDialog();
 
   useEffect(() => {
     fetchServices();
@@ -130,7 +104,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
   };
 
   const handleDeleteCategory = async (name) => {
-    if (!window.confirm(`¿Estás seguro de eliminar la categoría "${name}"?`)) return;
+    if (!await confirm(`¿Estás seguro de eliminar la categoría "${name}"?`)) return;
     try {
       await dataService.deleteServiceCategory(name);
       await fetchCategories();
@@ -157,7 +131,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
   };
 
   const handleDeleteStrategy = async (value) => {
-    if (!window.confirm('¿Estás seguro de eliminar esta estrategia?')) return;
+    if (!await confirm('¿Estás seguro de eliminar esta estrategia?')) return;
     try {
       await dataService.deleteServiceStrategy(value);
       await fetchStrategies();
@@ -193,7 +167,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
 
   const handleDeleteMasterItem = async (e, id, name) => {
     e.stopPropagation();
-    if (!window.confirm(`¿Eliminar "${name}" del checklist maestro?`)) return;
+    if (!await confirm(`¿Eliminar "${name}" del checklist maestro?`)) return;
     try {
       await dataService.deleteChecklistItem(id);
       await fetchBaseItems();
@@ -233,7 +207,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
 
   const handleDeleteBillableExtra = async (e, id, name) => {
     e.stopPropagation();
-    if (!window.confirm(`¿Archivar el extra "${name}"? Se mantendrá en el historial pero ya no se podrá seleccionar para nuevos servicios.`)) return;
+    if (!await confirm(`¿Archivar el extra "${name}"? Se mantendrá en el historial pero ya no se podrá seleccionar para nuevos servicios.`)) return;
     try {
       await dataService.deleteExtra(id);
       await fetchBillableExtras();
@@ -244,7 +218,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
   };
 
   const handleDeleteService = async (id, name) => {
-    if (!window.confirm(`¿Archivar el servicio "${name}"? Se mantendrá en el historial pero ya no se podrá seleccionar.`)) return;
+    if (!await confirm(`¿Archivar el servicio "${name}"? Se mantendrá en el historial pero ya no se podrá seleccionar.`)) return;
     try {
       setLoading(true);
       await dataService.deleteService(id);

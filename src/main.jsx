@@ -6,14 +6,18 @@ import { NotificationProvider } from './context/NotificationContext'
 import { AuthProvider } from './context/AuthContext'
 import { ModalProvider } from './context/ModalContext'
 
+import { DialogProvider } from './context/DialogContext'
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
-      <NotificationProvider>
-        <ModalProvider>
-          <App />
-        </ModalProvider>
-      </NotificationProvider>
+      <DialogProvider>
+        <NotificationProvider>
+          <ModalProvider>
+            <App />
+          </ModalProvider>
+        </NotificationProvider>
+      </DialogProvider>
     </AuthProvider>
   </StrictMode>,
 )

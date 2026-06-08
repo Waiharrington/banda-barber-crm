@@ -11,7 +11,11 @@ import {
   History,
   LogOut,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  PieChart,
+  ClipboardList,
+  CreditCard,
+  UserCheck
 } from 'lucide-react';
 import logo from '../assets/logo.png';
 import { useAuth } from '../context/AuthContext';
@@ -25,15 +29,15 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
     { id: 'my-profile', label: 'Mi Perfil', icon: UserCircle, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
     { id: 'scheduling', label: 'Agenda', icon: Calendar, roles: ['Admin', 'Barbero', 'Recepcionista'] },
-    { id: 'reception', label: 'Recepción', icon: UserCircle, roles: ['Admin', 'Recepcionista'] },
-    { id: 'checkout', label: 'Caja', icon: Wallet, roles: ['Admin', 'Caja'] },
+    { id: 'reception', label: 'Recepción', icon: ClipboardList, roles: ['Admin', 'Recepcionista'] },
+    { id: 'checkout', label: 'Caja', icon: CreditCard, roles: ['Admin', 'Caja'] },
     { id: 'barber', label: 'Panel Barber', icon: Scissors, roles: ['Admin', 'Barbero'] },
     { id: 'clients', label: 'Clientes', icon: Users, roles: ['Admin', 'Recepcionista', 'Barbero', 'Caja'] },
-    { id: 'personnel', label: 'Astro Team', icon: Scissors, roles: ['Admin'] },
+    { id: 'personnel', label: 'Astro Team', icon: UserCheck, roles: ['Admin'] },
     { id: 'services', label: 'Servicios', icon: Star, roles: ['Admin'] },
     { id: 'inventory', label: 'Inventario', icon: Package, roles: ['Admin', 'Caja'] },
     { id: 'finance', label: 'Caja Chica', icon: Wallet, roles: ['Admin', 'Caja'] },
-    { id: 'reports', label: 'Reportes', icon: BarChart3, roles: ['Admin'] },
+    { id: 'reports', label: 'Reportes', icon: PieChart, roles: ['Admin'] },
     { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
   ];
 
@@ -106,7 +110,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
     width: '100%', height: 'auto', backgroundColor: 'transparent', display: 'flex', flexDirection: 'column', padding: '0'
   } : {
     width: isCollapsed ? '80px' : '260px', height: '100vh', backgroundColor: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)',
-    display: 'flex', flexDirection: 'column', padding: isCollapsed ? '20px 10px' : '20px 16px', position: 'fixed', left: 0, top: 0, overflowY: 'auto',
+    display: 'flex', flexDirection: 'column', padding: isCollapsed ? '16px 10px' : '20px 16px', position: 'fixed', left: 0, top: 0, overflowY: 'auto',
     transition: 'all 0.3s ease', zIndex: 100,
     transform: isModalOpen ? 'translateX(-100%)' : 'translateX(0)',
     opacity: isModalOpen ? 0 : 1,
@@ -116,7 +120,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
   return (
     <div className="sidebar" style={sidebarStyle}>
       {!isMobile && (
-        <div className="logo-container" style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', position: 'relative' }}>
+        <div className="logo-container" style={{ marginBottom: isCollapsed ? '16px' : '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', position: 'relative' }}>
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
             style={{ 
@@ -167,7 +171,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
               onClick={() => setActiveTab(item.id)}
               onMouseEnter={() => setHoveredTab(item.id)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '10px', padding: isCollapsed ? '10px 0' : '8px 10px',
+                display: 'flex', alignItems: 'center', gap: '10px', padding: isCollapsed ? '7px 0' : '8px 10px',
                 backgroundColor: 'transparent', border: 'none', borderRadius: '10px',
                 color: isActive ? 'var(--gold-primary)' : 'var(--text-secondary)', cursor: 'pointer', transition: 'color 0.25s ease',
                 textAlign: 'left', width: '100%', fontWeight: isActive ? '700' : '500',
@@ -200,7 +204,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
               alignItems: 'center', 
               justifyContent: isCollapsed ? 'center' : 'flex-start', 
               gap: '10px', 
-              padding: '10px 12px', 
+              padding: isCollapsed ? '10px 0' : '10px 12px', 
               background: 'rgba(255, 69, 58, 0.05)', 
               border: '1px solid rgba(255, 69, 58, 0.15)', 
               borderRadius: '10px', 

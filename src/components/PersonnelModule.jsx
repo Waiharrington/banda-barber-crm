@@ -32,8 +32,11 @@ import { dataService } from '../services/dataService';
 import AstroSelect from './AstroSelect';
 import AstroCamera from './AstroCamera';
 import StaffProfileModal from './StaffProfileModal';
+import AstroDatePicker from './AstroDatePicker';
+import { formatName } from '../utils/stringUtils';
 
 import { useAuth } from '../context/AuthContext';
+import { useDialog } from '../context/DialogContext';
 import RoleManagerModal from './RoleManagerModal';
 
 const availableModules = [
@@ -61,6 +64,7 @@ const rolePresets = {
 const PersonnelModule = ({ isMobile, inventory = [] }) => {
   const { showToast } = useNotifs();
   const { user, refreshUser } = useAuth();
+  const { confirm } = useDialog();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -257,8 +261,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     }
   };
 
-  const handleDeleteCustomRole = (name) => {
-    if (!window.confirm(`¿Estás seguro de eliminar el rol "${name}"? Los miembros actuales que tengan este rol mantendrán sus permisos individuales, pero el rol ya no podrá ser asignado a nuevos artistas.`)) return;
+  const handleDeleteCustomRole = async (name) => {
+    if (!await confirm(`¿Estás seguro de eliminar el rol "${name}"? Los miembros actuales que tengan este rol mantendrán sus permisos individuales, pero el rol ya no podrá ser asignado a nuevos artistas.`)) return;
     
     const updated = { ...customRolePresets };
     delete updated[name];
@@ -329,7 +333,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   };
 
   const handleDeleteStaff = async (id, name) => {
-    if (!window.confirm(`¿Estás seguro de archivar a ${name}? Ya no aparecerá en las listas activas pero su historial se mantendrá.`)) return;
+    if (!await confirm(`¿Estás seguro de archivar a ${name}? Ya no aparecerá en las listas activas pero su historial se mantendrá.`)) return;
     try {
       setLoading(true);
       await dataService.deleteStaff(id);
@@ -440,7 +444,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>NOMBRE COMPLETO</label>
                   <div style={{ position: 'relative' }}>
                     <User size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                    <input className="form-input" placeholder="Ej. Marco Silva" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                    <input className="form-input" placeholder="Ej. Marco Silva" value={formData.name} onChange={e => setFormData({...formData, name: formatName(e.target.value)})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
                   </div>
                 </div>
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -594,7 +598,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>CUMPLEAÑOS</label>
                   <div style={{ position: 'relative' }}>
                     <Cake size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                    <input type="date" className="form-input" value={formData.birth_date} onChange={e => setFormData({...formData, birth_date: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                    <AstroDatePicker value={formData.birth_date} onChange={e => setFormData({...formData, birth_date: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
                   </div>
                 </div>
                 <div className="form-group">
@@ -908,7 +912,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>NOMBRE COMPLETO</label>
                           <div style={{ position: 'relative' }}>
                             <User size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                            <input className="form-input" placeholder="Ej. Marco Silva" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                            <input className="form-input" placeholder="Ej. Marco Silva" value={formData.name} onChange={e => setFormData({...formData, name: formatName(e.target.value)})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
                           </div>
                         </div>
                         <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1062,7 +1066,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>CUMPLEAÑOS</label>
                           <div style={{ position: 'relative' }}>
                             <Cake size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                            <input type="date" className="form-input" value={formData.birth_date} onChange={e => setFormData({...formData, birth_date: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                            <AstroDatePicker value={formData.birth_date} onChange={e => setFormData({...formData, birth_date: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
                           </div>
                         </div>
                         <div className="form-group">

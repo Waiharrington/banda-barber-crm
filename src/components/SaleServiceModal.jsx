@@ -20,13 +20,18 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import AstroSelect from './AstroSelect';
+import AstroDatePicker from './AstroDatePicker';
+import { normalizeForSearch } from '../utils/stringUtils';
 import NewClientModal from './NewClientModal';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, inventory, onRefresh, rates, currency }) => {
   const { showToast, triggerConfetti, triggerRocket, sendPushNotification } = useNotifs();
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   
+  useScrollLock(isOpen);
+
   // Selection Flow
   const [step, setStep] = useState(1); // 1: Client, 2: Order Details
   const [selectedClient, setSelectedClient] = useState(null);
@@ -252,9 +257,15 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
                 />
               </div>
 
-              {idSearch.length >= 2 && (
+              {idSearch.length >= 1 && (
                 <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                  {clients.filter(c => c.name.toLowerCase().includes(idSearch.toLowerCase()) || c.id_card?.includes(idSearch)).slice(0, 5).map(c => (
+                  {clients.filter(c => {
+                    const term = normalizeForSearch(idSearch);
+                    const normalizedName = normalizeForSearch(c.name || '');
+                    const nameMatches = normalizedName.split(' ').some(w => w.startsWith(term));
+                    const idMatches = (c.id_card || '').toLowerCase().includes(term);
+                    return nameMatches || idMatches;
+                  }).slice(0, 5).map(c => (
                     <div key={c.id} onClick={() => handleSelectClientFromList(c)} style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.03)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} className="client-search-item">
                       <div>
                         <div style={{ fontWeight: '800', fontSize: '14px' }}>{c.name}</div>

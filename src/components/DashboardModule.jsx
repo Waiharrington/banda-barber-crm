@@ -40,6 +40,7 @@ import { Line } from 'react-chartjs-2';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import { notificationService } from '../services/notificationService';
+import { useScrollLock } from '../hooks/useScrollLock';
 import { ModalShield } from '../context/ModalContext';
 
 ChartJS.register(
@@ -152,12 +153,13 @@ const DashboardModule = ({
 
   return (
     <div style={{ 
-      paddingBottom: (isMobile || isTablet) ? '100px' : '10px', 
-      height: (isMobile || isTablet) ? 'auto' : 'calc(100vh - 130px)', 
+      paddingBottom: (isMobile || isTablet) ? '100px' : '0px', 
       display: 'flex', 
       flexDirection: 'column',
       position: 'relative',
-      overflowX: 'hidden'
+      overflow: (isMobile || isTablet) ? 'visible' : 'hidden',
+      height: (isMobile || isTablet) ? 'auto' : 'calc(100vh - 145px)',
+      minHeight: 0
     }}>
       {/* Ambient glowing background orbs */}
       <div className="l-dashboard-orb l-orb-1" />
@@ -204,7 +206,7 @@ const DashboardModule = ({
                 }} />
               </div>
 
-              <div style={{ position: 'relative', zIndex: 2, maxWidth: isTablet ? '60%' : (isMobile ? '65%' : (isCollapsed ? '60%' : '56%')) }}>
+              <div style={{ position: 'relative', zIndex: 2, maxWidth: isMobile ? '65%' : '55%' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                   <div style={{ width: '24px', height: '2px', backgroundColor: 'var(--gold-primary)' }} />
                   <span style={{ fontSize: '11px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '2px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Pensamiento Astro</span>
@@ -255,7 +257,7 @@ const DashboardModule = ({
                 right: '-10px', 
                 top: '-70px',
                 bottom: '-10px', 
-                width: isMobile ? '45%' : (isTablet ? '42%' : (isCollapsed ? '48%' : '38%')), 
+                width: isMobile ? '45%' : '40%', 
                 display: 'flex',
                 alignItems: 'flex-end',
                 justifyContent: 'center',
@@ -279,7 +281,7 @@ const DashboardModule = ({
                   className="chair-float"
                   style={{ 
                     width: '100%', 
-                    maxWidth: isTablet ? '210px' : '260px',
+                    maxWidth: isMobile ? '180px' : '240px',
                     height: 'auto',
                     objectFit: 'contain',
                     zIndex: 3,
@@ -292,7 +294,7 @@ const DashboardModule = ({
 
             {/* Birthday Section Card */}
             {!isBarber && !isAssistant && (
-              <BirthdaySection clients={dbData?.clients || []} dbData={dbData} onNavigate={onNavigate} onRefresh={onRefresh} />
+              <BirthdaySection clients={dbData?.clients || []} dbData={dbData} onNavigate={onNavigate} onRefresh={onRefresh} isEditingGoals={isEditingGoals} />
             )}
 
           </div>
@@ -479,7 +481,7 @@ const DashboardModule = ({
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>
-                          {app.scheduled_at ? new Date(app.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'S/H'}
+                          {app.scheduled_at ? new Date(app.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'S/H'}
                         </div>
                         <div style={{ 
                           fontSize: '9px', 
@@ -765,7 +767,7 @@ const StatCard = ({ title, value, icon, color, trend, positive, goal, current, o
   );
 };
 
-const BirthdaySection = ({ clients, dbData, onNavigate, onRefresh }) => {
+const BirthdaySection = ({ clients, dbData, onNavigate, onRefresh, isEditingGoals }) => {
   const today = new Date();
   const todayMonth = today.getMonth() + 1;
   const todayDay = today.getDate();
@@ -775,6 +777,11 @@ const BirthdaySection = ({ clients, dbData, onNavigate, onRefresh }) => {
   const [editedPhone, setEditedPhone] = useState('');
   const [editedMessage, setEditedMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  useScrollLock(activePerson !== null || isEditingGoals);
+
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin' || user?.role?.includes('Admin|');
 
   useEffect(() => {
     if (whatsappModalData) {

@@ -26,12 +26,21 @@ import { dataService } from '../services/dataService';
 import { supabase } from '../lib/supabase';
 import AstroSelect from './AstroSelect';
 import AstroCamera from './AstroCamera';
+import AstroDatePicker from './AstroDatePicker';
+import AstroDialog from './AstroDialog';
+import { formatName, normalizeForSearch } from '../utils/stringUtils';
+import { useDialog } from '../context/DialogContext';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
   const { showToast } = useNotifs();
+  const { confirm } = useDialog();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
   const [showMessageModal, setShowMessageModal] = useState(false);
+
+  useScrollLock(showMessageModal);
+
   const getInitialBdayMessage = () => {
     let msg = localStorage.getItem('astro_default_bday_message');
     const isCorrupted = !msg || 
@@ -76,7 +85,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
   }, [clients]);
 
   const handleDeleteClient = async (id, name) => {
-    if (!window.confirm(`¿Estás seguro de eliminar a ${name}? Esta acción no se puede deshacer.`)) return;
+    if (!await confirm(`¿Estás seguro de eliminar a ${name}? Esta acción no se puede deshacer.`)) return;
     try {
       setLoading(true);
       await dataService.deleteClient(id);
@@ -206,7 +215,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
                 <div className="form-group">
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Nombre Completo</label>
-                  <input className="form-input" placeholder="Ej. Juan Pérez" value={newClient.name} onChange={(e) => setNewClient({...newClient, name: e.target.value})} style={{ width: '100%' }} />
+                  <input className="form-input" placeholder="Ej. Juan Pérez" value={newClient.name} onChange={(e) => setNewClient({...newClient, name: formatName(e.target.value)})} style={{ width: '100%' }} />
                 </div>
                 <div className="form-group">
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Cédula / ID</label>
@@ -218,7 +227,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                 </div>
                 <div className="form-group">
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Cumpleaños</label>
-                  <input type="date" className="form-input" value={newClient.birth_date} onChange={(e) => setNewClient({...newClient, birth_date: e.target.value})} style={{ width: '100%' }} />
+                  <AstroDatePicker value={newClient.birth_date} onChange={(e) => setNewClient({...newClient, birth_date: e.target.value})} style={{ width: '100%' }} />
                 </div>
                 <AstroSelect 
                   label="Tipo de Cabello"
@@ -289,7 +298,14 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
             </div>
           ) : viewMode === 'grid' || isMobile ? (
             <div style={{ display: 'grid', gap: '16px' }}>
-              {clients.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.phone?.includes(searchTerm)).map(client => (
+              {clients.filter(c => {
+                  const term = normalizeForSearch(searchTerm);
+                  const normalizedName = normalizeForSearch(c.name || '');
+                  const nameMatches = normalizedName.split(' ').some(w => w.startsWith(term));
+                  const idMatches = (c.id_card || '').toLowerCase().includes(term);
+                  const phoneMatches = (c.phone || '').includes(searchTerm);
+                  return nameMatches || idMatches || phoneMatches;
+                }).map(client => (
                 <div 
                   key={client.id} 
                   className="glass-card list-item" 
@@ -369,7 +385,14 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                 </thead>
                 <tbody>
                   {clients
-                    .filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.phone?.includes(searchTerm) || c.id_card?.includes(searchTerm))
+                    .filter(c => {
+                      const term = normalizeForSearch(searchTerm);
+                      const normalizedName = normalizeForSearch(c.name || '');
+                      const nameMatches = normalizedName.split(' ').some(w => w.startsWith(term));
+                      const idMatches = (c.id_card || '').toLowerCase().includes(term);
+                      const phoneMatches = (c.phone || '').includes(searchTerm);
+                      return nameMatches || idMatches || phoneMatches;
+                    })
                     .map((client) => (
                       <tr 
                         key={client.id} 
@@ -749,7 +772,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
   };
 
   const handlePhotoDelete = async (index) => {
-    if (!window.confirm('¿Deseas eliminar esta foto de la galería?')) return;
+    if (!await confirm('¿Deseas eliminar esta foto de la galería?')) return;
     try {
       const newGallery = gallery.filter((_, i) => i !== index);
       setGallery(newGallery);
@@ -806,7 +829,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
                 </div>
                 {isEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <input className="form-input" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} placeholder="Nombre" style={{ width: '100%', fontSize: '12px', padding: '8px' }} />
+                    <input className="form-input" value={editData.name} onChange={e => setEditData({...editData, name: formatName(e.target.value)})} placeholder="Nombre" style={{ width: '100%', fontSize: '12px', padding: '8px' }} />
                     <input className="form-input" value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} placeholder="Teléfono" style={{ width: '100%', fontSize: '12px', padding: '8px' }} />
                     <button className="btn-gold" onClick={() => { onUpdate(editData); setIsEditing(false); }} style={{ fontSize: '12px', padding: '8px' }}>Guardar</button>
                     <button onClick={() => setIsEditing(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '11px' }}>Cancelar</button>
@@ -846,7 +869,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
             {isEditing && (
               <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <input className="form-input" value={editData.id_card} onChange={e => setEditData({...editData, id_card: e.target.value})} placeholder="Cédula" style={{ width: '100%', fontSize: '12px', padding: '8px' }} />
-                <input className="form-input" value={editData.birth_date} onChange={e => setEditData({...editData, birth_date: e.target.value})} type="date" style={{ width: '100%', fontSize: '12px', padding: '8px' }} />
+                <AstroDatePicker value={editData.birth_date} onChange={e => setEditData({...editData, birth_date: e.target.value})} style={{ width: '100%' }} />
                 <AstroSelect 
                   label="Tipo de Cabello"
                   value={editData.hair_type}
@@ -1114,12 +1137,12 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
             </div>
             {isEditing ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <input className="form-input" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} placeholder="Nombre" style={{ width: '100%' }} />
+                <input className="form-input" value={editData.name} onChange={e => setEditData({...editData, name: formatName(e.target.value)})} placeholder="Nombre" style={{ width: '100%' }} />
                 <input className="form-input" value={editData.id_card} onChange={e => setEditData({...editData, id_card: e.target.value})} placeholder="Cédula" style={{ width: '100%' }} />
                 <input className="form-input" value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} placeholder="Teléfono" style={{ width: '100%' }} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left', marginBottom: '8px' }}>
                   <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Cumpleaños</label>
-                  <input className="form-input" value={editData.birth_date} onChange={e => setEditData({...editData, birth_date: e.target.value})} type="date" style={{ width: '100%' }} />
+                  <AstroDatePicker value={editData.birth_date} onChange={e => setEditData({...editData, birth_date: e.target.value})} style={{ width: '100%' }} />
                 </div>
                 <AstroSelect 
                   label="Tipo de Cabello"

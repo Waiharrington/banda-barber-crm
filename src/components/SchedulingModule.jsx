@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
+import AstroDatePicker from './AstroDatePicker';
+import { normalizeForSearch } from '../utils/stringUtils';
 import AstroSelect from './AstroSelect';
 import AstroDialog from './AstroDialog';
 import ScheduleModal from './ScheduleModal';
@@ -190,15 +192,33 @@ const SchedulingModule = ({ isMobile, rates }) => {
     setShowAddModal(true);
   };
 
+  const handleRescheduleAppointment = (app) => {
+    setEditingApp(app);
+    const clientName = clients.find(c => c.id === app.client_id)?.name || '';
+    setClientSearchTerm(clientName);
+    setClientSearchResults([]);
+    setNewApp({
+      clientId: app.client_id,
+      serviceId: app.service_id,
+      staffId: app.staff_id,
+      time: new Date(app.scheduled_at || app.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+      extras: app.appointment_extras?.map(e => e.service_extras?.id) || [],
+      products: app.appointment_products?.map(p => ({ id: p.inventory?.id, quantity: p.quantity })) || []
+    });
+    setShowScheduleModal(true);
+  };
+
   const handleClientSearch = (val) => {
     setClientSearchTerm(val);
     setNewApp(prev => ({ ...prev, clientId: '' }));
-    if (val.length >= 2) {
-      const term = val.toLowerCase();
-      const results = clients.filter(c =>
-        (c.id_card && c.id_card.toLowerCase().includes(term)) ||
-        (c.name && c.name.toLowerCase().includes(term))
-      );
+    if (val.length >= 1) {
+      const term = normalizeForSearch(val);
+      const results = clients.filter(c => {
+        const normalizedName = normalizeForSearch(c.name || '');
+        const nameMatches = normalizedName.split(' ').some(w => w.startsWith(term));
+        const idMatches = (c.id_card || '').toLowerCase().includes(term);
+        return nameMatches || idMatches;
+      });
       setClientSearchResults(results.slice(0, 5));
     } else {
       setClientSearchResults([]);
@@ -384,6 +404,8 @@ const SchedulingModule = ({ isMobile, rates }) => {
           padding: 12px;
           border-radius: 16px;
           border: 1px solid rgba(255, 255, 255, 0.05);
+          animation: schedulingCardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation-delay: 50ms;
         }
         @media (max-width: 600px) {
           .scheduling-metrics-banner {
@@ -392,14 +414,14 @@ const SchedulingModule = ({ isMobile, rates }) => {
         }
         @media (max-width: 1150px) {
           .premium-row-card {
-            grid-template-columns: 80px 1fr 1.3fr 1fr 50px 115px 70px !important;
+            grid-template-columns: 80px 1fr 1.3fr 1fr 50px 120px 85px !important;
             gap: 10px !important;
             padding: 12px 14px !important;
           }
         }
         @media (max-width: 768px) {
           .premium-row-card {
-            grid-template-columns: 75px 1fr 1.2fr 1fr 45px 105px 70px !important;
+            grid-template-columns: 75px 1fr 1.2fr 1fr 45px 105px 85px !important;
             gap: 6px !important;
             padding: 10px 12px !important;
             font-size: 12px !important;
@@ -477,6 +499,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
           align-items: center;
           gap: 14px;
           transition: all 0.3s ease;
+          animation: schedulingCardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         .premium-search-box:focus-within {
           border-color: rgba(212, 175, 55, 0.4);
@@ -501,16 +524,33 @@ const SchedulingModule = ({ isMobile, rates }) => {
           overflow: hidden;
           box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
         }
+        @keyframes schedulingCardFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(12px) scale(0.995);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
         .premium-row-card {
           padding: 16px 24px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.03);
           display: grid;
-          grid-template-columns: 100px 1.2fr 2.5fr 1.2fr 70px 130px 75px;
+          grid-template-columns: 100px 1.2fr 2.5fr 1.2fr 70px 130px 90px;
           gap: 16px;
           align-items: center;
           cursor: pointer;
-          transition: all 0.25s ease;
+          transition: all 0.25s ease, border-color 0.2s, background-color 0.2s, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
           background-color: transparent;
+          animation: schedulingCardFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .mobile-row-card {
+          animation: schedulingCardFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .scheduling-group-card {
+          animation: schedulingCardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         .premium-row-card:hover {
           background-color: rgba(255, 255, 255, 0.02);
@@ -632,7 +672,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
         }
         @media (max-width: 768px) {
           .premium-row-card {
-            grid-template-columns: 75px 1fr 1.2fr 1fr 45px 105px 70px !important;
+            grid-template-columns: 75px 1fr 1.2fr 1fr 45px 105px 85px !important;
             gap: 6px !important;
             padding: 10px 12px !important;
             font-size: 12px !important;
@@ -782,7 +822,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
 
       <div className="scheduling-grid-container" style={{ gridTemplateColumns: isMobile ? '1fr' : undefined }}>
         {/* Left Side: Mini Calendar */}
-        <aside className="scheduling-aside hide-on-tablet">
+        <aside className="scheduling-aside hide-on-tablet animate-slide-up animate-stagger-1">
           
           <MiniCalendar 
             selectedDate={selectedDate} 
@@ -816,7 +856,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
         </aside>
 
         {/* Right Side: Appointments List */}
-        <main>
+        <main className="animate-slide-up animate-stagger-2">
           <div className="date-navigator-card">
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
               <div style={{ background: 'var(--gold-primary)', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212, 175, 55, 0.3)' }}>
@@ -1008,15 +1048,16 @@ const SchedulingModule = ({ isMobile, rates }) => {
                     { key: 'morning', title: 'Mañana (12:00 AM - 11:59 AM)', apps: morningApps, icon: <Sunrise size={16} />, color: 'var(--gold-primary)' },
                     { key: 'afternoon', title: 'Tarde (12:00 PM - 06:59 PM)', apps: afternoonApps, icon: <Sun size={16} />, color: '#f39c12' },
                     { key: 'evening', title: 'Noche (07:00 PM - 11:59 PM)', apps: eveningApps, icon: <Moon size={16} />, color: '#9b59b6' }
-                  ].map(group => {
+                  ].map((group, groupIdx) => {
                     if (group.apps.length === 0) return null;
                     const isCollapsed = collapsedGroups[group.key];
                     return (
-                      <div key={group.key} style={{ 
+                      <div key={group.key} className="scheduling-group-card" style={{ 
                         background: 'rgba(18, 18, 18, 0.3)',
                         border: '1px solid rgba(255, 255, 255, 0.04)',
                         borderRadius: '24px',
                         padding: '16px',
+                        animationDelay: `${120 + groupIdx * 80}ms`,
                         marginBottom: '16px',
                         boxShadow: '0 10px 30px rgba(0, 0, 0, 0.25)'
                       }}>
@@ -1058,20 +1099,20 @@ const SchedulingModule = ({ isMobile, rates }) => {
                         {/* Group Cards List */}
                         {!isCollapsed && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '14px' }}>
-                            {(expandedGroups[group.key] ? group.apps : group.apps.slice(0, ITEMS_PER_GROUP)).map(app => {
+                            {(expandedGroups[group.key] ? group.apps : group.apps.slice(0, ITEMS_PER_GROUP)).map((app, idx) => {
                               const statusStyle = getStatusColor(app.status);
                                   return isMobile ? (
-                                    <div key={app.id} onClick={() => setSelectedAppDetail(app)} style={{ 
+                                    <div key={app.id} onClick={() => setSelectedAppDetail(app)} className="mobile-row-card" style={{ 
                                       padding: '12px 14px', 
                                       borderBottom: '1px solid rgba(255,255,255,0.03)',
                                       display: 'flex', 
                                       alignItems: 'center',
                                       justifyContent: 'space-between',
                                       gap: '6px',
-                                      opacity: 1,
                                       fontSize: '12px',
                                       color: '#fff',
-                                      cursor: 'pointer'
+                                      cursor: 'pointer',
+                                      animationDelay: `${idx * 40}ms`
                                     }}>
                                   <div style={{ flexShrink: 0, width: '75px', fontWeight: '800' }}>
                                     <div style={{ fontSize: '12px', color: 'white', whiteSpace: 'nowrap' }}>
@@ -1112,7 +1153,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                 </div>
                               ) : (
                                 <div key={app.id} onClick={() => setSelectedAppDetail(app)} className="premium-row-card" style={{ 
-                                  opacity: 1
+                                  animationDelay: `${idx * 40}ms`
                                 }}>
                                   <div>
                                     <div style={{ fontWeight: '900', fontSize: '14px', color: 'white', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>
@@ -1124,11 +1165,15 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                       </div>
                                     )}
                                   </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                                    <div className="avatar-gradient-circle">
-                                      {app.staff?.name?.charAt(0)}
+                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: 0 }}>
+                                    <div className="avatar-gradient-circle" style={{ overflow: 'hidden' }}>
+                                      {app.staff?.image_url ? (
+                                        <img src={app.staff.image_url} alt={app.staff.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                      ) : (
+                                        app.staff?.name?.charAt(0)
+                                      )}
                                     </div>
-                                    <div style={{ fontWeight: '750', fontSize: '13px', color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <div style={{ fontWeight: '850', fontSize: '9px', color: 'var(--gold-primary)', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.3px', textAlign: 'center' }}>
                                       {app.staff?.name?.split(' ')[0]}
                                     </div>
                                   </div>
@@ -1158,10 +1203,13 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                     </span>
                                   </div>
                                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
-                                    <button onClick={() => handleEditAppointment(app)} className="action-icon-btn edit">
+                                    <button onClick={() => handleEditAppointment(app)} className="action-icon-btn edit" title="Editar detalles">
                                       <Pencil size={13} />
                                     </button>
-                                    <button onClick={() => handleManageAppointment(app.id)} className="action-icon-btn delete">
+                                    <button onClick={() => handleRescheduleAppointment(app)} className="action-icon-btn edit" title="Reagendar / Cambiar Hora">
+                                      <Clock size={13} />
+                                    </button>
+                                    <button onClick={() => handleManageAppointment(app.id)} className="action-icon-btn delete" title="Cancelar / Eliminar">
                                       <Trash2 size={13} />
                                     </button>
                                   </div>
@@ -1215,6 +1263,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
 
       <AstroDialog 
         isOpen={dialog.isOpen} 
+        type="confirm"
         title="Gestionar Cita" 
         message="¿Qué deseas hacer con esta cita?" 
         onCancel={() => setDialog({ isOpen: false, appointmentId: null })}
@@ -1383,7 +1432,10 @@ const SchedulingModule = ({ isMobile, rates }) => {
                       value={newApp.staffId} 
                       onChange={(val) => setNewApp({...newApp, staffId: val})} 
                       options={staff
-                        .filter(s => s.role?.toLowerCase().includes('barbero'))
+                        .filter(s => {
+                          const roleName = (s.role?.split('|')[0] || '').toLowerCase();
+                          return roleName.includes('barber') && !roleName.includes('admin');
+                        })
                         .map(s => ({ label: s.name, value: s.id }))
                       } 
                       disabled={user?.role === 'Barbero' || user?.role?.startsWith('Barbero|')}
@@ -1707,8 +1759,12 @@ const SchedulingModule = ({ isMobile, rates }) => {
                           
                           return (
                             <div key={as.id} style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <div className="avatar-gradient-circle" style={{ width: '32px', height: '32px', minWidth: '32px', fontSize: '12px', margin: 0 }}>
-                                {as.staff?.name?.charAt(0).toUpperCase()}
+                              <div className="avatar-gradient-circle" style={{ width: '32px', height: '32px', minWidth: '32px', fontSize: '12px', margin: 0, overflow: 'hidden' }}>
+                                {as.staff?.image_url ? (
+                                  <img src={as.staff.image_url} alt={as.staff.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                  as.staff?.name?.charAt(0).toUpperCase()
+                                )}
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>

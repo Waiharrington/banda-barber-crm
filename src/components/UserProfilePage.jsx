@@ -24,10 +24,12 @@ import {
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import { useDialog } from '../context/DialogContext';
 
 const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) => {
   const { user } = useAuth();
   const { showToast } = useNotifs();
+  const { confirm } = useDialog();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalAppointments: 0,
@@ -106,7 +108,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
   };
 
   const handleRemoveTool = async (toolId) => {
-    if (!window.confirm('¿Seguro que deseas eliminar esta herramienta del inventario del barbero?')) return;
+    if (!await confirm('¿Seguro que deseas eliminar esta herramienta del inventario del barbero?')) return;
     try {
       setLoading(true);
       const toolToRemove = tools.find(t => t.id === toolId);

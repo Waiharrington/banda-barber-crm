@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, X, ShieldAlert, Trash2, CheckCheck, Sparkles, Smartphone } from 'lucide-react';
 import { notificationService } from '../services/notificationService';
+import { useDialog } from '../context/DialogContext';
 
 const NotificationsDrawer = ({ isOpen, onClose }) => {
   const [notifications, setNotifications] = useState([]);
   const [permission, setPermission] = useState('default');
+  const { showDialog } = useDialog();
 
   useEffect(() => {
     if (isOpen) {
@@ -30,12 +32,12 @@ const NotificationsDrawer = ({ isOpen, onClose }) => {
 
   const handleRequestPermission = async () => {
     if (!isSecure) {
-      alert("⚠️ Conexión no segura (HTTP):\n\nLos navegadores bloquean las notificaciones push por seguridad en conexiones HTTP (cuando usas una IP local como 192.168.x.x).\n\nPara probar en tu teléfono:\n1. Si es Android: puedes conectar el teléfono por USB y usar Chrome Port Forwarding (localhost).\n2. Si es iPhone o Android: se requiere un túnel seguro HTTPS (como ngrok o Cloudflare).");
+      await alert("⚠️ Conexión no segura (HTTP):\n\nLos navegadores bloquean las notificaciones push por seguridad en conexiones HTTP (cuando usas una IP local como 192.168.x.x).\n\nPara probar en tu teléfono:\n1. Si es Android: puedes conectar el teléfono por USB y usar Chrome Port Forwarding (localhost).\n2. Si es iPhone o Android: se requiere un túnel seguro HTTPS (como ngrok o Cloudflare).");
       return;
     }
 
     if (isIOS && !isStandalone) {
-      alert("📱 Requisito de iPhone:\n\nApple no permite activar notificaciones desde el navegador Safari.\n\nPara activarlas:\n1. Pulsa el botón 'Compartir' en Safari (icono de cuadrado con flecha arriba).\n2. Selecciona 'Agregar a la pantalla de inicio'.\n3. Abre la app desde tu pantalla de inicio e inténtalo de nuevo.");
+      await alert("📱 Requisito de iPhone:\n\nApple no permite activar notificaciones desde el navegador Safari.\n\nPara activarlas:\n1. Pulsa el botón 'Compartir' en Safari (icono de cuadrado con flecha arriba).\n2. Selecciona 'Agregar a la pantalla de inicio'.\n3. Abre la app desde tu pantalla de inicio e inténtalo de nuevo.");
       return;
     }
 

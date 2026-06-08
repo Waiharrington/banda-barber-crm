@@ -52,22 +52,41 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Scrollbar Styling */
+/* Hide scrollbars globally on all elements by default (layout, body, html, etc) */
 ::-webkit-scrollbar {
-  width: 8px;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+/* Re-enable and style scrollbars ONLY for elements with the .astro-scrollbar class */
+.astro-scrollbar::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+  display: block !important;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--bg-tertiary);
-  border-radius: 4px;
+.astro-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+  margin: 16px 0 !important; /* Keeps scrollbar away from rounded corners */
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--gold-primary);
+.astro-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border-radius: 10px !important;
+}
+
+.astro-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-primary) !important;
+}
+
+/* Hide native scrollbar arrows that some browsers inject */
+::-webkit-scrollbar-button,
+.astro-scrollbar::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Typography Utility */
@@ -141,6 +160,24 @@ html, body {
 .animate-fade-in > *:nth-child(7) { animation-delay: 0.4s; }
 .animate-fade-in > *:nth-child(8) { animation-delay: 0.46s; }
 
+.animate-page-fade-in {
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-page-fade-in > * {
+  opacity: 0;
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-page-fade-in > *:nth-child(1) { animation-delay: 0.04s; }
+.animate-page-fade-in > *:nth-child(2) { animation-delay: 0.1s; }
+.animate-page-fade-in > *:nth-child(3) { animation-delay: 0.16s; }
+.animate-page-fade-in > *:nth-child(4) { animation-delay: 0.22s; }
+.animate-page-fade-in > *:nth-child(5) { animation-delay: 0.28s; }
+.animate-page-fade-in > *:nth-child(6) { animation-delay: 0.34s; }
+.animate-page-fade-in > *:nth-child(7) { animation-delay: 0.4s; }
+.animate-page-fade-in > *:nth-child(8) { animation-delay: 0.46s; }
+
 @keyframes fadeInOnly {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -206,6 +243,11 @@ html, body {
 @keyframes fadeOutModal {
   from { opacity: 1; }
   to   { opacity: 0; }
+}
+
+.modal-overlay, .modal-overlay-enter, .modal-overlay-exit {
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal-overlay-enter {
@@ -547,20 +589,66 @@ input:focus, select:focus, textarea:focus {
 .animate-stagger-9 { animation-delay: 0.45s !important; }
 .animate-stagger-10 { animation-delay: 0.5s !important; }
 
-/* Hide scrollbars globally across all elements while preserving scroll functionality */
-::-webkit-scrollbar {
+/* Hide scrollbars on main app layout to keep it clean, but show in modals */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar,
+.app-container::-webkit-scrollbar,
+.main-content::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar,
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+#root::-webkit-scrollbar-track,
+.app-container::-webkit-scrollbar-track,
+.main-content::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-track,
+.no-scrollbar::-webkit-scrollbar-track,
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+#root::-webkit-scrollbar-thumb,
+.app-container::-webkit-scrollbar-thumb,
+.main-content::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb,
+.no-scrollbar::-webkit-scrollbar-thumb {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
   background: transparent !important;
+  background-color: transparent !important;
 }
 
-* {
-  scrollbar-width: none !important; /* Firefox */
-  -ms-overflow-style: none !important; /* IE/Edge */
+html, body, #root, .app-container, .main-content, .sidebar, .no-scrollbar {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
+/* Ensures modals behave correctly without adding unwanted scrollbars on Firefox */
+@supports (-moz-appearance: none) {
+  * {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(255, 255, 255, 0.25) transparent !important;
+  }
+}
 
+/* --- Responsive Container Queries for CheckoutPOS --- */
+.checkout-pos-container {
+  container-type: inline-size;
+  container-name: checkout;
+}
+
+.checkout-pos-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+@container checkout (min-width: 850px) {
+  .checkout-pos-grid {
+    grid-template-columns: 1fr 1.5fr;
+  }
+}
 
 /* --- Premium Interactive Transitions for Buttons, Tabs, and Modals --- */
 button, 

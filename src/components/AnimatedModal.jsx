@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ModalShield } from '../context/ModalContext';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 /**
  * AnimatedModal — transparent animation wrapper with render-prop pattern.
@@ -24,6 +25,8 @@ const AnimatedModal = ({ isOpen, children }) => {
   const [mounted, setMounted] = useState(isOpen);
   const [phase, setPhase] = useState(isOpen ? 'enter' : 'exit');
   const timer = useRef(null);
+
+  useScrollLock(isOpen);
 
   useEffect(() => {
     clearTimeout(timer.current);

@@ -10,6 +10,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
+import AstroDatePicker from './AstroDatePicker';
 
 const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   const [transactions, setTransactions] = useState([]);
@@ -440,124 +441,52 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         background: 'rgba(255, 255, 255, 0.01)'
       }}>
         {/* Date Range Selector */}
-        <div>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>Rango de Fecha</label>
-          <div style={{ position: 'relative' }}>
-            <select 
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              style={{
-                width: '100%',
-                backgroundColor: 'rgba(0,0,0,0.3)',
-                border: '1px solid var(--border-color)',
-                color: 'white',
-                padding: '11px 40px 11px 16px',
-                borderRadius: '12px',
-                fontSize: '13px',
-                fontWeight: '600',
-                appearance: 'none',
-                cursor: 'pointer',
-                outline: 'none'
-              }}
-            >
-              <option value="today">Hoy</option>
-              <option value="week">Esta Semana</option>
-              <option value="month">Este Mes</option>
-              <option value="custom">Rango Personalizado</option>
-              <option value="all">Histórico Total</option>
-            </select>
-            <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
-          </div>
-        </div>
+        <AstroSelect 
+          label="Rango de Fecha"
+          value={dateRange}
+          onChange={setDateRange}
+          options={[
+            { value: 'today', label: 'Hoy' },
+            { value: 'week', label: 'Esta Semana' },
+            { value: 'month', label: 'Este Mes' },
+            { value: 'custom', label: 'Rango Personalizado' },
+            { value: 'all', label: 'Histórico Total' }
+          ]}
+        />
 
         {/* Service Selector */}
-        <div>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>Servicio</label>
-          <div style={{ position: 'relative' }}>
-            <select 
-              value={selectedService}
-              onChange={(e) => setSelectedService(e.target.value)}
-              style={{
-                width: '100%',
-                backgroundColor: 'rgba(0,0,0,0.3)',
-                border: '1px solid var(--border-color)',
-                color: 'white',
-                padding: '11px 40px 11px 16px',
-                borderRadius: '12px',
-                fontSize: '13px',
-                fontWeight: '600',
-                appearance: 'none',
-                cursor: 'pointer',
-                outline: 'none'
-              }}
-            >
-              <option value="all">Todos los Servicios</option>
-              {uniqueServicesList.map((s, idx) => (
-                <option key={idx} value={s}>{s}</option>
-              ))}
-            </select>
-            <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
-          </div>
-        </div>
+        <AstroSelect 
+          label="Servicio"
+          value={selectedService}
+          onChange={setSelectedService}
+          options={[
+            { value: 'all', label: 'Todos los Servicios' },
+            ...uniqueServicesList.map((s) => ({ value: s, label: s }))
+          ]}
+        />
 
         {/* Staff Selector */}
-        <div>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>Miembro del Equipo</label>
-          <div style={{ position: 'relative' }}>
-            <select 
-              value={selectedStaff}
-              onChange={(e) => setSelectedStaff(e.target.value)}
-              style={{
-                width: '100%',
-                backgroundColor: 'rgba(0,0,0,0.3)',
-                border: '1px solid var(--border-color)',
-                color: 'white',
-                padding: '11px 40px 11px 16px',
-                borderRadius: '12px',
-                fontSize: '13px',
-                fontWeight: '600',
-                appearance: 'none',
-                cursor: 'pointer',
-                outline: 'none'
-              }}
-            >
-              <option value="all">Todo el Personal</option>
-              {staff.map((s) => (
-                <option key={s.id} value={s.id}>{s.name} ({s.role?.split('|')[0]})</option>
-              ))}
-            </select>
-            <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
-          </div>
-        </div>
+        <AstroSelect 
+          label="Miembro del Equipo"
+          value={selectedStaff}
+          onChange={setSelectedStaff}
+          options={[
+            { value: 'all', label: 'Todo el Personal' },
+            ...staff.map((s) => ({ value: s.id, label: `${s.name} (${s.role?.split('|')[0]})` }))
+          ]}
+        />
 
         {/* Chart Granularity Selector */}
-        <div>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>Agrupamiento Histórico</label>
-          <div style={{ position: 'relative' }}>
-            <select 
-              value={chartGranularity}
-              onChange={(e) => setChartGranularity(e.target.value)}
-              style={{
-                width: '100%',
-                backgroundColor: 'rgba(0,0,0,0.3)',
-                border: '1px solid var(--border-color)',
-                color: 'white',
-                padding: '11px 40px 11px 16px',
-                borderRadius: '12px',
-                fontSize: '13px',
-                fontWeight: '600',
-                appearance: 'none',
-                cursor: 'pointer',
-                outline: 'none'
-              }}
-            >
-              <option value="day">Por Día</option>
-              <option value="week">Por Semana</option>
-              <option value="month">Por Mes</option>
-            </select>
-            <ChevronDown size={14} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-muted)' }} />
-          </div>
-        </div>
+        <AstroSelect 
+          label="Agrupamiento Histórico"
+          value={chartGranularity}
+          onChange={setChartGranularity}
+          options={[
+            { value: 'day', label: 'Por Día' },
+            { value: 'week', label: 'Por Semana' },
+            { value: 'month', label: 'Por Mes' }
+          ]}
+        />
 
         {/* Week selector (clickable circles) */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
@@ -602,38 +531,16 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           }}>
             <div style={{ flex: 1 }}>
               <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '6px' }}>Fecha Inicial (Desde)</label>
-              <input 
-                type="date"
+              <AstroDatePicker 
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  backgroundColor: 'rgba(0,0,0,0.3)',
-                  border: '1px solid var(--border-color)',
-                  color: 'white',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  outline: 'none',
-                  fontSize: '12px'
-                }}
               />
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '6px' }}>Fecha Final (Hasta)</label>
-              <input 
-                type="date"
+              <AstroDatePicker 
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  backgroundColor: 'rgba(0,0,0,0.3)',
-                  border: '1px solid var(--border-color)',
-                  color: 'white',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  outline: 'none',
-                  fontSize: '12px'
-                }}
               />
             </div>
           </div>

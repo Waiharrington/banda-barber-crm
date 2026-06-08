@@ -40,6 +40,9 @@ import Login from './components/Login';
 import TopBar from './components/TopBar';
 import NotificationsDrawer from './components/NotificationsDrawer';
 import { notificationService } from './services/notificationService';
+import { useDialog } from './context/DialogContext';
+import { useScrollLock } from './hooks/useScrollLock';
+import { useModal } from './context/ModalContext';
 
 function getLastSundayDateString() {
   const now = new Date();
@@ -57,6 +60,7 @@ function getLastSundayDateString() {
 
 function App() {
   const { user } = useAuth();
+  const { alert, confirm } = useDialog();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('astro_active_tab') || 'dashboard');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -67,6 +71,9 @@ function App() {
   const [isTabLoading, setIsTabLoading] = useState(false);
   const [tabParams, setTabParams] = useState({});
   const [isReceptionModalOpen, setIsReceptionModalOpen] = useState(false);
+  const { isModalOpen } = useModal();
+
+  useScrollLock(isReceptionModalOpen);
 
   // Multi-currency State
 
@@ -481,19 +488,19 @@ function App() {
       link.click();
     } catch (e) {
       console.error('Error capturing screenshot:', e);
-      alert('Error al generar la captura de pantalla: ' + e.message);
+      await alert('Error al generar la captura de pantalla: ' + e.message);
     } finally {
       // ensure loading flag is cleared if it was set elsewhere
     }
   };
 
   const handleSeedData = async () => {
-    if (!window.confirm('¿Quieres cargar datos de prueba para ver el CRM funcionando?')) return;
+    if (!await confirm('¿Quieres cargar datos de prueba para ver el CRM funcionando?')) return;
     try {
       await dataService.addStaff({ name: 'Marco Silva', role: 'Barbero Principal', commission_pct: 40 });
       await dataService.addService({ name: 'Corte Astro Deluxe', price: 80, category: 'Barbería' });
       await dataService.addClient({ name: 'Carlos Demo', phone: '555-0123', hair_type: 'Normal' });
-      alert('Datos de demo cargados!');
+      await alert('Datos de demo cargados!');
       fetchInitialData();
     } catch (error) { console.error('Error seeding:', error); }
   };
@@ -559,7 +566,7 @@ function App() {
     return (
       <MobileLayout activeTab={activeTab} setActiveTab={handleTabChange} onOpenSale={() => setIsSaleModalOpen(true)}>
         <AstroLoader visible={isAppLoading} />
-        <div key={activeTab} className={isAppLoading ? "opacity-0" : "animate-fade-in"} style={{ height: '100%' }}>
+        <div key={activeTab} className={isAppLoading ? "opacity-0" : "animate-page-fade-in"} style={{ height: '100%' }}>
           {renderContent()}
         </div>
         <SaleServiceModal 
@@ -583,7 +590,7 @@ function App() {
   }
 
   return (
-    <div className="app-container" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'transparent', position: 'relative', overflowX: 'hidden' }}>
+    <div className="app-container no-scrollbar" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'transparent', position: 'relative', overflowX: 'hidden' }}>
       <AstroLoader visible={isAppLoading} />
       <Sidebar 
         activeTab={activeTab} 
@@ -594,15 +601,16 @@ function App() {
         activeRateType={activeRateType}
         onToggleRateType={handleSetActiveRateType}
       />
-      <main className="main-content" style={{ 
+      <main className="main-content no-scrollbar" style={{ 
         flex: 1, 
         marginLeft: isMobile ? '0' : (isCollapsed ? '80px' : '260px'), 
         padding: 'var(--spacing-xl)', 
-        minHeight: '100vh',
+        height: '100vh',
+        overflowY: 'auto',
         backgroundColor: 'transparent',
         transition: 'margin-left 0.3s ease'
       }}>
-        <div key={activeTab} className={isAppLoading ? "opacity-0" : "animate-fade-in"} style={{ height: '100%' }}>
+        <div key={activeTab} className={isAppLoading ? "opacity-0" : "animate-page-fade-in"} style={{ height: '100%' }}>
           <TopBar 
             activeTab={activeTab}
             rates={effectiveRates} 
@@ -635,7 +643,7 @@ function App() {
           width: '100%', 
           maxWidth: '1400px', 
           height: isMobile ? '100%' : '90vh', 
-          overflowY: 'auto', 
+          overflowY: isModalOpen ? 'hidden' : 'auto', 
           borderRadius: isMobile ? '0' : '32px', 
           border: '1px solid rgba(212,175,55,0.3)', 
           position: 'relative', 

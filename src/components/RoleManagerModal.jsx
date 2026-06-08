@@ -11,10 +11,13 @@ import {
   ChevronRight,
   Info
 } from 'lucide-react';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 const RoleManagerModal = ({ isOpen, onClose, roles, onSaveRole, onDeleteRole, availableModules }) => {
   const [editingRole, setEditingRole] = useState(null);
   const [formData, setFormData] = useState({ name: '', permissions: [] });
+
+  useScrollLock(isOpen);
 
   if (!isOpen) return null;
 

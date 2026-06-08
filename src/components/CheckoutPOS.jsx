@@ -30,12 +30,91 @@ import AstroSelect from './AstroSelect';
 import { notificationService } from '../services/notificationService';
 import AstroDialog from './AstroDialog';
 import NewClientModal from './NewClientModal';
-import { UserPlus, ChevronDown } from 'lucide-react';
-import { createPortal } from 'react-dom';
-import { ModalShield } from '../context/ModalContext';
+import { UserPlus, ChevronDown, VenetianMask, Ear, ScanFace, ShowerHead, Waves } from 'lucide-react';
+import { ModalShield, useModal } from '../context/ModalContext';
 import AnimatedModal from './AnimatedModal';
+import { normalizeForSearch } from '../utils/stringUtils';
+import { useScrollLock } from '../hooks/useScrollLock';
 
+const CartSellerSelect = ({ value, onChange, options }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const containerRef = React.useRef(null);
 
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selected = options.find(o => o.value === value);
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', marginLeft: '8px' }}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          background: isOpen ? 'rgba(212, 175, 55, 0.15)' : 'rgba(212, 175, 55, 0.08)',
+          border: '1px solid rgba(212, 175, 55, 0.3)',
+          color: 'var(--gold-primary)',
+          fontSize: '11px',
+          fontWeight: '800',
+          borderRadius: '10px',
+          padding: '6px 10px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '6px',
+          whiteSpace: 'nowrap',
+          minWidth: '105px',
+          transition: 'all 0.2s',
+          boxShadow: isOpen ? '0 0 0 2px rgba(212,175,55,0.2)' : 'none'
+        }}
+      >
+        <span>{selected ? selected.label : '+ Vendedor'}</span>
+        <ChevronDown size={14} strokeWidth={3} style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />
+      </div>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: 'calc(100% + 6px)',
+          right: 0,
+          background: '#1c1c1e',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '12px',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.8)',
+          zIndex: 9999,
+          minWidth: '120px',
+          overflow: 'hidden',
+          animation: 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+        }}>
+          <div 
+            onClick={() => { onChange(''); setIsOpen(false); }}
+            style={{ padding: '10px 14px', fontSize: '11px', color: !value ? 'var(--gold-primary)' : 'white', cursor: 'pointer', background: !value ? 'rgba(212,175,55,0.1)' : 'transparent', fontWeight: !value ? '800' : '500', transition: '0.2s' }}
+            onMouseEnter={e => { if(value) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+            onMouseLeave={e => { if(value) e.currentTarget.style.background = 'transparent' }}
+          >
+            + Vendedor
+          </div>
+          {options.map(opt => (
+            <div 
+              key={opt.value}
+              onClick={() => { onChange(opt.value); setIsOpen(false); }}
+              style={{ padding: '10px 14px', fontSize: '11px', color: value === opt.value ? 'var(--gold-primary)' : 'white', cursor: 'pointer', background: value === opt.value ? 'rgba(212,175,55,0.1)' : 'transparent', fontWeight: value === opt.value ? '800' : '500', transition: '0.2s' }}
+              onMouseEnter={e => { if(value !== opt.value) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+              onMouseLeave={e => { if(value !== opt.value) e.currentTarget.style.background = 'transparent' }}
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const { showToast, triggerConfetti, triggerRocket } = useNotifs();
   const formatCurrency = (amount) => {
@@ -60,6 +139,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const [directSaleIdSearch, setDirectSaleIdSearch] = useState('');
   const [directSaleSearchResults, setDirectSaleSearchResults] = useState([]);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const { isModalOpen } = useModal();
   
   // Checkout Multi-State
   const [fixedRate, setFixedRate] = useState(rates?.usd || 0);
@@ -939,12 +1019,14 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
 
   const handleDirectSaleSearchInput = (val) => {
     setDirectSaleIdSearch(val);
-    if (val.length >= 2) {
-      const term = val.toLowerCase();
-      const results = allClients.filter(c => 
-        (c.id_card && c.id_card.toLowerCase().includes(term)) || 
-        (c.name && c.name.toLowerCase().includes(term))
-      );
+    if (val.length >= 1) {
+      const term = normalizeForSearch(val);
+      const results = allClients.filter(c => {
+        const normalizedName = normalizeForSearch(c.name || '');
+        const nameMatches = normalizedName.split(' ').some(w => w.startsWith(term));
+        const idMatches = (c.id_card || '').toLowerCase().includes(term);
+        return nameMatches || idMatches;
+      });
       setDirectSaleSearchResults(results.slice(0, 5));
     } else {
       setDirectSaleSearchResults([]);
@@ -1029,7 +1111,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         <p style={{ color: 'var(--text-secondary)' }}>Liquidación de servicios y venta de productos.</p>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1.5fr', gap: '32px', alignItems: 'start' }}>
+      <div className="checkout-pos-container">
+        <div className="checkout-pos-grid">
         
         <section>
           <div className="glass-card" style={{ marginBottom: '32px', borderRadius: '24px' }}>
@@ -1149,7 +1232,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     const firstApp = group.apps[0];
                     const serviceNames = group.apps.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Venta de Productos';
                     const staffNames = Array.from(new Set(group.apps.map(a => a.staff?.name?.split(' ')[0]).filter(Boolean))).join(', ') || 'Caja';
-                    const timeString = new Date(firstApp.scheduled_at || firstApp.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const timeString = new Date(firstApp.scheduled_at || firstApp.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
                     
                     return (
                       <div 
@@ -1192,35 +1275,41 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             <div className="glass-card animate-slide-up" style={{ borderRadius: '24px', display: 'flex', gap: '12px' }}>
               <button 
                 onClick={() => setShowProductModal(true)}
-                style={{ flex: 1, padding: '24px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.05)', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}
+                style={{ flex: 1, padding: '24px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.3)', background: 'linear-gradient(145deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02))', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', transition: 'all 0.3s ease', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}
                 className="hover-item"
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(212,175,55,0.15)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)'; }}
               >
-                <div style={{ background: 'var(--gold-primary)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black' }}>
-                  <ShoppingBag size={24} />
+                <div style={{ background: 'var(--gold-primary)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212,175,55,0.3)' }}>
+                  <ShoppingBag size={24} strokeWidth={2.5} />
                 </div>
-                <div style={{ fontWeight: '900', fontSize: '12px', letterSpacing: '1px' }}>PRODUCTOS</div>
+                <div style={{ fontWeight: '900', fontSize: '12px', letterSpacing: '1px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>PRODUCTOS</div>
               </button>
 
               <button 
                 onClick={() => setShowExtraModal(true)}
-                style={{ flex: 1, padding: '24px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}
+                style={{ flex: 1, padding: '24px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.3)', background: 'linear-gradient(145deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02))', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', transition: 'all 0.3s ease', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}
                 className="hover-item"
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(212,175,55,0.15)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)'; }}
               >
-                <div style={{ background: 'rgba(255,255,255,0.1)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                  <Zap size={24} />
+                <div style={{ background: 'var(--gold-primary)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212,175,55,0.3)' }}>
+                  <Zap size={24} strokeWidth={2.5} />
                 </div>
-                <div style={{ fontWeight: '900', fontSize: '12px', letterSpacing: '1px' }}>EXTRAS</div>
+                <div style={{ fontWeight: '900', fontSize: '12px', letterSpacing: '1px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>EXTRAS</div>
               </button>
 
               <button 
                 onClick={() => setShowServiceModal(true)}
-                style={{ flex: 1, padding: '24px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}
+                style={{ flex: 1, padding: '24px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.3)', background: 'linear-gradient(145deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02))', color: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', transition: 'all 0.3s ease', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}
                 className="hover-item"
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(212,175,55,0.15)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)'; }}
               >
-                <div style={{ background: 'rgba(255,255,255,0.1)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                  <Scissors size={24} />
+                <div style={{ background: 'var(--gold-primary)', width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212,175,55,0.3)' }}>
+                  <Scissors size={24} strokeWidth={2.5} />
                 </div>
-                <div style={{ fontWeight: '900', fontSize: '12px', letterSpacing: '1px' }}>SERVICIOS</div>
+                <div style={{ fontWeight: '900', fontSize: '12px', letterSpacing: '1px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>SERVICIOS</div>
               </button>
             </div>
           )}
@@ -1430,38 +1519,11 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                       </div>
                       
                       {/* Staff Selector for Product Sale */}
-                      <select
+                      <CartSellerSelect
                         value={itemSalesAssociations[p.id] || ''}
-                        onChange={(e) => setItemSalesAssociations({ ...itemSalesAssociations, [p.id]: e.target.value })}
-                        style={{
-                          appearance: 'none',
-                          WebkitAppearance: 'none',
-                          MozAppearance: 'none',
-                          background: 'rgba(212, 175, 55, 0.08)',
-                          border: '1px solid rgba(212, 175, 55, 0.3)',
-                          color: 'var(--gold-primary)',
-                          fontSize: '9px',
-                          fontWeight: '800',
-                          borderRadius: '12px',
-                          padding: '1px 6px',
-                          height: '16px',
-                          lineHeight: '14px',
-                          textAlign: 'center',
-                          cursor: 'pointer',
-                          outline: 'none',
-                          maxWidth: '75px',
-                          flexShrink: 0,
-                          transition: 'all 0.2s',
-                          marginLeft: '8px'
-                        }}
-                      >
-                        <option value="" style={{ background: '#1c1c1e', color: 'white' }}>+ Vendedor</option>
-                        {allStaff.map(s => (
-                          <option key={s.id} value={s.id} style={{ background: '#1c1c1e', color: 'white' }}>
-                            {s.name?.split(' ')[0]}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(val) => setItemSalesAssociations({ ...itemSalesAssociations, [p.id]: val })}
+                        options={allStaff.filter(s => !(s.role || '').toLowerCase().includes('admin')).map(s => ({ value: s.id, label: s.name?.split(' ')[0] }))}
+                      />
                     </span>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0px', flexShrink: 0 }}>
                       <span style={{ fontWeight: '800', fontSize: isMobile ? '12px' : '14px', color: 'white' }}>
@@ -1486,38 +1548,11 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--gold-primary)' }}>{extra.service_extras?.name}</span>
                       
                       {/* Staff Selector for Extra */}
-                      <select
+                      <CartSellerSelect
                         value={itemSalesAssociations[extra.id] || ''}
-                        onChange={(e) => setItemSalesAssociations({ ...itemSalesAssociations, [extra.id]: e.target.value })}
-                        style={{
-                          appearance: 'none',
-                          WebkitAppearance: 'none',
-                          MozAppearance: 'none',
-                          background: 'rgba(212, 175, 55, 0.08)',
-                          border: '1px solid rgba(212, 175, 55, 0.3)',
-                          color: 'var(--gold-primary)',
-                          fontSize: '9px',
-                          fontWeight: '800',
-                          borderRadius: '12px',
-                          padding: '1px 6px',
-                          height: '16px',
-                          lineHeight: '14px',
-                          textAlign: 'center',
-                          cursor: 'pointer',
-                          outline: 'none',
-                          maxWidth: '75px',
-                          flexShrink: 0,
-                          transition: 'all 0.2s',
-                          marginLeft: '8px'
-                        }}
-                      >
-                        <option value="" style={{ background: '#1c1c1e', color: 'white' }}>+ Asignar</option>
-                        {allStaff.map(s => (
-                          <option key={s.id} value={s.id} style={{ background: '#1c1c1e', color: 'white' }}>
-                            {s.name?.split(' ')[0]}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(val) => setItemSalesAssociations({ ...itemSalesAssociations, [extra.id]: val })}
+                        options={allStaff.filter(s => !(s.role || '').toLowerCase().includes('admin')).map(s => ({ value: s.id, label: s.name?.split(' ')[0] }))}
+                      />
                     </span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
                       {editingExtraPriceId === extra.id ? (
@@ -1809,7 +1844,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                                 >
                                   Seleccionar Integrante
                                 </div>
-                                {allStaff.map(s => (
+                                {allStaff.filter(s => !(s.role || '').toLowerCase().includes('admin')).map(s => (
                                   <div
                                     key={s.id}
                                     onClick={() => {
@@ -2036,6 +2071,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             </div>
           )}
         </section>
+        </div>
       </div>
 
       <AstroDialog 
@@ -2163,42 +2199,44 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                       <h2 style={{ fontWeight: '900', fontSize: '20px', color: 'white', marginBottom: '2px' }}>Servicios Extras</h2>
                       <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{allExtras.length} extras disponibles</p>
                     </div>
-                  </div>
+</div>
                   <button onClick={() => setShowExtraModal(false)} style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
                 </div>
               </div>
               {/* Items in a 2-column grid */}
               <div style={{ padding: '16px 20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', maxHeight: '60vh', overflowY: 'auto' }}>
                 {allExtras.map((extra) => {
-                  // Function to get an alusive icon and background style based on the service name
+                  // Function to get a minimalist Lucide icon based on the service name
                   const getExtraItemConfig = (name) => {
                     const cleanName = name.toLowerCase();
-                    // Alisado / Hidratación Capilar (Tratamiento térmico o secado)
-                    if (cleanName.includes('alisado') || cleanName.includes('hidratación') || cleanName.includes('hidratacion') || cleanName.includes('planchado')) {
-                      return { Icon: Flame, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                    if (cleanName.includes('alisado') || cleanName.includes('planchado')) {
+                      return { Icon: Wind };
                     }
-                    // Lavados (Agua y shampoo)
-                    if (cleanName.includes('lavado')) {
-                      return { Icon: Droplets, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                    if (cleanName.includes('hidratación') || cleanName.includes('hidratacion') || cleanName.includes('capilar')) {
+                      return { Icon: Droplets };
                     }
-                    // Mascarillas (Black mask, mascarillas)
+                    if (cleanName.includes('profundo')) {
+                      return { Icon: Waves };
+                    }
+                    if (cleanName.includes('lavado') || cleanName.includes('express')) {
+                      return { Icon: ShowerHead };
+                    }
                     if (cleanName.includes('mask') || cleanName.includes('mascarilla')) {
-                      return { Icon: Smile, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                      return { Icon: VenetianMask };
                     }
-                    // Epilaciones (Nariz, oídos, cejas)
-                    if (cleanName.includes('nariz') || cleanName.includes('epilacion') || cleanName.includes('epilación') || cleanName.includes('oido') || cleanName.includes('oidos') || cleanName.includes('oídos')) {
-                      return { Icon: Scissors, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                    if (cleanName.includes('nariz')) {
+                      return { Icon: ScanFace };
                     }
-                    // Exfoliaciones y Limpieza de cutis
-                    if (cleanName.includes('exfoliacion') || cleanName.includes('exfoliación') || cleanName.includes('facial') || cleanName.includes('cutis')) {
-                      return { Icon: Sparkles, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                    if (cleanName.includes('oido') || cleanName.includes('oído') || cleanName.includes('oreja')) {
+                      return { Icon: Ear };
                     }
-                    // Afeitado y perfilado de Barba
-                    if (cleanName.includes('barba') || cleanName.includes('afeitado') || cleanName.includes('perfilado')) {
-                      return { Icon: Scissors, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                    if (cleanName.includes('exfoliacion') || cleanName.includes('exfoliación') || cleanName.includes('facial') || cleanName.includes('cutis') || cleanName.includes('limpieza')) {
+                      return { Icon: Sparkles };
                     }
-                    // Fallback general
-                    return { Icon: Sparkles, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                    if (cleanName.includes('barba') || cleanName.includes('afeitado') || cleanName.includes('perfilado') || cleanName.includes('epilacion') || cleanName.includes('epilación') || cleanName.includes('ceja')) {
+                      return { Icon: Scissors };
+                    }
+                    return { Icon: Zap };
                   };
 
                   const config = getExtraItemConfig(extra.name);
@@ -2213,43 +2251,44 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                         flexDirection: 'column', 
                         alignItems: 'flex-start', 
                         padding: '16px', 
-                        borderRadius: '18px', 
+                        borderRadius: '20px', 
                         border: '1px solid rgba(255,255,255,0.08)', 
-                        background: 'rgba(255,255,255,0.02)', 
+                        background: 'linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))', 
                         cursor: 'pointer', 
                         textAlign: 'left', 
-                        transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
-                        position: 'relative'
+                        transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+                        position: 'relative',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                       }}
                       onMouseEnter={e => { 
-                        e.currentTarget.style.background = 'rgba(212,175,55,0.06)'; 
-                        e.currentTarget.style.border = '1px solid rgba(212,175,55,0.35)'; 
-                        e.currentTarget.style.transform = 'translateY(-2px)'; 
-                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+                        e.currentTarget.style.background = 'linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))'; 
+                        e.currentTarget.style.border = '1px solid rgba(212,175,55,0.6)'; 
+                        e.currentTarget.style.transform = 'translateY(-4px)'; 
+                        e.currentTarget.style.boxShadow = '0 12px 24px rgba(212,175,55,0.15)';
                       }}
                       onMouseLeave={e => { 
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; 
+                        e.currentTarget.style.background = 'linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))'; 
                         e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)'; 
                         e.currentTarget.style.transform = 'translateY(0)'; 
-                        e.currentTarget.style.boxShadow = 'none';
+                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '12px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: config.bg, border: `1px solid rgba(212,175,55,0.2)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <IconComponent size={18} color={config.color} />
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '14px' }}>
+                        <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'transparent', border: '1px solid var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 10px rgba(212,175,55,0.1)' }}>
+                          <IconComponent size={20} color="var(--gold-primary)" strokeWidth={1.5} />
                         </div>
-                        <div style={{ fontWeight: '900', fontSize: '18px', color: 'var(--gold-primary)' }}>${extra.price}</div>
+                        <div style={{ fontWeight: '900', fontSize: '18px', color: 'var(--gold-primary)', background: 'rgba(212,175,55,0.1)', padding: '4px 10px', borderRadius: '10px' }}>${extra.price}</div>
                       </div>
                       
                       <div style={{ width: '100%' }}>
-                        <div style={{ fontWeight: '800', fontSize: '14px', color: 'white', marginBottom: '4px', lineHeight: '1.3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{extra.name}</div>
+                        <div style={{ fontWeight: '800', fontSize: '15px', color: 'white', marginBottom: '6px', lineHeight: '1.3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{extra.name}</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                           {rates?.usd > 0 ? (
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>≈ {Math.round(extra.price * rates.usd).toLocaleString()} Bs.</div>
+                            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.65)', fontWeight: '600' }}>~ {Math.round(extra.price * rates.usd).toLocaleString()} Bs.</div>
                           ) : (
                             <div />
                           )}
-                          <div style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>+ AGREGAR</div>
+                          <div style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '900', letterSpacing: '0.5px' }}>+ AGREGAR</div>
                         </div>
                       </div>
                     </button>

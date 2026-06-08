@@ -26,6 +26,7 @@ import { useAuth } from '../../context/AuthContext';
 import { notificationService } from '../../services/notificationService';
 import { dataService } from '../../services/dataService';
 import { useNotifs } from '../../context/NotificationContext';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 const QUOTES = [
   { text: "Cada cabeza es un mundo.", creator: "Refrán Popular" },
@@ -62,6 +63,8 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
   const [editedPhone, setEditedPhone] = useState('');
   const [editedMessage, setEditedMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  useScrollLock(whatsappModalData !== null || isEditingGoals);
 
   useEffect(() => {
     setQuoteIndex(Math.floor(Math.random() * QUOTES.length));

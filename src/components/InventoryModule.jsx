@@ -11,11 +11,15 @@ import {
   ChevronRight,
   Zap,
   Trash2,
-  History
+  History,
+  Tag, 
+  Filter, 
+  ShieldAlert
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import { useDialog } from '../context/DialogContext';
 import AstroSelect from './AstroSelect';
 import AstroCamera from './AstroCamera';
 import { Camera } from 'lucide-react';
@@ -23,6 +27,7 @@ import { Camera } from 'lucide-react';
 const InventoryModule = ({ isMobile, currency, rates }) => {
   const { user } = useAuth();
   const { showToast } = useNotifs();
+  const { confirm } = useDialog();
   const [inventory, setInventory] = useState([]);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -130,7 +135,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
   };
 
   const handleDeleteItem = async (id, name) => {
-    if (!window.confirm(`¿Estás seguro de que quieres eliminar "${name}" del inventario?`)) return;
+    if (!await confirm(`¿Estás seguro de que quieres eliminar "${name}" del inventario?`)) return;
     try {
       await dataService.deleteInventoryItem(id);
       fetchInventory();

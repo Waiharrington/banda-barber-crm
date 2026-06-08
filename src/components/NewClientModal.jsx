@@ -4,6 +4,9 @@ import { X, User, Phone, CreditCard, Loader2, Calendar } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import { ModalShield } from '../context/ModalContext';
+import AstroDatePicker from './AstroDatePicker';
+import { formatName } from '../utils/stringUtils';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
   const { showToast } = useNotifs();
@@ -14,6 +17,8 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
     id_card: '',
     birth_date: ''
   });
+
+  useScrollLock(isOpen);
 
   if (!isOpen) return null;
 
@@ -54,7 +59,7 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
 
   return createPortal(
     <ModalShield active={isOpen}>
-      <div style={{ 
+      <div className="modal-overlay" style={{ 
         position: 'fixed', 
         top: 0, 
         left: 0, 
@@ -118,7 +123,7 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
                   type="text" 
                   placeholder="Ej. Juan Pérez" 
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) => setFormData({...formData, name: formatName(e.target.value)})}
                   style={{ width: '100%', paddingLeft: '48px' }}
                 />
               </div>
@@ -160,15 +165,10 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
               <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 Fecha de Nacimiento
               </label>
-              <div style={{ position: 'relative' }}>
-                <Calendar style={{ position: 'absolute', left: '16px', top: '14px' }} size={18} color="var(--gold-primary)" />
-                <input 
-                  type="date" 
-                  value={formData.birth_date}
-                  onChange={(e) => setFormData({...formData, birth_date: e.target.value})}
-                  style={{ width: '100%', paddingLeft: '48px' }}
-                />
-              </div>
+              <AstroDatePicker 
+                value={formData.birth_date}
+                onChange={(e) => setFormData({...formData, birth_date: e.target.value})}
+              />
             </div>
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>

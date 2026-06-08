@@ -21,6 +21,7 @@ import {
 
 import { dataService } from '../services/dataService';
 import AstroDialog from './AstroDialog';
+import AstroDatePicker from './AstroDatePicker';
 
 const getStartOfWeek = () => {
   const now = new Date();
@@ -930,110 +931,65 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 </div>
 
                 {/* Service Filter */}
-                <div>
-                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Servicio</label>
-                  <select 
+                {/* Service Filter */}
+                <div style={{ flex: 1, minWidth: '150px' }}>
+                  <AstroSelect 
+                    label="Servicio"
                     value={filterService}
-                    onChange={(e) => setFilterService(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: '10px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      fontSize: '13px',
-                      height: '38px',
-                      cursor: 'pointer',
-                      outline: 'none'
-                    }}
-                  >
-                    <option value="all">Todos los Servicios</option>
-                    {uniqueServices.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
+                    onChange={setFilterService}
+                    options={[
+                      { value: 'all', label: 'Todos los Servicios' },
+                      ...uniqueServices.map(s => ({ value: s, label: s }))
+                    ]}
+                  />
                 </div>
 
                 {/* Type Select */}
-                <div>
-                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Tipo de Movimiento</label>
-                  <select 
+                <div style={{ flex: 1, minWidth: '150px' }}>
+                  <AstroSelect 
+                    label="Tipo de Movimiento"
                     value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: '10px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      fontSize: '13px',
-                      height: '38px',
-                      cursor: 'pointer',
-                      outline: 'none'
-                    }}
-                  >
-                    <option value="all">Todos los Movimientos</option>
-                    <option value="income">Ingresos (+)</option>
-                    <option value="expense">Egresos (-)</option>
-                  </select>
+                    onChange={setFilterType}
+                    options={[
+                      { value: 'all', label: 'Todos los Movimientos' },
+                      { value: 'income', label: 'Ingresos (+)' },
+                      { value: 'expense', label: 'Egresos (-)' }
+                    ]}
+                  />
                 </div>
 
                 {/* Barber Select */}
-                <div>
-                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Barbero Asignado</label>
-                  <select 
+                <div style={{ flex: 1, minWidth: '150px' }}>
+                  <AstroSelect 
+                    label="Barbero Asignado"
                     value={filterBarber}
-                    onChange={(e) => setFilterBarber(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: '10px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      fontSize: '13px',
-                      height: '38px',
-                      cursor: 'pointer',
-                      outline: 'none'
-                    }}
-                  >
-                    <option value="all">Cualquier Barbero</option>
-                    {staff.filter(s => {
-                      const role = s.role?.toLowerCase() || '';
-                      return role.includes('barber') || role.includes('estilista') || role.includes('socio') || role.includes('lider');
-                    }).map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
+                    onChange={setFilterBarber}
+                    options={[
+                      { value: 'all', label: 'Cualquier Barbero' },
+                      ...staff.filter(s => {
+                        const role = s.role?.toLowerCase() || '';
+                        return role.includes('barber') || role.includes('estilista') || role.includes('socio') || role.includes('lider');
+                      }).map(s => ({ value: s.id, label: s.name }))
+                    ]}
+                  />
                 </div>
 
                 {/* Date Select */}
-                <div>
-                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Fecha</label>
-                  <select 
+                <div style={{ flex: 1, minWidth: '150px' }}>
+                  <AstroSelect 
+                    label="Fecha"
                     value={filterDate}
-                    onChange={(e) => setFilterDate(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: '10px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      fontSize: '13px',
-                      height: '38px',
-                      cursor: 'pointer',
-                      outline: 'none'
-                    }}
-                  >
-                    <option value="all">Todo el Historial</option>
-                    <option value="today">Hoy</option>
-                    <option value="this_week">Esta Semana</option>
-                    <option value="this_month">Este Mes</option>
-                    <option value="custom">Rango Personalizado</option>
-                  </select>
+                    onChange={setFilterDate}
+                    options={[
+                      { value: 'all', label: 'Todo el Historial' },
+                      { value: 'today', label: 'Hoy' },
+                      { value: 'yesterday', label: 'Ayer' },
+                      { value: 'this_week', label: 'Esta Semana' },
+                      { value: 'last_week', label: 'Semana Pasada' },
+                      { value: 'this_month', label: 'Este Mes' },
+                      { value: 'custom', label: 'Rango Personalizado' }
+                    ]}
+                  />
                 </div>
               </div>
 
@@ -1051,38 +1007,16 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700' }}>Desde:</span>
-                    <input 
-                      type="date" 
+                    <AstroDatePicker 
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        backgroundColor: 'rgba(0,0,0,0.3)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: 'white',
-                        fontSize: '12px',
-                        outline: 'none',
-                        cursor: 'pointer'
-                      }}
                     />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700' }}>Hasta:</span>
-                    <input 
-                      type="date" 
+                    <AstroDatePicker 
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      style={{
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        backgroundColor: 'rgba(0,0,0,0.3)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: 'white',
-                        fontSize: '12px',
-                        outline: 'none',
-                        cursor: 'pointer'
-                      }}
                     />
                   </div>
                 </div>
@@ -1178,7 +1112,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       >
                         <td style={{ padding: '16px', borderRadius: '12px 0 0 12px' }}>
                           <div style={{ fontWeight: '700' }}>{new Date(t.created_at).toLocaleDateString()}</div>
-                          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</div>
                         </td>
                         <td style={{ padding: '16px', fontWeight: '800', color: 'white' }}>{clientName.toUpperCase()}</td>
                         <td style={{ padding: '16px', fontWeight: '700', color: 'var(--text-secondary)' }}>{barbero}</td>
@@ -1529,60 +1463,30 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 borderRadius: '12px',
                 flexWrap: 'wrap'
               }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)' }}>Filtro:</span>
-                <select
-                  value={payrollFilterDate}
-                  onChange={(e) => setPayrollFilterDate(e.target.value)}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(0,0,0,0.4)',
-                    border: '1px solid rgba(212,175,55,0.3)',
-                    color: 'white',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    outline: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="this_week">Esta Semana (Actual)</option>
-                  <option value="last_week">Semana Pasada</option>
-                  <option value="custom">Rango Personalizado</option>
-                </select>
+                <div style={{ flex: 1, minWidth: '150px' }}>
+                  <AstroSelect
+                    label="Filtro"
+                    value={payrollFilterDate}
+                    onChange={setPayrollFilterDate}
+                    options={[
+                      { value: 'this_week', label: 'Esta Semana (Actual)' },
+                      { value: 'last_week', label: 'Semana Pasada' },
+                      { value: 'custom', label: 'Rango Personalizado' }
+                    ]}
+                  />
+                </div>
 
                 {payrollFilterDate === 'custom' && (
                   <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Desde:</span>
-                    <input 
-                      type="date" 
+                    <AstroDatePicker 
                       value={payrollStartDate}
                       onChange={(e) => setPayrollStartDate(e.target.value)}
-                      style={{
-                        padding: '4px 8px',
-                        borderRadius: '6px',
-                        backgroundColor: 'rgba(0,0,0,0.3)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: 'white',
-                        fontSize: '11px',
-                        outline: 'none',
-                        cursor: 'pointer'
-                      }}
                     />
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Hasta:</span>
-                    <input 
-                      type="date" 
+                    <AstroDatePicker 
                       value={payrollEndDate}
                       onChange={(e) => setPayrollEndDate(e.target.value)}
-                      style={{
-                        padding: '4px 8px',
-                        borderRadius: '6px',
-                        backgroundColor: 'rgba(0,0,0,0.3)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        color: 'white',
-                        fontSize: '11px',
-                        outline: 'none',
-                        cursor: 'pointer'
-                      }}
                     />
                   </div>
                 )}
@@ -2322,30 +2226,19 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Método de Pago</label>
-                    <select 
+                    <AstroSelect 
+                      label="Método de Pago"
                       value={payrollModal.paymentMethod} 
-                      onChange={(e) => setPayrollModal({...payrollModal, paymentMethod: e.target.value})} 
-                      style={{ 
-                        width: '100%', 
-                        padding: '14px', 
-                        borderRadius: '12px', 
-                        background: 'rgba(255,255,255,0.05)', 
-                        border: '1px solid rgba(255,255,255,0.1)', 
-                        color: 'white', 
-                        fontSize: '16px', 
-                        fontWeight: '700',
-                        outline: 'none',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <option value="Efectivo ($)">Efectivo ($)</option>
-                      <option value="Zelle">Zelle</option>
-                      <option value="Pago Móvil">Pago Móvil</option>
-                      <option value="Efectivo (Bs)">Efectivo (Bs)</option>
-                      <option value="Binance">Binance</option>
-                      <option value="Zinli">Zinli</option>
-                    </select>
+                      onChange={(val) => setPayrollModal({...payrollModal, paymentMethod: val})} 
+                      options={[
+                        { value: 'Efectivo ($)', label: 'Efectivo ($)' },
+                        { value: 'Zelle', label: 'Zelle' },
+                        { value: 'Pago Móvil', label: 'Pago Móvil' },
+                        { value: 'Efectivo (Bs)', label: 'Efectivo (Bs)' },
+                        { value: 'Binance', label: 'Binance' },
+                        { value: 'Zinli', label: 'Zinli' }
+                      ]}
+                    />
                   </div>
 
                   <div>
@@ -2401,30 +2294,19 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Método de Pago</label>
-                    <select 
+                    <AstroSelect 
+                      label="Método de Pago"
                       value={valeModal.paymentMethod} 
-                      onChange={(e) => setValeModal({...valeModal, paymentMethod: e.target.value})} 
-                      style={{ 
-                        width: '100%', 
-                        padding: '14px', 
-                        borderRadius: '12px', 
-                        background: 'rgba(255,255,255,0.05)', 
-                        border: '1px solid rgba(255,255,255,0.1)', 
-                        color: 'white', 
-                        fontSize: '16px', 
-                        fontWeight: '700',
-                        outline: 'none',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <option value="Efectivo ($)">Efectivo ($)</option>
-                      <option value="Zelle">Zelle</option>
-                      <option value="Pago Móvil">Pago Móvil</option>
-                      <option value="Efectivo (Bs)">Efectivo (Bs)</option>
-                      <option value="Binance">Binance</option>
-                      <option value="Zinli">Zinli</option>
-                    </select>
+                      onChange={(val) => setValeModal({...valeModal, paymentMethod: val})} 
+                      options={[
+                        { value: 'Efectivo ($)', label: 'Efectivo ($)' },
+                        { value: 'Zelle', label: 'Zelle' },
+                        { value: 'Pago Móvil', label: 'Pago Móvil' },
+                        { value: 'Efectivo (Bs)', label: 'Efectivo (Bs)' },
+                        { value: 'Binance', label: 'Binance' },
+                        { value: 'Zinli', label: 'Zinli' }
+                      ]}
+                    />
                   </div>
 
                   <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>

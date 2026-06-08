@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import AnimatedModal from './AnimatedModal';
 
 /**
@@ -47,8 +48,35 @@ const AstroDialog = ({
             borderRadius: '28px',
             border: '1.5px solid rgba(212, 175, 55, 0.3)',
             boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 20px rgba(212,175,55,0.1)',
-            textAlign: 'center'
+            textAlign: 'center',
+            position: 'relative'
           }}>
+            {onCancel && (
+              <button 
+                onClick={onCancel} 
+                style={{ 
+                  position: 'absolute',
+                  top: '20px',
+                  right: '20px',
+                  background: 'rgba(255,255,255,0.04)', 
+                  border: 'none', 
+                  color: 'rgba(255,255,255,0.5)', 
+                  cursor: 'pointer', 
+                  width: '32px', 
+                  height: '32px', 
+                  borderRadius: '50%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  transition: 'all 0.2s',
+                  zIndex: 10
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,69,58,0.15)'; e.currentTarget.style.color = '#ff453a'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+              >
+                <X size={16} />
+              </button>
+            )}
             {title && <h3 style={{ fontSize: '22px', fontWeight: '900', marginBottom: '12px', color: 'white' }}>{title}</h3>}
             {message && <p style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.6' }}>{message}</p>}
 

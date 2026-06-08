@@ -18,6 +18,20 @@ const AstroSelect = ({
 
   const selectedOption = options.find(opt => opt.value == value);
 
+  const [popDirection, setPopDirection] = useState('down');
+
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < 260) { // Approx max height + padding
+        setPopDirection('up');
+      } else {
+        setPopDirection('down');
+      }
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
@@ -34,7 +48,7 @@ const AstroSelect = ({
   };
 
   return (
-    <div className="form-group" style={{ position: 'relative', width: '100%', ...style, opacity: disabled ? 0.6 : 1, pointerEvents: disabled ? 'none' : 'auto' }} ref={containerRef}>
+    <div className="form-group" style={{ position: 'relative', width: '100%', zIndex: isOpen ? 9999 : 1, ...style, opacity: disabled ? 0.6 : 1, pointerEvents: disabled ? 'none' : 'auto' }} ref={containerRef}>
       {label && <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</label>}
       
       <div 
@@ -61,14 +75,15 @@ const AstroSelect = ({
       {isOpen && (
         <div style={{
           position: 'absolute',
-          top: 'calc(100% + 8px)',
+          top: popDirection === 'down' ? 'calc(100% + 8px)' : 'auto',
+          bottom: popDirection === 'up' ? 'calc(100% + 8px)' : 'auto',
           left: 0,
           right: 0,
           backgroundColor: '#1c1c1e',
           borderRadius: '16px',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
-          zIndex: 2000,
+          zIndex: 9999,
           maxHeight: '250px',
           overflowY: 'auto',
           padding: '8px',
