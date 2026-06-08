@@ -389,6 +389,12 @@ const SchedulingModule = ({ isMobile, rates }) => {
           grid-template-columns: 320px 1fr;
           gap: 24px;
           align-items: start;
+          overflow: hidden;
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+        .scheduling-grid-container > * {
+          min-width: 0;
         }
         @media (max-width: 1150px) {
           .scheduling-grid-container {
@@ -641,6 +647,9 @@ const SchedulingModule = ({ isMobile, rates }) => {
           align-items: center;
           border: 1px solid rgba(255, 255, 255, 0.04);
           background: rgba(18, 18, 18, 0.3);
+          box-sizing: border-box;
+          width: 100%;
+          overflow: hidden;
         }
         @media (max-width: 600px) {
           .date-navigator-card {
@@ -737,6 +746,11 @@ const SchedulingModule = ({ isMobile, rates }) => {
           margin-bottom: 20px;
           overflow-x: auto;
           scrollbar-width: none;
+          box-sizing: border-box;
+          width: 100%;
+        }
+        .premium-filter-tabs::-webkit-scrollbar {
+          display: none;
         }
         .premium-tab-btn {
           flex: 1;
@@ -793,7 +807,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
           color: rgba(255, 255, 255, 0.6);
           cursor: pointer;
           transition: all 0.2s ease;
-          min-width: 42px;
+          min-width: 36px;
         }
         .ribbon-day-btn:hover {
           color: white;
@@ -886,7 +900,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
         </aside>
 
         {/* Right Side: Appointments List */}
-        <main className="animate-slide-up animate-stagger-2">
+        <main className="animate-slide-up animate-stagger-2" style={{ minWidth: 0, maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
           <div className="date-navigator-card">
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
               <div style={{ background: 'var(--gold-primary)', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212, 175, 55, 0.3)' }}>
