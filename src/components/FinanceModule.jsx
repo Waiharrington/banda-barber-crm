@@ -101,6 +101,10 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   // Payroll / Nómina States
   const [assistantConfig, setAssistantConfig] = useState(() => {
     const saved = localStorage.getItem('astro_assistant_config');
+    const defaults = {
+      weeklyVacaUsd: 20,
+      splits: {}
+    };
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -116,15 +120,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             splits: newSplits
           };
         }
-        return parsed;
+        return { ...defaults, ...parsed, splits: { ...defaults.splits, ...parsed.splits } };
       } catch (e) {
         console.error("Error parsing assistant config", e);
       }
     }
-    return { 
-      weeklyVacaUsd: 20,
-      splits: {} 
-    };
+    return defaults;
   });
   const [isConfiguringPayroll, setIsConfiguringPayroll] = useState(false);
   const [weeklyCloseModal, setWeeklyCloseModal] = useState({
@@ -261,7 +262,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   const handleBarberSplitChange = (staffId, val) => {
     const numVal = Number(val) || 0;
     const newSplits = {
-      ...assistantConfig.splits,
+      ...(assistantConfig?.splits || {}),
       [staffId]: numVal
     };
     
@@ -1403,12 +1404,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             grossIncomeBs = serviceTransactions.reduce((sum, t) => sum + ((t.amount || 0) * (t.exchange_rate || rates?.usd || 550)), 0);
             lavadosCount = serviceTransactions.filter(t => t.metadata?.didWash).length;
             lavadoDeductionBs = lavadosCount * 1.00 * (rates?.usd || 550);
-            weeklyAssistanceUsd = assistantConfig.splits[st.id] || 0;
+            weeklyAssistanceUsd = assistantConfig?.splits?.[st.id] || 0;
             weeklyAssistanceBs = weeklyAssistanceUsd * (rates?.usd || 550);
             netIncomeBs = earnedBs - lavadoDeductionBs - weeklyAssistanceBs;
           } else if (isAssistant) {
             lavadosCount = serviceTransactions.filter(t => t.metadata?.didWash).length;
-            const totalBarberAssistanceUsd = Object.values(assistantConfig.splits || {}).reduce((sum, val) => sum + (Number(val) || 0), 0);
+            const totalBarberAssistanceUsd = Object.values(assistantConfig?.splits || {}).reduce((sum, val) => sum + (Number(val) || 0), 0);
             weeklyAssistanceUsd = totalBarberAssistanceUsd;
             weeklyAssistanceBs = totalBarberAssistanceUsd * (rates?.usd || 550);
             netIncomeBs = earnedBs + weeklyAssistanceBs;
@@ -2097,7 +2098,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                           <input 
                             type="number" 
                             step="any"
-                            value={assistantConfig.splits[s.id] || 0} 
+                            value={assistantConfig?.splits?.[s.id] || 0} 
                             onChange={(e) => handleBarberSplitChange(s.id, e.target.value)} 
                             style={{ width: '100px', padding: '8px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', textAlign: 'center' }} 
                           />
