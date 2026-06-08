@@ -23,7 +23,7 @@ import SaleServiceModal from './components/SaleServiceModal';
 import HistoryModule from './components/HistoryModule';
 import { dataService } from './services/dataService';
 import logo from './assets/logo.png';
-import StaffProfileModal from './components/StaffProfileModal';
+import UserProfilePage from './components/UserProfilePage';
 import ReportsModule from './components/ReportsModule';
 
 // Mobile Components
@@ -66,7 +66,6 @@ function App() {
   const [isAppLoading, setIsAppLoading] = useState(true);
   const [isTabLoading, setIsTabLoading] = useState(false);
   const [tabParams, setTabParams] = useState({});
-  const [isMyProfileOpen, setIsMyProfileOpen] = useState(false);
   const [isReceptionModalOpen, setIsReceptionModalOpen] = useState(false);
 
   // Multi-currency State
@@ -190,14 +189,26 @@ function App() {
     };
     window.addEventListener('resize', handleResize);
     
+    // One-time cleanup of corrupted default birthday templates in localStorage
+    if (!localStorage.getItem('astro_bday_cleaned_v6')) {
+      localStorage.removeItem('astro_default_bday_message');
+      localStorage.setItem('astro_bday_cleaned_v6', 'true');
+    }
+
+    const bdayMsg = localStorage.getItem('astro_default_bday_message');
+    if (bdayMsg) {
+      console.log('DEBUG BDAY MSG:', bdayMsg);
+      console.log('DEBUG BDAY MSG CODES:', Array.from(bdayMsg).map(c => c.charCodeAt(0)));
+    }
+
     // Initial Load Sequence
     const initApp = async () => {
       const startTime = Date.now();
       await fetchInitialData();
       
-      // Ensure at least 1.5s of "Astro Experience" loader
+      // Ensure at least 300ms of "Astro Experience" loader
       const elapsed = Date.now() - startTime;
-      const delay = Math.max(0, 1500 - elapsed);
+      const delay = Math.max(0, 300 - elapsed);
       
       setTimeout(() => {
         setIsAppLoading(false);
@@ -434,20 +445,17 @@ function App() {
     }
 
     if (tabId === 'my-profile') {
-      setIsMyProfileOpen(true);
+      setTabParams(params);
+      setActiveTab('my-profile');
+      localStorage.setItem('astro_active_tab', 'my-profile');
       if (isMobile) setIsSidebarOpen(false);
       return;
     }
     setTabParams(params);
     if (tabId === activeTab) return;
-    setIsTabLoading(true);
-    // Short transition to maintain the premium feel
-    setTimeout(() => {
-      setActiveTab(tabId);
-      localStorage.setItem('astro_active_tab', tabId);
-      setIsTabLoading(false);
-      if (isMobile) setIsSidebarOpen(false);
-    }, 600);
+    setActiveTab(tabId);
+    localStorage.setItem('astro_active_tab', tabId);
+    if (isMobile) setIsSidebarOpen(false);
   };
 
   const handleCaptureFullPage = async () => {
@@ -519,6 +527,7 @@ function App() {
             handleSeedData={handleSeedData} 
             rates={effectiveRates}
             onNavigate={handleTabChange}
+            onRefresh={fetchInitialData}
           />
         );
       case 'reception': return <div className="p-container"><ReceptionModule isMobile={isMobile} /></div>;
@@ -532,6 +541,17 @@ function App() {
       case 'clients': return <div className="p-container"><ClientModule isMobile={isMobile} clients={dbData.clients} onRefresh={fetchInitialData} initialClientId={tabParams.clientId} /></div>;
       case 'personnel': return <div className="p-container"><PersonnelModule isMobile={isMobile} inventory={dbData.inventory || []} /></div>;
       case 'history': return <div className="p-container"><HistoryModule isMobile={isMobile} rates={effectiveRates} onNavigate={handleTabChange} /></div>;
+      case 'my-profile':
+        return (
+          <div className="p-container">
+            <UserProfilePage 
+              isMobile={isMobile}
+              staffMember={dbData.staff.find(s => s.id === user?.id)} 
+              inventory={dbData.inventory || []}
+              onUpdate={fetchInitialData}
+            />
+          </div>
+        );
       default: return <div className="p-container"><DashboardModule isMobile={isMobile} currency={currency} rates={effectiveRates} onNavigate={handleTabChange} /></div>;
     }
   };
@@ -541,8 +561,8 @@ function App() {
   if (isMobile) {
     return (
       <MobileLayout activeTab={activeTab} setActiveTab={handleTabChange} onOpenSale={() => setIsSaleModalOpen(true)}>
-        <AstroLoader visible={isAppLoading || isTabLoading} />
-        <div key={activeTab} className="animate-fade-in" style={{ height: '100%' }}>
+        <AstroLoader visible={isAppLoading} />
+        <div key={activeTab} className={isAppLoading ? "opacity-0" : "animate-fade-in"} style={{ height: '100%' }}>
           {renderContent()}
         </div>
         <SaleServiceModal 
@@ -557,49 +577,17 @@ function App() {
           rates={rates}
           currency={currency}
         />
-        <StaffProfileModal 
-          isOpen={isMyProfileOpen} 
-          onClose={() => setIsMyProfileOpen(false)} 
-          staffMember={dbData.staff.find(s => s.id === user?.id)} 
-          inventory={dbData.inventory || []}
-          onUpdate={fetchInitialData} 
-        />
         <NotificationsDrawer 
           isOpen={isNotificationsOpen} 
           onClose={() => setIsNotificationsOpen(false)} 
         />
-        {/* Botón temporal de captura de pantalla completa */}
-        <button
-          onClick={handleCaptureFullPage}
-          style={{
-            position: 'fixed',
-            bottom: '80px',
-            right: '20px',
-            zIndex: 4000,
-            background: 'var(--gold-gradient)',
-            color: 'black',
-            border: 'none',
-            borderRadius: '50px',
-            padding: '10px 16px',
-            fontSize: '11px',
-            fontWeight: '900',
-            cursor: 'pointer',
-            boxShadow: 'var(--gold-glow)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}
-        >
-          📸 Captura
-        </button>
       </MobileLayout>
     );
   }
 
   return (
-    <div className="app-container" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-primary)', position: 'relative' }}>
-      <AstroLoader visible={isAppLoading || isTabLoading} />
-      <ParticleBackground />
+    <div className="app-container" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'transparent', position: 'relative' }}>
+      <AstroLoader visible={isAppLoading} />
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={(id) => handleTabChange(id, {})} 
@@ -614,11 +602,12 @@ function App() {
         marginLeft: isMobile ? '0' : (isCollapsed ? '80px' : '260px'), 
         padding: 'var(--spacing-xl)', 
         minHeight: '100vh',
-        backgroundColor: 'var(--bg-primary)',
+        backgroundColor: 'transparent',
         transition: 'margin-left 0.3s ease'
       }}>
-        <div key={activeTab} className="animate-fade-in" style={{ height: '100%' }}>
+        <div key={activeTab} className={isAppLoading ? "opacity-0" : "animate-fade-in"} style={{ height: '100%' }}>
           <TopBar 
+            activeTab={activeTab}
             rates={effectiveRates} 
             onOpenSale={() => setIsReceptionModalOpen(true)}
             activeRateType={activeRateType}
@@ -630,21 +619,45 @@ function App() {
       </main>
 
       {/* Reception Modal (Floating Workspace) */}
-      {isReceptionModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 3000, backgroundColor: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '0' : '20px' }}>
-          <div className="glass-card animate-scale-in" style={{ width: '100%', maxWidth: '1400px', height: isMobile ? '100%' : '90vh', overflowY: 'auto', borderRadius: isMobile ? '0' : '32px', border: '1px solid rgba(212,175,55,0.3)', position: 'relative', background: 'var(--bg-primary)' }}>
-            <button 
-              onClick={() => setIsReceptionModalOpen(false)}
-              style={{ position: 'absolute', right: '20px', top: '20px', zIndex: 3001, background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <X size={20} />
-            </button>
-            <div style={{ padding: isMobile ? '20px' : '40px' }}>
-              <ReceptionModule isMobile={isMobile} rates={effectiveRates} />
-            </div>
+      <div style={{ 
+        position: 'fixed', 
+        inset: 0, 
+        zIndex: 3000, 
+        backgroundColor: 'rgba(0,0,0,0.9)', 
+        backdropFilter: isReceptionModalOpen ? 'blur(20px)' : 'blur(0px)', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        padding: isMobile ? '0' : '20px',
+        opacity: isReceptionModalOpen ? 1 : 0,
+        visibility: isReceptionModalOpen ? 'visible' : 'hidden',
+        pointerEvents: isReceptionModalOpen ? 'auto' : 'none',
+        transition: 'opacity 0.35s ease, backdrop-filter 0.35s ease, visibility 0.35s'
+      }}>
+        <div className="glass-card" style={{ 
+          width: '100%', 
+          maxWidth: '1400px', 
+          height: isMobile ? '100%' : '90vh', 
+          overflowY: 'auto', 
+          borderRadius: isMobile ? '0' : '32px', 
+          border: '1px solid rgba(212,175,55,0.3)', 
+          position: 'relative', 
+          background: 'var(--bg-primary)',
+          transform: isReceptionModalOpen ? 'scale(1) translateY(0)' : 'scale(0.96) translateY(20px)',
+          transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease',
+          opacity: isReceptionModalOpen ? 1 : 0
+        }}>
+          <button 
+            onClick={() => setIsReceptionModalOpen(false)}
+            style={{ position: 'absolute', right: '20px', top: '20px', zIndex: 3001, background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <X size={20} />
+          </button>
+          <div style={{ padding: isMobile ? '20px' : '40px' }}>
+            <ReceptionModule isMobile={isMobile} rates={effectiveRates} />
           </div>
         </div>
-      )}
+      </div>
 
       <SaleServiceModal 
         isOpen={isSaleModalOpen} 
@@ -658,44 +671,10 @@ function App() {
         rates={rates}
         currency={currency}
       />
-      <StaffProfileModal 
-        isOpen={isMyProfileOpen} 
-        onClose={() => setIsMyProfileOpen(false)} 
-        staffMember={dbData.staff.find(s => s.id === user?.id)} 
-        inventory={dbData.inventory || []}
-        onUpdate={fetchInitialData} 
-      />
       <NotificationsDrawer 
         isOpen={isNotificationsOpen} 
         onClose={() => setIsNotificationsOpen(false)} 
       />
-      {/* Botón temporal de captura de pantalla completa */}
-      <button
-        onClick={handleCaptureFullPage}
-        style={{
-          position: 'fixed',
-          bottom: '25px',
-          right: '25px',
-          zIndex: 4000,
-          background: 'var(--gold-gradient)',
-          color: 'black',
-          border: 'none',
-          borderRadius: '50px',
-          padding: '12px 22px',
-          fontSize: '13px',
-          fontWeight: '900',
-          cursor: 'pointer',
-          boxShadow: 'var(--gold-glow)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          transition: 'transform 0.2s',
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-      >
-        📸 Captura Completa
-      </button>
     </div>
   );
 }

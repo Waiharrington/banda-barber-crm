@@ -71,44 +71,69 @@ const MobileBottomNav = ({ activeTab, setActiveTab }) => {
     <>
       <nav style={{
         position: 'fixed',
-        bottom: '16px',
-        left: '16px',
-        right: '16px',
+        bottom: '0',
+        left: '0',
+        right: '0',
         height: '70px',
-        backgroundColor: 'rgba(20, 20, 20, 0.9)',
+        backgroundColor: '#111111',
         backdropFilter: 'blur(20px)',
-        borderRadius: '35px',
+        borderRadius: '0',
         display: 'flex',
         justifyContent: 'space-around',
         alignItems: 'center',
-        padding: '0 10px',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+        padding: '0 10px 12px 10px', // Extra bottom padding for safe-area / traditional look
+        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: '0 -4px 20px rgba(0,0,0,0.6)',
         zIndex: 1000
       }}>
-        {mainItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => handleSelect(item.id)}
-            style={{
-              background: 'none',
-              border: 'none',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '10px',
-              color: activeTab === item.id ? 'var(--gold-primary)' : 'var(--text-muted)',
-              transition: 'all 0.2s',
-              cursor: 'pointer'
-            }}
-          >
-            <item.icon size={22} strokeWidth={activeTab === item.id ? 2.5 : 2} />
-            <span style={{ fontSize: '10px', fontWeight: activeTab === item.id ? '700' : '500' }}>
-              {item.label}
-            </span>
-          </button>
-        ))}
+        {mainItems.map((item) => {
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => handleSelect(item.id)}
+              style={{
+                background: 'none',
+                border: 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '12px 10px 4px 10px',
+                color: isActive ? 'var(--gold-primary)' : 'var(--text-muted)',
+                transition: 'all 0.2s',
+                cursor: 'pointer',
+                position: 'relative',
+                height: '100%',
+                justifyContent: 'center'
+              }}
+            >
+              {isActive && (
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  width: '28px',
+                  height: '3px',
+                  borderRadius: '0 0 3px 3px',
+                  background: 'var(--gold-gradient)',
+                  boxShadow: '0 0 10px var(--gold-primary)',
+                  animation: 'fadeIn 0.25s ease-out'
+                }} />
+              )}
+              <item.icon 
+                size={22} 
+                strokeWidth={isActive ? 2.5 : 2} 
+                style={{
+                  transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                  transition: 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                }}
+              />
+              <span style={{ fontSize: '10px', fontWeight: isActive ? '700' : '500' }}>
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
 
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -119,13 +144,33 @@ const MobileBottomNav = ({ activeTab, setActiveTab }) => {
             flexDirection: 'column',
             alignItems: 'center',
             gap: '4px',
-            padding: '10px',
+            padding: '12px 10px 4px 10px',
             color: isMenuOpen ? 'var(--gold-primary)' : 'var(--text-muted)',
             transition: 'all 0.2s',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            position: 'relative',
+            height: '100%',
+            justifyContent: 'center'
           }}
         >
-          {isMenuOpen ? <X size={22} /> : <MoreHorizontal size={22} />}
+          {isMenuOpen && (
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              width: '28px',
+              height: '3px',
+              borderRadius: '0 0 3px 3px',
+              background: 'var(--gold-gradient)',
+              boxShadow: '0 0 10px var(--gold-primary)',
+              animation: 'fadeIn 0.25s ease-out'
+            }} />
+          )}
+          <div style={{
+            transform: isMenuOpen ? 'scale(1.1) rotate(90deg)' : 'scale(1) rotate(0deg)',
+            transition: 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }}>
+            {isMenuOpen ? <X size={22} /> : <MoreHorizontal size={22} />}
+          </div>
           <span style={{ fontSize: '10px', fontWeight: isMenuOpen ? '700' : '500' }}>Más</span>
         </button>
       </nav>
@@ -147,7 +192,7 @@ const MobileBottomNav = ({ activeTab, setActiveTab }) => {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'flex-end',
-            padding: '100px 16px 110px'
+            padding: '100px 16px 82px'
           }}
         >
           <div 

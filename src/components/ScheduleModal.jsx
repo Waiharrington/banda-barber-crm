@@ -9,6 +9,7 @@ import {
   Check
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
+import AnimatedModal from './AnimatedModal';
 
 const ScheduleModal = ({ isOpen, onClose, client, service, staff, onSchedule, defaultDate }) => {
   const [selectedDate, setSelectedDate] = useState(defaultDate || new Date());
@@ -83,11 +84,11 @@ const ScheduleModal = ({ isOpen, onClose, client, service, staff, onSchedule, de
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)', zIndex: 20000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-      <div className="glass-card animate-scale-in" style={{ maxWidth: '600px', width: '100%', borderRadius: '32px', padding: '32px', border: '1px solid rgba(212,175,55,0.2)' }}>
+    <AnimatedModal isOpen={isOpen}>
+      {(overlayClass, cardClass) => (
+        <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)', zIndex: 20000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div className={`glass-card ${cardClass}`} style={{ maxWidth: '600px', width: '100%', borderRadius: '32px', padding: '32px', border: '1px solid rgba(212,175,55,0.2)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <div>
             <h2 style={{ fontSize: '24px', fontWeight: '900' }}>Agendar <span className="text-gold">Turno</span></h2>
@@ -173,6 +174,8 @@ const ScheduleModal = ({ isOpen, onClose, client, service, staff, onSchedule, de
         </button>
       </div>
     </div>
+      )}
+    </AnimatedModal>
   );
 };
 

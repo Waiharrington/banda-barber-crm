@@ -16,7 +16,13 @@ import {
   Zap,
   Droplets,
   Edit3,
-  XCircle
+  XCircle,
+  Sparkles,
+  Flame,
+  Eye,
+  Smile,
+  RefreshCw,
+  Wind
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -24,7 +30,11 @@ import AstroSelect from './AstroSelect';
 import { notificationService } from '../services/notificationService';
 import AstroDialog from './AstroDialog';
 import NewClientModal from './NewClientModal';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, ChevronDown } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { ModalShield } from '../context/ModalContext';
+import AnimatedModal from './AnimatedModal';
+
 
 const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const { showToast, triggerConfetti, triggerRocket } = useNotifs();
@@ -61,6 +71,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const [methodUsd, setMethodUsd] = useState('Efectivo');
   const [methodBs, setMethodBs] = useState('Pago Móvil');
   const [selectedWasherId, setSelectedWasherId] = useState('');
+  const [isWasherDropdownOpen, setIsWasherDropdownOpen] = useState(false);
+  const [openTipDropdownId, setOpenTipDropdownId] = useState(null);
   const [washCount, setWashCount] = useState(0);
   const [bundledApps, setBundledApps] = useState([]);
   const [linkedApps, setLinkedApps] = useState([]);
@@ -1579,24 +1591,120 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     </div>
 
                     {washCount > 0 && (
-                      <div className="animate-fade-in">
-                        <select 
-                          value={selectedWasherId}
-                          onChange={e => setSelectedWasherId(e.target.value)}
-                          style={{ width: '100%', padding: isMobile ? '8px 10px' : '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: isMobile ? '11px' : '13px' }}
+                      <div className="animate-fade-in" style={{ position: 'relative' }}>
+                        {/* Selected value button */}
+                        <div 
+                          onClick={() => setIsWasherDropdownOpen(!isWasherDropdownOpen)}
+                          style={{
+                            width: '100%',
+                            padding: isMobile ? '10px 12px' : '14px 16px',
+                            borderRadius: '12px',
+                            background: 'rgba(212, 175, 55, 0.04)',
+                            border: '1px solid rgba(212, 175, 55, 0.25)',
+                            color: 'white',
+                            fontSize: isMobile ? '12px' : '14px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            transition: 'all 0.2s',
+                            boxSizing: 'border-box'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(212,175,55,0.6)'}
+                          onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(212,175,55,0.25)'}
                         >
-                          <option value="">Seleccionar Asistente de Lavado</option>
-                          {allStaff
-                            .filter(s => s.role?.toLowerCase().includes('asistente'))
-                            .map(s => {
-                              return (
-                                <option key={s.id} value={s.id}>
-                                  {s.name} (${s.washing_rate || 0}/wash) - Disponible
-                                </option>
-                              );
-                            })
-                          }
-                        </select>
+                          <span>
+                            {selectedWasherId 
+                              ? (() => {
+                                  const washer = allStaff.find(s => s.id === selectedWasherId);
+                                  return washer ? `${washer.name} ($${washer.washing_rate || 0}/lavado) - Disponible` : 'Seleccionar Asistente de Lavado';
+                                })()
+                              : 'Seleccionar Asistente de Lavado'
+                            }
+                          </span>
+                          <ChevronDown size={16} color="var(--gold-primary)" style={{
+                            transform: isWasherDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.2s ease',
+                            flexShrink: 0
+                          }} />
+                        </div>
+
+                        {/* Custom Dropdown Menu */}
+                        {isWasherDropdownOpen && (
+                          <>
+                            {/* Transparent overlay to close dropdown */}
+                            <div 
+                              onClick={() => setIsWasherDropdownOpen(false)}
+                              style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                            />
+                            
+                            <div className="animate-scale-in" style={{
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              right: 0,
+                              marginTop: '8px',
+                              background: 'rgba(30, 30, 35, 0.96)',
+                              backdropFilter: 'blur(30px)',
+                              border: '1.5px solid rgba(212, 175, 55, 0.3)',
+                              borderRadius: '16px',
+                              overflowY: 'auto',
+                              maxHeight: '180px',
+                              zIndex: 1000,
+                              boxShadow: '0 15px 35px rgba(0, 0, 0, 0.6)'
+                            }}>
+                              {/* Option: Seleccionar Asistente de Lavado */}
+                              <div
+                                onClick={() => {
+                                  setSelectedWasherId('');
+                                  setIsWasherDropdownOpen(false);
+                                }}
+                                style={{
+                                  padding: '12px 16px',
+                                  cursor: 'pointer',
+                                  fontSize: isMobile ? '12px' : '14px',
+                                  color: 'rgba(255, 255, 255, 0.5)',
+                                  borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
+                                  transition: 'background-color 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)'}
+                                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                              >
+                                Seleccionar Asistente de Lavado
+                              </div>
+                              
+                              {allStaff
+                                .filter(s => s.role?.toLowerCase().includes('asistente'))
+                                .map(s => (
+                                  <div
+                                    key={s.id}
+                                    onClick={() => {
+                                      setSelectedWasherId(s.id);
+                                      setIsWasherDropdownOpen(false);
+                                    }}
+                                    style={{
+                                      padding: '12px 16px',
+                                      cursor: 'pointer',
+                                      fontSize: isMobile ? '12px' : '14px',
+                                      color: 'white',
+                                      borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                      transition: 'background-color 0.2s',
+                                      backgroundColor: selectedWasherId === s.id ? 'rgba(212, 175, 55, 0.1)' : 'transparent'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.06)'}
+                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = selectedWasherId === s.id ? 'rgba(212, 175, 55, 0.1)' : 'transparent'}
+                                  >
+                                    <span style={{ fontWeight: selectedWasherId === s.id ? '800' : '500' }}>{s.name}</span>
+                                    <span style={{ fontSize: '11px', color: 'var(--gold-primary)' }}>${s.washing_rate || 0}/lavado</span>
+                                  </div>
+                                ))
+                              }
+                            </div>
+                          </>
+                        )}
                         {allStaff.filter(s => s.role?.toLowerCase().includes('asistente')).length > 1 && !selectedWasherId && (
                           <div style={{ marginTop: '6px', fontSize: '9px', color: '#ff9500', fontWeight: '800' }}>
                             ⚠️ Hay múltiples asistentes. Por favor selecciona una.
@@ -1623,21 +1731,112 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {tips.map((t, idx) => (
-                      <div key={t.id} style={{ display: 'flex', gap: '8px', alignItems: 'center' }} className="animate-fade-in">
-                        <select 
-                          value={t.staffId} 
-                          onChange={(e) => {
-                            const newTips = [...tips];
-                            newTips[idx].staffId = e.target.value;
-                            setTips(newTips);
-                          }}
-                          style={{ flex: 1, height: '36px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0 8px' }}
-                        >
-                          <option value="" disabled>Seleccionar Integrante</option>
-                          {allStaff.map(s => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                          ))}
-                        </select>
+                       <div key={t.id} style={{ display: 'flex', gap: '8px', alignItems: 'center', position: 'relative', width: '100%' }} className="animate-fade-in">
+                        {/* Custom Dropdown Trigger */}
+                        <div style={{ flex: 1, position: 'relative' }}>
+                          <div
+                            onClick={() => setOpenTipDropdownId(openTipDropdownId === t.id ? null : t.id)}
+                            style={{
+                              height: '36px',
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              borderRadius: '10px',
+                              fontSize: '12px',
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                              color: 'white',
+                              padding: '0 12px',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              cursor: 'pointer',
+                              userSelect: 'none',
+                              boxSizing: 'border-box'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
+                          >
+                            <span>
+                              {t.staffId 
+                                ? allStaff.find(s => s.id === t.staffId)?.name || 'Seleccionar Integrante'
+                                : 'Seleccionar Integrante'
+                              }
+                            </span>
+                            <ChevronDown size={14} color="var(--gold-primary)" style={{
+                              transform: openTipDropdownId === t.id ? 'rotate(180deg)' : 'rotate(0deg)',
+                              transition: 'transform 0.2s ease',
+                              flexShrink: 0
+                            }} />
+                          </div>
+
+                          {/* Custom Dropdown Menu */}
+                          {openTipDropdownId === t.id && (
+                            <>
+                              <div 
+                                onClick={() => setOpenTipDropdownId(null)}
+                                style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                              />
+                              <div className="animate-scale-in" style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                marginTop: '4px',
+                                background: 'rgba(30, 30, 35, 0.96)',
+                                backdropFilter: 'blur(30px)',
+                                border: '1.5px solid rgba(212, 175, 55, 0.3)',
+                                borderRadius: '12px',
+                                overflowY: 'auto',
+                                maxHeight: '180px',
+                                zIndex: 1000,
+                                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)'
+                              }}>
+                                <div
+                                  onClick={() => {
+                                    const newTips = [...tips];
+                                    newTips[idx].staffId = '';
+                                    setTips(newTips);
+                                    setOpenTipDropdownId(null);
+                                  }}
+                                  style={{
+                                    padding: '10px 12px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    color: 'rgba(255, 255, 255, 0.5)',
+                                    borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
+                                    transition: 'background-color 0.2s'
+                                  }}
+                                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)'}
+                                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                  Seleccionar Integrante
+                                </div>
+                                {allStaff.map(s => (
+                                  <div
+                                    key={s.id}
+                                    onClick={() => {
+                                      const newTips = [...tips];
+                                      newTips[idx].staffId = s.id;
+                                      setTips(newTips);
+                                      setOpenTipDropdownId(null);
+                                    }}
+                                    style={{
+                                      padding: '10px 12px',
+                                      cursor: 'pointer',
+                                      fontSize: '12px',
+                                      color: 'white',
+                                      borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
+                                      transition: 'background-color 0.2s',
+                                      backgroundColor: t.staffId === s.id ? 'rgba(212, 175, 55, 0.1)' : 'transparent'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.06)'}
+                                    onMouseLeave={e => e.currentTarget.style.backgroundColor = t.staffId === s.id ? 'rgba(212, 175, 55, 0.1)' : 'transparent'}
+                                  >
+                                    {s.name}
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
                         
                         {/* Currency Selector (USD/BS Toggle) */}
                         <button
@@ -1849,141 +2048,307 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       />
 
       {/* Product Selection Modal */}
-      {showProductModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div className="glass-card animate-scale-in" style={{ maxWidth: '600px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontWeight: '900' }}>Seleccionar Productos</h2>
-              <button onClick={() => {setShowProductModal(false); setSearchTerm('');}} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
-            </div>
-            <div style={{ position: 'relative', marginBottom: '24px' }}>
-              <Search style={{ position: 'absolute', left: '16px', top: '14px' }} size={18} color="var(--gold-primary)" />
-              <input type="text" placeholder="Buscar producto..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '14px 48px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'white' }} />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
-              {inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase())).map(item => {
-                const isOutOfStock = (item.stock || 0) <= 0;
-                return (
-                  <button 
-                    key={item.id} 
-                    onClick={() => !isOutOfStock && handleAddToCart(item)} 
-                    disabled={isOutOfStock}
-                    style={{ 
-                      padding: '16px', 
-                      borderRadius: '20px', 
-                      border: isOutOfStock ? '1px dashed rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.05)', 
-                      background: 'rgba(255,255,255,0.02)', 
-                      textAlign: 'center', 
-                      cursor: isOutOfStock ? 'not-allowed' : 'pointer',
-                      opacity: isOutOfStock ? 0.6 : 1
-                    }} 
-                    className="hover-item"
-                  >
-                    {item.image_url && <img src={item.image_url} style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '12px', marginBottom: '10px', filter: isOutOfStock ? 'grayscale(100%)' : 'none' }} alt="" />}
-                    <div style={{ fontWeight: '800', fontSize: '13px', marginBottom: '4px', color: isOutOfStock ? 'var(--text-muted)' : 'white' }}>{item.name}</div>
-                    
-                    <div style={{ fontSize: '11px', fontWeight: '800', color: isOutOfStock ? '#ff453a' : '#30d158', marginBottom: '8px' }}>
-                      {isOutOfStock ? 'Agotado (Sin Stock)' : `Stock: ${item.stock}`}
+      <AnimatedModal isOpen={showProductModal}>
+        {(overlayClass, cardClass) => (
+          <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+            <div className={`${cardClass}`} style={{ maxWidth: '680px', width: '100%', borderRadius: '32px', border: '1px solid rgba(212,175,55,0.25)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'linear-gradient(160deg, rgba(30,30,32,0.98) 0%, rgba(20,20,22,0.99) 100%)', boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset' }}>
+              
+              {/* Header */}
+              <div style={{ padding: '28px 28px 0', flexShrink: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.05))', border: '1px solid rgba(212,175,55,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <ShoppingBag size={18} color="var(--gold-primary)" />
+                      </div>
+                      <h2 style={{ fontWeight: '900', fontSize: '22px', letterSpacing: '-0.3px', color: 'white' }}>Seleccionar Producto</h2>
                     </div>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginLeft: '46px' }}>
+                      {inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase())).length} productos disponibles
+                    </p>
+                  </div>
+                  <button onClick={() => {setShowProductModal(false); setSearchTerm('');}} style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', flexShrink: 0 }}>×</button>
+                </div>
 
-                    <div style={{ color: 'var(--gold-primary)', fontWeight: '900' }}>
-                      <div>${item.price}</div>
-                      {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ {Math.round(item.price * rates.usd).toLocaleString()} Bs.</div>}
-                    </div>
-                  </button>
-                );
-              })}
+                {/* Search */}
+                <div style={{ position: 'relative', marginBottom: '20px' }}>
+                  <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 1 }} size={16} color="rgba(212,175,55,0.7)" />
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Buscar por nombre..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{ width: '100%', height: '44px', padding: '0 44px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', color: 'white', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              {/* Product Grid */}
+              <div style={{ padding: '0 28px 28px', overflowY: 'auto', flex: 1 }}>
+                {inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <ShoppingBag size={40} style={{ opacity: 0.2, marginBottom: '12px' }} />
+                    <p>Sin resultados para "{searchTerm}"</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '14px' }}>
+                    {inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase())).map(item => {
+                      const isOutOfStock = (item.stock || 0) <= 0;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => !isOutOfStock && handleAddToCart(item)}
+                          disabled={isOutOfStock}
+                          style={{
+                            padding: '0',
+                            borderRadius: '20px',
+                            border: isOutOfStock ? '1px solid rgba(255,59,48,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                            background: isOutOfStock ? 'rgba(255,59,48,0.03)' : 'rgba(255,255,255,0.03)',
+                            textAlign: 'left',
+                            cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                            opacity: isOutOfStock ? 0.55 : 1,
+                            overflow: 'hidden',
+                            transition: 'all 0.22s cubic-bezier(0.4,0,0.2,1)',
+                          }}
+                          onMouseEnter={e => { if (!isOutOfStock) { e.currentTarget.style.border = '1px solid rgba(212,175,55,0.5)'; e.currentTarget.style.background = 'rgba(212,175,55,0.06)'; e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.3)'; }}}
+                          onMouseLeave={e => { e.currentTarget.style.border = isOutOfStock ? '1px solid rgba(255,59,48,0.2)' : '1px solid rgba(255,255,255,0.07)'; e.currentTarget.style.background = isOutOfStock ? 'rgba(255,59,48,0.03)' : 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                        >
+                          {/* Image area */}
+                          <div style={{ width: '100%', height: '110px', background: 'rgba(255,255,255,0.03)', overflow: 'hidden', position: 'relative' }}>
+                            {item.image_url
+                              ? <img src={item.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: isOutOfStock ? 'grayscale(80%)' : 'none', transition: 'transform 0.3s' }} alt="" />
+                              : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <ShoppingBag size={32} color="rgba(255,255,255,0.12)" />
+                                </div>
+                            }
+                            {/* Stock badge */}
+                            <div style={{ position: 'absolute', top: '8px', right: '8px', padding: '3px 8px', borderRadius: '20px', background: isOutOfStock ? 'rgba(255,59,48,0.85)' : 'rgba(48,209,88,0.85)', backdropFilter: 'blur(6px)', fontSize: '10px', fontWeight: '800', color: 'white', letterSpacing: '0.3px' }}>
+                              {isOutOfStock ? 'AGOTADO' : `×${item.stock}`}
+                            </div>
+                          </div>
+
+                          {/* Info area */}
+                          <div style={{ padding: '12px 14px 14px' }}>
+                            <div style={{ fontWeight: '800', fontSize: '13px', color: 'white', marginBottom: '8px', lineHeight: '1.3' }}>{item.name}</div>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                              <span style={{ color: 'var(--gold-primary)', fontWeight: '900', fontSize: '18px' }}>${item.price}</span>
+                            </div>
+                            {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>≈ {Math.round(item.price * rates.usd).toLocaleString()} Bs.</div>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatedModal>
 
       {/* Extras Selection Modal */}
-      {showExtraModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div className="glass-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontWeight: '900' }}>Servicios Extras</h2>
-              <button onClick={() => setShowExtraModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '10px' }}>
-              {allExtras.map(extra => (
-                <button key={extra.id} onClick={() => handleAddExtra(extra)} style={{ padding: '20px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.2)', background: 'rgba(212,175,55,0.02)', textAlign: 'left', cursor: 'pointer' }} className="hover-item">
-                  <div style={{ fontWeight: '800', fontSize: '14px', marginBottom: '4px', color: 'white' }}>{extra.name}</div>
-                  <div style={{ color: 'var(--gold-primary)', fontWeight: '900' }}>
-                    <div>${extra.price}</div>
-                    {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ {Math.round(extra.price * rates.usd).toLocaleString()} Bs.</div>}
+      <AnimatedModal isOpen={showExtraModal}>
+        {(overlayClass, cardClass) => (
+          <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+            <div className={`${cardClass}`} style={{ maxWidth: '520px', width: '100%', borderRadius: '32px', border: '1px solid rgba(212,175,55,0.25)', overflow: 'hidden', background: 'linear-gradient(160deg, rgba(30,30,32,0.98) 0%, rgba(20,20,22,0.99) 100%)', boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset' }}>
+              {/* Header */}
+              <div style={{ padding: '28px 28px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.05))', border: '1px solid rgba(212,175,55,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Zap size={20} color="var(--gold-primary)" />
+                    </div>
+                    <div>
+                      <h2 style={{ fontWeight: '900', fontSize: '20px', color: 'white', marginBottom: '2px' }}>Servicios Extras</h2>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{allExtras.length} extras disponibles</p>
+                    </div>
                   </div>
-                </button>
-              ))}
+                  <button onClick={() => setShowExtraModal(false)} style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                </div>
+              </div>
+              {/* Items in a 2-column grid */}
+              <div style={{ padding: '16px 20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', maxHeight: '60vh', overflowY: 'auto' }}>
+                {allExtras.map((extra) => {
+                  // Function to get an alusive icon and background style based on the service name
+                  const getExtraItemConfig = (name) => {
+                    const cleanName = name.toLowerCase();
+                    // Alisado / Hidratación Capilar (Tratamiento térmico o secado)
+                    if (cleanName.includes('alisado') || cleanName.includes('hidratación') || cleanName.includes('hidratacion') || cleanName.includes('planchado')) {
+                      return { Icon: Flame, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                    }
+                    // Lavados (Agua y shampoo)
+                    if (cleanName.includes('lavado')) {
+                      return { Icon: Droplets, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                    }
+                    // Mascarillas (Black mask, mascarillas)
+                    if (cleanName.includes('mask') || cleanName.includes('mascarilla')) {
+                      return { Icon: Smile, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                    }
+                    // Epilaciones (Nariz, oídos, cejas)
+                    if (cleanName.includes('nariz') || cleanName.includes('epilacion') || cleanName.includes('epilación') || cleanName.includes('oido') || cleanName.includes('oidos') || cleanName.includes('oídos')) {
+                      return { Icon: Scissors, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                    }
+                    // Exfoliaciones y Limpieza de cutis
+                    if (cleanName.includes('exfoliacion') || cleanName.includes('exfoliación') || cleanName.includes('facial') || cleanName.includes('cutis')) {
+                      return { Icon: Sparkles, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                    }
+                    // Afeitado y perfilado de Barba
+                    if (cleanName.includes('barba') || cleanName.includes('afeitado') || cleanName.includes('perfilado')) {
+                      return { Icon: Scissors, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                    }
+                    // Fallback general
+                    return { Icon: Sparkles, color: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)' };
+                  };
+
+                  const config = getExtraItemConfig(extra.name);
+                  const IconComponent = config.Icon;
+
+                  return (
+                    <button
+                      key={extra.id}
+                      onClick={() => handleAddExtra(extra)}
+                      style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'flex-start', 
+                        padding: '16px', 
+                        borderRadius: '18px', 
+                        border: '1px solid rgba(255,255,255,0.08)', 
+                        background: 'rgba(255,255,255,0.02)', 
+                        cursor: 'pointer', 
+                        textAlign: 'left', 
+                        transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                        position: 'relative'
+                      }}
+                      onMouseEnter={e => { 
+                        e.currentTarget.style.background = 'rgba(212,175,55,0.06)'; 
+                        e.currentTarget.style.border = '1px solid rgba(212,175,55,0.35)'; 
+                        e.currentTarget.style.transform = 'translateY(-2px)'; 
+                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+                      }}
+                      onMouseLeave={e => { 
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; 
+                        e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)'; 
+                        e.currentTarget.style.transform = 'translateY(0)'; 
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '12px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: config.bg, border: `1px solid rgba(212,175,55,0.2)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <IconComponent size={18} color={config.color} />
+                        </div>
+                        <div style={{ fontWeight: '900', fontSize: '18px', color: 'var(--gold-primary)' }}>${extra.price}</div>
+                      </div>
+                      
+                      <div style={{ width: '100%' }}>
+                        <div style={{ fontWeight: '800', fontSize: '14px', color: 'white', marginBottom: '4px', lineHeight: '1.3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{extra.name}</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          {rates?.usd > 0 ? (
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>≈ {Math.round(extra.price * rates.usd).toLocaleString()} Bs.</div>
+                          ) : (
+                            <div />
+                          )}
+                          <div style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>+ AGREGAR</div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatedModal>
 
       {/* Service Modal */}
-      {showServiceModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '80px', overflowY: 'auto' }}>
-          <div className="glass-card animate-scale-in" style={{ width: '100%', maxWidth: '600px', borderRadius: '32px', padding: '32px', marginBottom: '80px', position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontWeight: '900' }}>Catálogo de Servicios</h2>
-              <button onClick={() => setShowServiceModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '10px' }}>
-              {allServices.map(service => (
-                <button key={service.id} onClick={() => handleAddService(service)} style={{ padding: '20px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.2)', background: 'rgba(212,175,55,0.02)', textAlign: 'left', cursor: 'pointer' }} className="hover-item">
-                  <div style={{ fontWeight: '800', fontSize: '14px', marginBottom: '4px', color: 'white' }}>{service.name}</div>
-                  <div style={{ color: 'var(--gold-primary)', fontWeight: '900' }}>
-                    <div>${service.price}</div>
-                    {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ {Math.round(service.price * rates.usd).toLocaleString()} Bs.</div>}
+      <AnimatedModal isOpen={showServiceModal}>
+        {(overlayClass, cardClass) => (
+          <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+            <div className={`${cardClass}`} style={{ maxWidth: '600px', width: '100%', borderRadius: '32px', border: '1px solid rgba(212,175,55,0.25)', overflow: 'hidden', background: 'linear-gradient(160deg, rgba(30,30,32,0.98) 0%, rgba(20,20,22,0.99) 100%)', boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset' }}>
+              {/* Header */}
+              <div style={{ padding: '28px 28px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.05))', border: '1px solid rgba(212,175,55,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Scissors size={20} color="var(--gold-primary)" />
+                    </div>
+                    <div>
+                      <h2 style={{ fontWeight: '900', fontSize: '20px', color: 'white', marginBottom: '2px' }}>Catálogo de Servicios</h2>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{allServices.length} servicios disponibles</p>
+                    </div>
                   </div>
-                </button>
-              ))}
+                  <button onClick={() => setShowServiceModal(false)} style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                </div>
+              </div>
+              {/* Items grid */}
+              <div style={{ padding: '16px 20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', maxHeight: '60vh', overflowY: 'auto' }}>
+                {allServices.map((service, i) => (
+                  <button
+                    key={service.id}
+                    onClick={() => handleAddService(service)}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '18px', borderRadius: '18px', border: '1px solid rgba(212,175,55,0.12)', background: 'rgba(212,175,55,0.03)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)', position: 'relative', overflow: 'hidden' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.09)'; e.currentTarget.style.border = '1px solid rgba(212,175,55,0.45)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(212,175,55,0.12)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.03)'; e.currentTarget.style.border = '1px solid rgba(212,175,55,0.12)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    {/* Accent stripe */}
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', background: `linear-gradient(to bottom, hsl(${45 + i * 15}, 80%, 55%), hsl(${45 + i * 15}, 60%, 30%))`, borderRadius: '0 0 0 0' }} />
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
+                      <Scissors size={15} color="var(--gold-primary)" />
+                    </div>
+                    <div style={{ fontWeight: '800', fontSize: '14px', color: 'white', marginBottom: '6px', lineHeight: '1.3' }}>{service.name}</div>
+                    <div style={{ fontWeight: '900', fontSize: '20px', color: 'var(--gold-primary)' }}>${service.price}</div>
+                    {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>≈ {Math.round(service.price * rates.usd).toLocaleString()} Bs.</div>}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatedModal>
 
       {/* Barber Select Modal */}
-      {showBarberModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div className="glass-card animate-scale-in" style={{ width: '100%', maxWidth: '400px', borderRadius: '32px', padding: '32px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontWeight: '900', fontSize: '20px' }}>Seleccionar Barbero / Asistente</h2>
-              <button onClick={() => { setShowBarberModal(false); setIsChangingBarber(false); }} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
-            </div>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '13px' }}>
-              {isChangingBarber ? (
-                "Selecciona el nuevo barbero o asistente para esta cita."
-              ) : (
-                <>Selecciona el barbero o asistente al que se le asignará la comisión por el servicio <strong>{selectedServiceForBarber?.name}</strong>.</>
-              )}
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', maxHeight: '400px', overflowY: 'auto', paddingRight: '8px' }}>
-              {allStaff.filter(s => {
-                const roleName = (s.role?.split('|')[0] || '').toLowerCase();
-                return !roleName.includes('admin') && 
-                       !roleName.includes('recepcionista') && 
-                       !roleName.includes('caja');
-              }).map(barber => (
-                <button 
-                  key={barber.id} 
-                  onClick={() => isChangingBarber ? handleChangeBarber(barber.id) : handleConfirmServiceBarber(barber.id)} 
-                  style={{ padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }} 
-                  className="hover-item"
-                >
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--gold-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black' }}>
-                    <Scissors size={20} />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: '800', color: 'white', fontSize: '15px' }}>{barber.name}</div>
-                  </div>
-                </button>
-              ))}
+      <AnimatedModal isOpen={showBarberModal}>
+        {(overlayClass, cardClass) => (
+          <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+            <div className={`${cardClass} glass-card`} style={{ width: '100%', maxWidth: '400px', borderRadius: '32px', padding: '32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h2 style={{ fontWeight: '900', fontSize: '20px' }}>Seleccionar Barbero / Asistente</h2>
+                <button onClick={() => { setShowBarberModal(false); setIsChangingBarber(false); }} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+              </div>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '13px' }}>
+                {isChangingBarber ? (
+                  "Selecciona el nuevo barbero o asistente para esta cita."
+                ) : (
+                  <>Selecciona el barbero o asistente al que se le asignará la comisión por el servicio <strong>{selectedServiceForBarber?.name}</strong>.</>
+                )}
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', maxHeight: '400px', overflowY: 'auto', paddingRight: '8px' }}>
+                {allStaff.filter(s => {
+                  const roleName = (s.role?.split('|')[0] || '').toLowerCase();
+                  return !roleName.includes('admin') && 
+                         !roleName.includes('recepcionista') && 
+                         !roleName.includes('caja');
+                }).map(barber => (
+                  <button 
+                    key={barber.id} 
+                    onClick={() => isChangingBarber ? handleChangeBarber(barber.id) : handleConfirmServiceBarber(barber.id)} 
+                    style={{ padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }} 
+                    className="hover-item"
+                  >
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--gold-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black' }}>
+                      <Scissors size={20} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: '800', color: 'white', fontSize: '15px' }}>{barber.name}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatedModal>
 
       <NewClientModal 
         isOpen={showNewClientModal}
@@ -1992,69 +2357,71 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       />
 
       {/* Link Citas Modal (Pago Grupal) */}
-      {showLinkModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div className="glass-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', padding: '28px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontWeight: '900', fontSize: '20px' }}>Enlazar Citas en Espera</h2>
-              <button onClick={() => setShowLinkModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
-            </div>
-            
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '13px' }}>
-              Selecciona los clientes que están en silla o pendientes de cobro para cargarlos a la cuenta de <strong>{selectedApp?.clients?.name}</strong>.
-            </p>
+      <AnimatedModal isOpen={showLinkModal}>
+        {(overlayClass, cardClass) => (
+          <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+            <div className={`${cardClass} glass-card`} style={{ maxWidth: '500px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', padding: '28px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h2 style={{ fontWeight: '900', fontSize: '20px' }}>Enlazar Citas en Espera</h2>
+                <button onClick={() => setShowLinkModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+              </div>
+              
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '13px' }}>
+                Selecciona los clientes que están en silla o pendientes de cobro para cargarlos a la cuenta de <strong>{selectedApp?.clients?.name}</strong>.
+              </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '350px', overflowY: 'auto', paddingRight: '8px' }} className="astro-scrollbar">
-              {groupedActiveServices.filter(g => g.client_id !== selectedApp?.client_id && !linkedApps.some(la => la.client_id === g.client_id)).length === 0 ? (
-                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
-                  No hay otros clientes pendientes en silla o por pagar.
-                </div>
-              ) : (
-                groupedActiveServices
-                  .filter(g => g.client_id !== selectedApp?.client_id && !linkedApps.some(la => la.client_id === g.client_id))
-                  .map(group => {
-                    const sNames = group.apps.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Servicio';
-                    const tPrice = group.apps.reduce((acc, a) => acc + (a.services?.price || a.total_price || 0), 0);
-                    return (
-                      <div 
-                        key={group.client_id}
-                        style={{ padding: '14px 16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                      >
-                        <div>
-                          <div style={{ fontWeight: '800', fontSize: '14px', color: 'white' }}>{group.client_name}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{sNames}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '350px', overflowY: 'auto', paddingRight: '8px' }} className="astro-scrollbar">
+                {groupedActiveServices.filter(g => g.client_id !== selectedApp?.client_id && !linkedApps.some(la => la.client_id === g.client_id)).length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                    No hay otros clientes pendientes en silla o por pagar.
+                  </div>
+                ) : (
+                  groupedActiveServices
+                    .filter(g => g.client_id !== selectedApp?.client_id && !linkedApps.some(la => la.client_id === g.client_id))
+                    .map(group => {
+                      const sNames = group.apps.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Servicio';
+                      const tPrice = group.apps.reduce((acc, a) => acc + (a.services?.price || a.total_price || 0), 0);
+                      return (
+                        <div 
+                          key={group.client_id}
+                          style={{ padding: '14px 16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                        >
+                          <div>
+                            <div style={{ fontWeight: '800', fontSize: '14px', color: 'white' }}>{group.client_name}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{sNames}</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontWeight: '700', color: 'var(--gold-primary)', fontSize: '13px' }}>${tPrice}</span>
+                            <button 
+                              onClick={() => {
+                                setLinkedApps([...linkedApps, ...group.apps]);
+                                showToast(`Cita de ${group.client_name} enlazada.`);
+                              }}
+                              className="btn-gold"
+                              style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '900' }}
+                            >
+                              Enlazar
+                            </button>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ fontWeight: '700', color: 'var(--gold-primary)', fontSize: '13px' }}>${tPrice}</span>
-                          <button 
-                            onClick={() => {
-                              setLinkedApps([...linkedApps, ...group.apps]);
-                              showToast(`Cita de ${group.client_name} enlazada.`);
-                            }}
-                            className="btn-gold"
-                            style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '900' }}
-                          >
-                            Enlazar
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-              )}
-            </div>
+                      );
+                    })
+                )}
+              </div>
 
-            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
-              <button 
-                onClick={() => setShowLinkModal(false)} 
-                className="btn-gold" 
-                style={{ padding: '10px 24px', borderRadius: '12px', fontWeight: '800' }}
-              >
-                LISTO
-              </button>
+              <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button 
+                  onClick={() => setShowLinkModal(false)} 
+                  className="btn-gold" 
+                  style={{ padding: '10px 24px', borderRadius: '12px', fontWeight: '800' }}
+                >
+                  LISTO
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatedModal>
 
       <style>{`
         .hover-item:hover {
