@@ -686,4 +686,27 @@ input[type="submit"]:active {
   input, select, textarea {
     font-size: 16px !important;
   }
+
+  /* Remove hover-lift on touch screens — no translateY bounce */
+  button:hover,
+  input[type="submit"]:hover {
+    transform: none !important;
+    filter: brightness(1.05) !important;
+  }
+
+  button:active,
+  input[type="submit"]:active {
+    transform: scale(0.97) !important;
+    filter: brightness(0.95) !important;
+  }
+
+  /* Keep sidebar special rule */
+  .sidebar button:hover {
+    transform: none !important;
+  }
+
+  /* Suppress hover-item translateY lift on mobile */
+  .hover-item:hover {
+    transform: none !important;
+  }
 }
