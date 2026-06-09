@@ -595,7 +595,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
     }
     
     return true;
-  });
+  }), [transactions, filterType, filterService, searchQuery, filterBarber, filterDate, startDate, endDate]);
 
   const handleSaveCosts = (e) => {
     e.preventDefault();
@@ -1360,7 +1360,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
         const weeklyTransactions = useMemo(() => transactions.filter(t => {
           const d = new Date(t.created_at);
           return d >= dateFilterStart && d <= dateFilterEnd;
-        });
+        }), [transactions, dateFilterStart, dateFilterEnd]);
 
         const processedPayroll = useMemo(() => staff.map(st => {
           const serviceTransactions = weeklyTransactions.filter(t => t.type === 'income' && t.metadata?.staffInvolved?.some(x => String(x.staffId) === String(st.id)));
@@ -1440,7 +1440,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             balanceBs,
             staffTransactions
           };
-        }).filter(s => s.balanceBs !== 0 || s.earnedBs > 0 || s.paidBs > 0 || s.valesBs > 0);
+        }), [staff, weeklyTransactions, rates, assistantConfig]).filter(s => s.balanceBs !== 0 || s.earnedBs > 0 || s.paidBs > 0 || s.valesBs > 0);
 
         const astroGrossIncomeBs = processedPayroll.reduce((sum, s) => sum + (s.isBarber ? s.grossIncomeBs : 0), 0);
         const totalStaffNetIncomeBs = processedPayroll.reduce((sum, s) => sum + s.netIncomeBs, 0);
