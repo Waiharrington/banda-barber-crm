@@ -23,7 +23,7 @@ const MobileBottomNav = ({ activeTab, setActiveTab }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const allMainItems = [
-    { id: 'dashboard', label: 'Inicio', icon: Home, roles: ['Admin'] },
+    { id: 'dashboard', label: 'Inicio', icon: Home, roles: ['Admin', 'Asistente de Lavado'] },
     { id: 'clients', label: 'Clientes', icon: Users, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja'] },
     { id: 'inventory', label: 'Stock', icon: Package, roles: ['Admin', 'Caja'] },
     { id: 'finance', label: 'Caja', icon: Wallet, roles: ['Admin', 'Caja'] },
@@ -33,8 +33,8 @@ const MobileBottomNav = ({ activeTab, setActiveTab }) => {
     { id: 'scheduling', label: 'Agenda', icon: Calendar, roles: ['Admin', 'Barbero', 'Recepcionista'] },
     { id: 'reception', label: 'Recepción', icon: UserCircle, roles: ['Admin', 'Recepcionista'] },
     { id: 'checkout', label: 'Caja', icon: Wallet, roles: ['Admin', 'Caja'] },
-    { id: 'barber', label: 'Panel Barber', icon: Scissors, roles: ['Admin', 'Barbero'] },
-    { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente'] },
+    { id: 'barber', label: 'Panel Barber', icon: Scissors, roles: ['Admin', 'Barbero', 'Asistente de Lavado'] },
+    { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
     { id: 'personnel', label: 'Equipo', icon: Scissors, roles: ['Admin'] },
     { id: 'reports', label: 'Reportes', icon: BarChart3, roles: ['Admin'] },
     { id: 'services', label: 'Servicios', icon: Star, roles: ['Admin'] },
@@ -46,6 +46,11 @@ const MobileBottomNav = ({ activeTab, setActiveTab }) => {
 
     if (roleName === 'Admin') return true;
     
+    // Asistente de Lavado: only dashboard, history, barber, my-profile
+    if (roleName === 'Asistente de Lavado') {
+      return ['dashboard', 'history', 'barber', 'my-profile'].includes(item.id);
+    }
+
     if (customPerms) {
       const perms = customPerms.split(',');
       return perms.includes(item.id);
