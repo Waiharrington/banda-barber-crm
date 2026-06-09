@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {  useState, useEffect , useMemo } from 'react';
 import { useNotifs } from '../context/NotificationContext';
 import { 
   Plus, 
@@ -545,7 +545,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   const breakEven = totalFixedCosts / 0.4; // Assuming 40% margin (after 60% commission)
   const avgTicket = totalIncome / (Object.values(analysisData.barberStats).reduce((acc, b) => acc + b.services, 0) || 1);
 
-  const filteredTransactions = transactions.filter(t => {
+  const filteredTransactions = useMemo(() => transactions.filter(t => {
     // 1. Filter by Type
     if (filterType !== 'all' && t.type !== filterType) return false;
     
@@ -890,7 +890,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
         {/* HIGH-END TRANSACTIONS FILTER PANEL */}
         {showFilterPanel && (() => {
-          const uniqueServices = Array.from(new Set(transactions.map(t => parseTxExcel(t).serviceName).filter(Boolean)));
+          const uniqueServices = useMemo(() => Array.from(new Set(transactions.map(t => parseTxExcel(t).serviceName).filter(Boolean))), [transactions]);
           
           return (
             <div className="glass-card animate-fade-in" style={{
@@ -1357,12 +1357,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           dateFilterEnd = payrollEndDate ? new Date(payrollEndDate + 'T23:59:59') : new Date();
         }
 
-        const weeklyTransactions = transactions.filter(t => {
+        const weeklyTransactions = useMemo(() => transactions.filter(t => {
           const d = new Date(t.created_at);
           return d >= dateFilterStart && d <= dateFilterEnd;
         });
 
-        const processedPayroll = staff.map(st => {
+        const processedPayroll = useMemo(() => staff.map(st => {
           const serviceTransactions = weeklyTransactions.filter(t => t.type === 'income' && t.metadata?.staffInvolved?.some(x => String(x.staffId) === String(st.id)));
           const valesTransactions = transactions.filter(t => {
             const d = new Date(t.created_at);

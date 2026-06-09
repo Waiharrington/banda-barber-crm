@@ -563,11 +563,14 @@ export const dataService = {
 
   // Transactions (Finance)
   async getTransactions() {
+    const cached = _cacheGet('transactions');
+    if (cached) return cached;
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
       .order('created_at', { ascending: false });
     if (error) throw error;
+    _cacheSet('transactions', data, 15000);
     return data;
   },
 
@@ -638,6 +641,7 @@ export const dataService = {
   },
 
   async addTransaction(transaction) {
+    _cacheInvalidate('transactions');
     const { data, error } = await supabase
       .from('transactions')
       .insert([transaction])
@@ -717,6 +721,8 @@ export const dataService = {
   },
 
   async getInventoryMovements() {
+    const cached = _cacheGet('inventory_movements');
+    if (cached) return cached;
     const { data, error } = await supabase
       .from('inventory_movements')
       .select('*, inventory(name)')
