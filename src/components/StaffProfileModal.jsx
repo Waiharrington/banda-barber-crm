@@ -19,6 +19,8 @@ import { useAuth } from '../context/AuthContext';
 import AstroSelect from './AstroSelect';
 import { useScrollLock } from '../hooks/useScrollLock';
 
+const asArray = (value) => Array.isArray(value) ? value : [];
+
 const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpdate, isMobile }) => {
   const { user } = useAuth();
   const isAdmin = user?.role?.startsWith('Admin');
@@ -49,7 +51,7 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
   useEffect(() => {
     if (isOpen && staffMember) {
       loadProfileData();
-      setTools(staffMember.tools || []);
+      setTools(asArray(staffMember.tools));
     }
   }, [isOpen, staffMember]);
 
@@ -130,7 +132,7 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
     }
   };
 
-  const availableInventoryTools = inventory.filter(i => 
+  const availableInventoryTools = asArray(inventory).filter(i => 
     (i.category === 'Herramienta' || i.category === 'Accesorios') && !i.staff_id
   );
 

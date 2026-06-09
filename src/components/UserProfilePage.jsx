@@ -26,6 +26,8 @@ import { useNotifs } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import { useDialog } from '../context/DialogContext';
 
+const asArray = (value) => Array.isArray(value) ? value : [];
+
 const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) => {
   const { user } = useAuth();
   const { showToast } = useNotifs();
@@ -49,7 +51,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
   useEffect(() => {
     if (staffMember) {
       loadProfileData();
-      setTools(staffMember.tools || []);
+      setTools(asArray(staffMember.tools));
     }
   }, [staffMember]);
 
@@ -129,7 +131,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
     }
   };
 
-  const availableInventoryTools = inventory.filter(i => 
+  const availableInventoryTools = asArray(inventory).filter(i => 
     (i.category === 'Herramienta' || i.category === 'Accesorios') && !i.staff_id
   );
 

@@ -47,6 +47,15 @@ function _normalizeAppointment(app) {
     appointment_staff: _asArray(app.appointment_staff)
   };
 }
+
+function _normalizeStaff(member) {
+  if (!member || typeof member !== 'object') return member;
+
+  return {
+    ...member,
+    tools: _asArray(member.tools)
+  };
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const dataService = {
@@ -160,7 +169,7 @@ export const dataService = {
       .select('*')
       .order('name');
     if (error) throw error;
-    const result = _asArray(data).filter(s => !s.role?.startsWith('ARCHIVED|'));
+    const result = _asArray(data).map(_normalizeStaff).filter(s => !s.role?.startsWith('ARCHIVED|'));
     _cacheSet('staff', result, 45000);
     return result;
   },
