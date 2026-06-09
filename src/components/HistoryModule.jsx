@@ -429,32 +429,29 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                     
                                     {isAdmin ? (
                                       <div style={{ marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
-                                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', display: 'block' }}>Desglose de Propinas y Comisiones</span>
+                                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', display: 'block' }}>Totales de liquidacion</span>
                                         {item.appointment_staff?.length > 0 ? item.appointment_staff.map((st, sidx) => {
                                           const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
+                                          const commission = Number(st.commission_earned || 0);
+                                          const tip = Number(st.tip_amount || 0);
+                                          const staffTotal = commission + tip;
+                                          const firstName = (st.staff?.name || 'Personal').split(' ')[0];
                                           return (
                                             <div key={sidx} style={{ marginBottom: '12px', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)' }}>
                                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{st.staff?.name}</span>
+                                                <span style={{ fontSize: '14px', fontWeight: '900', color: 'white' }}>Total {firstName}</span>
                                                 <div style={{ textAlign: 'right' }}>
                                                   <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>
-                                                    +{formatCurrency(Number(st.commission_earned || 0) * rate)} Bs.
+                                                    +{formatCurrency(staffTotal * rate)} Bs.
                                                   </div>
                                                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
-                                                    Ref: +${Number(st.commission_earned || 0).toFixed(2)} Comisión
+                                                    Ref: +${formatCurrency(staffTotal)}
                                                   </div>
                                                 </div>
                                               </div>
-                                              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px', alignItems: 'center' }}>
-                                                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Propina:</span>
-                                                <div style={{ textAlign: 'right' }}>
-                                                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600' }}>
-                                                    {formatCurrency(Number(st.tip_amount || 0) * rate)} Bs.
-                                                  </span>
-                                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginLeft: '6px' }}>
-                                                    (Ref: ${Number(st.tip_amount || 0).toFixed(2)})
-                                                  </span>
-                                                </div>
+                                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+                                                <MiniBreakdown label="Comision" amount={commission} rate={rate} formatCurrency={formatCurrency} />
+                                                <MiniBreakdown label="Propina" amount={tip} rate={rate} formatCurrency={formatCurrency} />
                                               </div>
                                             </div>
                                           );
@@ -464,7 +461,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                         {/* GANANCIA ASTRO */}
                                         <div style={{ marginTop: '16px', padding: '12px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
                                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>Ganancia Astro</span>
+                                            <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>Total Astro</span>
                                             <div style={{ textAlign: 'right' }}>
                                               <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>
                                                 {(() => {
@@ -573,6 +570,18 @@ const SectionHeader = ({ icon, title }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
     <div style={{ color: 'var(--gold-primary)' }}>{icon}</div>
     <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px', textTransform: 'uppercase' }}>{title}</div>
+  </div>
+);
+
+const MiniBreakdown = ({ label, amount, rate, formatCurrency }) => (
+  <div style={{ background: 'rgba(0,0,0,0.16)', borderRadius: '10px', padding: '8px' }}>
+    <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
+    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '800' }}>
+      {formatCurrency(Number(amount || 0) * rate)} Bs.
+    </div>
+    <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700', marginTop: '2px' }}>
+      Ref: ${formatCurrency(Number(amount || 0))}
+    </div>
   </div>
 );
 
