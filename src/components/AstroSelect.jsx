@@ -19,8 +19,9 @@ const AstroSelect = ({
   const [dropdownStyle, setDropdownStyle] = useState({});
   const containerRef = useRef(null);
   const triggerRef = useRef(null);
+  const safeOptions = Array.isArray(options) ? options : [];
 
-  const selectedOption = options.find(opt => opt.value == value);
+  const selectedOption = safeOptions.find(opt => opt.value == value);
 
   // Calculate fixed position whenever dropdown opens
   useEffect(() => {
@@ -105,10 +106,10 @@ const AstroSelect = ({
         transformOrigin: 'top center'
       }}
     >
-      {options.length === 0 ? (
+      {safeOptions.length === 0 ? (
         <div style={{ padding: '12px', color: 'var(--text-muted)', textAlign: 'center', fontSize: '13px' }}>Sin opciones</div>
       ) : (
-        options.map((opt) => (
+        safeOptions.map((opt) => (
           <div
             key={opt.value}
             onClick={() => handleSelect(opt.value)}

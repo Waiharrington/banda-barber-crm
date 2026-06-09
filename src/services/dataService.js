@@ -24,6 +24,29 @@ function _cacheSet(key, data, ttlMs = 45000) {
 function _cacheInvalidate(...keys) {
   keys.forEach(k => delete _cache[k]);
 }
+
+function _asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function _normalizeAppointment(app) {
+  if (!app || typeof app !== 'object') return app;
+
+  return {
+    ...app,
+    clients: app.clients ? {
+      ...app.clients,
+      work_gallery: _asArray(app.clients.work_gallery)
+    } : app.clients,
+    services: app.services ? {
+      ...app.services,
+      included_items: _asArray(app.services.included_items)
+    } : app.services,
+    appointment_extras: _asArray(app.appointment_extras),
+    appointment_products: _asArray(app.appointment_products),
+    appointment_staff: _asArray(app.appointment_staff)
+  };
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const dataService = {
@@ -40,8 +63,8 @@ export const dataService = {
 
     if (error) throw error;
 
-    const result = data.map(client => {
-      const validApps = client.appointments?.filter(a => ['Completado', 'En Silla', 'Por Pagar'].includes(a.status)) || [];
+    const result = _asArray(data).map(client => {
+      const validApps = _asArray(client.appointments).filter(a => ['Completado', 'En Silla', 'Por Pagar'].includes(a.status));
       return {
         ...client,
         total_visits: validApps.length,
@@ -81,7 +104,7 @@ export const dataService = {
       .eq('id_card', idCard);
 
     if (error) throw error;
-    return data.length > 0 ? data[0] : null;
+    return _asArray(data).length > 0 ? data[0] : null;
   },
 
   async updateClient(id, updates) {
@@ -105,7 +128,7 @@ export const dataService = {
       .eq('client_id', id);
 
     if (apps && apps.length > 0) {
-      const appIds = apps.map(a => a.id);
+      const appIds = _asArray(apps).map(a => a.id);
 
       // 2. Delete dependencies of those appointments
       await Promise.all([
@@ -137,7 +160,7 @@ export const dataService = {
       .select('*')
       .order('name');
     if (error) throw error;
-    const result = data.filter(s => !s.role?.startsWith('ARCHIVED|'));
+    const result = _asArray(data).filter(s => !s.role?.startsWith('ARCHIVED|'));
     _cacheSet('staff', result, 45000);
     return result;
   },
@@ -196,7 +219,7 @@ export const dataService = {
     let durationCount = 0;
     const serviceCounts = {};
 
-    staffRecords?.forEach(record => {
+    _asArray(staffRecords).forEach(record => {
       const app = record.appointments;
       if (!app) return;
 
@@ -229,7 +252,7 @@ export const dataService = {
     const avgDurationMin = durationCount > 0 ? Math.round(totalDurationMs / durationCount / 60000) : 0;
 
     return {
-      totalAppointments: staffRecords?.length || 0,
+      totalAppointments: _asArray(staffRecords).length,
       totalServiceComm,
       totalProductComm,
       totalTips,
@@ -281,7 +304,7 @@ export const dataService = {
       .order('name');
 
     if (error) throw error;
-    const result = data.filter(s => !s.name?.startsWith('ARCHIVED|'));
+    const result = _asArray(data).filter(s => !s.name?.startsWith('ARCHIVED|'));
     _cacheSet('services', result, 45000);
     return result;
   },
@@ -330,7 +353,7 @@ export const dataService = {
 
     const { data, error } = await supabase.from('service_extras').select('*').order('name');
     if (error) throw error;
-    const result = data.filter(e =>
+    const result = _asArray(data).filter(e =>
       !e.name?.startsWith('ARCHIVED|') &&
       !e.name?.startsWith('SYSTEM_CATEGORY:') &&
       !e.name?.startsWith('SYSTEM_STRATEGY:') &&
@@ -348,7 +371,7 @@ export const dataService = {
       .order('name');
     if (error) throw error;
 
-    const categories = data
+    const categories = _asArray(data)
       .filter(e => e.name?.startsWith('SYSTEM_CATEGORY:'))
       .map(e => e.name.replace('SYSTEM_CATEGORY:', ''));
 
@@ -366,7 +389,7 @@ export const dataService = {
   },
 
   async addServiceCategory(name) {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('service_extras')
       .insert([{ name: 'SYSTEM_CATEGORY:' + name, price: 0, cost: 0 }])
       .select()
@@ -391,7 +414,7 @@ export const dataService = {
       .order('name');
     if (error) throw error;
 
-    const strategies = data
+    const strategies = _asArray(data)
       .filter(e => e.name?.startsWith('SYSTEM_STRATEGY:'))
       .map(e => {
         const parts = e.name.replace('SYSTEM_STRATEGY:', '').split(':');
@@ -422,7 +445,7 @@ export const dataService = {
   },
 
   async addServiceStrategy(value, label) {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('service_extras')
       .insert([{ name: `SYSTEM_STRATEGY:${value}:${label}`, price: 0, cost: 0 }])
       .select()
@@ -438,7 +461,7 @@ export const dataService = {
       .order('name');
     if (selectError) throw selectError;
 
-    const matching = data.filter(e => e.name?.startsWith(`SYSTEM_STRATEGY:${value}:`));
+    const matching = _asArray(data).filter(e => e.name?.startsWith(`SYSTEM_STRATEGY:${value}:`));
     if (matching.length > 0) {
       await Promise.all(
         matching.map(e =>
@@ -491,7 +514,7 @@ export const dataService = {
   async getAppointmentExtras(appointmentId) {
     const { data, error } = await supabase.from('appointment_extras').select('*, service_extras(*)').eq('appointment_id', appointmentId);
     if (error) throw error;
-    return data;
+    return _asArray(data);
   },
 
   async removeExtraFromAppointment(id) {
@@ -514,7 +537,7 @@ export const dataService = {
   async getAppointmentProducts(appointmentId) {
     const { data, error } = await supabase.from('appointment_products').select('*, inventory(*)').eq('appointment_id', appointmentId);
     if (error) throw error;
-    return data;
+    return _asArray(data);
   },
 
   async removeProductFromAppointment(id) {
@@ -529,7 +552,7 @@ export const dataService = {
       .select('*')
       .order('name');
     if (error) throw error;
-    return data;
+    return _asArray(data);
   },
 
   async addChecklistItem(name, base_cost = 0) {
@@ -570,8 +593,9 @@ export const dataService = {
       .select('*')
       .order('created_at', { ascending: false });
     if (error) throw error;
-    _cacheSet('transactions', data, 15000);
-    return data;
+    const result = _asArray(data);
+    _cacheSet('transactions', result, 15000);
+    return result;
   },
 
   async getClientTransactions(clientId) {
@@ -600,9 +624,9 @@ export const dataService = {
 
     if (txError) console.error('Error fetching TXs for history:', txError);
 
-    return apps.map(app => {
+    return _asArray(apps).map(app => {
       // Find the specific transaction for this appointment if it exists
-      const relatedTx = txs?.find(t => t.metadata?.appointment_id === app.id);
+      const relatedTx = _asArray(txs).find(t => t.metadata?.appointment_id === app.id);
 
       return {
         id: app.id,
@@ -637,7 +661,10 @@ export const dataService = {
       .eq('staff_id', staffId);
 
     if (error) throw error;
-    return data;
+    return _asArray(data).map(record => ({
+      ...record,
+      appointments: _normalizeAppointment(record.appointments)
+    }));
   },
 
   async addTransaction(transaction) {
@@ -661,8 +688,9 @@ export const dataService = {
       .select('*')
       .order('name');
     if (error) throw error;
-    _cacheSet('inventory', data, 45000);
-    return data;
+    const result = _asArray(data);
+    _cacheSet('inventory', result, 45000);
+    return result;
   },
 
   async addInventoryItem(item) {
@@ -728,7 +756,7 @@ export const dataService = {
       .select('*, inventory(name)')
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return data;
+    return _asArray(data);
   },
 
   // Appointments (Operational States)
@@ -751,8 +779,9 @@ export const dataService = {
     const { data, error } = await query.order('created_at', { ascending: true });
     if (error) throw error;
     // Short TTL: appointments change frequently
-    _cacheSet(cacheKey, data, 15000);
-    return data;
+    const result = _asArray(data).map(_normalizeAppointment);
+    _cacheSet(cacheKey, result, 15000);
+    return result;
   },
 
   async getTodayAppointments() {
@@ -767,7 +796,7 @@ export const dataService = {
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return data;
+    return _asArray(data).map(_normalizeAppointment);
   },
 
   async createAppointment(appointment) {
@@ -922,9 +951,10 @@ export const dataService = {
 
     let totalUsd = 0;
     let earningsUsd = 0;
-    let serviceCount = data.length;
+    const apps = _asArray(data).map(_normalizeAppointment);
+    let serviceCount = apps.length;
 
-    data.forEach(app => {
+    apps.forEach(app => {
       const sPrice = app.services?.price || 0;
       const ePrice = app.appointment_extras?.reduce((sum, e) => sum + (e.price || 0), 0) || 0;
       const pPrice = app.appointment_products?.reduce((sum, p) => sum + ((p.price || 0) * (p.quantity || 1)), 0) || 0;
