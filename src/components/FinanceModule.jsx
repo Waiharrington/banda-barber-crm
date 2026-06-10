@@ -1235,7 +1235,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           </div>
         ) : (
           /* Desktop Table - EXCEL STYLE */
-          <div className="custom-scrollbar" style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '65vh', paddingRight: '8px' }}>
+          <div className="astro-scrollbar" style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '500px', paddingRight: '8px' }}>
             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px', textAlign: 'left' }}>
               <thead style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'rgba(28,28,30,0.98)' }}>
                 <tr style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '900' }}>
