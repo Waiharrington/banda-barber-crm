@@ -54,20 +54,26 @@ export const AuthProvider = ({ children }) => {
 
     initSession();
 
-    const { data: { subscription } } = dataService.supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = dataService.supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
-      try {
-        if (session?.user) {
-          await loadStaffProfile(session.user);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error('Auth state error:', error);
+
+      if (!session?.user) {
         setUser(null);
-      } finally {
         setLoading(false);
+        return;
       }
+
+      setTimeout(async () => {
+        if (!mounted) return;
+        try {
+          await loadStaffProfile(session.user);
+        } catch (error) {
+          console.error('Auth state error:', error);
+          setUser(null);
+        } finally {
+          if (mounted) setLoading(false);
+        }
+      }, 0);
     });
 
     return () => {

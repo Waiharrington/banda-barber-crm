@@ -213,15 +213,19 @@ function App() {
     // Initial Load Sequence
     const initApp = async () => {
       const startTime = Date.now();
-      await fetchInitialData();
-      
-      // Ensure at least 300ms of "Astro Experience" loader
-      const elapsed = Date.now() - startTime;
-      const delay = Math.max(0, 300 - elapsed);
-      
-      setTimeout(() => {
-        setIsAppLoading(false);
-      }, delay);
+      try {
+        await fetchInitialData();
+      } catch (error) {
+        console.error('Initial app load failed:', error);
+      } finally {
+        // Ensure at least 300ms of "Astro Experience" loader
+        const elapsed = Date.now() - startTime;
+        const delay = Math.max(0, 300 - elapsed);
+        
+        setTimeout(() => {
+          setIsAppLoading(false);
+        }, delay);
+      }
     };
 
     initApp();
