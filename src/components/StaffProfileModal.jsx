@@ -399,9 +399,10 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
               )}
             </div>
           )}
-        </div>
+          </div>
 
         </div>
+      </div>
       )}
     </AnimatedModal>,
     document.body
