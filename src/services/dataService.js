@@ -791,7 +791,7 @@ export const dataService = {
       *, 
       clients(id, name, phone, id_card, work_gallery), 
       services(name, price, included_items, commission_barber, commission_washer, commission_cashier, commission_receptionist),
-      staff(*),
+      staff(id, name, email, role, username, image_url, commission_pct, washing_rate),
       appointment_extras(id, price, service_extras(id, name)),
       appointment_products(id, quantity, price, inventory(id, name)),
       appointment_staff(*, staff(name, role))
