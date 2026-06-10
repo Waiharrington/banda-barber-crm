@@ -1194,51 +1194,86 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 else dateLabel = txDate.toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'short' });
               }
 
+              let titleText = t.description;
+              let subtitleText = t.category;
+              let isParsed = false;
+              
+              if (t.description.includes('VENTA FINAL -')) {
+                const descParts = t.description.split(' - ');
+                const clientPart = descParts.find(p => p.toLowerCase().includes('cliente:'));
+                const servicePart = descParts.find(p => p.toLowerCase().includes('servi:'));
+                
+                if (servicePart) {
+                  titleText = servicePart.split(': ')[1] || servicePart;
+                }
+                if (clientPart) {
+                  subtitleText = clientPart.split(': ')[1] || clientPart;
+                  isParsed = true;
+                }
+              } else if (t.category === 'Cierre Semanal') {
+                titleText = 'Cierre Semanal';
+                subtitleText = t.description;
+              }
+
               return (
                 <React.Fragment key={t.id}>
                   {showDateHeader && (
-                    <div style={{ padding: '8px 4px 0px 4px', color: 'var(--gold-primary)', fontWeight: '900', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginTop: idx === 0 ? '0' : '8px' }}>
+                    <div style={{ padding: '8px 4px 0px 4px', color: 'var(--gold-primary)', fontWeight: '900', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', marginTop: idx === 0 ? '0' : '16px' }}>
                       {dateLabel}
                     </div>
                   )}
                   <div style={{ 
                     backgroundColor: 'rgba(255,255,255,0.02)', 
                     padding: '16px', 
-                    borderRadius: '18px',
+                    borderRadius: '20px',
                     border: '1px solid var(--border-color)',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    gap: '12px'
                   }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, minWidth: 0 }}>
                   <div style={{ 
-                    width: '40px', 
-                    height: '40px', 
+                    width: '42px', 
+                    height: '42px', 
+                    flexShrink: 0,
                     backgroundColor: t.type === 'income' ? 'rgba(50, 215, 75, 0.1)' : 'rgba(255, 69, 58, 0.1)',
-                    borderRadius: '10px',
+                    borderRadius: '12px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    border: t.type === 'income' ? '1px solid rgba(50, 215, 75, 0.2)' : '1px solid rgba(255, 69, 58, 0.2)'
                   }}>
-                    {t.type === 'income' ? <Plus size={18} color="#32d74b" /> : <Minus size={18} color="#ff453a" />}
+                    {t.type === 'income' ? <Plus size={20} color="#32d74b" /> : <Minus size={20} color="#ff453a" />}
                   </div>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '700' }}>{t.description}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{new Date(t.created_at).toLocaleString('es-VE', { hour12: true })}</div>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: '800', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {titleText}
+                    </div>
+                    <div style={{ fontSize: '12px', color: isParsed ? 'var(--gold-primary)' : 'var(--text-muted)', fontWeight: isParsed ? '800' : '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {isParsed ? subtitleText : t.category}
+                    </div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: '600', marginTop: '2px' }}>
+                      {new Date(t.created_at).toLocaleString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                    </div>
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
                   <div style={{ 
-                    fontSize: '16px', 
-                    fontWeight: '800', 
-                    color: t.type === 'income' ? '#32d74b' : '#ff453a' 
+                    fontSize: '15px', 
+                    fontWeight: '900', 
+                    color: t.type === 'income' ? '#32d74b' : '#ff453a',
+                    whiteSpace: 'nowrap',
+                    letterSpacing: '-0.5px'
                   }}>
-                    {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount * (t.exchange_rate || rates?.usd || 550), '')} BS
+                    {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount * (t.exchange_rate || rates?.usd || 550), '')} Bs
                   </div>
-                  <div style={{ fontSize: '11px', color: 'white', marginTop: '2px' }}>
-                    REF: ${t.amount.toFixed(2)}
+                  <div style={{ fontSize: '11px', color: 'white', marginTop: '2px', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                    ${t.amount.toFixed(2)} USD
                   </div>
-                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px' }}>{t.category}</div>
+                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px', letterSpacing: '0.5px', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}>
+                    REF
+                  </div>
                 </div>
               </div>
             </React.Fragment>
