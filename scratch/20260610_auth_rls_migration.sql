@@ -106,14 +106,8 @@ WITH CHECK (public.current_staff_is('Admin'));
 DROP POLICY IF EXISTS staff_update_gradual ON public.staff;
 CREATE POLICY staff_update_gradual ON public.staff
 FOR UPDATE TO authenticated
-USING (
-  public.current_staff_is('Admin')
-  OR auth_user_id = auth.uid()
-)
-WITH CHECK (
-  public.current_staff_is('Admin')
-  OR auth_user_id = auth.uid()
-);
+USING (public.current_staff_is('Admin'))
+WITH CHECK (public.current_staff_is('Admin'));
 
 DROP POLICY IF EXISTS staff_delete_admin ON public.staff;
 CREATE POLICY staff_delete_admin ON public.staff
