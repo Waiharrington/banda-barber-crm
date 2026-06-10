@@ -23,6 +23,8 @@ import AstroSelect from './AstroSelect';
 import AstroDatePicker from './AstroDatePicker';
 import { normalizeForSearch } from '../utils/stringUtils';
 import NewClientModal from './NewClientModal';
+import AnimatedModal from './AnimatedModal';
+import { createPortal } from 'react-dom';
 import { useScrollLock } from '../hooks/useScrollLock';
 
 const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, inventory, onRefresh, rates, currency }) => {
@@ -80,7 +82,8 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
     setTotalPrice(total);
   }, [selectedService, selectedExtras, selectedProducts]);
 
-  if (!isOpen) return null;
+  // Remove early return so AnimatedModal can handle the exit animation
+  // if (!isOpen) return null;
 
   const handleIdSearch = () => {
     const cleanId = idSearch.trim().replace(/\./g, '');
@@ -209,18 +212,20 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
     flexDirection: 'column'
   };
 
-  return (
-    <div className="modal-overlay animate-fade-in" style={{
-      position: 'fixed',
-      top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.85)',
-      display: 'flex',
-      alignItems: isMobile ? 'flex-end' : 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      backdropFilter: 'blur(10px)'
-    }}>
-      <div className={isMobile ? 'animate-slide-up' : 'animate-scale-in'} style={modalContainerStyle}>
+  return createPortal(
+    <AnimatedModal isOpen={isOpen}>
+      {(overlayClass, cardClass) => (
+        <div className={overlayClass} style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          display: 'flex',
+          alignItems: isMobile ? 'flex-end' : 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div className={`${cardClass}`} style={modalContainerStyle}>
         
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexShrink: 0 }}>
@@ -455,16 +460,19 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
           }}
         />
 
-        <style>{`
-          .client-search-item:hover {
-            background-color: rgba(212,175,55,0.05) !important;
-          }
-          .astro-scrollbar::-webkit-scrollbar { width: 4px; }
-          .astro-scrollbar::-webkit-scrollbar-track { background: transparent; }
-          .astro-scrollbar::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.2); borderRadius: 10px; }
-        `}</style>
+          <style>{`
+            .client-search-item:hover {
+              background-color: rgba(212,175,55,0.05) !important;
+            }
+            .astro-scrollbar::-webkit-scrollbar { width: 4px; }
+            .astro-scrollbar::-webkit-scrollbar-track { background: transparent; }
+            .astro-scrollbar::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.2); borderRadius: 10px; }
+          `}</style>
+        </div>
       </div>
-    </div>
+      )}
+    </AnimatedModal>,
+    document.body
   );
 };
 

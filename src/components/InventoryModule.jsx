@@ -13,6 +13,21 @@ import {
   Trash2,
   History,
   Tag, 
+import React, { useState, useEffect } from 'react';
+import { 
+  Package, 
+  Plus, 
+  Minus, 
+  Search, 
+  AlertTriangle, 
+  Edit3,
+  Loader2,
+  TrendingDown,
+  ChevronRight,
+  Zap,
+  Trash2,
+  History,
+  Tag, 
   Filter, 
   ShieldAlert
 } from 'lucide-react';
@@ -20,14 +35,18 @@ import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import { useDialog } from '../context/DialogContext';
+import { useModal } from '../context/ModalContext';
+import { createPortal } from 'react-dom';
 import AstroSelect from './AstroSelect';
 import AstroCamera from './AstroCamera';
+import AnimatedModal from './AnimatedModal';
 import { Camera } from 'lucide-react';
 
 const InventoryModule = ({ isMobile, currency, rates }) => {
   const { user } = useAuth();
   const { showToast } = useNotifs();
   const { confirm } = useDialog();
+  const { pushModal, popModal } = useModal();
   const [inventory, setInventory] = useState([]);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -94,6 +113,14 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  useEffect(() => {
+    if (showAddForm || showCamera || showHistoryModal || editingItem) {
+      pushModal();
+      return () => popModal();
+    }
+  }, [showAddForm, showCamera, showHistoryModal, editingItem, pushModal, popModal]);
+
   const handleAddItem = async () => {
     if (!newItem.name || saving) return;
     try {
@@ -167,15 +194,17 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
     <div className="animate-fade-in" style={{ paddingBottom: isMobile ? '80px' : '0' }}>
       <header style={{ 
         display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between', 
-        alignItems: 'flex-start', 
-        marginBottom: '40px' 
+        alignItems: isMobile ? 'flex-start' : 'center', 
+        gap: isMobile ? '20px' : '0',
+        marginBottom: isMobile ? '24px' : '40px' 
       }}>
         <div>
-          <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Control de <span className="text-gold">Stock</span></h2>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Gestión de productos y suministros críticos.</p>
+          <h2 style={{ fontSize: isMobile ? '26px' : '32px', fontWeight: '800', letterSpacing: '-0.5px', lineHeight: '1.2' }}>Control de <span className="text-gold">Stock</span></h2>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '6px', fontSize: isMobile ? '13px' : '15px' }}>Gestión de productos y suministros críticos.</p>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
           <button 
             className="btn-gold" 
             onClick={async () => {
@@ -190,14 +219,17 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                 setLoadingHistory(false);
               }
             }} 
-            style={{ backgroundColor: 'rgba(212, 175, 55, 0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212, 175, 55, 0.2)' }}
+            style={{ 
+              backgroundColor: 'rgba(212, 175, 55, 0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212, 175, 55, 0.2)',
+              flex: isMobile ? '1 1 45%' : 'none', justifyContent: 'center', fontSize: isMobile ? '13px' : '14px', padding: isMobile ? '12px 8px' : '12px 16px', whiteSpace: 'nowrap'
+            }}
           >
-            <History size={18} style={{ marginRight: '8px' }} />
-            Ver Historial
+            <History size={18} style={{ marginRight: '6px' }} />
+            {isMobile ? 'Historial' : 'Ver Historial'}
           </button>
-          <button className="btn-gold" onClick={() => setShowAddForm(true)}>
-            <Plus size={18} style={{ marginRight: '8px' }} />
-            Nuevo Producto
+          <button className="btn-gold" onClick={() => setShowAddForm(true)} style={{ flex: isMobile ? '1 1 45%' : 'none', justifyContent: 'center', fontSize: isMobile ? '13px' : '14px', padding: isMobile ? '12px 8px' : '12px 16px', whiteSpace: 'nowrap' }}>
+            <Plus size={18} style={{ marginRight: '6px' }} />
+            {isMobile ? 'Producto' : 'Nuevo Producto'}
           </button>
         </div>
       </header>
@@ -234,27 +266,36 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                 ]}
               />
             )}
-             <div>
+            <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>IMAGEN DEL PRODUCTO</label>
               <div 
                 onClick={() => setShowCamera(true)}
                 style={{ 
-                  height: '48px', 
+                  height: newItem.image_url ? '120px' : '48px', 
                   backgroundColor: 'rgba(255,255,255,0.03)', 
-                  border: '1px solid var(--border-color)', 
-                  borderRadius: '12px', 
+                  border: '1px dashed rgba(255,255,255,0.15)', 
+                  borderRadius: '16px', 
                   display: 'flex', 
+                  flexDirection: newItem.image_url ? 'column' : 'row',
                   alignItems: 'center', 
+                  justifyContent: 'center',
                   gap: '12px',
-                  padding: '0 16px',
+                  padding: '16px',
                   cursor: 'pointer',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  position: 'relative',
+                  transition: 'all 0.2s'
                 }}
               >
                 {newItem.image_url ? (
                   <>
-                    <img src={newItem.image_url} style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover' }} />
-                    <span style={{ fontSize: '13px', color: 'var(--gold-primary)', fontWeight: '700' }}>¡Imagen lista!</span>
+                    <img src={newItem.image_url} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6 }} />
+                    <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                       <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+                         <Camera size={20} color="var(--gold-primary)" />
+                       </div>
+                       <span style={{ fontSize: '12px', color: 'white', fontWeight: '800', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>Tocar para cambiar foto</span>
+                    </div>
                   </>
                 ) : (
                   <>
@@ -368,7 +409,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
           </div>
         )}
 
-        <div style={{ display: 'flex', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '4px' }}>
+        <div style={{ display: 'flex', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '4px', flex: isMobile ? '1 1 100%' : 'none', justifyContent: 'space-between' }}>
           <button 
             onClick={() => setViewMode('grid')}
             style={{ 
@@ -382,7 +423,9 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
               alignItems: 'center',
               gap: '8px',
               fontSize: '12px',
-              fontWeight: '800'
+              fontWeight: '800',
+              flex: isMobile ? 1 : 'none',
+              justifyContent: 'center'
             }}
           >
             <Package size={16} /> Cuadrícula
@@ -400,7 +443,9 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
               alignItems: 'center',
               gap: '8px',
               fontSize: '12px',
-              fontWeight: '800'
+              fontWeight: '800',
+              flex: isMobile ? 1 : 'none',
+              justifyContent: 'center'
             }}
           >
             <Search size={16} style={{ transform: 'rotate(90deg)' }} /> Lista
@@ -418,95 +463,80 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
           <p style={{ color: 'var(--text-muted)', fontSize: '18px' }}>No hay productos que coincidan.</p>
         </div>
       ) : viewMode === 'list' ? (
-        <div className="glass-card" style={{ borderRadius: '24px', overflow: 'hidden', padding: '0' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                  <th style={{ padding: '20px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)' }}>PRODUCTO</th>
-                  <th style={{ padding: '20px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)' }}>CATEGORÍA</th>
-                  <th style={{ padding: '20px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)' }}>STOCK</th>
-                  <th style={{ padding: '20px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)' }}>COSTO</th>
-                  <th style={{ padding: '20px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)' }}>VENTA</th>
-                  <th style={{ padding: '20px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textAlign: 'right' }}>ACCIONES</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInventory.map(item => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} className="table-row-hover">
-                    <td style={{ padding: '16px 20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                          {item.image_url ? (
-                            <img src={item.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <Package size={20} color="rgba(255,255,255,0.1)" />
-                          )}
-                        </div>
-                        <span style={{ fontWeight: '800', fontSize: '14px' }}>{item.name}</span>
-                      </div>
-                    </td>
-                    <td style={{ padding: '16px 20px' }}>
-                      <span style={{ fontSize: '10px', backgroundColor: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '6px', color: 'var(--text-secondary)', fontWeight: '800' }}>
-                        {item.category}
-                      </span>
-                    </td>
-                    <td style={{ padding: '16px 20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ 
-                          fontWeight: '950', 
-                          fontSize: '15px',
-                          color: (item.stock <= 5 && item.category !== 'Accesorios') ? 'var(--gold-primary)' : 'white'
-                        }}>
-                          {item.stock}
-                        </span>
-                        {(item.stock <= 5 && item.category !== 'Accesorios') && <AlertTriangle size={12} color="var(--gold-primary)" />}
-                      </div>
-                    </td>
-                    <td style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--text-muted)' }}>
-                      ${item.cost_price?.toFixed(2)}
-                    </td>
-                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                      <div style={{ fontWeight: '900', color: 'var(--gold-primary)' }}>${item.price?.toFixed(2)}</div>
-                      {rates?.usd > 0 && (
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                          {Math.round(item.price * rates.usd).toLocaleString()} Bs.
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                        <button 
-                          onClick={() => handeAdjustStock(item.id, item.stock, -1)}
-                          className="action-btn" style={{ width: '32px', height: '32px' }}
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <button 
-                          onClick={() => handeAdjustStock(item.id, item.stock, 1)}
-                          className="action-btn" style={{ width: '32px', height: '32px' }}
-                        >
-                          <Plus size={14} />
-                        </button>
-                        <button 
-                          onClick={() => setEditingItem(item)}
-                          className="action-btn" style={{ width: '32px', height: '32px', backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)' }}
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteItem(item.id, item.name)}
-                          className="action-btn" style={{ width: '32px', height: '32px', backgroundColor: 'rgba(255,69,58,0.1)', color: '#ff453a' }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
+        <div className="glass-card animate-fade-in" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.03)' }}>
+            <div style={{ width: '100%', overflowX: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'auto' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                    <th style={{ padding: isMobile ? '8px 4px 8px 12px' : '20px', fontSize: isMobile ? '9px' : '11px', fontWeight: '900', color: 'var(--text-muted)' }}>PRODUCTO</th>
+                    <th style={{ padding: isMobile ? '8px 4px' : '20px', fontSize: isMobile ? '9px' : '11px', fontWeight: '900', color: 'var(--text-muted)', display: isMobile ? 'none' : 'table-cell' }}>CATEGORÍA</th>
+                    <th style={{ padding: isMobile ? '8px 4px' : '20px', fontSize: isMobile ? '9px' : '11px', fontWeight: '900', color: 'var(--text-muted)', textAlign: 'center' }}>STOCK</th>
+                    <th style={{ padding: isMobile ? '8px 4px' : '20px', fontSize: isMobile ? '9px' : '11px', fontWeight: '900', color: 'var(--text-muted)', textAlign: 'right' }}>PRECIO</th>
+                    <th style={{ padding: isMobile ? '8px 12px 8px 4px' : '20px', fontSize: isMobile ? '9px' : '11px', fontWeight: '900', color: 'var(--text-muted)', textAlign: 'right' }}>ACCIONES</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredInventory.map(item => (
+                    <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} className="table-row-hover">
+                      <td style={{ padding: isMobile ? '8px 4px 8px 12px' : '16px 20px', maxWidth: isMobile ? '100px' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                           <span style={{ fontWeight: '800', fontSize: isMobile ? '11px' : '14px', lineHeight: '1.2' }}>{item.name}</span>
+                           {isMobile && <span style={{ fontSize: '9px', color: 'var(--text-secondary)', marginTop: '2px' }}>{item.category}</span>}
+                        </div>
+                      </td>
+                      <td style={{ padding: isMobile ? '8px 4px' : '16px 20px', display: isMobile ? 'none' : 'table-cell' }}>
+                        <span style={{ fontSize: '10px', backgroundColor: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '6px', color: 'var(--text-secondary)', fontWeight: '800' }}>
+                          {item.category}
+                        </span>
+                      </td>
+                      <td style={{ padding: isMobile ? '8px 4px' : '16px 20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
+                          <span style={{ 
+                            fontWeight: '950', 
+                            fontSize: isMobile ? '11px' : '15px',
+                            color: (item.stock <= 5 && item.category !== 'Accesorios') ? 'var(--gold-primary)' : 'white'
+                          }}>
+                            {item.stock}
+                          </span>
+                          {(item.stock <= 5 && item.category !== 'Accesorios') && <AlertTriangle size={isMobile ? 10 : 12} color="var(--gold-primary)" />}
+                        </div>
+                      </td>
+                      <td style={{ padding: isMobile ? '8px 4px' : '16px 20px', textAlign: 'right' }}>
+                        <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: isMobile ? '11px' : '14px' }}>${item.price?.toFixed(2) || '0.00'}</div>
+                      </td>
+                      <td style={{ padding: isMobile ? '8px 12px 8px 4px' : '16px 20px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                          <button 
+                            onClick={() => handeAdjustStock(item.id, item.stock, -1)}
+                            className="action-btn" style={{ width: isMobile ? '24px' : '32px', height: isMobile ? '24px' : '32px', padding: 0 }}
+                          >
+                            <Minus size={isMobile ? 12 : 14} />
+                          </button>
+                          <button 
+                            onClick={() => handeAdjustStock(item.id, item.stock, 1)}
+                            className="action-btn" style={{ width: isMobile ? '24px' : '32px', height: isMobile ? '24px' : '32px', padding: 0 }}
+                          >
+                            <Plus size={isMobile ? 12 : 14} />
+                          </button>
+                          <button 
+                            onClick={() => setEditingItem(item)}
+                            className="action-btn" style={{ width: isMobile ? '24px' : '32px', height: isMobile ? '24px' : '32px', padding: 0, backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)' }}
+                          >
+                            <Edit3 size={isMobile ? 12 : 14} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteItem(item.id, item.name)}
+                            className="action-btn" style={{ width: isMobile ? '24px' : '32px', height: isMobile ? '24px' : '32px', padding: 0, backgroundColor: 'rgba(255,69,58,0.1)', color: '#ff453a' }}
+                          >
+                            <Trash2 size={isMobile ? 12 : 14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
@@ -674,24 +704,23 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
         </div>
       )}
 
-      {editingItem && (
-        <EditInventoryModal 
-          item={editingItem} 
-          onClose={() => setEditingItem(null)} 
-          onSave={async (updates) => {
-            try {
-              // Sanitize updates
-              const { cost_price_dirty, price_dirty, stock_dirty, ...cleanUpdates } = updates;
-              await dataService.updateInventoryItem(editingItem.id, cleanUpdates);
-              fetchInventory();
-              setEditingItem(null);
-              showToast('Producto actualizado');
-            } catch (error) {
-              showToast('Error al actualizar producto', 'error');
-            }
-          }}
-        />
-      )}
+      <EditInventoryModal 
+        isOpen={!!editingItem}
+        item={editingItem || {}} 
+        onClose={() => setEditingItem(null)} 
+        onSave={async (updates) => {
+          try {
+            // Sanitize updates
+            const { cost_price_dirty, price_dirty, stock_dirty, ...cleanUpdates } = updates;
+            await dataService.updateInventoryItem(editingItem.id, cleanUpdates);
+            fetchInventory();
+            setEditingItem(null);
+            showToast('Producto actualizado');
+          } catch (error) {
+            showToast('Error al actualizar producto', 'error');
+          }
+        }}
+      />
 
       <style>{`
         @keyframes pulse {
@@ -704,76 +733,85 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
         }
       `}</style>
 
-      {showHistoryModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div className="glass-card animate-scale-in" style={{ maxWidth: '800px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', padding: '24px 32px 0 32px' }}>
-              <div>
-                <h2 style={{ fontWeight: '900', fontSize: '24px' }}>Historial de Movimientos</h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Registro detallado de entradas y salidas de almacén.</p>
+      <AnimatedModal isOpen={showHistoryModal}>
+        {(overlayClass, cardClass) => (
+          <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+            <div className={`glass-card ${cardClass}`} style={{ maxWidth: '800px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', padding: '24px 32px 0 32px' }}>
+                <div>
+                  <h2 style={{ fontWeight: '900', fontSize: '24px' }}>Historial de Movimientos</h2>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Registro detallado de entradas y salidas de almacén.</p>
+                </div>
+                <button onClick={() => setShowHistoryModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '32px', cursor: 'pointer' }}>&times;</button>
               </div>
-              <button onClick={() => setShowHistoryModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '32px', cursor: 'pointer' }}>&times;</button>
-            </div>
 
-            <div style={{ padding: '0 32px 32px 32px' }}>
-              {loadingHistory ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
-                  <Loader2 className="animate-spin" size={40} color="var(--gold-primary)" />
-                </div>
-              ) : history.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-                  <History size={48} style={{ marginBottom: '16px', opacity: 0.1 }} />
-                  <p>No hay movimientos registrados aún.</p>
-                </div>
-              ) : (
-                <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                      <tr>
-                        <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>FECHA</th>
-                        <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>PRODUCTO</th>
-                        <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>TIPO</th>
-                        <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>CANT.</th>
-                        <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>MOTIVO</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {history.map(move => (
-                        <tr key={move.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                          <td style={{ padding: '16px', fontSize: '12px' }}>{new Date(move.created_at).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
-                          <td style={{ padding: '16px', fontSize: '13px', fontWeight: '700' }}>{move.inventory?.name || 'Producto Eliminado'}</td>
-                          <td style={{ padding: '16px' }}>
-                            <span style={{ 
-                              padding: '4px 10px', 
-                              borderRadius: '8px', 
-                              fontSize: '10px', 
-                              fontWeight: '800',
-                              backgroundColor: move.type === 'entry' ? 'rgba(50,215,75,0.1)' : 'rgba(255,69,58,0.1)',
-                              color: move.type === 'entry' ? '#32d74b' : '#ff453a'
-                            }}>
-                              {move.type === 'entry' ? 'ENTRADA' : 'SALIDA'}
-                            </span>
-                          </td>
-                          <td style={{ padding: '16px', fontSize: '14px', fontWeight: '900' }}>{move.type === 'entry' ? '+' : '-'}{move.amount}</td>
-                          <td style={{ padding: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>{move.reason}</td>
+              <div style={{ padding: '0 32px 32px 32px' }}>
+                {loadingHistory ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
+                    <Loader2 className="animate-spin" size={40} color="var(--gold-primary)" />
+                  </div>
+                ) : history.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
+                    <History size={48} style={{ marginBottom: '16px', opacity: 0.1 }} />
+                    <p>No hay movimientos registrados aún.</p>
+                  </div>
+                ) : (
+                  <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                      <thead style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                        <tr>
+                          <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>FECHA</th>
+                          <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>PRODUCTO</th>
+                          <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>TIPO</th>
+                          <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>CANT.</th>
+                          <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>MOTIVO</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                      </thead>
+                      <tbody>
+                        {history.map(move => (
+                          <tr key={move.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                            <td style={{ padding: '16px', fontSize: '12px' }}>{new Date(move.created_at).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+                            <td style={{ padding: '16px', fontSize: '13px', fontWeight: '700' }}>{move.inventory?.name || 'Producto Eliminado'}</td>
+                            <td style={{ padding: '16px' }}>
+                              <span style={{ 
+                                padding: '4px 10px', 
+                                borderRadius: '8px', 
+                                fontSize: '10px', 
+                                fontWeight: '800',
+                                backgroundColor: move.type === 'entry' ? 'rgba(50,215,75,0.1)' : 'rgba(255,69,58,0.1)',
+                                color: move.type === 'entry' ? '#32d74b' : '#ff453a'
+                              }}>
+                                {move.type === 'entry' ? 'ENTRADA' : 'SALIDA'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '16px', fontSize: '14px', fontWeight: '900' }}>{move.type === 'entry' ? '+' : '-'}{move.amount}</td>
+                            <td style={{ padding: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>{move.reason}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatedModal>
     </div>
   );
 };
 
-const EditInventoryModal = ({ item, onClose, onSave }) => {
+const EditInventoryModal = ({ isOpen, item, onClose, onSave }) => {
   const [formData, setFormData] = useState({ ...item });
   const [loading, setLoading] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({ ...item });
+      setShowCamera(false);
+    }
+  }, [isOpen, item]);
 
   const handleSave = async () => {
     setLoading(true);
@@ -782,90 +820,139 @@ const EditInventoryModal = ({ item, onClose, onSave }) => {
   };
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-      <div className="glass-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '28px', padding: '32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Editar <span className="text-gold">Producto</span></h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><Plus size={24} style={{ transform: 'rotate(45deg)' }} /></button>
-        </div>
+    <AnimatedModal isOpen={isOpen}>
+      {(overlayClass, cardClass) => (
+        <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div className={`glass-card ${cardClass} astro-scrollbar`} style={{ maxWidth: '500px', width: '100%', maxHeight: '90vh', overflowY: 'auto', borderRadius: '28px', padding: '32px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexShrink: 0 }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Editar <span className="text-gold">Producto</span></h3>
+              <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><Plus size={24} style={{ transform: 'rotate(45deg)' }} /></button>
+            </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>NOMBRE</label>
-            <input type="text" className="astro-input" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ width: '100%' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>NOMBRE</label>
+                <input type="text" className="astro-input" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ width: '100%' }} />
+              </div>
+
+              <AstroSelect 
+                label="CATEGORÍA"
+                value={formData.category}
+                onChange={(val) => setFormData({...formData, category: val})}
+                options={[
+                  { label: '🛒 Para Venta', value: 'Venta' },
+                  { label: '💈 Uso Interno', value: 'Uso Interno' },
+                  { label: '✂️ Accesorios', value: 'Accesorios' },
+                  { label: '🔧 Herramienta', value: 'Herramienta' }
+                ]}
+              />
+
+              {formData.category === 'Herramienta' && (
+                <AstroSelect 
+                  label="ASIGNAR A"
+                  placeholder="Selecciona barbero"
+                  value={formData.staff_id}
+                  onChange={(val) => setFormData({...formData, staff_id: val})}
+                  options={[
+                    { label: '💈 Local / General', value: null }
+                  ]}
+                />
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO COSTO ($)</label>
+                  <input type="number" className="astro-input" value={formData.cost_price || 0} onChange={(e) => setFormData({...formData, cost_price: Number(e.target.value)})} style={{ width: '100%' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO VENTA ($)</label>
+                  <input type="number" className="astro-input" value={formData.price || 0} onChange={(e) => setFormData({...formData, price: Number(e.target.value)})} style={{ width: '100%' }} />
+                </div>
+              </div>
+
+              {(formData.category === 'Venta' || formData.category === 'Accesorios') && (
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>COMISIÓN VENDEDOR (%)</label>
+                  <input type="number" className="astro-input" value={formData.commission_pct ?? 10} onChange={(e) => setFormData({...formData, commission_pct: Number(e.target.value)})} style={{ width: '100%' }} />
+                </div>
+              )}
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>FOTO DEL PRODUCTO</label>
+                <div 
+                  onClick={() => setShowCamera(true)}
+                  style={{ 
+                    height: formData.image_url ? '120px' : '48px', 
+                    backgroundColor: 'rgba(255,255,255,0.03)', 
+                    border: '1px dashed rgba(255,255,255,0.15)', 
+                    borderRadius: '16px', 
+                    display: 'flex', 
+                    flexDirection: formData.image_url ? 'column' : 'row',
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    gap: '12px',
+                    padding: '16px',
+                    cursor: 'pointer',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {formData.image_url ? (
+                    <>
+                      <img src={formData.image_url} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 1 }} />
+                      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%', height: '100%', justifyContent: 'center', background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }}>
+                         <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+                           <Camera size={20} color="var(--gold-primary)" />
+                         </div>
+                         <span style={{ fontSize: '12px', color: 'white', fontWeight: '800', textShadow: '0 2px 4px rgba(0,0,0,0.8)', backgroundColor: 'rgba(0,0,0,0.4)', padding: '4px 10px', borderRadius: '12px', backdropFilter: 'blur(4px)' }}>Tocar para cambiar foto</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Camera size={18} color="var(--gold-primary)" />
+                      <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Tomar o subir foto...</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
+              <button 
+                onClick={onClose} 
+                style={{ 
+                  flex: 1, 
+                  padding: '14px', 
+                  borderRadius: '14px', 
+                  border: 'none', 
+                  backgroundColor: 'rgba(255,255,255,0.05)', 
+                  color: 'white', 
+                  fontSize: '14px', 
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'; }}
+              >
+                Cancelar
+              </button>
+              <button onClick={handleSave} className="btn-gold" style={{ flex: 2, padding: '14px', borderRadius: '14px', fontSize: '15px', fontWeight: '800' }} disabled={loading}>
+                {loading ? <Loader2 className="animate-spin" /> : 'Guardar Cambios'}
+              </button>
+            </div>
+
+            {showCamera && (
+              <AstroCamera 
+                onCapture={(img) => { setFormData({...formData, image_url: img}); setShowCamera(false); }} 
+                onClose={() => setShowCamera(false)} 
+              />
+            )}
           </div>
-
-          <AstroSelect 
-            label="CATEGORÍA"
-            value={formData.category}
-            onChange={(val) => setFormData({...formData, category: val})}
-            options={[
-              { label: '🛒 Para Venta', value: 'Venta' },
-              { label: '💈 Uso Interno', value: 'Uso Interno' },
-              { label: '✂️ Accesorios', value: 'Accesorios' },
-              { label: '🔧 Herramienta', value: 'Herramienta' }
-            ]}
-          />
-
-          {formData.category === 'Herramienta' && (
-            <AstroSelect 
-              label="ASIGNAR A"
-              placeholder="Selecciona barbero"
-              value={formData.staff_id}
-              onChange={(val) => setFormData({...formData, staff_id: val})}
-              options={[
-                { label: '💈 Local / General', value: null },
-                ...staff.map(s => ({ label: s.name, value: s.id }))
-              ]}
-            />
-          )}
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO COSTO ($)</label>
-              <input type="number" className="astro-input" value={formData.cost_price} onChange={(e) => setFormData({...formData, cost_price: Number(e.target.value)})} style={{ width: '100%' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO VENTA ($)</label>
-              <input type="number" className="astro-input" value={formData.price} onChange={(e) => setFormData({...formData, price: Number(e.target.value)})} style={{ width: '100%' }} />
-            </div>
-          </div>
-
-          {(formData.category === 'Venta' || formData.category === 'Accesorios') && (
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>COMISIÓN VENDEDOR (%)</label>
-              <input type="number" className="astro-input" value={formData.commission_pct ?? 10} onChange={(e) => setFormData({...formData, commission_pct: Number(e.target.value)})} style={{ width: '100%' }} />
-            </div>
-          )}
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>FOTO DEL PRODUCTO</label>
-            <div 
-              onClick={() => setShowCamera(true)}
-              style={{ padding: '12px', border: '1px solid var(--border-color)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
-            >
-              <Camera size={18} color="var(--gold-primary)" />
-              <span style={{ fontSize: '13px' }}>{formData.image_url ? 'Cambiar Foto' : 'Añadir Foto'}</span>
-              {formData.image_url && <img src={formData.image_url} style={{ width: '24px', height: '24px', borderRadius: '4px', marginLeft: 'auto' }} />}
-            </div>
-          </div>
         </div>
-
-        <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
-          <button onClick={onClose} className="btn-secondary" style={{ flex: 1 }}>Cancelar</button>
-          <button onClick={handleSave} className="btn-gold" style={{ flex: 2 }} disabled={loading}>
-            {loading ? <Loader2 className="animate-spin" /> : 'Guardar Cambios'}
-          </button>
-        </div>
-
-        {showCamera && (
-          <AstroCamera 
-            onCapture={(img) => { setFormData({...formData, image_url: img}); setShowCamera(false); }} 
-            onClose={() => setShowCamera(false)} 
-          />
-        )}
-      </div>
-    </div>
+      )}
+    </AnimatedModal>
   );
 };
 

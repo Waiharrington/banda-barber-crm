@@ -28,6 +28,7 @@ import AstroSelect from './AstroSelect';
 import AstroCamera from './AstroCamera';
 import AstroDatePicker from './AstroDatePicker';
 import AstroDialog from './AstroDialog';
+import AnimatedModal from './AnimatedModal';
 import { formatName, normalizeForSearch } from '../utils/stringUtils';
 import { useDialog } from '../context/DialogContext';
 import { useScrollLock } from '../hooks/useScrollLock';
@@ -1079,39 +1080,41 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
                   </div>
                 )}
 
-                {selectingFor && (
-                  <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-                    <div className="glass-card animate-scale-in" style={{ maxWidth: '600px', width: '100%', padding: '24px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
-                        <h4 style={{ fontWeight: '900' }}>Elegir Foto {selectingFor}</h4>
-                        <button onClick={() => setSelectingFor(null)} style={{ background: 'none', border: 'none', color: 'white' }}><X size={20} /></button>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
-                        {gallery
-                          .filter(img => selectingFor === 'A' ? img.type === 'Antes' : img.type === 'Después')
-                          .map((img, i) => (
-                          <div 
-                            key={i} 
-                            onClick={() => {
-                              if (selectingFor === 'A') setPhotoA(img.url);
-                              if (selectingFor === 'B') setPhotoB(img.url);
-                              setSelectingFor(null);
-                            }}
-                            style={{ 
-                              aspectRatio: '1/1', 
-                              borderRadius: '8px', 
-                              overflow: 'hidden', 
-                              cursor: 'pointer',
-                              border: (selectingFor === 'A' ? photoA === img.url : photoB === img.url) ? '3px solid var(--gold-primary)' : 'none'
-                            }}
-                          >
-                            <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          </div>
-                        ))}
+                <AnimatedModal isOpen={!!selectingFor}>
+                  {(overlayClass, cardClass) => (
+                    <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+                      <div className={`glass-card ${cardClass}`} style={{ maxWidth: '600px', width: '100%', padding: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
+                          <h4 style={{ fontWeight: '900' }}>Elegir Foto {selectingFor}</h4>
+                          <button onClick={() => setSelectingFor(null)} style={{ background: 'none', border: 'none', color: 'white' }}><X size={20} /></button>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
+                          {gallery
+                            .filter(img => selectingFor === 'A' ? img.type === 'Antes' : img.type === 'Después')
+                            .map((img, i) => (
+                            <div 
+                              key={i} 
+                              onClick={() => {
+                                if (selectingFor === 'A') setPhotoA(img.url);
+                                if (selectingFor === 'B') setPhotoB(img.url);
+                                setSelectingFor(null);
+                              }}
+                              style={{ 
+                                aspectRatio: '1/1', 
+                                borderRadius: '8px', 
+                                overflow: 'hidden', 
+                                cursor: 'pointer',
+                                border: (selectingFor === 'A' ? photoA === img.url : photoB === img.url) ? '3px solid var(--gold-primary)' : 'none'
+                              }}
+                            >
+                              <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </AnimatedModal>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
@@ -1334,39 +1337,41 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
                   </div>
                 )}
 
-                {selectingFor && (
-                  <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-                    <div className="glass-card animate-scale-in" style={{ maxWidth: '600px', width: '100%', padding: '24px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
-                        <h4 style={{ fontWeight: '900' }}>Elegir Foto {selectingFor}</h4>
-                        <button onClick={() => setSelectingFor(null)} style={{ background: 'none', border: 'none', color: 'white' }}><X size={20} /></button>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
-                        {gallery
-                          .filter(img => selectingFor === 'A' ? img.type === 'Antes' : img.type === 'Después')
-                          .map((img, i) => (
-                          <div 
-                            key={i} 
-                            onClick={() => {
-                              if (selectingFor === 'A') setPhotoA(img.url);
-                              if (selectingFor === 'B') setPhotoB(img.url);
-                              setSelectingFor(null);
-                            }}
-                            style={{ 
-                              aspectRatio: '1/1', 
-                              borderRadius: '8px', 
-                              overflow: 'hidden', 
-                              cursor: 'pointer',
-                              border: (selectingFor === 'A' ? photoA === img.url : photoB === img.url) ? '3px solid var(--gold-primary)' : 'none'
-                            }}
-                          >
-                            <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          </div>
-                        ))}
+                <AnimatedModal isOpen={!!selectingFor}>
+                  {(overlayClass, cardClass) => (
+                    <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+                      <div className={`glass-card ${cardClass}`} style={{ maxWidth: '600px', width: '100%', padding: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
+                          <h4 style={{ fontWeight: '900' }}>Elegir Foto {selectingFor}</h4>
+                          <button onClick={() => setSelectingFor(null)} style={{ background: 'none', border: 'none', color: 'white' }}><X size={20} /></button>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
+                          {gallery
+                            .filter(img => selectingFor === 'A' ? img.type === 'Antes' : img.type === 'Después')
+                            .map((img, i) => (
+                            <div 
+                              key={i} 
+                              onClick={() => {
+                                if (selectingFor === 'A') setPhotoA(img.url);
+                                if (selectingFor === 'B') setPhotoB(img.url);
+                                setSelectingFor(null);
+                              }}
+                              style={{ 
+                                aspectRatio: '1/1', 
+                                borderRadius: '8px', 
+                                overflow: 'hidden', 
+                                cursor: 'pointer',
+                                border: (selectingFor === 'A' ? photoA === img.url : photoB === img.url) ? '3px solid var(--gold-primary)' : 'none'
+                              }}
+                            >
+                              <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </AnimatedModal>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
@@ -1476,164 +1481,169 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
         />
       )}
 
-      {selectedVisit && (
-        <VisitDetailModal 
-          visit={selectedVisit} 
-          onClose={() => setSelectedVisit(null)} 
-          gallery={gallery}
-        />
-      )}
+      <VisitDetailModal 
+        isOpen={!!selectedVisit}
+        visit={selectedVisit || {}} 
+        onClose={() => setSelectedVisit(null)} 
+        gallery={gallery}
+      />
 
-      {pendingPhoto && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div className="glass-card animate-scale-in" style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '24px', border: '1.5px solid rgba(212,175,55,0.3)' }}>
-            <h3 style={{ marginBottom: '20px', fontWeight: '900' }}>Configurar <span className="text-gold">Foto</span></h3>
-            
-            <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', marginBottom: '20px' }}>
-              <img src={pendingPhoto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
+      <AnimatedModal isOpen={!!pendingPhoto}>
+        {(overlayClass, cardClass) => (
+          <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+            <div className={`glass-card ${cardClass}`} style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '24px', border: '1.5px solid rgba(212,175,55,0.3)' }}>
+              <h3 style={{ marginBottom: '20px', fontWeight: '900' }}>Configurar <span className="text-gold">Foto</span></h3>
+              
+              <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', marginBottom: '20px' }}>
+                <img src={pendingPhoto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <AstroSelect 
-                label="TIPO DE FOTO"
-                value={photoMeta.type}
-                onChange={(val) => setPhotoMeta({ ...photoMeta, type: val })}
-                options={[
-                  { label: 'Normal / General', value: 'Normal' },
-                  { label: 'Antes (Before)', value: 'Antes' },
-                  { label: 'Después (After)', value: 'Después' }
-                ]}
-              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <AstroSelect 
+                  label="TIPO DE FOTO"
+                  value={photoMeta.type}
+                  onChange={(val) => setPhotoMeta({ ...photoMeta, type: val })}
+                  options={[
+                    { label: 'Normal / General', value: 'Normal' },
+                    { label: 'Antes (Before)', value: 'Antes' },
+                    { label: 'Después (After)', value: 'Después' }
+                  ]}
+                />
 
-              <AstroSelect 
-                label="ASOCIAR A VISITA (OPCIONAL)"
-                value={photoMeta.serviceId}
-                onChange={(val) => setPhotoMeta({ ...photoMeta, serviceId: val })}
-                options={[
-                  { label: 'Ninguna', value: null },
-                  ...history.map(h => ({ 
-                    label: `${new Date(h.created_at).toLocaleDateString()} - ${h.services?.name || h.description.split(' - ')[0].replace('Servicio: ', '')}`, 
-                    value: h.id 
-                  }))
-                ]}
-              />
+                <AstroSelect 
+                  label="ASOCIAR A VISITA (OPCIONAL)"
+                  value={photoMeta.serviceId}
+                  onChange={(val) => setPhotoMeta({ ...photoMeta, serviceId: val })}
+                  options={[
+                    { label: 'Ninguna', value: null },
+                    ...history.map(h => ({ 
+                      label: `${new Date(h.created_at).toLocaleDateString()} - ${h.services?.name || h.description.split(' - ')[0].replace('Servicio: ', '')}`, 
+                      value: h.id 
+                    }))
+                  ]}
+                />
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                <button onClick={() => setPendingPhoto(null)} style={{ flex: 1, padding: '14px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)', background: 'none', color: 'white', fontWeight: '700' }}>CANCELAR</button>
-                <button onClick={confirmSavePhoto} className="btn-gold" style={{ flex: 1, height: '48px', borderRadius: '14px' }}>GUARDAR FOTO</button>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                  <button onClick={() => setPendingPhoto(null)} style={{ flex: 1, padding: '14px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)', background: 'none', color: 'white', fontWeight: '700' }}>CANCELAR</button>
+                  <button onClick={confirmSavePhoto} className="btn-gold" style={{ flex: 1, height: '48px', borderRadius: '14px' }}>GUARDAR FOTO</button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatedModal>
     </div>
   );
 };
 
-const VisitDetailModal = ({ visit, onClose, gallery = [] }) => {
-  if (!visit) return null;
+const VisitDetailModal = ({ isOpen, visit, onClose, gallery = [] }) => {
+  if (!visit || Object.keys(visit).length === 0) return null;
 
   const servicePhotos = gallery.filter(img => img.service_id === visit.id);
   const servicePriceBs = (visit.service_price || 0) * (visit.exchange_rate || 0);
   const totalBs = visit.payment_metadata?.transfer_bs || (visit.amount * (visit.exchange_rate || 0));
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-      <div className="glass-card animate-scale-in" style={{ maxWidth: '480px', width: '100%', borderRadius: '28px', padding: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Recibo de <span className="text-gold">Visita</span></h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
-        </div>
+    <AnimatedModal isOpen={isOpen}>
+      {(overlayClass, cardClass) => (
+        <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div className={`glass-card ${cardClass}`} style={{ maxWidth: '480px', width: '100%', borderRadius: '28px', padding: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Recibo de <span className="text-gold">Visita</span></h3>
+              <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Header Info */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', paddingBottom: '16px', borderBottom: '1px dashed rgba(255,255,255,0.1)' }}>
-            <DetailItem label="Fecha y Hora" value={new Date(visit.created_at).toLocaleString('es-VE', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })} />
-            <DetailItem label="Barbero" value={visit.barber_name || 'No esp.'} />
-          </div>
-
-          {/* Invoice Items */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--gold-primary)', letterSpacing: '1px', textTransform: 'uppercase' }}>Detalle de Cargos</label>
-            
-            {/* Main Service */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontWeight: '700', fontSize: '14px' }}>{visit.service_name}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Servicio Base</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Header Info */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', paddingBottom: '16px', borderBottom: '1px dashed rgba(255,255,255,0.1)' }}>
+                <DetailItem label="Fecha y Hora" value={new Date(visit.created_at).toLocaleString('es-VE', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })} />
+                <DetailItem label="Barbero" value={visit.barber_name || 'No esp.'} />
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: '700', fontSize: '14px' }}>${visit.service_price}</div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{servicePriceBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
-              </div>
-            </div>
 
-            {/* Extras */}
-            {visit.payment_metadata?.extras && visit.payment_metadata.extras.length > 0 && (
-              visit.payment_metadata.extras.map((ex, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>+ {ex.name}</div>
-                  <div style={{ fontWeight: '600', fontSize: '13px' }}>${ex.price}</div>
-                </div>
-              ))
-            )}
-
-            {/* Products */}
-            {visit.payment_metadata?.products_sold && visit.payment_metadata.products_sold.length > 0 && (
-              visit.payment_metadata.products_sold.map((p, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>{p.name} (x{p.quantity})</div>
-                  <div style={{ fontWeight: '600', fontSize: '13px' }}>${(p.price * p.quantity).toFixed(2)}</div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Totals Section */}
-          <div style={{ marginTop: '10px', paddingTop: '16px', borderTop: '2px solid rgba(212,175,55,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-            <div>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>TOTAL A PAGAR</label>
-              <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--gold-primary)', lineHeight: '1' }}>${visit.amount}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>TASA: {visit.exchange_rate} Bs.</div>
-            </div>
-          </div>
-
-          {/* Payment Method */}
-          <div style={{ padding: '16px', backgroundColor: 'rgba(212,175,55,0.05)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.1)' }}>
-            <label style={{ display: 'block', fontSize: '10px', fontWeight: '800', color: 'var(--gold-primary)', marginBottom: '12px', letterSpacing: '1px' }}>MÉTODO DE PAGO</label>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: '700', fontSize: '16px' }}>{visit.payment_method}</span>
-              <span style={{ fontSize: '11px', fontWeight: '900', color: '#34c759', backgroundColor: 'rgba(52,199,89,0.1)', padding: '4px 8px', borderRadius: '6px' }}>{visit.status.toUpperCase()}</span>
-            </div>
-            {visit.payment_metadata?.method_bs && visit.payment_metadata.method_bs !== visit.payment_method && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>M. Secundario</span>
-                <span style={{ fontWeight: '700', fontSize: '14px' }}>{visit.payment_metadata.method_bs}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Photos */}
-          {servicePhotos.length > 0 && (
-            <div style={{ marginTop: '10px' }}>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase' }}>Fotos de esta visita</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                {servicePhotos.map((p, i) => (
-                  <div key={i} style={{ aspectRatio: '1/1', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
-                    <img src={p.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              {/* Invoice Items */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--gold-primary)', letterSpacing: '1px', textTransform: 'uppercase' }}>Detalle de Cargos</label>
+                
+                {/* Main Service */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: '700', fontSize: '14px' }}>{visit.service_name}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Servicio Base</div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: '700', fontSize: '14px' }}>${visit.service_price}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{servicePriceBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
+                  </div>
+                </div>
 
-        <button onClick={onClose} className="btn-gold" style={{ width: '100%', marginTop: '32px', height: '52px', borderRadius: '16px', fontWeight: '900' }}>CERRAR RECIBO</button>
-      </div>
-    </div>
+                {/* Extras */}
+                {visit.payment_metadata?.extras && visit.payment_metadata.extras.length > 0 && (
+                  visit.payment_metadata.extras.map((ex, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>+ {ex.name}</div>
+                      <div style={{ fontWeight: '600', fontSize: '13px' }}>${ex.price}</div>
+                    </div>
+                  ))
+                )}
+
+                {/* Products */}
+                {visit.payment_metadata?.products_sold && visit.payment_metadata.products_sold.length > 0 && (
+                  visit.payment_metadata.products_sold.map((p, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>{p.name} (x{p.quantity})</div>
+                      <div style={{ fontWeight: '600', fontSize: '13px' }}>${(p.price * p.quantity).toFixed(2)}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Totals Section */}
+              <div style={{ marginTop: '10px', paddingTop: '16px', borderTop: '2px solid rgba(212,175,55,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div>
+                  <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>TOTAL A PAGAR</label>
+                  <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--gold-primary)', lineHeight: '1' }}>${visit.amount}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>TASA: {visit.exchange_rate} Bs.</div>
+                </div>
+              </div>
+
+              {/* Payment Method */}
+              <div style={{ padding: '16px', backgroundColor: 'rgba(212,175,55,0.05)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.1)' }}>
+                <label style={{ display: 'block', fontSize: '10px', fontWeight: '800', color: 'var(--gold-primary)', marginBottom: '12px', letterSpacing: '1px' }}>MÉTODO DE PAGO</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: '700', fontSize: '16px' }}>{visit.payment_method}</span>
+                  <span style={{ fontSize: '11px', fontWeight: '900', color: '#34c759', backgroundColor: 'rgba(52,199,89,0.1)', padding: '4px 8px', borderRadius: '6px' }}>{visit.status?.toUpperCase() || 'PAGADO'}</span>
+                </div>
+                {visit.payment_metadata?.method_bs && visit.payment_metadata.method_bs !== visit.payment_method && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>M. Secundario</span>
+                    <span style={{ fontWeight: '700', fontSize: '14px' }}>{visit.payment_metadata.method_bs}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Photos */}
+              {servicePhotos.length > 0 && (
+                <div style={{ marginTop: '10px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase' }}>Fotos de esta visita</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                    {servicePhotos.map((p, i) => (
+                      <div key={i} style={{ aspectRatio: '1/1', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+                        <img src={p.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button onClick={onClose} className="btn-gold" style={{ width: '100%', marginTop: '32px', height: '52px', borderRadius: '16px', fontWeight: '900' }}>CERRAR RECIBO</button>
+          </div>
+        </div>
+      )}
+    </AnimatedModal>
   );
 };
 

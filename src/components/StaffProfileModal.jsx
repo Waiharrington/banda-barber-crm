@@ -18,6 +18,8 @@ import { useDialog } from '../context/DialogContext';
 import { useAuth } from '../context/AuthContext';
 import AstroSelect from './AstroSelect';
 import { useScrollLock } from '../hooks/useScrollLock';
+import AnimatedModal from './AnimatedModal';
+import { createPortal } from 'react-dom';
 
 const asArray = (value) => Array.isArray(value) ? value : [];
 
@@ -136,21 +138,25 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
     (i.category === 'Herramienta' || i.category === 'Accesorios') && !i.staff_id
   );
 
-  if (!isOpen || !staffMember) return null;
+  // Remove early return to allow AnimatedModal exit animations
+  // if (!isOpen || !staffMember) return null;
+  if (!staffMember) return null;
 
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.85)',
-      backdropFilter: 'blur(10px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: '20px'
-    }}>
-      <div className="glass-card animate-slide-up" style={{
+  return createPortal(
+    <AnimatedModal isOpen={isOpen}>
+      {(overlayClass, cardClass) => (
+        <div className={overlayClass} style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div className={`glass-card ${cardClass}`} style={{
         width: '100%',
         maxWidth: '800px',
         maxHeight: isMobileView ? '95vh' : '90vh',
@@ -395,8 +401,10 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
           )}
         </div>
 
-      </div>
-    </div>
+        </div>
+      )}
+    </AnimatedModal>,
+    document.body
   );
 };
 

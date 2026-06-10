@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Calendar as CalendarIcon, 
@@ -84,7 +85,7 @@ const ScheduleModal = ({ isOpen, onClose, client, service, staff, onSchedule, de
     onClose();
   };
 
-  return (
+  return createPortal(
     <AnimatedModal isOpen={isOpen}>
       {(overlayClass, cardClass) => (
         <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)', zIndex: 20000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
@@ -175,7 +176,8 @@ const ScheduleModal = ({ isOpen, onClose, client, service, staff, onSchedule, de
       </div>
     </div>
       )}
-    </AnimatedModal>
+    </AnimatedModal>,
+    document.body
   );
 };
 
