@@ -1230,7 +1230,8 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 </div>
               </div>
             </React.Fragment>
-            ))}
+            );
+          })}
           </div>
         ) : (
           /* Desktop Table - EXCEL STYLE */
