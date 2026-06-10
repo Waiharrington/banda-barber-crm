@@ -2510,72 +2510,88 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       }
 
                       return (
-                        <div key={idx} style={{ background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '20px', borderLeft: t.metadata?.didWash ? '4px solid #007aff' : '1px solid rgba(255,255,255,0.1)' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <div key={idx} style={{ 
+                          background: 'linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%)', 
+                          padding: '24px', 
+                          borderRadius: '24px', 
+                          border: '1px solid rgba(255,255,255,0.05)',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          marginBottom: '16px'
+                        }}>
+                          {/* Accent line */}
+                          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: t.metadata?.didWash ? 'linear-gradient(to bottom, #007aff, #00c6ff)' : 'rgba(255,255,255,0.15)' }}></div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', paddingLeft: '8px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ fontWeight: '900', fontSize: '15px', color: 'white' }}>{serviceName}</span>
-                              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '800', marginTop: '2px' }}>
-                                <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{clientName}</span> · Costo Total: <span style={{ color: 'white' }}>${(commUsd / 0.4).toFixed(2)} USD</span> ({(commBs / 0.4).toFixed(2)} Bs)
+                              <span style={{ fontWeight: '900', fontSize: '18px', color: 'white', letterSpacing: '-0.5px' }}>{serviceName}</span>
+                              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '6px' }}>
+                                <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{clientName}</span> <span style={{opacity: 0.5, margin: '0 4px'}}>•</span> Costo Total: <span style={{ color: 'white', fontWeight: '800' }}>${(commUsd / 0.4).toFixed(2)} USD</span> <span style={{opacity: 0.6}}>({(commBs / 0.4).toFixed(2)} Bs)</span>
                               </span>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <div style={{ color: '#32d74b', fontWeight: '950', fontSize: '16px' }}>+{formatCurrency(totalEarningsBs, '')} Bs</div>
-                              <div style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: '800' }}>+${formatCurrency(totalEarningsUsd, '')} USD</div>
+                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
+                              <div style={{ color: '#32d74b', fontWeight: '900', fontSize: '20px', letterSpacing: '-0.5px' }}>+{formatCurrency(totalEarningsBs, '')} Bs</div>
+                              <div style={{ color: '#32d74b', opacity: 0.9, fontSize: '12px', fontWeight: '800', background: 'rgba(50, 215, 75, 0.15)', padding: '2px 8px', borderRadius: '12px', marginTop: '4px' }}>+${formatCurrency(totalEarningsUsd, '')} USD</div>
                             </div>
                           </div>
                           
                           {/* Desglose de ganancias reales del barbero */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', margin: '8px 0 12px 0', padding: '8px 12px', background: 'rgba(0,0,0,0.15)', borderRadius: '12px', fontSize: '11px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
-                              <span>Comisión Servicio:</span>
-                              <span style={{ color: 'white', fontWeight: '700' }}>${commUsd.toFixed(2)} USD ({commBs.toFixed(2)} Bs)</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '16px 0', padding: '16px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.03)', boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.2)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Comisión Servicio:</span>
+                              <span style={{ color: 'white', fontWeight: '800', fontFamily: 'monospace', fontSize: '13px' }}>${commUsd.toFixed(2)} USD <span style={{opacity: 0.5}}>({commBs.toFixed(2)} Bs)</span></span>
                             </div>
                             {prodCommUsd > 0 && (
-                              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
-                                <span>Comisión Productos:</span>
-                                <span style={{ color: 'white', fontWeight: '700' }}>${prodCommUsd.toFixed(2)} USD ({prodCommBs.toFixed(2)} Bs)</span>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Comisión Productos:</span>
+                                <span style={{ color: 'white', fontWeight: '800', fontFamily: 'monospace', fontSize: '13px' }}>${prodCommUsd.toFixed(2)} USD <span style={{opacity: 0.5}}>({prodCommBs.toFixed(2)} Bs)</span></span>
                               </div>
                             )}
                             {tipUsd > 0 && (
-                              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#32d74b', fontWeight: '700' }}>
-                                <span>🍬 Propina:</span>
-                                <span>+${tipUsd.toFixed(2)} USD (+{tipBs.toFixed(2)} Bs)</span>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#32d74b', marginTop: '4px', paddingTop: '8px', borderTop: '1px solid rgba(50,215,75,0.2)' }}>
+                                <span style={{ fontWeight: '800' }}>🍬 Propina:</span>
+                                <span style={{ fontWeight: '800', fontFamily: 'monospace', fontSize: '13px' }}>+${tipUsd.toFixed(2)} USD <span style={{opacity: 0.7}}>(+{tipBs.toFixed(2)} Bs)</span></span>
                               </div>
                             )}
                           </div>
 
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px', marginTop: '4px' }}>
-                            <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', padding: '3px 10px', borderRadius: '20px', fontWeight: '700', border: '1px solid rgba(255,255,255,0.1)' }}>
-                              💳 {methodText.toUpperCase()}
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px', paddingLeft: '8px' }}>
+                            <span style={{ fontSize: '11px', background: 'rgba(255,255,255,0.08)', color: 'white', padding: '6px 12px', borderRadius: '8px', fontWeight: '700', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '6px', letterSpacing: '0.5px' }}>
+                              <span style={{opacity: 0.6}}>💳</span> {methodText.toUpperCase()}
                             </span>
                             {t.metadata?.didWash && (
-                              <span style={{ fontSize: '10px', background: 'rgba(0,122,255,0.1)', color: '#007aff', padding: '3px 10px', borderRadius: '20px', fontWeight: '900', border: '1px solid rgba(0,122,255,0.2)' }}>💧 LAVADO</span>
+                              <span style={{ fontSize: '11px', background: 'linear-gradient(45deg, rgba(0,122,255,0.15), rgba(0,198,255,0.15))', color: '#64d2ff', padding: '6px 12px', borderRadius: '8px', fontWeight: '800', border: '1px solid rgba(0,122,255,0.3)', display: 'flex', alignItems: 'center', gap: '6px', letterSpacing: '0.5px' }}>
+                                💧 LAVADO
+                              </span>
                             )}
                           </div>
 
                           {(t.metadata?.extras?.length > 0 || t.metadata?.products_sold?.length > 0) && (
-                            <div style={{ padding: '12px', background: 'rgba(0,0,0,0.25)', borderRadius: '14px', marginBottom: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Detalle de Venta:</div>
+                            <div style={{ padding: '16px', background: 'rgba(212, 175, 55, 0.05)', borderRadius: '16px', marginBottom: '16px', border: '1px dashed rgba(212, 175, 55, 0.2)' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                <span style={{ color: 'var(--gold-primary)' }}>🛍️</span>
+                                <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>Detalle de Venta</div>
+                              </div>
                               {t.metadata?.extras?.map((ex, eidx) => (
-                                <div key={eidx} style={{ fontSize: '11px', color: 'white', display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                                  <span style={{ color: 'var(--text-secondary)' }}>• {ex.service_extras?.name || 'Extra'} (Extra)</span>
-                                  <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>+${ex.price}</span>
+                                <div key={eidx} style={{ fontSize: '12px', color: 'white', display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                  <span style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>• {ex.service_extras?.name || 'Extra'} <span style={{opacity:0.5, fontSize:'10px'}}>(Extra)</span></span>
+                                  <span style={{ color: 'var(--gold-primary)', fontWeight: '800', fontFamily: 'monospace' }}>+${ex.price.toFixed(2)}</span>
                                 </div>
                               ))}
                               {t.metadata?.products_sold?.map((p, pidx) => (
-                                <div key={pidx} style={{ fontSize: '11px', color: 'white', display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
-                                  <span style={{ color: 'var(--text-secondary)' }}>• {p.name} (x{p.quantity})</span>
-                                  <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>+${p.price * p.quantity}</span>
+                                <div key={pidx} style={{ fontSize: '12px', color: 'white', display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                  <span style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>• {p.name} <span style={{color: 'var(--gold-primary)', opacity: 0.8}}>(x{p.quantity})</span></span>
+                                  <span style={{ color: 'var(--gold-primary)', fontWeight: '800', fontFamily: 'monospace' }}>+${(p.price * p.quantity).toFixed(2)}</span>
                                 </div>
                               ))}
                             </div>
                           )}
 
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                              {t.created_at ? new Date(t.created_at).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }) : 'S/F'}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '16px', paddingLeft: '8px' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{opacity:0.5}}>🕒</span> {t.created_at ? new Date(t.created_at).toLocaleString('es-VE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }) : 'S/F'}
                             </span>
-                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px' }}>ID: {t.id.slice(0,8)}</span>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '6px', fontWeight: '600' }}>ID: {t.id.slice(0,8)}</span>
                           </div>
                         </div>
                       );
