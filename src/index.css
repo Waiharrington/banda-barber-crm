@@ -102,7 +102,7 @@ html, body {
   background: rgba(28, 28, 30, 0.6);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.15);
   border-radius: 20px;
   padding: 24px;
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);

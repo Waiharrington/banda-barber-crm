@@ -382,9 +382,10 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
+            justifyContent: 'center',
             gap: '12px', 
             backgroundColor: 'rgba(255, 69, 58, 0.08)', 
-            padding: '0 20px', 
+            padding: '14px 20px', 
             borderRadius: '12px', 
             border: '1px solid rgba(255,69,58,0.15)',
             color: 'rgba(255, 69, 58, 0.9)',
@@ -449,7 +450,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
           <p style={{ color: 'var(--text-muted)', fontSize: '18px' }}>No hay productos que coincidan.</p>
         </div>
       ) : viewMode === 'list' ? (
-        <div className="glass-card animate-fade-in" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.03)' }}>
+        <div className="glass-card animate-fade-in" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
             <div style={{ width: '100%', overflowX: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'auto' }}>
                 <thead>
@@ -532,7 +533,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
               <div key={item.id} className="glass-card animate-scale-in inventory-card" style={{ 
                 position: 'relative',
                 borderRadius: '24px',
-                border: isLowStock ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(255,255,255,0.05)',
+                border: isLowStock ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(212, 175, 55, 0.1)',
                 boxShadow: isLowStock ? '0 10px 30px rgba(212, 175, 55, 0.1)' : '0 10px 30px rgba(0,0,0,0.2)',
                 background: isLowStock ? 'linear-gradient(135deg, rgba(28,28,30,0.9), rgba(212, 175, 55, 0.05))' : 'var(--bg-secondary)'
               }}>
