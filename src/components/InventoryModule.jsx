@@ -567,16 +567,8 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                     </span>
                   </div>
                   {isLowStock && (
-                    <span style={{ 
-                      color: 'var(--gold-primary)', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '4px', 
-                      fontSize: '11px',
-                      fontWeight: '900',
-                      animation: 'pulse 2s infinite'
-                    }}>
-                      <Zap size={14} fill="var(--gold-primary)" /> GOLD ALERT
+                    <span className="animate-pulse" style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', gap: '4px', letterSpacing: '1px' }}>
+                      <Zap size={14} fill="var(--gold-primary)" /> STOCK BAJO
                     </span>
                   )}
                 </div>
