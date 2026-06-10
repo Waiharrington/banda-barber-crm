@@ -450,25 +450,25 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
           <p style={{ color: 'var(--text-muted)', fontSize: '18px' }}>No hay productos que coincidan.</p>
         </div>
       ) : viewMode === 'list' ? (
-        <div className="glass-card" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
+        <div className="animate-slide-up" style={{ background: 'rgba(28, 28, 30, 0.95)', padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
             <div style={{ width: '100%', overflowX: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'auto' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                    <th style={{ padding: isMobile ? '8px 4px 8px 12px' : '20px', fontSize: isMobile ? '9px' : '11px', fontWeight: '900', color: 'var(--text-muted)' }}>PRODUCTO</th>
-                    <th style={{ padding: isMobile ? '8px 4px' : '20px', fontSize: isMobile ? '9px' : '11px', fontWeight: '900', color: 'var(--text-muted)', display: isMobile ? 'none' : 'table-cell' }}>CATEGORÍA</th>
-                    <th style={{ padding: isMobile ? '8px 4px' : '20px', fontSize: isMobile ? '9px' : '11px', fontWeight: '900', color: 'var(--text-muted)', textAlign: 'center' }}>STOCK</th>
-                    <th style={{ padding: isMobile ? '8px 4px' : '20px', fontSize: isMobile ? '9px' : '11px', fontWeight: '900', color: 'var(--text-muted)', textAlign: 'right' }}>PRECIO</th>
-                    <th style={{ padding: isMobile ? '8px 12px 8px 4px' : '20px', fontSize: isMobile ? '9px' : '11px', fontWeight: '900', color: 'var(--text-muted)', textAlign: 'right' }}>ACCIONES</th>
+                    <th style={{ padding: isMobile ? '12px 6px 12px 16px' : '20px', fontSize: isMobile ? '10px' : '11px', fontWeight: '900', color: 'var(--text-muted)' }}>PRODUCTO</th>
+                    <th style={{ padding: isMobile ? '12px 6px' : '20px', fontSize: isMobile ? '10px' : '11px', fontWeight: '900', color: 'var(--text-muted)', display: isMobile ? 'none' : 'table-cell' }}>CATEGORÍA</th>
+                    <th style={{ padding: isMobile ? '12px 6px' : '20px', fontSize: isMobile ? '10px' : '11px', fontWeight: '900', color: 'var(--text-muted)', textAlign: 'center' }}>STOCK</th>
+                    <th style={{ padding: isMobile ? '12px 6px' : '20px', fontSize: isMobile ? '10px' : '11px', fontWeight: '900', color: 'var(--text-muted)', textAlign: 'right' }}>PRECIO</th>
+                    <th style={{ padding: isMobile ? '12px 16px 12px 6px' : '20px', fontSize: isMobile ? '10px' : '11px', fontWeight: '900', color: 'var(--text-muted)', textAlign: 'right' }}>ACCIONES</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredInventory.map(item => (
                     <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background 0.2s' }} className="table-row-hover">
-                      <td style={{ padding: isMobile ? '8px 4px 8px 12px' : '16px 20px', maxWidth: isMobile ? '100px' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <td style={{ padding: isMobile ? '12px 6px 12px 16px' : '16px 20px', maxWidth: isMobile ? '120px' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                           <span style={{ fontWeight: '800', fontSize: isMobile ? '11px' : '14px', lineHeight: '1.2' }}>{item.name}</span>
-                           {isMobile && <span style={{ fontSize: '9px', color: 'var(--text-secondary)', marginTop: '2px' }}>{item.category}</span>}
+                           <span style={{ fontWeight: '800', fontSize: isMobile ? '13px' : '14px', lineHeight: '1.2' }}>{item.name}</span>
+                           {isMobile && <span style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '4px' }}>{item.category}</span>}
                         </div>
                       </td>
                       <td style={{ padding: isMobile ? '8px 4px' : '16px 20px', display: isMobile ? 'none' : 'table-cell' }}>
@@ -480,42 +480,42 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
                           <span style={{ 
                             fontWeight: '950', 
-                            fontSize: isMobile ? '11px' : '15px',
+                            fontSize: isMobile ? '13px' : '15px',
                             color: (item.stock <= 5 && item.category !== 'Accesorios') ? 'var(--gold-primary)' : 'white'
                           }}>
                             {item.stock}
                           </span>
-                          {(item.stock <= 5 && item.category !== 'Accesorios') && <AlertTriangle size={isMobile ? 10 : 12} color="var(--gold-primary)" />}
+                          {(item.stock <= 5 && item.category !== 'Accesorios') && <AlertTriangle size={12} color="var(--gold-primary)" />}
                         </div>
                       </td>
-                      <td style={{ padding: isMobile ? '8px 4px' : '16px 20px', textAlign: 'right' }}>
-                        <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: isMobile ? '11px' : '14px' }}>${item.price?.toFixed(2) || '0.00'}</div>
+                      <td style={{ padding: isMobile ? '12px 6px' : '16px 20px', textAlign: 'right' }}>
+                        <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: isMobile ? '13px' : '14px' }}>${item.price?.toFixed(2) || '0.00'}</div>
                       </td>
-                      <td style={{ padding: isMobile ? '8px 12px 8px 4px' : '16px 20px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                      <td style={{ padding: isMobile ? '12px 16px 12px 6px' : '16px 20px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
                           <button 
                             onClick={() => handeAdjustStock(item.id, item.stock, -1)}
-                            className="action-btn" style={{ width: isMobile ? '24px' : '32px', height: isMobile ? '24px' : '32px', padding: 0 }}
+                            className="action-btn" style={{ width: isMobile ? '28px' : '32px', height: isMobile ? '28px' : '32px', padding: 0 }}
                           >
-                            <Minus size={isMobile ? 12 : 14} />
+                            <Minus size={14} />
                           </button>
                           <button 
                             onClick={() => handeAdjustStock(item.id, item.stock, 1)}
-                            className="action-btn" style={{ width: isMobile ? '24px' : '32px', height: isMobile ? '24px' : '32px', padding: 0 }}
+                            className="action-btn" style={{ width: isMobile ? '28px' : '32px', height: isMobile ? '28px' : '32px', padding: 0 }}
                           >
-                            <Plus size={isMobile ? 12 : 14} />
+                            <Plus size={14} />
                           </button>
                           <button 
                             onClick={() => setEditingItem(item)}
-                            className="action-btn" style={{ width: isMobile ? '24px' : '32px', height: isMobile ? '24px' : '32px', padding: 0, backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)' }}
+                            className="action-btn" style={{ width: isMobile ? '28px' : '32px', height: isMobile ? '28px' : '32px', padding: 0, backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)' }}
                           >
-                            <Edit3 size={isMobile ? 12 : 14} />
+                            <Edit3 size={14} />
                           </button>
                           <button 
                             onClick={() => handleDeleteItem(item.id, item.name)}
-                            className="action-btn" style={{ width: isMobile ? '24px' : '32px', height: isMobile ? '24px' : '32px', padding: 0, backgroundColor: 'rgba(255,69,58,0.1)', color: '#ff453a' }}
+                            className="action-btn" style={{ width: isMobile ? '28px' : '32px', height: isMobile ? '28px' : '32px', padding: 0, backgroundColor: 'rgba(255,69,58,0.1)', color: '#ff453a' }}
                           >
-                            <Trash2 size={isMobile ? 12 : 14} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </td>
@@ -530,7 +530,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
           {filteredInventory.map(item => {
             const isLowStock = item.stock <= 5 && item.category !== 'Accesorios';
             return (
-              <div key={item.id} className="glass-card inventory-card" style={{ 
+              <div key={item.id} className="glass-card inventory-card animate-scale-in" style={{ 
                 position: 'relative',
                 borderRadius: '24px',
                 border: isLowStock ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(212, 175, 55, 0.1)',
