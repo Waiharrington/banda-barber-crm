@@ -19,6 +19,7 @@ const TopBar = ({
 }) => {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [activeBarber, setActiveBarber] = useState(null);
 
   useEffect(() => {
     const updateUnread = () => {
@@ -27,11 +28,27 @@ const TopBar = ({
       setUnreadCount(count);
     };
 
+    const handleBarberChange = (e) => {
+      setActiveBarber(e.detail);
+    };
+
     updateUnread();
     window.addEventListener('astro_new_notification', updateUnread);
-    return () => window.removeEventListener('astro_new_notification', updateUnread);
+    window.addEventListener('astro_active_barber_changed', handleBarberChange);
+    return () => {
+      window.removeEventListener('astro_new_notification', updateUnread);
+      window.removeEventListener('astro_active_barber_changed', handleBarberChange);
+    };
   }, []);
   
+  const getGreeting = () => {
+    const options = { timeZone: 'America/Caracas', hour: 'numeric', hour12: false };
+    const hour = parseInt(new Date().toLocaleString('en-US', options), 10);
+    if (hour >= 5 && hour < 12) return '¡Buenos días,';
+    if (hour >= 12 && hour < 19) return '¡Buenas tardes,';
+    return '¡Buenas noches,';
+  };
+
   return (
     <div style={{ 
       display: 'flex', 
@@ -53,7 +70,11 @@ const TopBar = ({
             justifyContent: 'center',
             boxShadow: 'var(--gold-glow)'
           }}>
-            <User color="black" size={22} />
+            {user?.image_url ? (
+              <img src={user.image_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} />
+            ) : (
+              <User color="black" size={22} />
+            )}
           </div>
           <div style={{ 
             position: 'absolute', 
@@ -73,7 +94,9 @@ const TopBar = ({
             </h1>
           ) : (
             <h1 style={{ fontSize: '22px', fontWeight: '950', letterSpacing: '-0.5px' }}>
-              ¡Hola, <span className="text-gold">{user?.name?.split(' ')[0] || 'Astro'}</span>!
+              ¡Hola, <span className="text-gold">
+                {user?.name?.split(' ')[0] || 'Administrador'}!
+              </span>
             </h1>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>

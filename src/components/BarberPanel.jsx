@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { useModal } from '../context/ModalContext';
 import { 
   Scissors, 
   Camera, 
@@ -39,13 +41,13 @@ const BarberPanel = ({ isMobile, rates }) => {
   const [inventory, setInventory] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeAppId, setActiveAppId] = useState(null);
-  const [addMode, setAddMode] = useState('extra'); // 'extra' or 'product'
-
-  // Photo States
+  const [addMode, setAddMode] = useState(null); // 'extra' | 'product'
+  const { pushModal, popModal } = useModal();
   const [showCamera, setShowCamera] = useState(false);
   const [cameraTarget, setCameraTarget] = useState({ appId: null, type: 'Antes' });
   const [editingExtraPriceId, setEditingExtraPriceId] = useState(null);
   const [selectedCompletedApp, setSelectedCompletedApp] = useState(null);
+  const [visibleCompletedCount, setVisibleCompletedCount] = useState(5);
 
   const handleUpdateExtraPrice = async (extraId, newPrice) => {
     try {
@@ -89,10 +91,22 @@ const BarberPanel = ({ isMobile, rates }) => {
       const isSelectableRole = !roleName.includes('admin') && !roleName.includes('recepcionista') && !roleName.includes('caja');
       if (isSelectableRole) {
         const me = staff.find(s => s.id === user.id);
-        if (me) setSelectedBarber(me);
+        if (me) {
+          setSelectedBarber(me);
+          window.dispatchEvent(new CustomEvent('astro_active_barber_changed', { detail: me }));
+        }
       }
     }
   }, [staff, user]);
+
+  // Sync modal state with global context to hide sidebar
+  useEffect(() => {
+    const isAnyModalOpen = !!selectedCompletedApp || showAddModal || showCamera;
+    if (isAnyModalOpen) {
+      pushModal();
+      return () => popModal();
+    }
+  }, [selectedCompletedApp, showAddModal, showCamera, pushModal, popModal]);
 
   const loadMyWork = useCallback(async () => {
     if (!selectedBarber) return;
@@ -182,6 +196,8 @@ const BarberPanel = ({ isMobile, rates }) => {
       return () => {
         supabase.removeChannel(subscription);
       };
+    } else {
+      window.dispatchEvent(new CustomEvent('astro_active_barber_changed', { detail: null }));
     }
   }, [selectedBarber, loadMyWork, loadCompletedToday]);
 
@@ -434,11 +450,11 @@ const BarberPanel = ({ isMobile, rates }) => {
 
   if (!selectedBarber) {
     return (
-      <div className="animate-fade-in" style={{ padding: '40px 20px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '10px' }}>Panel de <span className="text-gold">Barberos / Asistentes</span></h2>
+      <div className="animate-fade-in" style={{ padding: '40px 20px 100px 20px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: 'clamp(18px, 5.5vw, 28px)', fontWeight: '900', marginBottom: '10px', whiteSpace: 'nowrap' }}>Panel de <span className="text-gold">Barberos / Asistentes</span></h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '40px' }}>Selecciona tu perfil para comenzar tu turno.</p>
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '20px', maxWidth: '600px', margin: '0 auto' }}>
+        <div className="animate-page-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '20px', maxWidth: '600px', margin: '0 auto' }}>
           {staff
             .filter(s => {
               const roleName = (s.role?.split('|')[0] || '').toLowerCase();
@@ -446,25 +462,54 @@ const BarberPanel = ({ isMobile, rates }) => {
                      !roleName.includes('recepcionista') && 
                      !roleName.includes('caja');
             })
-            .map(s => (
-            <button 
-              key={s.id} 
-              onClick={() => setSelectedBarber(s)}
-              className="glass-card hover-item" 
-              style={{ padding: '30px 20px', borderRadius: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer' }}
-            >
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--gold-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--gold-glow)' }}>
-                <User size={32} color="black" />
-              </div>
-              <span style={{ fontWeight: '800', fontSize: '15px', color: 'white' }}>{s.name}</span>
-            </button>
-          ))}
+            .map(s => {
+              const displayRole = (s.role?.split('|')[0] || 'Barbero').trim();
+              return (
+              <button 
+                key={s.id} 
+                onClick={() => {
+                  setSelectedBarber(s);
+                  window.dispatchEvent(new CustomEvent('astro_active_barber_changed', { detail: s }));
+                }}
+                className="glass-card hover-item" 
+                style={{ padding: '30px 10px', borderRadius: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', cursor: 'pointer', width: '100%' }}
+              >
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--gold-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--gold-glow)', marginBottom: '4px' }}>
+                  {s.image_url ? (
+                    <img src={s.image_url} alt={s.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <User size={32} color="black" />
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', width: '100%' }}>
+                  <span style={{ fontWeight: '800', fontSize: '16px', color: 'white' }}>{s.name}</span>
+                  <span style={{ 
+                    fontSize: '9.5px', 
+                    fontWeight: '700', 
+                    color: 'var(--text-muted)', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0px',
+                    textAlign: 'center',
+                    lineHeight: '1.2',
+                    width: '100%',
+                    textWrap: 'balance'
+                  }}>{displayRole}</span>
+                </div>
+              </button>
+            )})}
         </div>
       </div>
     );
   }
 
   const isAssistant = selectedBarber?.role?.toLowerCase().includes('asistente');
+  const getGreeting = () => {
+    const options = { timeZone: 'America/Caracas', hour: 'numeric', hour12: false };
+    const hour = parseInt(new Date().toLocaleString('en-US', options), 10);
+    if (hour >= 5 && hour < 12) return '¡Buenos días,';
+    if (hour >= 12 && hour < 19) return '¡Buenas tardes,';
+    return '¡Buenas noches,';
+  };
 
   return (
     <div className="animate-fade-in" style={{ maxWidth: '550px', margin: '0 auto', paddingBottom: '100px' }}>
@@ -472,9 +517,13 @@ const BarberPanel = ({ isMobile, rates }) => {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: isAssistant ? 'linear-gradient(135deg, #007aff, #00d2ff)' : 'var(--gold-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {isAssistant ? <Droplets size={20} color="white" /> : <Scissors size={20} color="black" />}
+              {selectedBarber.image_url ? (
+                <img src={selectedBarber.image_url} alt={selectedBarber.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                isAssistant ? <Droplets size={20} color="white" /> : <Scissors size={20} color="black" />
+              )}
             </div>
-            <h2 style={{ fontSize: '24px', fontWeight: '900' }}>Hola, <span className="text-gold">{selectedBarber.name.split(' ')[0]}</span></h2>
+            <h2 style={{ fontSize: '24px', fontWeight: '900' }}>¡Hola, <span className="text-gold">{selectedBarber.name.split(' ')[0]}!</span></h2>
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
             {isAssistant ? "Gestiona las estaciones de lavado del día." : "Gestiona tus servicios activos y citas."}
@@ -491,8 +540,13 @@ const BarberPanel = ({ isMobile, rates }) => {
           </button>
           {!(user?.role === 'Barbero' || user?.role?.startsWith('Barbero|')) && (
             <button 
-              onClick={() => setSelectedBarber(null)}
-              style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}
+              onClick={() => {
+                setSelectedBarber(null);
+                window.dispatchEvent(new CustomEvent('astro_active_barber_changed', { detail: null }));
+              }}
+              style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', transition: 'all 0.2s' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#ff4d4d'; e.currentTarget.style.borderColor = 'rgba(255,77,77,0.3)'; e.currentTarget.style.background = 'rgba(255,77,77,0.05)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.background = 'transparent'; }}
             >
               <LogOut size={16} /> Salir
             </button>
@@ -523,9 +577,28 @@ const BarberPanel = ({ isMobile, rates }) => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '40px' }}>
               {myServices.filter(app => app.status === 'En Lavado').length === 0 ? (
-                <div className="glass-card" style={{ textAlign: 'center', padding: '40px', borderRadius: '24px', opacity: 0.5 }}>
-                  <Droplets size={32} style={{ marginBottom: '12px', color: 'var(--text-muted)' }} />
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No hay clientes listos para lavar en este momento.</p>
+                <div className="glass-card" style={{ 
+                  textAlign: 'center', 
+                  padding: '40px', 
+                  borderRadius: '24px',
+                  border: '2px dashed rgba(0, 122, 255, 0.4)',
+                  background: 'radial-gradient(circle at center, rgba(0,122,255,0.08) 0%, transparent 70%)'
+                }}>
+                  <style>{`
+                    @keyframes pulseBlue {
+                      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(0,122,255,0.4)); opacity: 0.8; }
+                      50% { transform: scale(1.1); filter: drop-shadow(0 0 15px rgba(0,122,255,0.8)); opacity: 1; }
+                    }
+                  `}</style>
+                  <div style={{ display: 'inline-flex', animation: 'pulseBlue 2s infinite' }}>
+                    <Droplets size={44} color="#007aff" style={{ marginBottom: '16px' }} />
+                  </div>
+                  <p style={{ fontSize: '15px', color: '#007aff', fontWeight: '800', letterSpacing: '0.3px', textShadow: '0 0 10px rgba(0,122,255,0.3)' }}>
+                    Estación impecable y lista...
+                  </p>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '6px', fontWeight: '600' }}>
+                    Esperando al próximo cliente.
+                  </p>
                 </div>
               ) : (
                 myServices.filter(app => app.status === 'En Lavado').map(app => (
@@ -747,9 +820,43 @@ const BarberPanel = ({ isMobile, rates }) => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {myServices.length === 0 ? (
-                <div className="glass-card" style={{ textAlign: 'center', padding: '60px', borderRadius: '24px', borderStyle: 'dashed', opacity: 0.5 }}>
-                  <Clock size={40} style={{ marginBottom: '16px' }} />
-                  <p>No tienes clientes asignados en este momento.</p>
+                <div className="glass-card" style={{ textAlign: 'center', padding: '60px', borderRadius: '24px', border: '2px dashed rgba(212,175,55,0.2)', background: 'rgba(212,175,55,0.02)' }}>
+                  <style>{`
+                    @keyframes chair-float-small {
+                      0%, 100% { transform: translateY(0px) rotate(0deg); }
+                      50% { transform: translateY(-10px) rotate(3deg); }
+                    }
+                    @keyframes shadow-scale-small {
+                      0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.7; }
+                      50% { transform: translateX(-50%) scaleX(0.8) scaleY(0.9); opacity: 0.3; }
+                    }
+                  `}</style>
+                  <div style={{ position: 'relative', height: '110px', width: '80px', margin: '0 auto 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
+                    <div style={{ 
+                      position: 'absolute', 
+                      bottom: '-8px', 
+                      left: '50%', 
+                      transform: 'translateX(-50%)', 
+                      width: '60px', 
+                      height: '8px', 
+                      background: 'radial-gradient(ellipse at center, rgba(212,175,55,0.4) 0%, transparent 70%)',
+                      zIndex: 1,
+                      animation: 'shadow-scale-small 6s infinite ease-in-out'
+                    }} />
+                    <img 
+                      src="/barber-chair.png" 
+                      alt="Astro Chair" 
+                      style={{ 
+                        width: '80px', 
+                        height: 'auto',
+                        objectFit: 'contain',
+                        zIndex: 3,
+                        filter: 'drop-shadow(0 5px 15px rgba(0,0,0,0.5)) drop-shadow(0 0 10px rgba(212, 175, 55, 0.4))',
+                        animation: 'chair-float-small 6s infinite ease-in-out'
+                      }} 
+                    />
+                  </div>
+                  <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Buscando clientes... La silla está libre.</p>
                 </div>
               ) : (
                 myServices.map(app => {
@@ -947,8 +1054,8 @@ const BarberPanel = ({ isMobile, rates }) => {
         )}
 
         {/* Add Modal */}
-        {showAddModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+        {showAddModal && createPortal(
+          <div className="animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
             <div className="glass-card animate-scale-in" style={{ maxWidth: '400px', width: '100%', borderRadius: '24px', padding: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3 style={{ fontWeight: '900' }}>Añadir <span className="text-gold">{addMode === 'extra' ? 'Extra' : 'Producto'}</span></h3>
@@ -967,7 +1074,8 @@ const BarberPanel = ({ isMobile, rates }) => {
                 ))}
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {showCamera && (
@@ -985,9 +1093,9 @@ const BarberPanel = ({ isMobile, rates }) => {
               {isAssistant ? "Comisiones Hoy" : "Producción Hoy"}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '8px' }}>
-              <div style={{ fontSize: '22px', fontWeight: '900' }}>${stats.production.toFixed(2)}</div>
+              <div style={{ fontSize: '26px', fontWeight: '900', color: isAssistant ? '#007aff' : 'var(--gold-primary)', textShadow: isAssistant ? '0 0 15px rgba(0,122,255,0.4)' : '0 0 15px rgba(212,175,55,0.4)' }}>${stats.production.toFixed(2)}</div>
               {rates?.usd > 0 && stats.production > 0 && (
-                <div style={{ fontSize: '11px', color: isAssistant ? '#007aff' : 'var(--gold-primary)', fontWeight: '800', marginTop: '2px' }}>
+                <div style={{ fontSize: '12px', color: isAssistant ? '#007aff' : 'var(--gold-primary)', fontWeight: '800', marginTop: '4px' }}>
                   {Math.round(stats.production * rates.usd).toLocaleString()} BS
                 </div>
               )}
@@ -1001,9 +1109,9 @@ const BarberPanel = ({ isMobile, rates }) => {
                 Ganancia Hoy
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '8px' }}>
-                <div style={{ fontSize: '22px', fontWeight: '900', color: '#32d74b' }}>${stats.earnings.toFixed(2)}</div>
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#32d74b', textShadow: '0 0 15px rgba(50,215,75,0.4)' }}>${stats.earnings.toFixed(2)}</div>
                 {rates?.usd > 0 && stats.earnings > 0 && (
-                  <div style={{ fontSize: '11px', color: '#32d74b', fontWeight: '800', marginTop: '2px' }}>
+                  <div style={{ fontSize: '12px', color: '#32d74b', fontWeight: '800', marginTop: '4px' }}>
                     {Math.round(stats.earnings * rates.usd).toLocaleString()} BS
                   </div>
                 )}
@@ -1020,14 +1128,14 @@ const BarberPanel = ({ isMobile, rates }) => {
             <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
               {isAssistant ? "Lavados" : "Servicios"}
             </div>
-            <div style={{ fontSize: '22px', fontWeight: '900', marginTop: '8px' }}>{stats.services}</div>
+            <div style={{ fontSize: '26px', fontWeight: '900', marginTop: '8px', color: 'white' }}>{stats.services}</div>
           </div>
         </section>
 
         {/* Completed Today Section */}
         <section style={{ marginTop: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-            {isAssistant ? <Droplets size={18} color="#007aff" /> : <CheckCircle size={18} color="#32d74b" />}
+            <CheckCircle size={18} color={isAssistant ? "#007aff" : "#32d74b"} />
             <span style={{ fontWeight: '800', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>
               {isAssistant ? "Lavados Completados Hoy" : "Trabajos Completados Hoy"}
             </span>
@@ -1051,7 +1159,13 @@ const BarberPanel = ({ isMobile, rates }) => {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {completedToday.map(app => {
+              {(() => {
+                const totalItems = completedToday;
+                const visibleItems = totalItems.slice(0, visibleCompletedCount);
+                
+                return (
+                  <>
+                    {visibleItems.map(app => {
                 const extrasTotal = app.appointment_extras?.reduce((sum, e) => sum + (Number(e.price) || 0), 0) || 0;
                 const productsTotal = app.appointment_products?.reduce((sum, p) => sum + ((Number(p.price) || 0) * (p.quantity || 1)), 0) || 0;
                 const totalUsd = (Number(app.services?.price) || 0) + extrasTotal + productsTotal;
@@ -1070,42 +1184,56 @@ const BarberPanel = ({ isMobile, rates }) => {
                   <div key={app.id} className="glass-card" onClick={() => setSelectedCompletedApp(app)} style={{ 
                     padding: '16px 20px', 
                     borderRadius: '20px',
-                    border: isAssistant ? '1px solid rgba(0, 122, 255, 0.1)' : '1px solid rgba(50, 215, 75, 0.1)',
-                    background: isAssistant ? 'linear-gradient(135deg, rgba(0,122,255,0.03), transparent)' : 'linear-gradient(135deg, rgba(50,215,75,0.03), transparent)',
+                    border: isAssistant ? '1px solid rgba(0, 122, 255, 0.15)' : '1px solid rgba(50, 215, 75, 0.15)',
+                    background: isAssistant ? 'linear-gradient(135deg, rgba(0,122,255,0.05), rgba(0,0,0,0.4))' : 'linear-gradient(135deg, rgba(50,215,75,0.05), rgba(0,0,0,0.4))',
                     cursor: 'pointer',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-3px)';
+                    e.currentTarget.style.boxShadow = isAssistant ? '0 8px 25px rgba(0,122,255,0.15)' : '0 8px 25px rgba(50,215,75,0.15)';
+                    e.currentTarget.style.borderColor = isAssistant ? 'rgba(0,122,255,0.4)' : 'rgba(50,215,75,0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'none';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.borderColor = isAssistant ? 'rgba(0, 122, 255, 0.15)' : 'rgba(50, 215, 75, 0.15)';
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ 
-                          width: '36px', height: '36px', borderRadius: '10px', 
-                          background: isAssistant ? 'rgba(0,122,255,0.1)' : 'rgba(50,215,75,0.1)', 
-                          display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                          width: '40px', height: '40px', borderRadius: '12px', 
+                          background: isAssistant ? 'linear-gradient(135deg, rgba(0,122,255,0.2), rgba(0,122,255,0.05))' : 'linear-gradient(135deg, rgba(50,215,75,0.2), rgba(50,215,75,0.05))', 
+                          border: isAssistant ? '1px solid rgba(0,122,255,0.3)' : '1px solid rgba(50,215,75,0.3)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          boxShadow: isAssistant ? 'inset 0 0 10px rgba(0,122,255,0.2)' : 'inset 0 0 10px rgba(50,215,75,0.2)'
                         }}>
-                          {isAssistant ? <Droplets size={18} color="#007aff" /> : <CheckCircle size={18} color="#32d74b" />}
+                          {isAssistant ? <Droplets size={20} color="#007aff" style={{ filter: 'drop-shadow(0 0 5px rgba(0,122,255,0.5))' }} /> : <Scissors size={20} color="#32d74b" style={{ filter: 'drop-shadow(0 0 5px rgba(50,215,75,0.5))' }} />}
                         </div>
                         <div>
-                          <div style={{ fontWeight: '800', fontSize: '14px', color: 'white' }}>{app.clients?.name || 'Cliente'}</div>
-                          <div style={{ fontSize: '12px', color: 'var(--gold-primary)', fontWeight: '700' }}>
+                          <div style={{ fontWeight: '900', fontSize: '16px', color: 'white', letterSpacing: '0.3px' }}>{app.clients?.name || 'Cliente'}</div>
+                          <div style={{ fontSize: '13px', color: 'var(--gold-primary)', fontWeight: '800' }}>
                             {isAssistant ? `${app.services?.name} (${app.staff?.name || 'Barbero'})` : app.services?.name}
                           </div>
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '16px', fontWeight: '900', color: isAssistant ? '#007aff' : '#32d74b' }}>
+                        <div style={{ fontSize: '18px', fontWeight: '900', color: isAssistant ? '#007aff' : '#32d74b', textShadow: isAssistant ? '0 0 10px rgba(0,122,255,0.4)' : '0 0 10px rgba(50,215,75,0.4)' }}>
                           ${displayVal.toFixed(2)} {isAssistant && <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>(Comisión)</span>}
                         </div>
                         {rates?.usd > 0 && (
-                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>{(displayVal * rates.usd).toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Bs.</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800' }}>{(displayVal * rates.usd).toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Bs.</div>
                         )}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '16px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed rgba(212,175,55,0.25)' }}>
                       {startedTime && (
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>⏱ {startedTime} → {completedTime}</span>
-                      )}
-                      {durationMin > 0 && (
-                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '800' }}>{durationMin} min</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '800' }}>⏱ {startedTime} → {completedTime}</span>
+                          <span style={{ marginLeft: 'auto', fontSize: '11px', fontWeight: '900', color: isAssistant ? '#007aff' : 'var(--gold-primary)', background: isAssistant ? 'rgba(0,122,255,0.1)' : 'rgba(212,175,55,0.1)', padding: '4px 10px', borderRadius: '12px', border: isAssistant ? '1px solid rgba(0,122,255,0.2)' : '1px solid rgba(212,175,55,0.2)' }}>
+                            {durationMin > 0 ? `${durationMin} min` : 'Completado'}
+                          </span>
+                        </div>
                       )}
                       {!isAssistant && (app.appointment_extras?.length > 0 || app.appointment_products?.length > 0) && (
                         <span style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '700', marginLeft: 'auto' }}>
@@ -1116,6 +1244,41 @@ const BarberPanel = ({ isMobile, rates }) => {
                   </div>
                 );
               })}
+              {completedToday.length > visibleCompletedCount && (
+                <button 
+                  onClick={() => setVisibleCompletedCount(prev => prev + 5)}
+                  style={{
+                    background: isAssistant ? 'rgba(0,122,255,0.05)' : 'rgba(50,215,75,0.05)',
+                    border: isAssistant ? '1px solid rgba(0,122,255,0.15)' : '1px solid rgba(50,215,75,0.15)',
+                    color: isAssistant ? '#007aff' : '#32d74b',
+                    padding: '12px',
+                    borderRadius: '16px',
+                    fontWeight: '800',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    marginTop: '10px',
+                    transition: 'all 0.2s',
+                    boxShadow: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = isAssistant ? 'rgba(0,122,255,0.15)' : 'rgba(50,215,75,0.15)';
+                    e.target.style.border = isAssistant ? '1px solid rgba(0,122,255,0.4)' : '1px solid rgba(50,215,75,0.4)';
+                    e.target.style.boxShadow = isAssistant ? '0 0 15px rgba(0,122,255,0.2)' : '0 0 15px rgba(50,215,75,0.2)';
+                    e.target.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = isAssistant ? 'rgba(0,122,255,0.05)' : 'rgba(50,215,75,0.05)';
+                    e.target.style.border = isAssistant ? '1px solid rgba(0,122,255,0.15)' : '1px solid rgba(50,215,75,0.15)';
+                    e.target.style.boxShadow = 'none';
+                    e.target.style.transform = 'translateY(0)';
+                  }}
+                >
+                  Ver más antiguos ({completedToday.length - visibleCompletedCount})
+                </button>
+              )}
+              </>
+              );
+              })()}
             </div>
           )}
         </section>
@@ -1123,7 +1286,7 @@ const BarberPanel = ({ isMobile, rates }) => {
       </div>
 
       {/* Detail Modal for Completed Service */}
-      {selectedCompletedApp && (() => {
+      {selectedCompletedApp && createPortal((() => {
         const app = selectedCompletedApp;
         const extrasTotal = app.appointment_extras?.reduce((sum, e) => sum + (Number(e.price) || 0), 0) || 0;
         const productsTotal = app.appointment_products?.reduce((sum, p) => sum + ((Number(p.price) || 0) * (p.quantity || 1)), 0) || 0;
@@ -1141,12 +1304,13 @@ const BarberPanel = ({ isMobile, rates }) => {
 
         return (
           <div 
+            className="animate-fade-in"
             onClick={() => setSelectedCompletedApp(null)}
             style={{ 
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
               backgroundColor: 'rgba(0,0,0,0.85)', 
               backdropFilter: 'blur(12px)', 
-              zIndex: 1000, 
+              zIndex: 99999, 
               display: 'flex', 
               justifyContent: 'center', 
               alignItems: 'center', 
@@ -1333,7 +1497,7 @@ const BarberPanel = ({ isMobile, rates }) => {
             </div>
           </div>
         );
-      })()}
+      })(), document.body)}
 
       <style>{`
         .hover-item:hover {
