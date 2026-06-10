@@ -374,7 +374,8 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
             placeholder="Buscar en el almacén..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: '100%', paddingLeft: '48px', height: '48px', backgroundColor: 'rgba(255,255,255,0.03)' }}
+            className="glass-search-bar focus-ring"
+            style={{ width: '100%', paddingLeft: '48px', height: '48px', transition: 'all 0.3s' }}
           />
         </div>
          {lowStockCount > 0 && (
@@ -382,11 +383,11 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
             display: 'flex', 
             alignItems: 'center', 
             gap: '12px', 
-            backgroundColor: 'rgba(255, 69, 58, 0.05)', 
+            backgroundColor: 'rgba(255, 69, 58, 0.08)', 
             padding: '0 20px', 
             borderRadius: '12px', 
-            border: '1px solid rgba(255,69,58,0.1)',
-            color: '#ff453a',
+            border: '1px solid rgba(255,69,58,0.15)',
+            color: 'rgba(255, 69, 58, 0.9)',
             fontSize: '13px',
             fontWeight: '750'
           }}>
@@ -528,7 +529,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
           {filteredInventory.map(item => {
             const isLowStock = item.stock <= 5 && item.category !== 'Accesorios';
             return (
-              <div key={item.id} className="glass-card animate-scale-in" style={{ 
+              <div key={item.id} className="glass-card animate-scale-in inventory-card" style={{ 
                 position: 'relative',
                 borderRadius: '24px',
                 border: isLowStock ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(255,255,255,0.05)',
@@ -537,22 +538,24 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <button 
-                      onClick={() => setEditingItem(item)}
-                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
-                      onMouseOver={(e) => e.currentTarget.style.color = 'var(--gold-primary)'}
-                      onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-                    >
-                      <Edit3 size={16} />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteItem(item.id, item.name)}
-                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
-                      onMouseOver={(e) => e.currentTarget.style.color = '#ff453a'}
-                      onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="inventory-actions" style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        onClick={() => setEditingItem(item)}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                        onMouseOver={(e) => e.currentTarget.style.color = 'var(--gold-primary)'}
+                        onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteItem(item.id, item.name)}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                        onMouseOver={(e) => e.currentTarget.style.color = '#ff453a'}
+                        onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                     <span style={{ 
                       fontSize: '10px', 
                       backgroundColor: 'rgba(255,255,255,0.05)', 
@@ -578,9 +581,10 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                     width: '64px', 
                     height: '64px', 
                     borderRadius: '16px', 
-                    backgroundColor: 'rgba(255,255,255,0.02)', 
+                    background: item.image_url ? 'rgba(255,255,255,0.02)' : 'linear-gradient(135deg, rgba(212,175,55,0.08), rgba(0,0,0,0.4))', 
                     overflow: 'hidden',
                     border: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: 'inset 0 0 10px rgba(0,0,0,0.5)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -588,7 +592,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                     {item.image_url ? (
                       <img src={item.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <Package size={24} color="rgba(255,255,255,0.1)" />
+                      <Package size={24} color="var(--gold-primary)" style={{ opacity: 0.6 }} />
                     )}
                   </div>
                   <div style={{ flex: 1 }}>
@@ -608,13 +612,13 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                         </div>
                       )}
                     </div>
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', marginTop: '4px' }}>
                       {(item.category === 'Venta' || item.category === 'Accesorios') ? (
                         <>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)' }}>VENTA</span>
-                            <div style={{ fontSize: '18px', fontWeight: '950', color: 'var(--gold-primary)' }}>
-                              <span style={{ fontSize: '12px', verticalAlign: 'super', marginRight: '2px' }}>$</span>
+                            <div style={{ fontSize: '20px', fontWeight: '950', color: 'var(--gold-primary)', lineHeight: '1.1' }}>
+                              <span style={{ fontSize: '13px', verticalAlign: 'super', marginRight: '2px' }}>$</span>
                               {item.price?.toFixed(2) || '0.00'}
                             </div>
                             {rates?.usd > 0 && (
@@ -623,11 +627,10 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                               </div>
                             )}
                           </div>
-                          <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255,255,255,0.1)' }}></div>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)' }}>COSTO</span>
-                            <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-secondary)' }}>
-                              <span style={{ fontSize: '10px', verticalAlign: 'super', marginRight: '2px' }}>$</span>
+                            <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-secondary)' }}>
+                              <span style={{ fontSize: '9px', verticalAlign: 'super', marginRight: '2px' }}>$</span>
                               {item.cost_price?.toFixed(2) || '0.00'}
                             </div>
                           </div>
@@ -655,21 +658,40 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                   border: '1px solid rgba(255,255,255,0.03)'
                 }}>
                   <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-secondary)' }}>ALMACÉN</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    background: 'rgba(255,255,255,0.04)', 
+                    borderRadius: '100px', 
+                    padding: '4px',
+                    border: '1px solid rgba(255,255,255,0.06)'
+                  }}>
                     <button 
                       onClick={() => handeAdjustStock(item.id, item.stock, -1)}
-                      className="action-btn"
-                      style={{ width: '32px', height: '32px' }}
+                      style={{ 
+                        width: '32px', height: '32px', borderRadius: '50%', border: 'none', background: 'transparent', 
+                        color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: '0.2s' 
+                      }}
+                      onMouseOver={e => { e.currentTarget.style.background='rgba(255,255,255,0.1)'; e.currentTarget.style.color='white'; }}
+                      onMouseOut={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='var(--text-secondary)'; }}
                     >
                       <Minus size={14} />
                     </button>
-                    <span style={{ fontSize: '22px', fontWeight: '950', minWidth: '32px', textAlign: 'center', color: isLowStock ? 'var(--gold-primary)' : 'white' }}>
+                    <span style={{ 
+                      fontSize: '18px', fontWeight: '950', minWidth: '40px', textAlign: 'center', 
+                      color: isLowStock ? 'var(--gold-primary)' : 'white',
+                      textShadow: isLowStock ? '0 0 10px rgba(212,175,55,0.5)' : 'none'
+                    }}>
                       {item.stock}
                     </span>
                     <button 
                       onClick={() => handeAdjustStock(item.id, item.stock, 1)}
-                      className="action-btn"
-                      style={{ width: '32px', height: '32px' }}
+                      style={{ 
+                        width: '32px', height: '32px', borderRadius: '50%', border: 'none', background: 'transparent', 
+                        color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: '0.2s' 
+                      }}
+                      onMouseOver={e => { e.currentTarget.style.background='rgba(255,255,255,0.1)'; e.currentTarget.style.color='white'; }}
+                      onMouseOut={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='var(--text-secondary)'; }}
                     >
                       <Plus size={14} />
                     </button>

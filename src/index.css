@@ -659,6 +659,35 @@ input[type="submit"],
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
+/* --- Inventory Module Enhancements --- */
+.inventory-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.inventory-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(212, 175, 55, 0.4) !important;
+}
+.inventory-actions {
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.inventory-card:hover .inventory-actions {
+  opacity: 1;
+}
+
+/* Search Bar Glassmorphism */
+.glass-search-bar {
+  background: rgba(28, 28, 30, 0.4) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.glass-search-bar:focus-within {
+  background: rgba(28, 28, 30, 0.6) !important;
+  border-color: rgba(212, 175, 55, 0.4) !important;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+}
+
 button:hover, 
 input[type="submit"]:hover {
   transform: translateY(-1.5px);
