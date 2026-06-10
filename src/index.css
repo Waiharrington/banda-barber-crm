@@ -103,11 +103,13 @@ html, body {
 }
 
 .glass-card {
-  background: rgba(28, 28, 30, 0.95);
+  background: rgba(28, 28, 30, 0.98);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
   border: 1px solid rgba(212, 175, 55, 0.15);
   border-radius: 20px;
   padding: 24px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateZ(0); /* Fixes backdrop-filter rendering flash */
 }
