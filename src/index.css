@@ -274,6 +274,9 @@ html, body {
 .modal-overlay, .modal-overlay-enter, .modal-overlay-exit {
   overflow-y: auto;
   overscroll-behavior: contain;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  pointer-events: auto;
 }
 
 .modal-overlay-enter {
