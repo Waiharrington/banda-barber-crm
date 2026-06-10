@@ -13,21 +13,6 @@ import {
   Trash2,
   History,
   Tag, 
-import React, { useState, useEffect } from 'react';
-import { 
-  Package, 
-  Plus, 
-  Minus, 
-  Search, 
-  AlertTriangle, 
-  Edit3,
-  Loader2,
-  TrendingDown,
-  ChevronRight,
-  Zap,
-  Trash2,
-  History,
-  Tag, 
   Filter, 
   ShieldAlert
 } from 'lucide-react';
