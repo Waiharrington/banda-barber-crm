@@ -2332,9 +2332,17 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
                   <div>
                     <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Comprobante de Pago (Foto / Capture)</label>
-                    <input type="file" accept="image/*" onChange={handleFileUpload} style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', color: 'white', fontSize: '12px' }} />
+                    <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: payrollModal.file ? '12px' : '24px 16px', background: payrollModal.file ? 'rgba(50,215,75,0.05)' : 'rgba(212,175,55,0.05)', border: payrollModal.file ? '1px dashed rgba(50,215,75,0.3)' : '1px dashed rgba(212,175,55,0.3)', borderRadius: '16px', cursor: 'pointer', transition: 'all 0.3s' }}>
+                      <input type="file" accept="image/*" onChange={handleFileUpload} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10 }} />
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ fontSize: payrollModal.file ? '16px' : '24px' }}>{payrollModal.file ? '✅' : '📸'}</span>
+                        <span style={{ color: payrollModal.file ? '#32d74b' : 'var(--gold-primary)', fontWeight: '800', fontSize: '12px' }}>
+                          {payrollModal.file ? '¡Comprobante cargado! (Toca para cambiar)' : 'Toca para subir comprobante'}
+                        </span>
+                      </div>
+                    </div>
                     {payrollModal.file && (
-                      <div style={{ marginTop: '12px', height: '100px', borderRadius: '12px', overflow: 'hidden', backgroundImage: `url(${payrollModal.file})`, backgroundSize: 'cover', backgroundPosition: 'center', border: '1px solid var(--gold-primary)' }}></div>
+                      <div style={{ marginTop: '12px', height: '140px', borderRadius: '16px', overflow: 'hidden', backgroundImage: `url(${payrollModal.file})`, backgroundSize: 'cover', backgroundPosition: 'center', border: '2px solid rgba(50,215,75,0.3)' }}></div>
                     )}
                   </div>
 
