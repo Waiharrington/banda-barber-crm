@@ -1,4 +1,5 @@
 import React, {  useState, useEffect , useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useNotifs } from '../context/NotificationContext';
 import { 
   Plus, 
@@ -2137,11 +2138,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
                 </form>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
           
           {/* Assistant Config Modal */}
-          {isConfiguringPayroll && (
+          {isConfiguringPayroll && createPortal(
             <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
               <div className="glass-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '32px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
                 <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '24px' }}>Configuración <span className="text-gold">Sueldo Asistente</span></h3>
@@ -2185,11 +2187,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
                 </form>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
 
           {/* Weekly Close Modal */}
-          {weeklyCloseModal.isOpen && (
+          {weeklyCloseModal.isOpen && createPortal(
             <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
               <div className="glass-card animate-scale-in" style={{ maxWidth: '450px', width: '100%', borderRadius: '32px', padding: '32px', textAlign: 'center' }}>
                 {!weeklyCloseModal.success ? (
@@ -2254,11 +2257,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </>
                 )}
               </div>
-            </div>
+            </div>,
+            document.body
           )}
 
           {/* Payroll Payment Modal */}
-          {payrollModal.isOpen && (
+          {payrollModal.isOpen && createPortal(
             <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
               <div className="glass-card animate-scale-in" style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '32px' }}>
                 <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '8px' }}>
@@ -2329,11 +2333,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
 
           {/* Registrar Vale Modal */}
-          {valeModal.isOpen && (
+          {valeModal.isOpen && createPortal(
             <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
               <div className="glass-card animate-scale-in" style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '32px' }}>
                 <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '8px' }}>
@@ -2400,11 +2405,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
 
           {/* Payroll Detail Modal */}
-          {payrollDetail.isOpen && (
+          {payrollDetail.isOpen && createPortal(
             <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
               <div className="glass-card animate-scale-in" style={{ maxWidth: '600px', width: '100%', borderRadius: '32px', padding: '32px', maxHeight: '80vh', overflowY: 'auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -2568,7 +2574,8 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
                 <button onClick={() => setPayrollDetail({ isOpen: false, staff: null, transactions: [] })} className="btn-gold" style={{ width: '100%', marginTop: '24px', padding: '14px', borderRadius: '12px', fontWeight: '800' }}>Cerrar</button>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         
 
