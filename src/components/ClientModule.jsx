@@ -130,15 +130,17 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
         <>
           <div style={{
             display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
             justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '40px'
+            alignItems: isMobile ? 'flex-start' : 'center',
+            gap: isMobile ? '20px' : '0',
+            marginBottom: isMobile ? '24px' : '40px'
           }}>
             <div>
-              <h2 style={{ fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px' }}>Archivo de <span className="text-gold">Clientes</span></h2>
-              <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Fichas técnicas y galería de evolución.</p>
+              <h2 style={{ fontSize: isMobile ? '26px' : '28px', fontWeight: '800', letterSpacing: '-0.5px', lineHeight: '1.2' }}>Archivo de <span className="text-gold">Clientes</span></h2>
+              <p style={{ color: 'var(--text-secondary)', marginTop: '6px', fontSize: isMobile ? '13px' : '15px' }}>Fichas técnicas y galería de evolución.</p>
             </div>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
               {/* View Toggles */}
               <div style={{ 
                 display: 'flex', 
@@ -146,7 +148,9 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                 borderRadius: '12px', 
                 padding: '4px',
                 border: '1px solid rgba(255,255,255,0.05)',
-                marginRight: '12px'
+                marginRight: isMobile ? '0' : '12px',
+                flex: isMobile ? '1 1 100%' : 'none',
+                justifyContent: 'space-between'
               }}>
                 <button 
                   onClick={() => setViewMode('grid')}
@@ -161,7 +165,9 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                     alignItems: 'center',
                     gap: '6px',
                     fontSize: '12px',
-                    fontWeight: '700'
+                    fontWeight: '700',
+                    flex: isMobile ? 1 : 'none',
+                    justifyContent: 'center'
                   }}
                 >
                   <LayoutGrid size={16} /> Tarjetas
@@ -179,7 +185,9 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                     alignItems: 'center',
                     gap: '6px',
                     fontSize: '12px',
-                    fontWeight: '700'
+                    fontWeight: '700',
+                    flex: isMobile ? 1 : 'none',
+                    justifyContent: 'center'
                   }}
                 >
                   <TableIcon size={16} /> Tabla
@@ -197,13 +205,29 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                   backgroundColor: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.1)',
                   color: 'white',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  flex: isMobile ? '1 1 45%' : 'none',
+                  justifyContent: 'center',
+                  fontSize: isMobile ? '13px' : '14px',
+                  padding: isMobile ? '12px 8px' : '12px 16px',
+                  whiteSpace: 'nowrap'
                 }}
               >
-                <MessageCircle size={18} /> Mensaje Cumpleaños
+                <MessageCircle size={18} /> {!isMobile && "Mensaje Cumpleaños"}
+                {isMobile && "Cumpleaños"}
               </button>
 
-              <button className="btn-gold" onClick={() => setShowAddForm(!showAddForm)} style={{ borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button className="btn-gold" onClick={() => setShowAddForm(!showAddForm)} style={{ 
+                borderRadius: '12px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px',
+                flex: isMobile ? '1 1 45%' : 'none',
+                justifyContent: 'center',
+                fontSize: isMobile ? '13px' : '14px',
+                padding: isMobile ? '12px 8px' : '12px 16px',
+                whiteSpace: 'nowrap'
+              }}>
                 <Plus size={18} /> {showAddForm ? 'Cancelar' : 'Nuevo Cliente'}
               </button>
             </div>
@@ -296,7 +320,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
               <User size={48} color="var(--bg-tertiary)" style={{ marginBottom: '20px' }} />
               <p style={{ color: 'var(--text-muted)' }}>Archivo vacío. Agrega a tu primer cliente.</p>
             </div>
-          ) : viewMode === 'grid' || isMobile ? (
+          ) : viewMode === 'grid' ? (
             <div style={{ display: 'grid', gap: '16px' }}>
               {clients.filter(c => {
                   const term = normalizeForSearch(searchTerm);
@@ -372,15 +396,15 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
             </div>
           ) : (
             <div className="glass-card animate-fade-in" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.03)' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'auto' }}>
                 <thead>
                   <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cliente</th>
-                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cédula / ID</th>
-                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Teléfono</th>
-                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Registrado</th>
-                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Visitas</th>
-                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}></th>
+                    <th style={{ padding: isMobile ? '12px 12px' : '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cliente</th>
+                    {!isMobile && <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cédula / ID</th>}
+                    <th style={{ padding: isMobile ? '12px 12px' : '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Contacto</th>
+                    {!isMobile && <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Registrado</th>}
+                    <th style={{ padding: isMobile ? '12px 12px' : '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: isMobile ? 'right' : 'left' }}>Visitas</th>
+                    {!isMobile && <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -400,26 +424,33 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                         style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background-color 0.2s', cursor: 'pointer' }} 
                         className="table-row-hover"
                       >
-                        <td style={{ padding: '16px 24px' }}>
-                          <div style={{ fontWeight: '700', color: 'white' }}>{client.name}</div>
+                        <td style={{ padding: isMobile ? '12px 12px' : '16px 24px' }}>
+                          <div style={{ fontWeight: '700', color: 'white', fontSize: isMobile ? '13px' : '16px' }}>{client.name}</div>
+                          {isMobile && client.id_card && <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>V-{client.id_card}</div>}
                         </td>
-                        <td style={{ padding: '16px 24px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '700' }}>
-                          V-{client.id_card || '00.000.000'}
-                        </td>
-                        <td style={{ padding: '16px 24px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+                        {!isMobile && (
+                          <td style={{ padding: '16px 24px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '700' }}>
+                            V-{client.id_card || '00.000.000'}
+                          </td>
+                        )}
+                        <td style={{ padding: isMobile ? '12px 12px' : '16px 24px', fontSize: isMobile ? '12px' : '14px', color: 'var(--text-secondary)' }}>
                           {client.phone}
                         </td>
-                        <td style={{ padding: '16px 24px', fontSize: '13px', color: 'var(--text-muted)' }}>
-                          {client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'}
-                        </td>
-                        <td style={{ padding: '16px 24px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.05)', padding: '4px 10px', borderRadius: '8px' }}>
-                            {client.total_visits || 0} Visitas
+                        {!isMobile && (
+                          <td style={{ padding: '16px 24px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                            {client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'}
+                          </td>
+                        )}
+                        <td style={{ padding: isMobile ? '12px 12px' : '16px 24px', textAlign: isMobile ? 'right' : 'left' }}>
+                          <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.05)', padding: '4px 8px', borderRadius: '8px', whiteSpace: 'nowrap' }}>
+                            {client.total_visits || 0} {!isMobile && "Visitas"}
                           </span>
                         </td>
-                        <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                          <ChevronRight size={18} color="var(--text-muted)" />
-                        </td>
+                        {!isMobile && (
+                          <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                            <ChevronRight size={18} color="var(--text-muted)" />
+                          </td>
+                        )}
                       </tr>
                     ))}
                 </tbody>

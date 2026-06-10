@@ -573,7 +573,7 @@ function App() {
     return (
       <MobileLayout activeTab={activeTab} setActiveTab={handleTabChange} onOpenSale={() => setIsSaleModalOpen(true)}>
         <AstroLoader visible={isAppLoading} />
-        <div key={activeTab} className={isAppLoading ? "opacity-0" : "animate-page-fade-in"} style={{ height: '100%' }}>
+        <div key={activeTab} className={isAppLoading ? "opacity-0" : "animate-page-fade-in"} style={{ minHeight: '100%' }}>
           {renderContent()}
         </div>
         <SaleServiceModal 
