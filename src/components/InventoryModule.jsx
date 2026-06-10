@@ -450,7 +450,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
           <p style={{ color: 'var(--text-muted)', fontSize: '18px' }}>No hay productos que coincidan.</p>
         </div>
       ) : viewMode === 'list' ? (
-        <div className="glass-card animate-fade-in" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
+        <div className="glass-card" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
             <div style={{ width: '100%', overflowX: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'auto' }}>
                 <thead>
@@ -530,7 +530,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
           {filteredInventory.map(item => {
             const isLowStock = item.stock <= 5 && item.category !== 'Accesorios';
             return (
-              <div key={item.id} className="glass-card animate-scale-in inventory-card" style={{ 
+              <div key={item.id} className="glass-card inventory-card" style={{ 
                 position: 'relative',
                 borderRadius: '24px',
                 border: isLowStock ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(212, 175, 55, 0.1)',
