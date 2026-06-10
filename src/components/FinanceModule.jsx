@@ -785,64 +785,66 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       </div>
 
       {/* Tab Selector */}
-      <div className="hide-scrollbar" style={{ 
+      <div style={{ 
         display: 'flex', 
-        gap: '20px', 
+        gap: isMobile ? '8px' : '20px', 
         marginBottom: '32px', 
         borderBottom: '1px solid var(--border-color)',
-        overflowX: 'auto',
-        WebkitOverflowScrolling: 'touch'
+        width: '100%'
       }}>
         <button 
           onClick={() => setActiveTab('transactions')}
           style={{ 
-            padding: '12px 20px', 
+            padding: isMobile ? '12px 4px' : '12px 20px', 
             background: 'none', 
             border: 'none', 
             color: activeTab === 'transactions' ? 'var(--gold-primary)' : 'var(--text-secondary)',
             fontWeight: '800',
-            fontSize: '14px',
+            fontSize: isMobile ? '12px' : '14px',
             cursor: 'pointer',
-            whiteSpace: 'nowrap',
+            flex: isMobile ? 1 : 'none',
+            textAlign: 'center',
             borderBottom: activeTab === 'transactions' ? '2px solid var(--gold-primary)' : '2px solid transparent',
             transition: '0.2s'
           }}
         >
-          TRANSACCIONES
+          {isMobile ? 'MOVIMIENTOS' : 'TRANSACCIONES'}
         </button>
         <button 
           onClick={() => setActiveTab('payroll')}
           style={{ 
-            padding: '12px 20px', 
+            padding: isMobile ? '12px 4px' : '12px 20px', 
             background: 'none', 
             border: 'none', 
             color: activeTab === 'payroll' ? 'var(--gold-primary)' : 'var(--text-secondary)',
             fontWeight: '800',
-            fontSize: '14px',
+            fontSize: isMobile ? '12px' : '14px',
             cursor: 'pointer',
-            whiteSpace: 'nowrap',
+            flex: isMobile ? 1 : 'none',
+            textAlign: 'center',
             borderBottom: activeTab === 'payroll' ? '2px solid var(--gold-primary)' : '2px solid transparent',
             transition: '0.2s'
           }}
         >
-          NÓMINA Y PAGOS
+          {isMobile ? 'NÓMINA' : 'NÓMINA Y PAGOS'}
         </button>
         <button 
           onClick={() => setActiveTab('analysis')}
           style={{ 
-            padding: '12px 20px', 
+            padding: isMobile ? '12px 4px' : '12px 20px', 
             background: 'none', 
             border: 'none', 
             color: activeTab === 'analysis' ? 'var(--gold-primary)' : 'var(--text-secondary)',
             fontWeight: '800',
-            fontSize: '14px',
+            fontSize: isMobile ? '12px' : '14px',
             cursor: 'pointer',
-            whiteSpace: 'nowrap',
+            flex: isMobile ? 1 : 'none',
+            textAlign: 'center',
             borderBottom: activeTab === 'analysis' ? '2px solid var(--gold-primary)' : '2px solid transparent',
             transition: '0.2s'
           }}
         >
-          RENTABILIDAD Y OCUPACIÓN
+          {isMobile ? 'ANÁLISIS' : 'RENTABILIDAD Y OCUPACIÓN'}
         </button>
       </div>
 
