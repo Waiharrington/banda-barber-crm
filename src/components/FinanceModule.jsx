@@ -597,6 +597,127 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
     return true;
   }), [transactions, filterType, filterService, searchQuery, filterBarber, filterDate, startDate, endDate]);
 
+  const uniqueServices = useMemo(() => (
+    Array.from(new Set(transactions.map(t => parseTxExcel(t).serviceName).filter(Boolean)))
+  ), [transactions]);
+
+  const payrollDateRange = useMemo(() => {
+    let dateFilterStart;
+    let dateFilterEnd;
+
+    if (payrollFilterDate === 'this_week') {
+      dateFilterStart = getStartOfWeek();
+      dateFilterEnd = new Date();
+    } else if (payrollFilterDate === 'last_week') {
+      const startOfThisWeek = getStartOfWeek();
+      dateFilterStart = new Date(startOfThisWeek);
+      dateFilterStart.setDate(startOfThisWeek.getDate() - 7);
+      dateFilterEnd = new Date(startOfThisWeek);
+      dateFilterEnd.setMilliseconds(-1);
+    } else if (payrollFilterDate === 'custom') {
+      dateFilterStart = payrollStartDate ? new Date(payrollStartDate + 'T00:00:00') : getStartOfWeek();
+      dateFilterEnd = payrollEndDate ? new Date(payrollEndDate + 'T23:59:59') : new Date();
+    } else {
+      dateFilterStart = getStartOfWeek();
+      dateFilterEnd = new Date();
+    }
+
+    return { dateFilterStart, dateFilterEnd };
+  }, [payrollFilterDate, payrollStartDate, payrollEndDate]);
+
+  const { dateFilterStart, dateFilterEnd } = payrollDateRange;
+
+  const weeklyTransactions = useMemo(() => transactions.filter(t => {
+    const d = new Date(t.created_at);
+    return d >= dateFilterStart && d <= dateFilterEnd;
+  }), [transactions, dateFilterStart, dateFilterEnd]);
+
+  const processedPayroll = useMemo(() => staff.map(st => {
+    const serviceTransactions = weeklyTransactions.filter(t => t.type === 'income' && t.metadata?.staffInvolved?.some(x => String(x.staffId) === String(st.id)));
+    const valesTransactions = transactions.filter(t => {
+      const d = new Date(t.created_at);
+      return t.type === 'expense' &&
+             t.category === 'Vales Barberos' &&
+             String(t.metadata?.staffId) === String(st.id) &&
+             d >= dateFilterStart &&
+             d <= dateFilterEnd;
+    });
+    const staffTransactions = [...serviceTransactions, ...valesTransactions].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    const servicesCount = serviceTransactions.length;
+    
+    const earnedBs = serviceTransactions.reduce((sum, t) => {
+      const s = t.metadata?.staffInvolved?.find(x => String(x.staffId) === String(st.id));
+      return sum + (s ? (s.commissionBs || 0) + (s.productCommissionBs || 0) : 0);
+    }, 0);
+
+    const propinasBs = serviceTransactions.reduce((sum, t) => {
+      const s = t.metadata?.staffInvolved?.find(x => String(x.staffId) === String(st.id));
+      return sum + (s ? (s.tipBs || 0) : 0);
+    }, 0);
+
+    const valesBs = valesTransactions.reduce((sum, t) => sum + (t.metadata?.amountBs || 0), 0);
+    
+    const paidBs = weeklyTransactions.filter(t => t.type === 'expense' && t.category === 'Pago NÃ³mina' && String(t.metadata?.staffId) === String(st.id)).reduce((sum, t) => sum + (t.metadata?.amountBs || 0) + (t.metadata?.deductionBs || 0), 0);
+    
+    const roleLower = st.role?.toLowerCase() || '';
+    const isAssistant = roleLower.includes('asistente') || roleLower.includes('lavado') || roleLower.includes('operaciones');
+    const isBarber = !isAssistant && (roleLower.includes('barbero') || roleLower.includes('barber') || roleLower.includes('socio') || roleLower.includes('estilista') || roleLower.includes('lider'));
+    
+    let grossIncomeBs = 0;
+    let lavadosCount = 0;
+    let lavadoDeductionBs = 0;
+    let weeklyAssistanceUsd = 0;
+    let weeklyAssistanceBs = 0;
+    let netIncomeBs = 0;
+    
+    if (isBarber) {
+      grossIncomeBs = serviceTransactions.reduce((sum, t) => sum + ((t.amount || 0) * (t.exchange_rate || rates?.usd || 550)), 0);
+      lavadosCount = serviceTransactions.filter(t => t.metadata?.didWash).length;
+      lavadoDeductionBs = lavadosCount * 1.00 * (rates?.usd || 550);
+      weeklyAssistanceUsd = assistantConfig?.splits?.[st.id] || 0;
+      weeklyAssistanceBs = weeklyAssistanceUsd * (rates?.usd || 550);
+      netIncomeBs = earnedBs - lavadoDeductionBs - weeklyAssistanceBs;
+    } else if (isAssistant) {
+      lavadosCount = serviceTransactions.filter(t => t.metadata?.didWash).length;
+      const totalBarberAssistanceUsd = Object.values(assistantConfig?.splits || {}).reduce((sum, val) => sum + (Number(val) || 0), 0);
+      weeklyAssistanceUsd = totalBarberAssistanceUsd;
+      weeklyAssistanceBs = totalBarberAssistanceUsd * (rates?.usd || 550);
+      netIncomeBs = earnedBs + weeklyAssistanceBs;
+    } else {
+      netIncomeBs = earnedBs;
+    }
+    
+    const balanceBs = netIncomeBs + propinasBs - valesBs - paidBs;
+    const netIncomeUsd = netIncomeBs / (rates?.usd || 550);
+    
+    return {
+      ...st,
+      isBarber,
+      isAssistant,
+      servicesCount,
+      lavadosCount,
+      grossIncomeBs,
+      lavadoDeductionBs,
+      weeklyAssistanceUsd,
+      weeklyAssistanceBs,
+      earnedBs,
+      propinasBs,
+      valesBs,
+      netIncomeBs,
+      netIncomeUsd,
+      paidBs,
+      balanceBs,
+      staffTransactions
+    };
+  }), [staff, weeklyTransactions, transactions, dateFilterStart, dateFilterEnd, rates, assistantConfig])
+    .filter(s => s.balanceBs !== 0 || s.earnedBs > 0 || s.paidBs > 0 || s.valesBs > 0);
+
+  const astroGrossIncomeBs = processedPayroll.reduce((sum, s) => sum + (s.isBarber ? s.grossIncomeBs : 0), 0);
+  const totalStaffNetIncomeBs = processedPayroll.reduce((sum, s) => sum + s.netIncomeBs, 0);
+  const astroNetProfitBs = Math.max(0, astroGrossIncomeBs - totalStaffNetIncomeBs);
+  const astroNetProfitUsd = astroNetProfitBs / (rates?.usd || 550);
+
   const handleSaveCosts = (e) => {
     e.preventDefault();
     localStorage.setItem('astro_fixed_costs', JSON.stringify(fixedCosts));
@@ -890,8 +1011,6 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
         {/* HIGH-END TRANSACTIONS FILTER PANEL */}
         {showFilterPanel && (() => {
-          const uniqueServices = useMemo(() => Array.from(new Set(transactions.map(t => parseTxExcel(t).serviceName).filter(Boolean))), [transactions]);
-          
           return (
             <div className="glass-card animate-fade-in" style={{
               padding: '20px',
@@ -1339,115 +1458,8 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       </>
       )}
 
-      {activeTab === 'payroll' && (() => {
-        let dateFilterStart;
-        let dateFilterEnd;
 
-        if (payrollFilterDate === 'this_week') {
-          dateFilterStart = getStartOfWeek();
-          dateFilterEnd = new Date();
-        } else if (payrollFilterDate === 'last_week') {
-          const startOfThisWeek = getStartOfWeek();
-          dateFilterStart = new Date(startOfThisWeek);
-          dateFilterStart.setDate(startOfThisWeek.getDate() - 7);
-          dateFilterEnd = new Date(startOfThisWeek);
-          dateFilterEnd.setMilliseconds(-1);
-        } else if (payrollFilterDate === 'custom') {
-          dateFilterStart = payrollStartDate ? new Date(payrollStartDate + 'T00:00:00') : getStartOfWeek();
-          dateFilterEnd = payrollEndDate ? new Date(payrollEndDate + 'T23:59:59') : new Date();
-        }
-
-        const weeklyTransactions = useMemo(() => transactions.filter(t => {
-          const d = new Date(t.created_at);
-          return d >= dateFilterStart && d <= dateFilterEnd;
-        }), [transactions, dateFilterStart, dateFilterEnd]);
-
-        const processedPayroll = useMemo(() => staff.map(st => {
-          const serviceTransactions = weeklyTransactions.filter(t => t.type === 'income' && t.metadata?.staffInvolved?.some(x => String(x.staffId) === String(st.id)));
-          const valesTransactions = transactions.filter(t => {
-            const d = new Date(t.created_at);
-            return t.type === 'expense' && 
-                   t.category === 'Vales Barberos' && 
-                   String(t.metadata?.staffId) === String(st.id) && 
-                   d >= dateFilterStart && 
-                   d <= dateFilterEnd;
-          });
-          const staffTransactions = [...serviceTransactions, ...valesTransactions].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-          
-          const servicesCount = serviceTransactions.length;
-          
-          const earnedBs = serviceTransactions.reduce((sum, t) => {
-            const s = t.metadata?.staffInvolved?.find(x => String(x.staffId) === String(st.id));
-            return sum + (s ? (s.commissionBs || 0) + (s.productCommissionBs || 0) : 0);
-          }, 0);
-
-          const propinasBs = serviceTransactions.reduce((sum, t) => {
-            const s = t.metadata?.staffInvolved?.find(x => String(x.staffId) === String(st.id));
-            return sum + (s ? (s.tipBs || 0) : 0);
-          }, 0);
-
-          const valesBs = valesTransactions.reduce((sum, t) => sum + (t.metadata?.amountBs || 0), 0);
-          
-          const paidBs = weeklyTransactions.filter(t => t.type === 'expense' && t.category === 'Pago Nómina' && String(t.metadata?.staffId) === String(st.id)).reduce((sum, t) => sum + (t.metadata?.amountBs || 0) + (t.metadata?.deductionBs || 0), 0);
-          
-          const roleLower = st.role?.toLowerCase() || '';
-          const isAssistant = roleLower.includes('asistente') || roleLower.includes('lavado') || roleLower.includes('operaciones');
-          const isBarber = !isAssistant && (roleLower.includes('barbero') || roleLower.includes('barber') || roleLower.includes('socio') || roleLower.includes('estilista') || roleLower.includes('lider'));
-          
-          let grossIncomeBs = 0;
-          let lavadosCount = 0;
-          let lavadoDeductionBs = 0;
-          let weeklyAssistanceUsd = 0;
-          let weeklyAssistanceBs = 0;
-          let netIncomeBs = 0;
-          
-          if (isBarber) {
-            grossIncomeBs = serviceTransactions.reduce((sum, t) => sum + ((t.amount || 0) * (t.exchange_rate || rates?.usd || 550)), 0);
-            lavadosCount = serviceTransactions.filter(t => t.metadata?.didWash).length;
-            lavadoDeductionBs = lavadosCount * 1.00 * (rates?.usd || 550);
-            weeklyAssistanceUsd = assistantConfig?.splits?.[st.id] || 0;
-            weeklyAssistanceBs = weeklyAssistanceUsd * (rates?.usd || 550);
-            netIncomeBs = earnedBs - lavadoDeductionBs - weeklyAssistanceBs;
-          } else if (isAssistant) {
-            lavadosCount = serviceTransactions.filter(t => t.metadata?.didWash).length;
-            const totalBarberAssistanceUsd = Object.values(assistantConfig?.splits || {}).reduce((sum, val) => sum + (Number(val) || 0), 0);
-            weeklyAssistanceUsd = totalBarberAssistanceUsd;
-            weeklyAssistanceBs = totalBarberAssistanceUsd * (rates?.usd || 550);
-            netIncomeBs = earnedBs + weeklyAssistanceBs;
-          } else {
-            netIncomeBs = earnedBs;
-          }
-          
-          const balanceBs = netIncomeBs + propinasBs - valesBs - paidBs;
-          const netIncomeUsd = netIncomeBs / (rates?.usd || 550);
-          
-          return {
-            ...st,
-            isBarber,
-            isAssistant,
-            servicesCount,
-            lavadosCount,
-            grossIncomeBs,
-            lavadoDeductionBs,
-            weeklyAssistanceUsd,
-            weeklyAssistanceBs,
-            earnedBs,
-            propinasBs,
-            valesBs,
-            netIncomeBs,
-            netIncomeUsd,
-            paidBs,
-            balanceBs,
-            staffTransactions
-          };
-        }), [staff, weeklyTransactions, rates, assistantConfig]).filter(s => s.balanceBs !== 0 || s.earnedBs > 0 || s.paidBs > 0 || s.valesBs > 0);
-
-        const astroGrossIncomeBs = processedPayroll.reduce((sum, s) => sum + (s.isBarber ? s.grossIncomeBs : 0), 0);
-        const totalStaffNetIncomeBs = processedPayroll.reduce((sum, s) => sum + s.netIncomeBs, 0);
-        const astroNetProfitBs = Math.max(0, astroGrossIncomeBs - totalStaffNetIncomeBs);
-        const astroNetProfitUsd = astroNetProfitBs / (rates?.usd || 550);
-
-        return (
+      {activeTab === 'payroll' && (
           <div className="animate-fade-in">
              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1751,8 +1763,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
               ))}
             </div>
           </div>
-        );
-      })()}
+      )}
 
       {activeTab === 'analysis' && (() => {
         // Ejecución de Fórmulas Financieras (Basadas en el Excel de Rentabilidad)
