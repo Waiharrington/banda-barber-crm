@@ -762,9 +762,9 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             <Plus size={16} /> Ingreso
           </button>
           <button onClick={() => handleManualTransaction('expense')} style={{ 
-            backgroundColor: 'rgba(255, 69, 58, 0.08)', 
-            border: '1px solid rgba(255, 69, 58, 0.15)', 
-            color: '#ff453a',
+            background: 'linear-gradient(145deg, rgba(255, 69, 58, 0.15) 0%, rgba(255, 69, 58, 0.05) 100%)', 
+            border: '1px solid rgba(255, 69, 58, 0.3)', 
+            color: '#ff6961',
             height: '44px',
             padding: '0 16px',
             borderRadius: '12px',
@@ -773,10 +773,11 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            fontWeight: '600',
+            fontWeight: '700',
             fontSize: '14px',
             flex: 1,
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            boxShadow: '0 4px 12px rgba(255, 69, 58, 0.1)'
           }}>
             <Minus size={16} /> Gasto
           </button>
@@ -784,7 +785,14 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       </div>
 
       {/* Tab Selector */}
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px', borderBottom: '1px solid var(--border-color)' }}>
+      <div className="hide-scrollbar" style={{ 
+        display: 'flex', 
+        gap: '20px', 
+        marginBottom: '32px', 
+        borderBottom: '1px solid var(--border-color)',
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch'
+      }}>
         <button 
           onClick={() => setActiveTab('transactions')}
           style={{ 
@@ -795,7 +803,8 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             fontWeight: '800',
             fontSize: '14px',
             cursor: 'pointer',
-            borderBottom: activeTab === 'transactions' ? '2px solid var(--gold-primary)' : 'none',
+            whiteSpace: 'nowrap',
+            borderBottom: activeTab === 'transactions' ? '2px solid var(--gold-primary)' : '2px solid transparent',
             transition: '0.2s'
           }}
         >
@@ -811,7 +820,8 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             fontWeight: '800',
             fontSize: '14px',
             cursor: 'pointer',
-            borderBottom: activeTab === 'payroll' ? '2px solid var(--gold-primary)' : 'none',
+            whiteSpace: 'nowrap',
+            borderBottom: activeTab === 'payroll' ? '2px solid var(--gold-primary)' : '2px solid transparent',
             transition: '0.2s'
           }}
         >
@@ -827,7 +837,8 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             fontWeight: '800',
             fontSize: '14px',
             cursor: 'pointer',
-            borderBottom: activeTab === 'analysis' ? '2px solid var(--gold-primary)' : 'none',
+            whiteSpace: 'nowrap',
+            borderBottom: activeTab === 'analysis' ? '2px solid var(--gold-primary)' : '2px solid transparent',
             transition: '0.2s'
           }}
         >
@@ -846,13 +857,15 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
         }}>
         <div className="glass-card" style={{ 
           textAlign: 'center', 
-          padding: '32px',
-          border: '1px solid var(--border-color)',
-          borderRadius: '24px'
+          padding: isMobile ? '24px' : '32px',
+          border: '1px solid rgba(212, 175, 55, 0.2)',
+          borderRadius: '24px',
+          background: 'linear-gradient(145deg, rgba(28, 28, 30, 0.95) 0%, rgba(35, 35, 38, 0.98) 100%)',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
         }}>
           <div>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '600', textTransform: 'uppercase' }}>Saldo Actual</div>
-            <div style={{ fontSize: '48px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '-1px' }}>
+            <div style={{ fontSize: isMobile ? '12px' : '13px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Saldo Actual</div>
+            <div style={{ fontSize: isMobile ? '38px' : '48px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '-1px' }}>
               ${formatCurrency(balance, '')}
             </div>
           </div>
