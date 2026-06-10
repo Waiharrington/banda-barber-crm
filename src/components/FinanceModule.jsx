@@ -1166,16 +1166,38 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           <div className="hide-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '65vh', overflowY: 'auto', paddingRight: '4px' }}>
             {filteredTransactions.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No hay transacciones registradas que coincidan.</div>
-            ) : filteredTransactions.map(t => (
-              <div key={t.id} style={{ 
-                backgroundColor: 'rgba(255,255,255,0.02)', 
-                padding: '16px', 
-                borderRadius: '18px',
-                border: '1px solid var(--border-color)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
+            ) : filteredTransactions.map((t, idx) => {
+              const txDate = new Date(t.created_at);
+              const currentTxDateStr = txDate.toLocaleDateString();
+              const prevTxDateStr = idx > 0 ? new Date(filteredTransactions[idx-1].created_at).toLocaleDateString() : null;
+              const showDateHeader = currentTxDateStr !== prevTxDateStr;
+              
+              let dateLabel = currentTxDateStr;
+              if (showDateHeader) {
+                const today = new Date();
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                if (txDate.toDateString() === today.toDateString()) dateLabel = 'Hoy';
+                else if (txDate.toDateString() === yesterday.toDateString()) dateLabel = 'Ayer';
+                else dateLabel = txDate.toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'short' });
+              }
+
+              return (
+                <React.Fragment key={t.id}>
+                  {showDateHeader && (
+                    <div style={{ padding: '8px 4px 0px 4px', color: 'var(--gold-primary)', fontWeight: '900', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginTop: idx === 0 ? '0' : '8px' }}>
+                      {dateLabel}
+                    </div>
+                  )}
+                  <div style={{ 
+                    backgroundColor: 'rgba(255,255,255,0.02)', 
+                    padding: '16px', 
+                    borderRadius: '18px',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <div style={{ 
                     width: '40px', 
@@ -1206,8 +1228,10 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
                   <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px' }}>{t.category}</div>
                 </div>
+                </div>
               </div>
-            ))}
+            </React.Fragment>
+            )})}
           </div>
         ) : (
           /* Desktop Table - EXCEL STYLE */
@@ -1229,12 +1253,34 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   <tr>
                     <td colSpan="7" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>No hay transacciones registradas que coincidan.</td>
                   </tr>
-                ) : filteredTransactions.map(t => {
+                ) : filteredTransactions.map((t, idx) => {
                   const { clientName, serviceName, barbero, paymentMethod, didWash } = parseTxExcel(t);
                   const isExpanded = selectedTxId === t.id;
                   
+                  const txDate = new Date(t.created_at);
+                  const currentTxDateStr = txDate.toLocaleDateString();
+                  const prevTxDateStr = idx > 0 ? new Date(filteredTransactions[idx-1].created_at).toLocaleDateString() : null;
+                  const showDateHeader = currentTxDateStr !== prevTxDateStr;
+                  
+                  let dateLabel = currentTxDateStr;
+                  if (showDateHeader) {
+                    const today = new Date();
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    if (txDate.toDateString() === today.toDateString()) dateLabel = 'Hoy';
+                    else if (txDate.toDateString() === yesterday.toDateString()) dateLabel = 'Ayer';
+                    else dateLabel = txDate.toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'short' });
+                  }
+
                   return (
                     <React.Fragment key={t.id}>
+                      {showDateHeader && (
+                        <tr>
+                          <td colSpan="7" style={{ padding: idx === 0 ? '8px 0 8px 16px' : '24px 0 8px 16px', color: 'var(--gold-primary)', fontWeight: '900', fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                            {dateLabel}
+                          </td>
+                        </tr>
+                      )}
                       <tr 
                         onClick={() => setSelectedTxId(isExpanded ? null : t.id)}
                         className="table-row-hover" 
