@@ -1163,7 +1163,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
         {isMobile ? (
           /* Mobile Card List */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="hide-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '65vh', overflowY: 'auto', paddingRight: '4px' }}>
             {filteredTransactions.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No hay transacciones registradas que coincidan.</div>
             ) : filteredTransactions.map(t => (
@@ -1211,17 +1211,17 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           </div>
         ) : (
           /* Desktop Table - EXCEL STYLE */
-          <div style={{ overflowX: 'auto' }}>
+          <div className="hide-scrollbar" style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '65vh', paddingRight: '8px' }}>
             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px', textAlign: 'left' }}>
-              <thead>
+              <thead style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'rgba(28,28,30,0.98)' }}>
                 <tr style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '900' }}>
-                  <th style={{ padding: '12px 16px' }}>FECHA</th>
-                  <th style={{ padding: '12px 16px' }}>CLIENTE</th>
-                  <th style={{ padding: '12px 16px' }}>BARBERO</th>
-                  <th style={{ padding: '12px 16px' }}>SERVICIO</th>
-                  <th style={{ padding: '12px 16px' }}>MÉTODO DE PAGO</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>LAVADO</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right' }}>MONTO</th>
+                  <th style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>FECHA</th>
+                  <th style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>CLIENTE</th>
+                  <th style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>BARBERO</th>
+                  <th style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>SERVICIO</th>
+                  <th style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>MÉTODO DE PAGO</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>LAVADO</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'right', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>MONTO</th>
                 </tr>
               </thead>
               <tbody>
