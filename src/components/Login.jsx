@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
-  User, Lock, Loader2, Rocket, Eye, EyeOff,
+  Mail, Lock, Loader2, Rocket, Eye, EyeOff,
   Calendar, Users, BarChart2, DollarSign, ShieldCheck,
   Sliders, Copy, Check, X, Monitor, Tablet as TabletIcon, Phone
 } from 'lucide-react';
@@ -18,7 +18,7 @@ const features = [
 
 export default function Login() {
   const { login, loading } = useAuth();
-  const [username, setUsername]       = useState('');
+  const [email, setEmail]             = useState('');
   const [password, setPassword]       = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError]             = useState('');
@@ -172,7 +172,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    const result = await login(username, password);
+    const result = await login(email, password);
     if (!result.success) setError(result.message);
   };
 
@@ -1140,16 +1140,17 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
               <p className="l-card-sub">Ingresa tus credenciales para continuar</p>
 
               <form onSubmit={handleSubmit}>
-                {/* Username */}
+                {/* Email */}
                 <div className="l-field">
-                  <span className="l-field-label">USUARIO</span>
-                  <span className="l-field-icon"><User size={17} /></span>
+                  <span className="l-field-label">EMAIL</span>
+                  <span className="l-field-icon"><Mail size={17} /></span>
                   <input
-                    type="text"
-                    placeholder="Nombre de usuario"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
+                    type="email"
+                    placeholder="correo@astrobarber.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
                     required
+                    autoComplete="email"
                     className="l-input"
                   />
                 </div>
@@ -1164,6 +1165,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     required
+                    autoComplete="current-password"
                     className="l-input"
                   />
                   <button

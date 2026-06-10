@@ -23,8 +23,6 @@ import {
   MoreHorizontal,
   ChevronRight,
   Shield,
-  Eye,
-  EyeOff,
   Plus,
   Cake
 } from 'lucide-react';
@@ -70,7 +68,6 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
   // Form & Editing State
   const [showForm, setShowForm] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [profileModalData, setProfileModalData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -80,8 +77,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     image_url: '',
     phone: '',
     address: '',
+    email: '',
     username: '',
-    password: '',
     permissions: rolePresets['Barbero'],
     washing_rate: 0,
     birth_date: ''
@@ -177,8 +174,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       image_url: person.image_url || '',
       phone: person.phone || '',
       address: person.address || '',
+      email: person.email || '',
       username: person.username || '',
-      password: person.password || '',
       permissions: perms,
       washing_rate: person.washing_rate || 0,
       birth_date: person.birth_date || ''
@@ -198,8 +195,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       image_url: '',
       phone: '',
       address: '',
+      email: '',
       username: '',
-      password: '',
       permissions: rolePresets['Barbero'],
       washing_rate: 0,
       roles: ['Barbero'],
@@ -207,7 +204,6 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     });
     setIsCreatingNewRole(false);
     setNewRoleName('');
-    setShowPassword(false);
   };
 
   const handleSaveCustomRole = async (name, perms, oldName) => {
@@ -283,6 +279,10 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       showToast('Por favor ingresa un nombre.', 'error');
       return;
     }
+    if (!formData.email) {
+      showToast('Por favor ingresa el email de acceso.', 'error');
+      return;
+    }
     try {
       setLoading(true);
       
@@ -305,8 +305,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         image_url: formData.image_url,
         phone: formData.phone,
         address: formData.address,
+        email: formData.email ? formData.email.trim().toLowerCase() : null,
         username: formData.username,
-        password: formData.password,
         commission_pct: 40,
         washing_rate: formData.washing_rate || 0,
         birth_date: formData.birth_date || null
@@ -613,47 +613,24 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
               {/* Login Credentials */}
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', padding: '20px', backgroundColor: 'rgba(212,175,55,0.03)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.1)' }}>
                 <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>USUARIO DE ACCESO</label>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>EMAIL DE ACCESO</label>
                   <div style={{ position: 'relative' }}>
-                    <Key size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                    <input className="form-input" placeholder="usuario.barbero" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.2)' }} />
+                    <Mail size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                    <input className="form-input" type="email" placeholder="persona@astrobarber.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.2)' }} />
                   </div>
                 </div>
                 <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>CONTRASEÑA</label>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>ALIAS LEGACY</label>
                   <div style={{ position: 'relative' }}>
-                    <Lock size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                    <Key size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
                     <input 
                       className="form-input" 
-                      type={showPassword ? "text" : "password"} 
-                      placeholder="••••••••" 
-                      value={formData.password} 
-                      onChange={e => setFormData({...formData, password: e.target.value})} 
+                      type="text" 
+                      placeholder="usuario.barbero" 
+                      value={formData.username} 
+                      onChange={e => setFormData({...formData, username: e.target.value})} 
                       style={{ width: '100%', height: '50px', paddingLeft: '48px', paddingRight: '48px', border: '1px solid rgba(212,175,55,0.2)' }} 
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      style={{
-                        position: 'absolute',
-                        right: '16px',
-                        top: '16px',
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--gold-primary)',
-                        cursor: 'pointer',
-                        padding: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        opacity: 0.7,
-                        transition: 'opacity 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                      onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
                   </div>
                 </div>
               </div>
@@ -792,7 +769,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                 {/* Access Column */}
                 {!isMobile && (
                   <div>
-                    {person.username ? (
+                    {person.email ? (
                       <div style={{ 
                         display: 'inline-flex', 
                         alignItems: 'center', 
@@ -804,8 +781,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         fontSize: '11px',
                         fontWeight: '800'
                       }}>
-                        <Key size={12} />
-                        {person.username}
+                        <Mail size={12} />
+                        {person.email}
                       </div>
                     ) : (
                       <div style={{ 
@@ -820,7 +797,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         fontWeight: '800'
                       }}>
                         <Lock size={12} />
-                        SIN ACCESO
+                        SIN EMAIL AUTH
                       </div>
                     )}
                   </div>
@@ -1081,47 +1058,24 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       {/* Login Credentials */}
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', padding: '20px', backgroundColor: 'rgba(212,175,55,0.03)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.1)' }}>
                         <div className="form-group">
-                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>USUARIO DE ACCESO</label>
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>EMAIL DE ACCESO</label>
                           <div style={{ position: 'relative' }}>
-                            <Key size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                            <input className="form-input" placeholder="usuario.barbero" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.2)' }} />
+                            <Mail size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                            <input className="form-input" type="email" placeholder="persona@astrobarber.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.2)' }} />
                           </div>
                         </div>
                         <div className="form-group">
-                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>CONTRASEÑA</label>
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>ALIAS LEGACY</label>
                           <div style={{ position: 'relative' }}>
-                            <Lock size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                            <Key size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
                             <input 
                               className="form-input" 
-                              type={showPassword ? "text" : "password"} 
-                              placeholder="••••••••" 
-                              value={formData.password} 
-                              onChange={e => setFormData({...formData, password: e.target.value})} 
+                              type="text" 
+                              placeholder="usuario.barbero" 
+                              value={formData.username} 
+                              onChange={e => setFormData({...formData, username: e.target.value})} 
                               style={{ width: '100%', height: '50px', paddingLeft: '48px', paddingRight: '48px', border: '1px solid rgba(212,175,55,0.2)' }} 
                             />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              style={{
-                                position: 'absolute',
-                                right: '16px',
-                                top: '16px',
-                                background: 'none',
-                                border: 'none',
-                                color: 'var(--gold-primary)',
-                                cursor: 'pointer',
-                                padding: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                opacity: 0.7,
-                                transition: 'opacity 0.2s'
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                              onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
-                            >
-                              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
                           </div>
                         </div>
                       </div>

@@ -6,6 +6,7 @@ import { notificationService } from './notificationService';
 // Static data (inventory, clients, staff, services, extras) caches 45s.
 // Operational data (appointments) caches 15s since it changes more often.
 const _cache = {};
+const STAFF_PUBLIC_SELECT = 'id, auth_user_id, email, name, role, commission_pct, active, created_at, image_url, phone, address, username, tools, washing_rate, birth_date';
 
 function _cacheGet(key) {
   const entry = _cache[key];
@@ -166,12 +167,23 @@ export const dataService = {
 
     const { data, error } = await supabase
       .from('staff')
-      .select('*')
+      .select(STAFF_PUBLIC_SELECT)
       .order('name');
     if (error) throw error;
     const result = _asArray(data).map(_normalizeStaff).filter(s => !s.role?.startsWith('ARCHIVED|'));
     _cacheSet('staff', result, 45000);
     return result;
+  },
+
+  async getStaffByAuthUserId(authUserId) {
+    const { data, error } = await supabase
+      .from('staff')
+      .select(STAFF_PUBLIC_SELECT)
+      .eq('auth_user_id', authUserId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data || data.role?.startsWith('ARCHIVED|')) return null;
+    return _normalizeStaff(data);
   },
 
   async addStaff(member) {
@@ -1410,6 +1422,9 @@ export const dataService = {
   },
 
   async resetDatabase() {
+    if (import.meta.env.PROD || import.meta.env.VITE_ENABLE_DATABASE_RESET !== 'true') {
+      throw new Error('Database reset is disabled outside explicit local maintenance mode.');
+    }
     if (!window.confirm('¿ESTÁS ABSOLUTAMENTE SEGURO? Se borrarán todos los clientes, personal y ventas. Esta acción es irreversible.')) return;
     try {
       await supabase.from('appointment_staff').delete().neq('id', 0);

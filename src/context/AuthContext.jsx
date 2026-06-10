@@ -1,93 +1,126 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { dataService } from '../services/dataService';
 
 const AuthContext = createContext();
 
+const toSessionUser = (staffProfile, authUser) => ({
+  id: staffProfile.id,
+  auth_user_id: authUser.id,
+  name: staffProfile.name,
+  email: staffProfile.email || authUser.email,
+  role: staffProfile.role,
+  username: staffProfile.username || ''
+});
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('astro_auth_user');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [loading, setLoading] = useState(false);
-  
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadStaffProfile = async (authUser) => {
+    if (!authUser?.id) {
+      setUser(null);
+      return null;
+    }
+
+    const staffProfile = await dataService.getStaffByAuthUserId(authUser.id);
+    if (!staffProfile) {
+      await dataService.supabase.auth.signOut();
+      setUser(null);
+      return null;
+    }
+
+    const sessionUser = toSessionUser(staffProfile, authUser);
+    setUser(sessionUser);
+    return sessionUser;
+  };
+
   useEffect(() => {
-    const syncUser = async () => {
-      if (user) {
-        try {
-          const staff = await dataService.getStaff();
-          const found = staff.find(s => s.id === user.id);
-          if (found) {
-            const userData = {
-              id: found.id,
-              name: found.name,
-              role: found.role,
-              username: found.username
-            };
-            setUser(userData);
-            localStorage.setItem('astro_auth_user', JSON.stringify(userData));
-          } else {
-            // If they are not in the active staff list anymore (e.g. archived), force logout
-            logout();
-          }
-        } catch (e) {
-          console.error('Sync error:', e);
+    let mounted = true;
+
+    const initSession = async () => {
+      try {
+        const { data: { session }, error } = await dataService.supabase.auth.getSession();
+        if (error) throw error;
+        if (mounted && session?.user) {
+          await loadStaffProfile(session.user);
         }
+      } catch (error) {
+        console.error('Auth session error:', error);
+        if (mounted) setUser(null);
+      } finally {
+        if (mounted) setLoading(false);
       }
     };
-    syncUser();
+
+    initSession();
+
+    const { data: { subscription } } = dataService.supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return;
+      try {
+        if (session?.user) {
+          await loadStaffProfile(session.user);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Auth state error:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
   }, []);
 
-  const login = async (username, password) => {
+  const login = async (email, password) => {
     setLoading(true);
     try {
-      const staff = await dataService.getStaff();
-      const found = staff.find(s => s.username === username && s.password === password);
-      
-      if (found) {
-        const userData = {
-          id: found.id,
-          name: found.name,
-          role: found.role, // e.g., 'Admin', 'Barbero', 'Recepcionista', 'Caja'
-          username: found.username
-        };
-        setUser(userData);
-        localStorage.setItem('astro_auth_user', JSON.stringify(userData));
-        return { success: true };
-      } else {
-        return { success: false, message: 'Usuario o contraseña incorrectos' };
+      const { data, error } = await dataService.supabase.auth.signInWithPassword({
+        email: String(email || '').trim().toLowerCase(),
+        password
+      });
+
+      if (error) {
+        return { success: false, message: 'Correo o contrasena incorrectos' };
       }
+
+      const profile = await loadStaffProfile(data.user);
+      if (!profile) {
+        return { success: false, message: 'Este usuario no esta vinculado al equipo activo' };
+      }
+
+      return { success: true };
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false, message: 'Error de conexión' };
+      return { success: false, message: 'Error de conexion' };
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('astro_auth_user');
-    localStorage.removeItem('astro_active_tab');
+  const logout = async () => {
+    setLoading(true);
+    try {
+      await dataService.supabase.auth.signOut();
+    } finally {
+      setUser(null);
+      localStorage.removeItem('astro_active_tab');
+      localStorage.removeItem('astro_auth_user');
+      setLoading(false);
+    }
   };
 
   const refreshUser = async () => {
-    if (!user) return;
-    try {
-      const staff = await dataService.getStaff();
-      const found = staff.find(s => s.id === user.id);
-      if (found) {
-        const userData = {
-          id: found.id,
-          name: found.name,
-          role: found.role,
-          username: found.username
-        };
-        setUser(userData);
-        localStorage.setItem('astro_auth_user', JSON.stringify(userData));
-      }
-    } catch (error) {
-      console.error('Error refreshing user:', error);
+    const { data: { user: authUser } } = await dataService.supabase.auth.getUser();
+    if (!authUser) {
+      setUser(null);
+      return null;
     }
+    return loadStaffProfile(authUser);
   };
 
   return (

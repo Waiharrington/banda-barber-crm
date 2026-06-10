@@ -59,7 +59,7 @@ function getLastSundayDateString() {
 }
 
 function App() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { alert, confirm } = useDialog();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('astro_active_tab') || 'dashboard');
@@ -184,6 +184,8 @@ function App() {
   ];
 
   useEffect(() => {
+    if (!user) return;
+
     const handleResize = () => {
       const width = window.innerWidth;
       setIsMobile(width < 768);
@@ -224,7 +226,7 @@ function App() {
 
     initApp();
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [user]);
 
   const checkAutomaticWeeklyClose = async () => {
     try {
@@ -343,7 +345,7 @@ function App() {
     }
   };
 
-  const fetchInitialData = async () => {
+  async function fetchInitialData() {
     try {
       const [c, s, st, t, ext, inv, apps, todayApps] = await Promise.all([
         dataService.getClients(),
@@ -441,7 +443,7 @@ function App() {
         monthlyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= thirtyDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0)
       });
     } catch (error) { console.error('Error fetching data:', error); }
-  };
+  }
 
   const handleTabChange = (tabId, params = {}) => {
     // Permission check for non-admins
@@ -560,6 +562,7 @@ function App() {
     }
   };
 
+  if (authLoading && !user) return <AstroLoader visible={true} />;
   if (!user) return <Login />;
 
   if (isMobile) {
