@@ -726,7 +726,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   };
 
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: isMobile ? '80px' : '0' }}>
+    <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: isMobile ? '120px' : '80px' }}>
       {/* Header Section */}
       <div style={{
         display: 'flex',
