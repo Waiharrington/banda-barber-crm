@@ -606,16 +606,16 @@ export const dataService = {
   },
 
   // Transactions (Finance)
-  async getTransactions() {
-    const cached = _cacheGet('transactions');
+  async getTransactions(startDate = null) {
+    const cacheKey = 'transactions' + (startDate ? `_${startDate}` : '');
+    const cached = _cacheGet(cacheKey);
     if (cached) return cached;
-    const { data, error } = await supabase
-      .from('transactions')
-      .select('*')
-      .order('created_at', { ascending: false });
+    let query = supabase.from('transactions').select('*');
+    if (startDate) query = query.gte('created_at', startDate);
+    const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
     const result = _asArray(data);
-    _cacheSet('transactions', result, 15000);
+    _cacheSet(cacheKey, result, 15000);
     return result;
   },
 
@@ -781,9 +781,9 @@ export const dataService = {
   },
 
   // Appointments (Operational States)
-  async getAppointmentsByState(states = []) {
-    // Cache key based on the states array (sorted for consistency)
-    const cacheKey = 'appts_' + [...states].sort().join(',');
+  async getAppointmentsByState(states = [], startDate = null) {
+    // Cache key based on the states array and startDate
+    const cacheKey = 'appts_' + [...states].sort().join(',') + (startDate ? `_${startDate}` : '');
     const cached = _cacheGet(cacheKey);
     if (cached) return cached;
 
@@ -797,6 +797,7 @@ export const dataService = {
       appointment_staff(*, staff(name, role))
     `);
     if (states.length > 0) query = query.in('status', states);
+    if (startDate) query = query.gte('created_at', startDate);
     const { data, error } = await query.order('created_at', { ascending: true });
     if (error) throw error;
     // Short TTL: appointments change frequently

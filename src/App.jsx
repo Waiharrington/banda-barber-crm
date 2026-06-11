@@ -351,19 +351,20 @@ function App() {
 
   async function fetchInitialData() {
     try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
+
       const [c, s, st, t, ext, inv, apps, todayApps] = await Promise.all([
         dataService.getClients(),
         dataService.getServices(),
         dataService.getStaff(),
-        dataService.getTransactions(),
+        dataService.getTransactions(thirtyDaysAgoISO),
         dataService.getExtras(),
         dataService.getInventory(),
-        dataService.getAppointmentsByState(['Completado']),
+        dataService.getAppointmentsByState(['Completado'], thirtyDaysAgoISO),
         dataService.getTodayAppointments()
       ]);
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
 
       const staffWithStats = st.map(barber => {
         // Historical Appts logic (services and extras)
