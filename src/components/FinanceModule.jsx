@@ -2573,7 +2573,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                               <span style={{ fontWeight: '900', fontSize: '18px', color: 'white', letterSpacing: '-0.5px' }}>{serviceName}</span>
                               <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '6px' }}>
-                                <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{clientName}</span> <span style={{opacity: 0.5, margin: '0 4px'}}>•</span> Costo Total: <span style={{ color: 'white', fontWeight: '800' }}>${(commUsd / 0.4).toFixed(2)} USD</span> <span style={{opacity: 0.6}}>({(commBs / 0.4).toFixed(2)} Bs)</span>
+                                <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{clientName}</span> <span style={{opacity: 0.5, margin: '0 4px'}}>•</span> Costo Total: <span style={{ color: 'white', fontWeight: '800' }}>${(commUsd / 0.4).toFixed(2)} USD</span> <span style={{opacity: 0.6, whiteSpace: 'nowrap'}}>({(commBs / 0.4).toFixed(2)} Bs)</span>
                               </span>
                             </div>
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
