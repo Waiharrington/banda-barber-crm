@@ -210,21 +210,22 @@ function App() {
       console.log('DEBUG BDAY MSG CODES:', Array.from(bdayMsg).map(c => c.charCodeAt(0)));
     }
 
-    // Initial Load Sequence
+    // Fast-Path Load Sequence
+    // Phase 1: Load only what's needed to show the UI (fast)
+    // Phase 2: Load heavy data silently in background
     const initApp = async () => {
-      const startTime = Date.now();
       try {
-        await fetchInitialData();
+        await fetchCriticalData();
       } catch (error) {
         console.error('Initial app load failed:', error);
       } finally {
-        // Ensure at least 300ms of "Astro Experience" loader
-        const elapsed = Date.now() - startTime;
-        const delay = Math.max(0, 300 - elapsed);
-        
-        setTimeout(() => {
-          setIsAppLoading(false);
-        }, delay);
+        setIsAppLoading(false); // Dismiss loader immediately after critical data
+      }
+      // Phase 2: heavy data loads in background, no spinner
+      try {
+        await fetchSecondaryData();
+      } catch (e) {
+        console.warn('Secondary data load failed:', e);
       }
     };
 
@@ -349,23 +350,44 @@ function App() {
     }
   };
 
-  async function fetchInitialData() {
+  // Phase 1: Just enough to render the UI — fast!
+  async function fetchCriticalData() {
+    try {
+      const [c, s, st, todayApps] = await Promise.all([
+        dataService.getClients(),
+        dataService.getServices(),
+        dataService.getStaff(),
+        dataService.getTodayAppointments()
+      ]);
+      setDbData(prev => ({
+        ...prev,
+        clients: c,
+        services: s,
+        staff: st,
+        extras: [],
+        inventory: [],
+        todayAppointments: todayApps
+      }));
+      checkBirthdaysAndNotify(c);
+    } catch (error) { console.error('Error in critical data fetch:', error); }
+  }
+
+  // Phase 2: Heavy data — runs silently after loader is gone
+  async function fetchSecondaryData() {
     try {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
 
-      const [c, s, st, t, ext, inv, apps, todayApps] = await Promise.all([
-        dataService.getClients(),
-        dataService.getServices(),
-        dataService.getStaff(),
+      const [t, ext, inv, apps] = await Promise.all([
         dataService.getTransactions(thirtyDaysAgoISO),
         dataService.getExtras(),
         dataService.getInventory(),
-        dataService.getAppointmentsByState(['Completado'], thirtyDaysAgoISO),
-        dataService.getTodayAppointments()
+        dataService.getAppointmentsByState(['Completado'], thirtyDaysAgoISO)
       ]);
 
+      const st = await dataService.getStaff();
+      
       const staffWithStats = st.map(barber => {
         // Historical Appts logic (services and extras)
         const barberApps = apps.filter(a => a.staff_id === barber.id);
@@ -401,15 +423,13 @@ function App() {
         };
       });
 
-      setDbData({ 
-        clients: c, 
-        services: s, 
+      setDbData(prev => ({ 
+        ...prev,
         staff: staffWithStats, 
         extras: ext || [], 
         inventory: inv?.filter(i => i.is_for_sale !== false) || [],
-        appointments: apps,
-        todayAppointments: todayApps
-      });
+        appointments: apps
+      }));
       const today = new Date().toISOString().split('T')[0];
       const todayTransactions = t.filter(trans => trans.created_at?.startsWith(today));
       const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -420,7 +440,7 @@ function App() {
         weeklyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= sevenDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
         monthlyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= thirtyDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
         expenses: todayTransactions.filter(tr => tr.type === 'expense').reduce((acc, tr) => acc + Number(tr.amount), 0),
-        clients: c.length,
+        clients: (await dataService.getClients()).length,
         appointments: todayTransactions.length 
       });
       if (t.length > 0) {
@@ -438,16 +458,18 @@ function App() {
       // Automatic weekly close
       await checkAutomaticWeeklyClose();
 
-      // Check birthdays
-      checkBirthdaysAndNotify(c);
-
       // Check goals
       checkGoalsAndNotify({
         income: todayTransactions.filter(tr => tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0),
         weeklyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= sevenDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
         monthlyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= thirtyDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0)
       });
-    } catch (error) { console.error('Error fetching data:', error); }
+    } catch (error) { console.error('Error fetching secondary data:', error); }
+  }
+
+  async function fetchInitialData() {
+    await fetchCriticalData();
+    await fetchSecondaryData();
   }
 
   const handleTabChange = (tabId, params = {}) => {
