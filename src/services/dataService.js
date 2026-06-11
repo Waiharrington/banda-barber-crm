@@ -85,6 +85,20 @@ export const dataService = {
     return result;
   },
 
+  // Lightweight clients list — no joins, fast for initial load
+  async getClientsLite() {
+    const cached = _cacheGet('clients_lite');
+    if (cached) return cached;
+    const { data, error } = await supabase
+      .from('clients')
+      .select('id, name, phone, birth_date, id_card, image_url, hair_type, notes, work_gallery')
+      .order('name');
+    if (error) throw error;
+    const result = _asArray(data).map(c => ({ ...c, total_visits: 0, total_spent: 0 }));
+    _cacheSet('clients_lite', result, 45000);
+    return result;
+  },
+
   async addClient(client) {
     _cacheInvalidate('clients');
     const { data, error } = await supabase

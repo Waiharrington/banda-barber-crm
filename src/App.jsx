@@ -350,14 +350,13 @@ function App() {
     }
   };
 
-  // Phase 1: Just enough to render the UI — fast!
+  // Phase 1: Ultra-fast — only 3 simple queries with NO joins!
   async function fetchCriticalData() {
     try {
-      const [c, s, st, todayApps] = await Promise.all([
-        dataService.getClients(),
+      const [c, s, st] = await Promise.all([
+        dataService.getClientsLite(),
         dataService.getServices(),
-        dataService.getStaff(),
-        dataService.getTodayAppointments()
+        dataService.getStaff()
       ]);
       setDbData(prev => ({
         ...prev,
@@ -365,8 +364,7 @@ function App() {
         services: s,
         staff: st,
         extras: [],
-        inventory: [],
-        todayAppointments: todayApps
+        inventory: []
       }));
       checkBirthdaysAndNotify(c);
     } catch (error) { console.error('Error in critical data fetch:', error); }
@@ -379,11 +377,13 @@ function App() {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
 
-      const [t, ext, inv, apps] = await Promise.all([
+      const [t, ext, inv, apps, todayApps, fullClients] = await Promise.all([
         dataService.getTransactions(thirtyDaysAgoISO),
         dataService.getExtras(),
         dataService.getInventory(),
-        dataService.getAppointmentsByState(['Completado'], thirtyDaysAgoISO)
+        dataService.getAppointmentsByState(['Completado'], thirtyDaysAgoISO),
+        dataService.getTodayAppointments(),
+        dataService.getClients() // Full client data with visit counts
       ]);
 
       const st = await dataService.getStaff();
@@ -425,10 +425,12 @@ function App() {
 
       setDbData(prev => ({ 
         ...prev,
+        clients: fullClients, // Now with real visit counts
         staff: staffWithStats, 
         extras: ext || [], 
         inventory: inv?.filter(i => i.is_for_sale !== false) || [],
-        appointments: apps
+        appointments: apps,
+        todayAppointments: todayApps
       }));
       const today = new Date().toISOString().split('T')[0];
       const todayTransactions = t.filter(trans => trans.created_at?.startsWith(today));
@@ -440,7 +442,7 @@ function App() {
         weeklyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= sevenDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
         monthlyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= thirtyDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
         expenses: todayTransactions.filter(tr => tr.type === 'expense').reduce((acc, tr) => acc + Number(tr.amount), 0),
-        clients: (await dataService.getClients()).length,
+        clients: fullClients.length,
         appointments: todayTransactions.length 
       });
       if (t.length > 0) {
