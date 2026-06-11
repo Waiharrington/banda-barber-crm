@@ -591,7 +591,17 @@ function App() {
     }
   };
 
-  if (authLoading && !user) return <AstroLoader visible={true} />;
+  const hasSessionKey = Object.keys(localStorage).some(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
+  if (authLoading && !user) {
+    if (!hasSessionKey) {
+      return (
+        <Suspense fallback={<AstroLoader visible={true} />}>
+          <Login />
+        </Suspense>
+      );
+    }
+    return <AstroLoader visible={true} />;
+  }
   if (!user) {
     return (
       <Suspense fallback={<AstroLoader visible={true} />}>
