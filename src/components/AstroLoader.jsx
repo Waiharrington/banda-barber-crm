@@ -74,14 +74,15 @@ const AstroLoader = ({ visible }) => {
         
         {/* Dynamic Text */}
         <div style={{ 
-          fontSize: '12px', 
+          fontSize: '11px', 
           color: 'var(--text-muted)', 
           fontWeight: '600', 
           textTransform: 'uppercase',
           letterSpacing: '1px',
           height: '18px',
           transition: 'opacity 0.3s ease',
-          textAlign: 'center'
+          textAlign: 'center',
+          whiteSpace: 'nowrap'
         }}>
           {loadingTexts[textIndex]}
         </div>
