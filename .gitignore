@@ -28,3 +28,4 @@ dist-ssr
 .env.local
 .env.*
 scratch/auth_users.json
+scratch/transaction_backups/
