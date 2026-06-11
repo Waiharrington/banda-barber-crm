@@ -1555,9 +1555,17 @@ const VisitDetailModal = ({ isOpen, visit, onClose, gallery = [] }) => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Header Info */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', paddingBottom: '16px', borderBottom: '1px dashed rgba(255,255,255,0.1)' }}>
-                <DetailItem label="Fecha y Hora" value={new Date(visit.created_at).toLocaleString('es-VE', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })} />
-                <DetailItem label="Barbero" value={visit.barber_name || 'No esp.'} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', paddingBottom: '20px', borderBottom: '1px dashed rgba(255,255,255,0.1)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Fecha y Hora</span>
+                  <span style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>
+                    {visit.created_at ? new Date(visit.created_at).toLocaleString('es-VE', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Fecha no registrada'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Barbero</span>
+                  <span style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>{visit.barber_name || 'No especificado'}</span>
+                </div>
               </div>
 
               {/* Invoice Items */}

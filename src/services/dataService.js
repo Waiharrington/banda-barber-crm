@@ -651,7 +651,7 @@ export const dataService = {
 
       return {
         id: app.id,
-        created_at: app.created_at,
+        created_at: app.created_at || relatedTx?.created_at || app.started_at || app.scheduled_at || new Date().toISOString(),
         amount: app.total_price,
         status: app.status,
         barber_name: app.staff?.name,
