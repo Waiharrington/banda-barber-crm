@@ -2035,7 +2035,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.values(analysisData.barberStats).map(b => (
+                    {Object.values(analysisData.barberStats).filter(b => b.services > 0 || b.incomeBs > 0).map(b => (
                       <tr key={b.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                         <td style={{ padding: '12px', fontWeight: '700' }}>
                           {staff.find(s => String(s.id) === String(b.id))?.name || (
