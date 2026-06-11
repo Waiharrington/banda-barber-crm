@@ -25,6 +25,7 @@ import { dataService } from '../services/dataService';
 import AstroDialog from './AstroDialog';
 import AstroDatePicker from './AstroDatePicker';
 import AstroSelect from './AstroSelect';
+import AnimatedModal from './AnimatedModal';
 
 const getStartOfWeek = () => {
   const now = new Date();
@@ -2061,9 +2062,10 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
 
           {/* Costs Config Modal */}
-          {isEditingCosts && createPortal(
-            <div className="modal-overlay animate-fade-in" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-              <div className="glass-card animate-scale-in" style={{ maxWidth: '850px', width: '100%', borderRadius: '32px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
+          <AnimatedModal isOpen={isEditingCosts}>
+            {(overlayClass, cardClass) => (
+              <div className={overlayClass} onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div className={`glass-card ${cardClass}`} style={{ maxWidth: '850px', width: '100%', borderRadius: '32px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                   <h3 style={{ fontSize: '20px', fontWeight: '900', margin: 0 }}>Configuración de <span className="text-gold">Costos Fijos</span></h3>
                   <button 
@@ -2192,14 +2194,15 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
                 </form>
               </div>
-            </div>,
-            document.body
-          )}
+            </div>
+            )}
+          </AnimatedModal>
           
           {/* Assistant Config Modal */}
-          {isConfiguringPayroll && createPortal(
-            <div className="modal-overlay animate-fade-in" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-              <div className="glass-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', borderRadius: '32px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
+          <AnimatedModal isOpen={isConfiguringPayroll}>
+            {(overlayClass, cardClass) => (
+            <div className={overlayClass} onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div className={`glass-card ${cardClass}`} style={{ maxWidth: '500px', width: '100%', borderRadius: '32px', padding: '32px', maxHeight: '90vh', overflowY: 'auto' }}>
                 <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '24px' }}>Configuración <span className="text-gold">Sueldo Asistente</span></h3>
                 <form onSubmit={handleSaveAssistantConfig} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <div>
@@ -2241,14 +2244,15 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
                 </form>
               </div>
-            </div>,
-            document.body
-          )}
+            </div>
+            )}
+          </AnimatedModal>
 
           {/* Weekly Close Modal */}
-          {weeklyCloseModal.isOpen && createPortal(
-            <div className="modal-overlay animate-fade-in" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-              <div className="glass-card animate-scale-in" style={{ maxWidth: '450px', width: '100%', borderRadius: '32px', padding: '32px', textAlign: 'center' }}>
+          <AnimatedModal isOpen={weeklyCloseModal.isOpen}>
+            {(overlayClass, cardClass) => (
+            <div className={overlayClass} onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div className={`glass-card ${cardClass}`} style={{ maxWidth: '450px', width: '100%', borderRadius: '32px', padding: '32px', textAlign: 'center' }}>
                 {!weeklyCloseModal.success ? (
                   <>
                     <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(255, 69, 58, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#ff453a' }}>
@@ -2311,14 +2315,15 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </>
                 )}
               </div>
-            </div>,
-            document.body
-          )}
+            </div>
+            )}
+          </AnimatedModal>
 
           {/* Payroll Payment Modal */}
-          {payrollModal.isOpen && createPortal(
-            <div className="modal-overlay animate-fade-in" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-              <div className="glass-card animate-scale-in" style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '32px' }}>
+          <AnimatedModal isOpen={payrollModal.isOpen}>
+            {(overlayClass, cardClass) => (
+            <div className={overlayClass} onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div className={`glass-card ${cardClass}`} style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '32px' }}>
                 <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '8px' }}>
                   {payrollModal.isAbono ? 'Abono a' : 'Pago a'} <span className="text-gold">{payrollModal.staff?.name}</span>
                 </h3>
@@ -2395,14 +2400,15 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
                 </div>
               </div>
-            </div>,
-            document.body
-          )}
+            </div>
+            )}
+          </AnimatedModal>
 
           {/* Registrar Vale Modal */}
-          {valeModal.isOpen && createPortal(
-            <div className="modal-overlay animate-fade-in" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-              <div className="glass-card animate-scale-in" style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '32px' }}>
+          <AnimatedModal isOpen={valeModal.isOpen}>
+            {(overlayClass, cardClass) => (
+            <div className={overlayClass} onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div className={`glass-card ${cardClass}`} style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '32px' }}>
                 <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '8px' }}>
                   Registrar <span className="text-gold">Vale / Adelanto</span>
                 </h3>
@@ -2467,14 +2473,15 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
                 </div>
               </div>
-            </div>,
-            document.body
-          )}
+            </div>
+            )}
+          </AnimatedModal>
 
           {/* Payroll Detail Modal */}
-          {payrollDetail.isOpen && createPortal(
-            <div className="modal-overlay animate-fade-in" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-              <div className="glass-card animate-scale-in" style={{ maxWidth: '600px', width: '100%', borderRadius: '32px', padding: '32px', maxHeight: '80vh', overflowY: 'auto' }}>
+          <AnimatedModal isOpen={payrollDetail.isOpen}>
+            {(overlayClass, cardClass) => (
+            <div className={overlayClass} onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+              <div className={`glass-card ${cardClass}`} style={{ maxWidth: '600px', width: '100%', borderRadius: '32px', padding: '32px', maxHeight: '80vh', overflowY: 'auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                   <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Detalle de Servicios: <span className="text-gold">{payrollDetail.staff?.name}</span></h3>
                   <button onClick={() => setPayrollDetail({ isOpen: false, staff: null, transactions: [] })} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>✕</button>
@@ -2652,9 +2659,9 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
                 <button onClick={() => setPayrollDetail({ isOpen: false, staff: null, transactions: [] })} className="btn-gold" style={{ width: '100%', marginTop: '24px', padding: '14px', borderRadius: '12px', fontWeight: '800' }}>Cerrar</button>
               </div>
-            </div>,
-            document.body
-          )}
+            </div>
+            )}
+          </AnimatedModal>
         
 
       <AstroDialog 
