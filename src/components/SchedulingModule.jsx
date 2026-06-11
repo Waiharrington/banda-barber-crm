@@ -994,7 +994,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                 const isSelected = selectedDate.toDateString() === date.toDateString();
                 const isToday = new Date().toDateString() === date.toDateString();
                 const dateStr = date.toISOString().split('T')[0];
-                const hasApps = allAppointments.some(a => (a.scheduled_at || a.created_at).startsWith(dateStr));
+                const hasApps = allAppointments.some(a => (a.scheduled_at || a.created_at)?.startsWith(dateStr));
                 const dayNamesShort = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
                 
                 return (
@@ -1926,7 +1926,7 @@ const MiniCalendar = ({ selectedDate, onDateSelect, allAppointments }) => {
           const isSelected = selectedDate.toDateString() === date.toDateString();
           const isToday = new Date().toDateString() === date.toDateString();
           const dateStr = date.toISOString().split('T')[0];
-          const hasApps = allAppointments.some(a => (a.scheduled_at || a.created_at).startsWith(dateStr));
+          const hasApps = allAppointments.some(a => (a.scheduled_at || a.created_at)?.startsWith(dateStr));
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
           return (

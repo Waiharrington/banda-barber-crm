@@ -95,7 +95,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
     if (!searchMatch) return false;
     if (dateRange === 'today') {
       const today = new Date().toISOString().split('T')[0];
-      return item.created_at.startsWith(today);
+      return item.created_at?.startsWith(today);
     }
     if (dateRange === 'week') {
       const lastWeek = new Date();
