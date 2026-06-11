@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import { 
   BarChart3, 
@@ -13,36 +13,42 @@ import {
   X,
   History
 } from 'lucide-react';
-import DashboardModule from './components/DashboardModule';
-import ClientModule from './components/ClientModule';
-import PersonnelModule from './components/PersonnelModule';
-import FinanceModule from './components/FinanceModule';
-import ServicesModule from './components/ServicesModule';
-import InventoryModule from './components/InventoryModule';
-import SaleServiceModal from './components/SaleServiceModal';
-import HistoryModule from './components/HistoryModule';
 import { dataService } from './services/dataService';
-import logo from './assets/logo.png';
-import UserProfilePage from './components/UserProfilePage';
-import ReportsModule from './components/ReportsModule';
 
 // Mobile Components
 import MobileLayout from './components/mobile/MobileLayout';
-import MobileDashboard from './components/mobile/MobileDashboard';
 import ParticleBackground from './components/ParticleBackground';
 import AstroLoader from './components/AstroLoader';
-import ReceptionModule from './components/ReceptionModule';
-import CheckoutPOS from './components/CheckoutPOS';
-import BarberPanel from './components/BarberPanel';
-import SchedulingModule from './components/SchedulingModule';
 import { useAuth } from './context/AuthContext';
-import Login from './components/Login';
 import TopBar from './components/TopBar';
 import NotificationsDrawer from './components/NotificationsDrawer';
 import { notificationService } from './services/notificationService';
 import { useDialog } from './context/DialogContext';
 import { useScrollLock } from './hooks/useScrollLock';
 import { useModal } from './context/ModalContext';
+
+const DashboardModule = lazy(() => import('./components/DashboardModule'));
+const Login = lazy(() => import('./components/Login'));
+const MobileDashboard = lazy(() => import('./components/mobile/MobileDashboard'));
+const ClientModule = lazy(() => import('./components/ClientModule'));
+const PersonnelModule = lazy(() => import('./components/PersonnelModule'));
+const FinanceModule = lazy(() => import('./components/FinanceModule'));
+const ServicesModule = lazy(() => import('./components/ServicesModule'));
+const InventoryModule = lazy(() => import('./components/InventoryModule'));
+const SaleServiceModal = lazy(() => import('./components/SaleServiceModal'));
+const HistoryModule = lazy(() => import('./components/HistoryModule'));
+const UserProfilePage = lazy(() => import('./components/UserProfilePage'));
+const ReportsModule = lazy(() => import('./components/ReportsModule'));
+const ReceptionModule = lazy(() => import('./components/ReceptionModule'));
+const CheckoutPOS = lazy(() => import('./components/CheckoutPOS'));
+const BarberPanel = lazy(() => import('./components/BarberPanel'));
+const SchedulingModule = lazy(() => import('./components/SchedulingModule'));
+
+const ModuleFallback = () => (
+  <div style={{ minHeight: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontWeight: 800 }}>
+    Cargando...
+  </div>
+);
 
 function getLastSundayDateString() {
   const now = new Date();
@@ -586,27 +592,39 @@ function App() {
   };
 
   if (authLoading && !user) return <AstroLoader visible={true} />;
-  if (!user) return <Login />;
+  if (!user) {
+    return (
+      <Suspense fallback={<AstroLoader visible={true} />}>
+        <Login />
+      </Suspense>
+    );
+  }
 
   if (isMobile) {
     return (
       <MobileLayout activeTab={activeTab} setActiveTab={handleTabChange} onOpenSale={() => setIsSaleModalOpen(true)}>
         <AstroLoader visible={isAppLoading} />
         <div key={activeTab} className={isAppLoading ? "opacity-0" : "animate-page-fade-in"} style={{ minHeight: '100%' }}>
-          {renderContent()}
+          <Suspense fallback={<ModuleFallback />}>
+            {renderContent()}
+          </Suspense>
         </div>
-        <SaleServiceModal 
-          isOpen={isSaleModalOpen} 
-          onClose={() => setIsSaleModalOpen(false)} 
-          clients={dbData.clients}
-          services={dbData.services}
-          staff={dbData.staff}
-          extras={dbData.extras || []}
-          inventory={dbData.inventory || []}
-          onRefresh={fetchInitialData}
-          rates={rates}
-          currency={currency}
-        />
+        {isSaleModalOpen && (
+          <Suspense fallback={null}>
+            <SaleServiceModal 
+              isOpen={isSaleModalOpen} 
+              onClose={() => setIsSaleModalOpen(false)} 
+              clients={dbData.clients}
+              services={dbData.services}
+              staff={dbData.staff}
+              extras={dbData.extras || []}
+              inventory={dbData.inventory || []}
+              onRefresh={fetchInitialData}
+              rates={rates}
+              currency={currency}
+            />
+          </Suspense>
+        )}
         <NotificationsDrawer 
           isOpen={isNotificationsOpen} 
           onClose={() => setIsNotificationsOpen(false)} 
@@ -645,7 +663,9 @@ function App() {
             onToggleRateType={handleSetActiveRateType}
             onOpenNotifications={() => setIsNotificationsOpen(true)}
           />
-          {renderContent()}
+          <Suspense fallback={<ModuleFallback />}>
+            {renderContent()}
+          </Suspense>
         </div>
       </main>
 
@@ -684,24 +704,32 @@ function App() {
           >
             <X size={20} />
           </button>
-          <div style={{ padding: isMobile ? '20px' : '40px' }}>
-            <ReceptionModule isMobile={isMobile} rates={effectiveRates} />
-          </div>
+          {isReceptionModalOpen && (
+            <div style={{ padding: isMobile ? '20px' : '40px' }}>
+              <Suspense fallback={<ModuleFallback />}>
+                <ReceptionModule isMobile={isMobile} rates={effectiveRates} />
+              </Suspense>
+            </div>
+          )}
         </div>
       </div>
 
-      <SaleServiceModal 
-        isOpen={isSaleModalOpen} 
-        onClose={() => setIsSaleModalOpen(false)} 
-        clients={dbData.clients}
-        services={dbData.services}
-        staff={dbData.staff}
-        extras={dbData.extras || []}
-        inventory={dbData.inventory || []}
-        onRefresh={fetchInitialData}
-        rates={rates}
-        currency={currency}
-      />
+      {isSaleModalOpen && (
+        <Suspense fallback={null}>
+          <SaleServiceModal 
+            isOpen={isSaleModalOpen} 
+            onClose={() => setIsSaleModalOpen(false)} 
+            clients={dbData.clients}
+            services={dbData.services}
+            staff={dbData.staff}
+            extras={dbData.extras || []}
+            inventory={dbData.inventory || []}
+            onRefresh={fetchInitialData}
+            rates={rates}
+            currency={currency}
+          />
+        </Suspense>
+      )}
       <NotificationsDrawer 
         isOpen={isNotificationsOpen} 
         onClose={() => setIsNotificationsOpen(false)} 
