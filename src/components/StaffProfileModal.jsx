@@ -156,28 +156,64 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
           zIndex: 9999,
           padding: '20px'
         }}>
-          <div className={`glass-card ${cardClass}`} style={{
-        width: '100%',
-        maxWidth: '800px',
-        maxHeight: isMobileView ? '95vh' : '90vh',
-        borderRadius: isMobileView ? '24px' : '32px',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        position: 'relative'
-      }}>
+          <div className={`${cardClass}`} style={{
+            width: '100%',
+            maxWidth: '800px',
+            maxHeight: isMobileView ? '95vh' : '90vh',
+            borderRadius: isMobileView ? '24px' : '32px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            position: 'relative',
+            background: 'linear-gradient(145deg, rgba(22,22,28,0.98) 0%, rgba(14,14,18,0.99) 100%)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(212,175,55,0.08)'
+          }}>
         
         {/* Header Section */}
-        <div style={{ padding: isMobileView ? '24px 16px 16px' : '32px 32px 24px', background: 'linear-gradient(to bottom, rgba(212,175,55,0.1), transparent)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ 
+          padding: isMobileView ? '24px 16px 16px' : '32px 32px 24px', 
+          background: 'linear-gradient(90deg, rgba(212,175,55,0.06) 0%, transparent 60%)', 
+          borderBottom: '1px solid rgba(255,255,255,0.06)' 
+        }}>
           <button 
             onClick={onClose}
-            style={{ position: 'absolute', top: isMobileView ? '16px' : '24px', right: isMobileView ? '16px' : '24px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', cursor: 'pointer', zIndex: 10 }}
+            style={{ 
+              position: 'absolute', 
+              top: isMobileView ? '16px' : '24px', 
+              right: isMobileView ? '16px' : '24px', 
+              background: 'rgba(255,255,255,0.06)', 
+              border: '1px solid rgba(255,255,255,0.08)', 
+              borderRadius: '50%', 
+              width: '40px', 
+              height: '40px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              color: 'var(--text-muted)', 
+              cursor: 'pointer', 
+              zIndex: 10,
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,69,58,0.15)'; e.currentTarget.style.color = '#ff453a'; }}
+            onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
           >
             <X size={20} />
           </button>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: isMobileView ? '16px' : '24px' }}>
-            <div style={{ width: isMobileView ? '70px' : '90px', height: isMobileView ? '70px' : '90px', borderRadius: isMobileView ? '16px' : '24px', backgroundColor: 'rgba(255,255,255,0.05)', overflow: 'hidden', border: '2px solid var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ 
+              width: isMobileView ? '70px' : '90px', 
+              height: isMobileView ? '70px' : '90px', 
+              borderRadius: isMobileView ? '16px' : '24px', 
+              backgroundColor: 'rgba(255,255,255,0.05)', 
+              overflow: 'hidden', 
+              border: '2px solid var(--gold-primary)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              flexShrink: 0 
+            }}>
               {staffMember.image_url ? (
                 <img src={staffMember.image_url} alt={staffMember.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
@@ -197,13 +233,45 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobileView ? '8px' : '16px', marginTop: isMobileView ? '20px' : '32px' }}>
             <button 
               onClick={() => setActiveTab('rendimiento')}
-              style={{ padding: isMobileView ? '10px 8px' : '12px 24px', borderRadius: '12px', background: activeTab === 'rendimiento' ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', color: activeTab === 'rendimiento' ? 'black' : 'white', fontWeight: '800', border: 'none', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: isMobileView ? '11px' : '14px' }}
+              style={{ 
+                padding: isMobileView ? '10px 8px' : '12px 24px', 
+                borderRadius: '50px', 
+                background: activeTab === 'rendimiento' ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', 
+                color: activeTab === 'rendimiento' ? 'black' : 'white', 
+                fontWeight: '800', 
+                border: 'none', 
+                cursor: 'pointer', 
+                transition: 'all 0.2s', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: '8px', 
+                fontSize: isMobileView ? '11px' : '14px' 
+              }}
+              onMouseOver={e => { if (activeTab !== 'rendimiento') e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+              onMouseOut={e => { if (activeTab !== 'rendimiento') e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
             >
               <TrendingUp size={isMobileView ? 14 : 18} /> {isMobileView ? 'Rendimiento' : 'Rendimiento Histórico'}
             </button>
             <button 
               onClick={() => setActiveTab('inventario')}
-              style={{ padding: isMobileView ? '10px 8px' : '12px 24px', borderRadius: '12px', background: activeTab === 'inventario' ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', color: activeTab === 'inventario' ? 'black' : 'white', fontWeight: '800', border: 'none', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: isMobileView ? '11px' : '14px' }}
+              style={{ 
+                padding: isMobileView ? '10px 8px' : '12px 24px', 
+                borderRadius: '50px', 
+                background: activeTab === 'inventario' ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', 
+                color: activeTab === 'inventario' ? 'black' : 'white', 
+                fontWeight: '800', 
+                border: 'none', 
+                cursor: 'pointer', 
+                transition: 'all 0.2s', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: '8px', 
+                fontSize: isMobileView ? '11px' : '14px' 
+              }}
+              onMouseOver={e => { if (activeTab !== 'inventario') e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+              onMouseOut={e => { if (activeTab !== 'inventario') e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
             >
               <Wrench size={isMobileView ? 14 : 18} /> {isMobileView ? 'Inventario' : 'Inventario Personal'}
             </button>
@@ -220,7 +288,20 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
             <div className="animate-fade-in">
               {/* Top Stats Cards */}
               <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : 'repeat(3, 1fr)', gap: isMobileView ? '12px' : '16px', marginBottom: isMobileView ? '20px' : '32px' }}>
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: isMobileView ? '16px' : '24px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: isMobileView ? '12px' : '20px' }}>
+                <div 
+                  style={{ 
+                    background: 'rgba(255,255,255,0.025)', 
+                    padding: isMobileView ? '16px' : '24px', 
+                    borderRadius: '20px', 
+                    border: '1px solid rgba(255,255,255,0.06)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: isMobileView ? '12px' : '20px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.025)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
+                >
                   <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(50,215,75,0.1)', color: '#32d74b', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Scissors size={24} />
                   </div>
@@ -229,7 +310,20 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                     <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>${stats.totalServiceComm.toFixed(2)}</div>
                   </div>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: isMobileView ? '16px' : '24px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: isMobileView ? '12px' : '20px' }}>
+                <div 
+                  style={{ 
+                    background: 'rgba(255,255,255,0.025)', 
+                    padding: isMobileView ? '16px' : '24px', 
+                    borderRadius: '20px', 
+                    border: '1px solid rgba(255,255,255,0.06)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: isMobileView ? '12px' : '20px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.025)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
+                >
                   <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(10,132,255,0.1)', color: '#0a84ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <ShoppingBag size={24} />
                   </div>
@@ -238,7 +332,20 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                     <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>${stats.totalProductComm.toFixed(2)}</div>
                   </div>
                 </div>
-                <div style={{ background: 'rgba(212,175,55,0.02)', padding: isMobileView ? '16px' : '24px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', gap: isMobileView ? '12px' : '20px' }}>
+                <div 
+                  style={{ 
+                    background: 'rgba(212,175,55,0.025)', 
+                    padding: isMobileView ? '16px' : '24px', 
+                    borderRadius: '20px', 
+                    border: '1px solid rgba(212,175,55,0.12)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: isMobileView ? '12px' : '20px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.04)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.25)'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.025)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.12)'; }}
+                >
                   <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <TrendingUp size={24} />
                   </div>
@@ -252,7 +359,17 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
               {/* Bottom Row */}
               <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '1fr 1fr', gap: isMobileView ? '16px' : '24px' }}>
                 {/* Time & Volume */}
-                <div style={{ background: 'rgba(212,175,55,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.1)' }}>
+                <div 
+                  style={{ 
+                    background: 'rgba(212,175,55,0.025)', 
+                    padding: '24px', 
+                    borderRadius: '20px', 
+                    border: '1px solid rgba(212,175,55,0.12)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.04)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.25)'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.025)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.12)'; }}
+                >
                   <h4 style={{ color: 'var(--gold-primary)', fontSize: '14px', fontWeight: '900', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Clock size={16} /> Volumen y Tiempos
                   </h4>
@@ -268,7 +385,17 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                 </div>
 
                 {/* Top Services */}
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div 
+                  style={{ 
+                    background: 'rgba(255,255,255,0.025)', 
+                    padding: '24px', 
+                    borderRadius: '20px', 
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.025)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
+                >
                   <h4 style={{ color: 'white', fontSize: '14px', fontWeight: '900', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <TrendingUp size={16} color="var(--gold-primary)" /> Servicios Más Realizados
                   </h4>
@@ -278,7 +405,7 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                       {stats.topServices.map((srv, idx) => (
                         <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ color: 'var(--text-secondary)', fontWeight: '600', fontSize: '14px' }}>{srv.name}</span>
-                          <span style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '800' }}>{srv.count} veces</span>
+                          <span style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', padding: '4px 12px', borderRadius: '50px', fontSize: '12px', fontWeight: '800' }}>{srv.count} veces</span>
                         </div>
                       ))}
                     </div>
@@ -297,7 +424,33 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                 </div>
                 <button 
                   onClick={() => setShowAddTool(!showAddTool)}
-                  style={{ background: showAddTool ? 'rgba(255,255,255,0.1)' : 'var(--gold-primary)', color: showAddTool ? 'white' : 'black', border: 'none', padding: '10px 16px', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}
+                  style={{ 
+                    background: showAddTool ? 'rgba(255,255,255,0.06)' : 'var(--gold-primary)', 
+                    color: showAddTool ? 'white' : 'black', 
+                    border: showAddTool ? '1px solid rgba(255,255,255,0.08)' : 'none', 
+                    padding: '10px 20px', 
+                    borderRadius: '50px', 
+                    fontWeight: '800', 
+                    cursor: 'pointer', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px', 
+                    transition: 'all 0.2s' 
+                  }}
+                  onMouseOver={e => {
+                    if (showAddTool) {
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                    } else {
+                      e.currentTarget.style.background = '#e5be44';
+                    }
+                  }}
+                  onMouseOut={e => {
+                    if (showAddTool) {
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                    } else {
+                      e.currentTarget.style.background = 'var(--gold-primary)';
+                    }
+                  }}
                 >
                   {showAddTool ? 'Cancelar' : <><Plus size={16} /> Añadir Herramienta</>}
                 </button>
@@ -357,7 +510,24 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                       />
                     </div>
                   </div>
-                  <button onClick={handleAddTool} style={{ width: '100%', background: 'white', color: 'black', border: 'none', borderRadius: '12px', height: '44px', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' }}>Guardar Herramienta</button>
+                  <button 
+                    onClick={handleAddTool} 
+                    style={{ 
+                      width: '100%', 
+                      background: 'white', 
+                      color: 'black', 
+                      border: 'none', 
+                      borderRadius: '50px', 
+                      height: '44px', 
+                      fontWeight: '800', 
+                      cursor: 'pointer', 
+                      transition: 'all 0.2s' 
+                    }}
+                    onMouseOver={e => e.currentTarget.style.background = '#e5e5e5'}
+                    onMouseOut={e => e.currentTarget.style.background = 'white'}
+                  >
+                    Guardar Herramienta
+                  </button>
                 </div>
               )}
 
@@ -369,7 +539,23 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {tools.map(tool => (
-                    <div key={tool.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: isMobileView ? '12px 16px' : '16px 24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap', gap: '12px' }}>
+                    <div 
+                      key={tool.id} 
+                      style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        background: 'rgba(255,255,255,0.025)', 
+                        padding: isMobileView ? '12px 16px' : '16px 24px', 
+                        borderRadius: '20px', 
+                        border: '1px solid rgba(255,255,255,0.06)', 
+                        flexWrap: 'wrap', 
+                        gap: '12px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                      onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.025)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
+                    >
                       <div style={{ display: 'flex', alignItems: 'center', gap: isMobileView ? '12px' : '16px' }}>
                         <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: tool.ownership === 'Asignada' ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <Wrench size={18} color={tool.ownership === 'Asignada' ? 'var(--gold-primary)' : 'white'} />
@@ -381,15 +567,47 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                       </div>
                       
                       <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: '800', padding: '2px 8px', borderRadius: '6px', background: tool.ownership === 'Asignada' ? 'var(--gold-primary)' : 'rgba(255,255,255,0.1)', color: tool.ownership === 'Asignada' ? 'black' : 'white' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                          <span style={{ 
+                            fontSize: '11px', 
+                            fontWeight: '800', 
+                            padding: '2px 10px', 
+                            borderRadius: '50px', 
+                            background: tool.ownership === 'Asignada' ? 'var(--gold-primary)' : 'rgba(255,255,255,0.08)', 
+                            color: tool.ownership === 'Asignada' ? 'black' : 'white',
+                            border: tool.ownership === 'Asignada' ? 'none' : '1px solid rgba(255,255,255,0.08)'
+                          }}>
                             {tool.ownership}
                           </span>
-                          <span style={{ fontSize: '11px', fontWeight: '700', color: tool.status === 'Operativa' ? '#32d74b' : tool.status === 'En Mantenimiento' ? '#ff9f0a' : '#ff453a' }}>
+                          <span style={{ 
+                            fontSize: '11px', 
+                            fontWeight: '800', 
+                            padding: '2px 10px', 
+                            borderRadius: '50px', 
+                            background: tool.status === 'Operativa' ? 'rgba(50,215,75,0.12)' : tool.status === 'En Mantenimiento' ? 'rgba(255,159,10,0.12)' : 'rgba(255,69,58,0.12)', 
+                            color: tool.status === 'Operativa' ? '#32d74b' : tool.status === 'En Mantenimiento' ? '#ff9f0a' : '#ff453a',
+                            border: `1px solid ${tool.status === 'Operativa' ? 'rgba(50,215,75,0.15)' : tool.status === 'En Mantenimiento' ? 'rgba(255,159,10,0.15)' : 'rgba(255,69,58,0.15)'}`
+                          }}>
                             {tool.status}
                           </span>
                         </div>
-                        <button onClick={() => handleRemoveTool(tool.id)} style={{ background: 'transparent', border: 'none', color: '#ff453a', cursor: 'pointer', opacity: 0.7 }} title="Eliminar">
+                        <button 
+                          onClick={() => handleRemoveTool(tool.id)} 
+                          style={{ 
+                            background: 'rgba(255,69,58,0.08)', 
+                            border: '1px solid rgba(255,69,58,0.15)', 
+                            padding: '8px 10px', 
+                            borderRadius: '10px', 
+                            cursor: 'pointer', 
+                            color: '#ff453a',
+                            transition: 'all 0.2s', 
+                            display: 'flex', 
+                            alignItems: 'center' 
+                          }}
+                          onMouseOver={e => e.currentTarget.style.background = 'rgba(255,69,58,0.18)'}
+                          onMouseOut={e => e.currentTarget.style.background = 'rgba(255,69,58,0.08)'}
+                          title="Eliminar"
+                        >
                           <Trash2 size={18} />
                         </button>
                       </div>
