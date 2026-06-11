@@ -425,7 +425,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   const handleExport = () => {
     try {
       const headers = ['ID', 'Fecha', 'Descripción', 'Tipo', 'Monto', 'Categoría'];
-      const rows = transactions.map(t => [
+      const rows = filteredTransactions.map(t => [
         t.id, 
         new Date(t.created_at).toLocaleString('es-VE', { hour12: true }), 
         t.description, 
@@ -494,9 +494,35 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
     }).format(amount);
   };
 
-  const totalIncome = transactions.reduce((acc, t) => t.type === 'income' ? acc + t.amount : acc, 0);
-  const totalExpense = transactions.reduce((acc, t) => t.type === 'expense' ? acc + t.amount : acc, 0);
+  const isHistoricalImport = (transaction) => transaction?.metadata?.importedHistorical === true;
+
+  const operationalTransactions = useMemo(
+    () => transactions.filter(t => !isHistoricalImport(t)),
+    [transactions]
+  );
+
+  const totalIncome = operationalTransactions.reduce((acc, t) => t.type === 'income' ? acc + t.amount : acc, 0);
+  const totalExpense = operationalTransactions.reduce((acc, t) => t.type === 'expense' ? acc + t.amount : acc, 0);
   const balance = totalIncome - totalExpense;
+
+  const todayOperationalTransactions = useMemo(() => {
+    const today = new Date();
+    return operationalTransactions.filter(t => new Date(t.created_at).toDateString() === today.toDateString());
+  }, [operationalTransactions]);
+
+  const todayIncome = todayOperationalTransactions.reduce((acc, t) => t.type === 'income' ? acc + (t.amount || 0) : acc, 0);
+  const todayExpense = todayOperationalTransactions.reduce((acc, t) => t.type === 'expense' ? acc + (t.amount || 0) : acc, 0);
+  const todayCashUsd = todayOperationalTransactions.reduce((acc, t) => (
+    acc + Number(t.metadata?.cash_usd || t.metadata?.cashUsd || 0)
+  ), 0);
+  const todayTransferBs = todayOperationalTransactions.reduce((acc, t) => (
+    acc + Number(t.metadata?.transfer_bs || t.metadata?.transferBs || 0)
+  ), 0);
+  const todayCommissionDebtUsd = todayOperationalTransactions.reduce((acc, t) => {
+    if (t.type !== 'income') return acc;
+    return acc + (t.metadata?.staffInvolved?.reduce((sum, s) => sum + Number(s.commissionEarned || 0), 0) || 0);
+  }, 0);
+  const todayNetRealUsd = todayIncome - todayExpense;
 
   // Analysis Logic (Excel Replication)
   const analysisData = (() => {
@@ -504,7 +530,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
     const paymentStats = {};
     const serviceStats = {};
 
-    transactions.forEach(t => {
+    operationalTransactions.forEach(t => {
       if (t.type !== 'income') return;
 
       const meta = t.metadata || {};
@@ -558,7 +584,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   const breakEven = totalFixedCosts / 0.4; // Assuming 40% margin (after 60% commission)
   const avgTicket = totalIncome / (Object.values(analysisData.barberStats).reduce((acc, b) => acc + b.services, 0) || 1);
 
-  const filteredTransactions = useMemo(() => transactions.filter(t => {
+  const filteredTransactions = useMemo(() => operationalTransactions.filter(t => {
     // 1. Filter by Type
     if (filterType !== 'all' && t.type !== filterType) return false;
     
@@ -608,11 +634,11 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
     }
     
     return true;
-  }), [transactions, filterType, filterService, searchQuery, filterBarber, filterDate, startDate, endDate]);
+  }), [operationalTransactions, filterType, filterService, searchQuery, filterBarber, filterDate, startDate, endDate]);
 
   const uniqueServices = useMemo(() => (
-    Array.from(new Set(transactions.map(t => parseTxExcel(t).serviceName).filter(Boolean)))
-  ), [transactions]);
+    Array.from(new Set(operationalTransactions.map(t => parseTxExcel(t).serviceName).filter(Boolean)))
+  ), [operationalTransactions]);
 
   const payrollDateRange = useMemo(() => {
     let dateFilterStart;
@@ -640,14 +666,14 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
   const { dateFilterStart, dateFilterEnd } = payrollDateRange;
 
-  const weeklyTransactions = useMemo(() => transactions.filter(t => {
+  const weeklyTransactions = useMemo(() => operationalTransactions.filter(t => {
     const d = new Date(t.created_at);
     return d >= dateFilterStart && d <= dateFilterEnd;
-  }), [transactions, dateFilterStart, dateFilterEnd]);
+  }), [operationalTransactions, dateFilterStart, dateFilterEnd]);
 
   const processedPayroll = useMemo(() => staff.map(st => {
     const serviceTransactions = weeklyTransactions.filter(t => t.type === 'income' && t.metadata?.staffInvolved?.some(x => String(x.staffId) === String(st.id)));
-    const valesTransactions = transactions.filter(t => {
+    const valesTransactions = operationalTransactions.filter(t => {
       const d = new Date(t.created_at);
       return t.type === 'expense' &&
              t.category === 'Vales Barberos' &&
@@ -723,7 +749,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       balanceBs,
       staffTransactions
     };
-  }), [staff, weeklyTransactions, transactions, dateFilterStart, dateFilterEnd, rates, assistantConfig])
+  }), [staff, weeklyTransactions, operationalTransactions, dateFilterStart, dateFilterEnd, rates, assistantConfig])
     .filter(s => s.balanceBs !== 0 || s.earnedBs > 0 || s.paidBs > 0 || s.valesBs > 0);
 
   const astroGrossIncomeBs = processedPayroll.reduce((sum, s) => sum + (s.isBarber ? s.grossIncomeBs : 0), 0);
@@ -906,7 +932,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           </div>
           <div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>INGRESOS (HOY)</div>
-            <div style={{ fontSize: '24px', fontWeight: '800' }}>${formatCurrency(totalIncome, '')}</div>
+            <div style={{ fontSize: '24px', fontWeight: '800' }}>${formatCurrency(todayIncome, '')}</div>
           </div>
         </div>
 
@@ -930,7 +956,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           </div>
           <div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>EGRESOS (HOY)</div>
-            <div style={{ fontSize: '24px', fontWeight: '800' }}>${formatCurrency(totalExpense, '')}</div>
+            <div style={{ fontSize: '24px', fontWeight: '800' }}>${formatCurrency(todayExpense, '')}</div>
           </div>
         </div>
       </section>
@@ -954,37 +980,37 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
             <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>EFECTIVO ($)</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: '#32d74b' }}>
-              {formatCurrency(transactions.filter(t => t.metadata?.cash_usd || t.metadata?.cashUsd).reduce((acc, t) => acc + Number(t.metadata?.cash_usd || t.metadata?.cashUsd || 0), 0) * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
+              {formatCurrency(todayCashUsd * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
             </div>
             <div style={{ fontSize: '11px', color: 'white', marginTop: '4px' }}>
-              REF: ${formatCurrency(transactions.filter(t => t.metadata?.cash_usd || t.metadata?.cashUsd).reduce((acc, t) => acc + Number(t.metadata?.cash_usd || t.metadata?.cashUsd || 0), 0), '')}
+              REF: ${formatCurrency(todayCashUsd, '')}
             </div>
           </div>
           <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
             <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>PAGO MÓVIL (BS)</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)' }}>
-              {formatCurrency(transactions.filter(t => t.metadata?.transfer_bs || t.metadata?.transferBs).reduce((acc, t) => acc + Number(t.metadata?.transfer_bs || t.metadata?.transferBs || 0), 0), '')} <span style={{fontSize: '12px'}}>BS</span>
+              {formatCurrency(todayTransferBs, '')} <span style={{fontSize: '12px'}}>BS</span>
             </div>
             <div style={{ fontSize: '11px', color: 'white', marginTop: '4px' }}>
-              REF: ${formatCurrency(transactions.filter(t => t.metadata?.transfer_bs || t.metadata?.transferBs).reduce((acc, t) => acc + Number(t.metadata?.transfer_bs || t.metadata?.transferBs || 0), 0) / (rates?.usd || 550), '')}
+              REF: ${formatCurrency(todayTransferBs / (rates?.usd || 550), '')}
             </div>
           </div>
           <div style={{ padding: '20px', backgroundColor: 'rgba(255,69,58,0.05)', borderRadius: '20px' }}>
             <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>COMISIONES DEUDA</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: '#ff453a' }}>
-              {formatCurrency((totalIncome * 0.4) * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
+              {formatCurrency(todayCommissionDebtUsd * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
             </div>
             <div style={{ fontSize: '11px', color: 'white', marginTop: '4px' }}>
-              REF: ${(totalIncome * 0.4).toFixed(2)}
+              REF: ${formatCurrency(todayCommissionDebtUsd, '')}
             </div>
           </div>
           <div style={{ padding: '20px', backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: '20px', border: '1px solid var(--gold-primary)' }}>
             <div style={{ fontSize: '10px', fontWeight: '900', color: 'black', backgroundColor: 'var(--gold-primary)', display: 'inline-block', padding: '2px 6px', borderRadius: '4px', marginBottom: '4px' }}>NETO REAL</div>
             <div style={{ fontSize: '24px', fontWeight: '950', color: 'white' }}>
-              {formatCurrency((totalIncome - totalExpense) * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
+              {formatCurrency(todayNetRealUsd * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
             </div>
             <div style={{ fontSize: '12px', color: 'white', marginTop: '4px' }}>
-              REF: ${formatCurrency(totalIncome - totalExpense, '')}
+              REF: ${formatCurrency(todayNetRealUsd, '')}
             </div>
           </div>
         </div>
@@ -1880,8 +1906,8 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
       {activeTab === 'analysis' && (() => {
         // Ejecución de Fórmulas Financieras (Basadas en el Excel de Rentabilidad)
-        const ingresosTotales = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + (t.amount || 0), 0);
-        const egresosBarberos = transactions.filter(t => t.type === 'income').reduce((acc, t) => {
+        const ingresosTotales = operationalTransactions.filter(t => t.type === 'income').reduce((acc, t) => acc + (t.amount || 0), 0);
+        const egresosBarberos = operationalTransactions.filter(t => t.type === 'income').reduce((acc, t) => {
           return acc + (t.metadata?.staffInvolved?.reduce((sum, s) => sum + (s.commissionEarned || 0), 0) || 0);
         }, 0);
         
