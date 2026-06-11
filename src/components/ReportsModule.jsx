@@ -22,7 +22,8 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   const [selectedService, setSelectedService] = useState('all');
   const [selectedWeek, setSelectedWeek] = useState(null); // timestamp of week start
   const [selectedStaff, setSelectedStaff] = useState('all');
-  const [chartGranularity, setChartGranularity] = useState('day'); // 'day', 'week', 'month'
+  const [chartGranularity, setChartGranularity] = useState('week'); // 'day', 'week', 'month'
+  const [hoveredTimelinePoint, setHoveredTimelinePoint] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   
@@ -292,43 +293,134 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   const maxDayCount = Math.max(...daysFlow.map(d => d.count)) || 1;
 
   // 4. REF $ OVER TIME (Line Chart with Custom Granularity)
+  const toInputDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatLongDate = (date) => date.toLocaleDateString('es-VE', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+
+  const getIsoWeekNumber = (date) => {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    normalized.setDate(normalized.getDate() + 3 - ((normalized.getDay() + 6) % 7));
+    const weekOne = new Date(normalized.getFullYear(), 0, 4);
+    return 1 + Math.round(((normalized - weekOne) / 86400000 - 3 + ((weekOne.getDay() + 6) % 7)) / 7);
+  };
+
+  const isTimelineWeekDrilldown = (() => {
+    if (dateRange !== 'custom' || chartGranularity !== 'week' || !customStartDate || !customEndDate) return false;
+    const start = new Date(`${customStartDate}T00:00:00`);
+    const end = new Date(`${customEndDate}T00:00:00`);
+    const days = Math.round((end - start) / 86400000) + 1;
+    return days > 0 && days <= 7;
+  })();
+
+  const effectiveTimelineGranularity = isTimelineWeekDrilldown ? 'day' : chartGranularity;
+
+  const getTimelineGroup = (date) => {
+    const start = new Date(date);
+    const end = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    if (effectiveTimelineGranularity === 'week') {
+      const dayOffset = (start.getDay() + 6) % 7;
+      start.setDate(start.getDate() - dayOffset);
+      end.setTime(start.getTime());
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+      const weekNumber = getIsoWeekNumber(start);
+
+      return {
+        key: toInputDate(start),
+        date: start.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit' }),
+        sortKey: start.getTime(),
+        startDate: toInputDate(start),
+        endDate: toInputDate(end),
+        rangeLabel: `Del ${formatLongDate(start)} al ${formatLongDate(end)} (Semana ${weekNumber})`
+      };
+    }
+
+    if (effectiveTimelineGranularity === 'month') {
+      start.setDate(1);
+      end.setFullYear(start.getFullYear(), start.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+
+      return {
+        key: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`,
+        date: start.toLocaleDateString('es-VE', { month: 'short', year: '2-digit' }),
+        sortKey: start.getTime(),
+        startDate: toInputDate(start),
+        endDate: toInputDate(end),
+        rangeLabel: `${formatLongDate(start)} - ${formatLongDate(end)}`
+      };
+    }
+
+    return {
+      key: toInputDate(start),
+      date: start.toLocaleDateString('es-VE', { day: '2-digit', month: 'short' }),
+      sortKey: start.getTime(),
+      startDate: toInputDate(start),
+      endDate: toInputDate(end),
+      rangeLabel: formatLongDate(start)
+    };
+  };
+
   const timelineData = (() => {
     const groups = {};
-    const incomeTransactions = filteredTransactions.filter(t => t.type === 'income');
+    const incomeTransactions = filteredTransactions
+      .filter(t => t.type === 'income')
+      .slice()
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     
     if (incomeTransactions.length === 0) return groupTimelinePlaceholder();
     
     incomeTransactions.forEach(t => {
       const tDate = new Date(t.created_at);
-      let dateKey = '';
+      const group = getTimelineGroup(tDate);
 
-      if (chartGranularity === 'day') {
-        dateKey = tDate.toLocaleDateString('es-VE', { day: '2-digit', month: 'short' });
-      } else if (chartGranularity === 'week') {
-        const day = tDate.getDay();
-        const diff = tDate.getDate() - day + (day === 0 ? -6 : 1); // Lunes como primer día
-        const monday = new Date(tDate);
-        monday.setDate(diff);
-        dateKey = `Sem ${monday.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit' })}`;
-      } else if (chartGranularity === 'month') {
-        dateKey = tDate.toLocaleDateString('es-VE', { month: 'short', year: '2-digit' });
+      if (!groups[group.key]) {
+        groups[group.key] = {
+          ...group,
+          amount: 0
+        };
       }
-      
-      groups[dateKey] = (groups[dateKey] || 0) + t.amount;
+      groups[group.key].amount += t.amount;
     });
 
-    const list = Object.entries(groups).map(([date, amount]) => ({ date, amount }));
-    if (list.length < 2) return groupTimelinePlaceholder();
+    if (isTimelineWeekDrilldown) {
+      const start = new Date(`${customStartDate}T00:00:00`);
+      const end = new Date(`${customEndDate}T00:00:00`);
+      for (let cur = new Date(start); cur <= end; cur.setDate(cur.getDate() + 1)) {
+        const group = getTimelineGroup(cur);
+        if (!groups[group.key]) {
+          groups[group.key] = {
+            ...group,
+            amount: 0
+          };
+        }
+      }
+    }
+
+    const list = Object.values(groups).sort((a, b) => a.sortKey - b.sortKey);
+    if (list.length === 0) return groupTimelinePlaceholder();
     return list.slice(-7);
   })();
 
   function groupTimelinePlaceholder() {
     return [
-      { date: "20 abr 2026", amount: 2430 },
-      { date: "27 abr 2026", amount: 888 },
-      { date: "4 may 2026", amount: 951 },
-      { date: "11 may 2026", amount: 712 },
-      { date: "18 may 2026", amount: 800 }
+      { date: "20/04", amount: 2430, startDate: "2026-04-20", endDate: "2026-04-26", rangeLabel: "Del 20 abr 2026 al 26 abr 2026 (Semana 17)", sortKey: 0 },
+      { date: "27/04", amount: 888, startDate: "2026-04-27", endDate: "2026-05-03", rangeLabel: "Del 27 abr 2026 al 3 may 2026 (Semana 18)", sortKey: 1 },
+      { date: "04/05", amount: 951, startDate: "2026-05-04", endDate: "2026-05-10", rangeLabel: "Del 4 may 2026 al 10 may 2026 (Semana 19)", sortKey: 2 },
+      { date: "11/05", amount: 712, startDate: "2026-05-11", endDate: "2026-05-17", rangeLabel: "Del 11 may 2026 al 17 may 2026 (Semana 20)", sortKey: 3 },
+      { date: "18/05", amount: 800, startDate: "2026-05-18", endDate: "2026-05-24", rangeLabel: "Del 18 may 2026 al 24 may 2026 (Semana 21)", sortKey: 4 }
     ];
   }
 
@@ -338,8 +430,26 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   const timelinePoints = timelineData.map((d, i) => {
     const x = 35 + i * (300 / (timelineData.length - 1 || 1));
     const y = 130 - (d.amount / maxTimelineAmount) * timelineHeight;
-    return { x, y, amount: d.amount, date: d.date };
+    return {
+      x,
+      y,
+      amount: d.amount,
+      date: d.date,
+      startDate: d.startDate,
+      endDate: d.endDate,
+      rangeLabel: d.rangeLabel,
+      sortKey: d.sortKey
+    };
   });
+
+  const handleTimelinePointClick = (point) => {
+    if (!point?.startDate || !point?.endDate) return;
+    setDateRange('custom');
+    setCustomStartDate(point.startDate);
+    setCustomEndDate(point.endDate);
+    setSelectedWeek(new Date(`${point.startDate}T00:00:00`).getTime());
+    setHoveredTimelinePoint(null);
+  };
 
   const timelinePath = timelinePoints.reduce((path, p, i) => {
     if (i === 0) return `M ${p.x} ${p.y}`;
@@ -479,7 +589,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
 
         {/* Chart Granularity Selector */}
         <AstroSelect 
-          label="Agrupamiento Histórico"
+          label="Agrupamiento Ref. $"
           value={chartGranularity}
           onChange={setChartGranularity}
           options={[
@@ -528,8 +638,8 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         marginBottom: '32px' 
       }}>
         {[
-          { label: "Total Bs.", value: `${totalIncome.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.` },
-          { label: "TIKET PROMEDIO", value: `${avgTicket.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`, isGold: true },
+          { label: "Total Ref. $", value: `$${totalIncome.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` },
+          { label: "Ticket Promedio Ref. $", value: `$${avgTicket.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, isGold: true },
           { label: "Promedio semanal", value: weeklyAvg.toString() },
           { label: "Servicios", value: totalServices.toString() },
           { label: "Lavados", value: totalLavados.toString() },
@@ -588,7 +698,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
             <div style={{ width: '12px', height: '6px', backgroundColor: 'var(--gold-primary)', borderRadius: '2px' }}></div>
-            <span style={{ fontSize: '11px', fontWeight: '900', color: '#b3b3b3', textTransform: 'uppercase', letterSpacing: '1px' }}>Ref Bs.</span>
+            <span style={{ fontSize: '11px', fontWeight: '900', color: '#b3b3b3', textTransform: 'uppercase', letterSpacing: '1px' }}>Ref. $</span>
           </div>
           
           <div style={{ position: 'relative', height: '170px' }}>
@@ -609,15 +719,31 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
               )}
 
               {/* Data points and badges */}
-              {timelinePoints.map((p, i) => (
-                <g key={i}>
-                  <circle cx={p.x} cy={p.y} r="5" fill="var(--gold-primary)" stroke="#121212" strokeWidth="2" />
+              {timelinePoints.map((p, i) => {
+                const isHovered = hoveredTimelinePoint?.sortKey === p.sortKey;
+                return (
+                <g
+                  key={i}
+                  onMouseEnter={() => setHoveredTimelinePoint(p)}
+                  onMouseLeave={() => setHoveredTimelinePoint(null)}
+                  onClick={() => handleTimelinePointClick(p)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <circle cx={p.x} cy={p.y} r="13" fill="transparent" pointerEvents="all" />
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={isHovered ? "7" : "5"}
+                    fill="var(--gold-primary)"
+                    stroke={isHovered ? "#ffffff" : "#121212"}
+                    strokeWidth="2"
+                  />
                   
                   {/* Point Labels bubbles matching the white Looker bubbles */}
                   <g transform={`translate(${p.x}, ${p.y - 18})`}>
-                    <rect x="-24" y="-8" width="48" height="15" rx="3" fill="#ffffff" />
+                    <rect x="-30" y="-8" width="60" height="15" rx="3" fill="#ffffff" />
                     <text x="0" y="3" fill="#000000" fontSize="9" fontWeight="950" textAnchor="middle">
-                      {p.amount >= 1000 ? `${(p.amount/1000).toFixed(2)} mil Bs.` : `${Math.round(p.amount)} Bs.`}
+                      {p.amount >= 1000 ? `$${(p.amount/1000).toFixed(2)} mil` : `$${Math.round(p.amount)}`}
                     </text>
                   </g>
                   
@@ -626,7 +752,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
                     {p.date}
                   </text>
                 </g>
-              ))}
+              )})}
               
               {/* Gradients */}
               <defs>
@@ -636,6 +762,46 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
                 </linearGradient>
               </defs>
             </svg>
+            {hoveredTimelinePoint && (
+              <div style={{
+                position: 'absolute',
+                left: `${Math.min(Math.max((hoveredTimelinePoint.x / timelineWidth) * 100, 12), 82)}%`,
+                top: `${Math.max(hoveredTimelinePoint.y - 8, 28)}px`,
+                transform: 'translate(-50%, -100%)',
+                minWidth: '270px',
+                padding: '12px 14px',
+                background: '#f4f4f6',
+                color: '#1b1b1f',
+                borderRadius: '8px',
+                boxShadow: '0 18px 40px rgba(0,0,0,0.35)',
+                zIndex: 20,
+                pointerEvents: 'none'
+              }}>
+                <div style={{ fontSize: '12px', fontWeight: '900', marginBottom: '10px', lineHeight: 1.35 }}>
+                  {hoveredTimelinePoint.rangeLabel}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '18px', fontSize: '12px', fontWeight: '800' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '18px', height: '2px', background: 'var(--gold-primary)', display: 'inline-block', position: 'relative' }}>
+                      <span style={{
+                        position: 'absolute',
+                        left: '7px',
+                        top: '-4px',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: 'var(--gold-primary)'
+                      }} />
+                    </span>
+                    Ref $
+                  </span>
+                  <span>${hoveredTimelinePoint.amount.toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                </div>
+                <div style={{ marginTop: '8px', color: '#5e6068', fontSize: '10px', fontWeight: '800' }}>
+                  Click para filtrar este rango
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
