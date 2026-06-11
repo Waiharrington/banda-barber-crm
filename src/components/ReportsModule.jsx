@@ -99,6 +99,18 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     return Array.from(list).sort();
   })();
 
+  const reportStaffOptions = (() => {
+    const isBarberRole = (role = '') => {
+      const normalizedRole = role.toLowerCase();
+      return normalizedRole.includes('barber') || normalizedRole.includes('barbero');
+    };
+
+    return staff
+      .filter((s) => isBarberRole(s.role))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((s) => ({ value: s.id, label: s.name }));
+  })();
+
   const filteredTransactions = transactions.filter(t => {
     // 1. Rango de Fecha
     const tDate = new Date(t.created_at);
@@ -594,7 +606,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           onChange={setSelectedStaff}
           options={[
             { value: 'all', label: 'Todo el Personal' },
-            ...staff.map((s) => ({ value: s.id, label: `${s.name} (${s.role?.split('|')[0]})` }))
+            ...reportStaffOptions
           ]}
         />
 
