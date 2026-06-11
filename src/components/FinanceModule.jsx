@@ -36,6 +36,67 @@ const getStartOfWeek = () => {
   return monday;
 };
 
+const getEndOfDay = (date) => {
+  const end = new Date(date);
+  end.setHours(23, 59, 59, 999);
+  return end;
+};
+
+const parseLocalDate = (value) => {
+  if (!value) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const getDateRangeForFilter = (filter, customStart = '', customEnd = '') => {
+  const today = new Date();
+  const startOfToday = new Date(today);
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = getEndOfDay(today);
+
+  if (filter === 'today') return { start: startOfToday, end: endOfToday };
+
+  if (filter === 'yesterday') {
+    const yesterday = new Date(startOfToday);
+    yesterday.setDate(yesterday.getDate() - 1);
+    return { start: yesterday, end: getEndOfDay(yesterday) };
+  }
+
+  if (filter === 'this_week') {
+    return { start: getStartOfWeek(), end: endOfToday };
+  }
+
+  if (filter === 'last_week') {
+    const startOfThisWeek = getStartOfWeek();
+    const start = new Date(startOfThisWeek);
+    start.setDate(start.getDate() - 7);
+    const end = new Date(startOfThisWeek);
+    end.setMilliseconds(-1);
+    return { start, end };
+  }
+
+  if (filter === 'this_month') {
+    return { start: new Date(today.getFullYear(), today.getMonth(), 1), end: endOfToday };
+  }
+
+  if (filter === 'last_month') {
+    const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const end = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
+    return { start, end };
+  }
+
+  if (filter === 'custom') {
+    const start = parseLocalDate(customStart);
+    const endBase = parseLocalDate(customEnd);
+    return {
+      start: start ? new Date(start.setHours(0, 0, 0, 0)) : null,
+      end: endBase ? getEndOfDay(endBase) : null
+    };
+  }
+
+  return { start: null, end: null };
+};
+
 const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   const { showToast } = useNotifs();
   const [transactions, setTransactions] = useState([]);
@@ -52,6 +113,11 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+
+  // Cash Closing Filter States
+  const [cashCloseDate, setCashCloseDate] = useState('today');
+  const [cashCloseStartDate, setCashCloseStartDate] = useState('');
+  const [cashCloseEndDate, setCashCloseEndDate] = useState('');
   
   // Payroll Date Filter States
   const [payrollFilterDate, setPayrollFilterDate] = useState('this_week'); // 'this_week', 'last_week', 'custom'
@@ -512,17 +578,32 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
   const todayIncome = todayOperationalTransactions.reduce((acc, t) => t.type === 'income' ? acc + (t.amount || 0) : acc, 0);
   const todayExpense = todayOperationalTransactions.reduce((acc, t) => t.type === 'expense' ? acc + (t.amount || 0) : acc, 0);
-  const todayCashUsd = todayOperationalTransactions.reduce((acc, t) => (
+
+  const cashCloseDateRange = useMemo(
+    () => getDateRangeForFilter(cashCloseDate, cashCloseStartDate, cashCloseEndDate),
+    [cashCloseDate, cashCloseStartDate, cashCloseEndDate]
+  );
+
+  const cashCloseTransactions = useMemo(() => operationalTransactions.filter(t => {
+    const txDate = new Date(t.created_at);
+    if (cashCloseDateRange.start && txDate < cashCloseDateRange.start) return false;
+    if (cashCloseDateRange.end && txDate > cashCloseDateRange.end) return false;
+    return true;
+  }), [operationalTransactions, cashCloseDateRange]);
+
+  const cashCloseIncome = cashCloseTransactions.reduce((acc, t) => t.type === 'income' ? acc + (t.amount || 0) : acc, 0);
+  const cashCloseExpense = cashCloseTransactions.reduce((acc, t) => t.type === 'expense' ? acc + (t.amount || 0) : acc, 0);
+  const cashCloseCashUsd = cashCloseTransactions.reduce((acc, t) => (
     acc + Number(t.metadata?.cash_usd || t.metadata?.cashUsd || 0)
   ), 0);
-  const todayTransferBs = todayOperationalTransactions.reduce((acc, t) => (
+  const cashCloseTransferBs = cashCloseTransactions.reduce((acc, t) => (
     acc + Number(t.metadata?.transfer_bs || t.metadata?.transferBs || 0)
   ), 0);
-  const todayCommissionDebtUsd = todayOperationalTransactions.reduce((acc, t) => {
+  const cashCloseCommissionDebtUsd = cashCloseTransactions.reduce((acc, t) => {
     if (t.type !== 'income') return acc;
     return acc + (t.metadata?.staffInvolved?.reduce((sum, s) => sum + Number(s.commissionEarned || 0), 0) || 0);
   }, 0);
-  const todayNetRealUsd = todayIncome - todayExpense;
+  const cashCloseNetRealUsd = cashCloseIncome - cashCloseExpense;
 
   // Analysis Logic (Excel Replication)
   const analysisData = (() => {
@@ -584,7 +665,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   const breakEven = totalFixedCosts / 0.4; // Assuming 40% margin (after 60% commission)
   const avgTicket = totalIncome / (Object.values(analysisData.barberStats).reduce((acc, b) => acc + b.services, 0) || 1);
 
-  const filteredTransactions = useMemo(() => operationalTransactions.filter(t => {
+  const filteredTransactions = useMemo(() => transactions.filter(t => {
     // 1. Filter by Type
     if (filterType !== 'all' && t.type !== filterType) return false;
     
@@ -611,34 +692,17 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
     // 5. Filter by Date
     if (filterDate !== 'all') {
       const txDate = new Date(t.created_at);
-      const today = new Date();
-      if (filterDate === 'today') {
-        if (txDate.toDateString() !== today.toDateString()) return false;
-      } else if (filterDate === 'this_week') {
-        const startOfWeek = getStartOfWeek();
-        if (txDate < startOfWeek) return false;
-      } else if (filterDate === 'this_month') {
-        if (txDate.getMonth() !== today.getMonth() || txDate.getFullYear() !== today.getFullYear()) return false;
-      } else if (filterDate === 'custom') {
-        if (startDate) {
-          const sDate = new Date(startDate);
-          sDate.setHours(0, 0, 0, 0);
-          if (txDate < sDate) return false;
-        }
-        if (endDate) {
-          const eDate = new Date(endDate);
-          eDate.setHours(23, 59, 59, 999);
-          if (txDate > eDate) return false;
-        }
-      }
+      const { start, end } = getDateRangeForFilter(filterDate, startDate, endDate);
+      if (start && txDate < start) return false;
+      if (end && txDate > end) return false;
     }
     
     return true;
-  }), [operationalTransactions, filterType, filterService, searchQuery, filterBarber, filterDate, startDate, endDate]);
+  }), [transactions, filterType, filterService, searchQuery, filterBarber, filterDate, startDate, endDate]);
 
   const uniqueServices = useMemo(() => (
-    Array.from(new Set(operationalTransactions.map(t => parseTxExcel(t).serviceName).filter(Boolean)))
-  ), [operationalTransactions]);
+    Array.from(new Set(transactions.map(t => parseTxExcel(t).serviceName).filter(Boolean)))
+  ), [transactions]);
 
   const payrollDateRange = useMemo(() => {
     let dateFilterStart;
@@ -969,48 +1033,95 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
         background: 'linear-gradient(135deg, rgba(28,28,30,0.8), rgba(212,175,55,0.05))',
         border: '1px solid rgba(212,175,55,0.1)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Wallet size={20} color="black" />
+        <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '24px', flexDirection: isMobile ? 'column' : 'row' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Wallet size={20} color="black" />
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Cierre de Caja <span className="text-gold">Astro</span></h3>
           </div>
-          <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Cierre de Caja <span className="text-gold">Astro</span></h3>
+          <div style={{ width: isMobile ? '100%' : '260px' }}>
+            <AstroSelect
+              label="Rango de Cierre"
+              value={cashCloseDate}
+              onChange={setCashCloseDate}
+              options={[
+                { value: 'today', label: 'Hoy' },
+                { value: 'yesterday', label: 'Ayer' },
+                { value: 'this_week', label: 'Esta Semana' },
+                { value: 'last_week', label: 'Semana Pasada' },
+                { value: 'this_month', label: 'Este Mes' },
+                { value: 'last_month', label: 'Mes Pasado' },
+                { value: 'custom', label: 'Rango Personalizado' }
+              ]}
+            />
+          </div>
         </div>
+
+        {cashCloseDate === 'custom' && (
+          <div className="animate-fade-in" style={{
+            display: 'flex',
+            gap: '16px',
+            alignItems: 'center',
+            padding: '16px',
+            backgroundColor: 'rgba(0,0,0,0.15)',
+            borderRadius: '16px',
+            flexWrap: 'wrap',
+            border: '1px solid rgba(255,255,255,0.05)',
+            marginBottom: '20px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: isMobile ? '1 1 100%' : '1' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700' }}>Desde:</span>
+              <AstroDatePicker
+                value={cashCloseStartDate}
+                onChange={(e) => setCashCloseStartDate(e.target.value)}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: isMobile ? '1 1 100%' : '1' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700' }}>Hasta:</span>
+              <AstroDatePicker
+                value={cashCloseEndDate}
+                onChange={(e) => setCashCloseEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '20px' }}>
           <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
             <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>EFECTIVO ($)</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: '#32d74b' }}>
-              {formatCurrency(todayCashUsd * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
+              {formatCurrency(cashCloseCashUsd * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
             </div>
             <div style={{ fontSize: '11px', color: 'white', marginTop: '4px' }}>
-              REF: ${formatCurrency(todayCashUsd, '')}
+              REF: ${formatCurrency(cashCloseCashUsd, '')}
             </div>
           </div>
           <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
             <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>PAGO MÓVIL (BS)</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)' }}>
-              {formatCurrency(todayTransferBs, '')} <span style={{fontSize: '12px'}}>BS</span>
+              {formatCurrency(cashCloseTransferBs, '')} <span style={{fontSize: '12px'}}>BS</span>
             </div>
             <div style={{ fontSize: '11px', color: 'white', marginTop: '4px' }}>
-              REF: ${formatCurrency(todayTransferBs / (rates?.usd || 550), '')}
+              REF: ${formatCurrency(cashCloseTransferBs / (rates?.usd || 550), '')}
             </div>
           </div>
           <div style={{ padding: '20px', backgroundColor: 'rgba(255,69,58,0.05)', borderRadius: '20px' }}>
             <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>COMISIONES DEUDA</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: '#ff453a' }}>
-              {formatCurrency(todayCommissionDebtUsd * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
+              {formatCurrency(cashCloseCommissionDebtUsd * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
             </div>
             <div style={{ fontSize: '11px', color: 'white', marginTop: '4px' }}>
-              REF: ${formatCurrency(todayCommissionDebtUsd, '')}
+              REF: ${formatCurrency(cashCloseCommissionDebtUsd, '')}
             </div>
           </div>
           <div style={{ padding: '20px', backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: '20px', border: '1px solid var(--gold-primary)' }}>
             <div style={{ fontSize: '10px', fontWeight: '900', color: 'black', backgroundColor: 'var(--gold-primary)', display: 'inline-block', padding: '2px 6px', borderRadius: '4px', marginBottom: '4px' }}>NETO REAL</div>
             <div style={{ fontSize: '24px', fontWeight: '950', color: 'white' }}>
-              {formatCurrency(todayNetRealUsd * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
+              {formatCurrency(cashCloseNetRealUsd * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
             </div>
             <div style={{ fontSize: '12px', color: 'white', marginTop: '4px' }}>
-              REF: ${formatCurrency(todayNetRealUsd, '')}
+              REF: ${formatCurrency(cashCloseNetRealUsd, '')}
             </div>
           </div>
         </div>
@@ -1162,6 +1273,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       { value: 'this_week', label: 'Esta Semana' },
                       { value: 'last_week', label: 'Semana Pasada' },
                       { value: 'this_month', label: 'Este Mes' },
+                      { value: 'last_month', label: 'Mes Pasado' },
                       { value: 'custom', label: 'Rango Personalizado' }
                     ]}
                   />
