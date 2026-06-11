@@ -692,7 +692,7 @@ export const dataService = {
     _cacheInvalidate('transactions');
     const { data, error } = await supabase
       .from('transactions')
-      .insert([transaction])
+      .insert([{ created_at: new Date().toISOString(), ...transaction }])
       .select()
       .single();
     if (error) throw error;
@@ -826,6 +826,7 @@ export const dataService = {
     const { data, error } = await supabase
       .from('appointments')
       .insert([{
+        created_at: new Date().toISOString(),
         ...appointment,
         status: appointment.status || 'Agendado',
         scheduled_at: appointment.scheduled_at || null,
