@@ -1569,25 +1569,13 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
       {activeTab === 'payroll' && (
           <div className="animate-fade-in">
-             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: '20px', marginBottom: '32px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <h3 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '1px', margin: 0 }}>NÓMINA Y CORTE SEMANAL</h3>
-              </div>
-
-              {/* DATE RANGE FILTER */}
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '12px', 
-                background: 'rgba(255, 255, 255, 0.03)', 
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                padding: '6px 12px',
-                borderRadius: '12px',
-                flexWrap: 'wrap'
-              }}>
-                <div style={{ flex: 1, minWidth: '150px' }}>
+                
+                {/* DATE RANGE FILTER */}
+                <div style={{ width: isMobile ? '100%' : '240px' }}>
                   <AstroSelect
-                    label="Filtro"
                     value={payrollFilterDate}
                     onChange={setPayrollFilterDate}
                     options={[
@@ -1597,9 +1585,8 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     ]}
                   />
                 </div>
-
                 {payrollFilterDate === 'custom' && (
-                  <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Desde:</span>
                     <AstroDatePicker 
                       value={payrollStartDate}
@@ -1614,34 +1601,48 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', width: isMobile ? '100%' : 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px', width: isMobile ? '100%' : 'auto' }}>
                 <button 
                   onClick={() => setIsConfiguringPayroll(true)} 
-                  className="btn-gold" 
-                  style={{ flex: isMobile ? 1 : 'none', padding: '8px 16px', fontSize: '12px', borderRadius: '10px' }}
+                  style={{ 
+                    padding: '14px 16px', 
+                    fontSize: '13px', 
+                    borderRadius: '12px',
+                    background: 'rgba(212,175,55,0.1)',
+                    border: '1px solid rgba(212,175,55,0.3)',
+                    color: 'var(--gold-primary)',
+                    fontWeight: '800',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    width: isMobile ? '100%' : 'auto',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
                 >
-                  Configurar Salario (Asistente)
+                  <WalletCards size={16} /> Salario Asistente
                 </button>
                 <button 
                   onClick={() => setWeeklyCloseModal({ isOpen: true, loading: false, success: false, error: null })} 
                   style={{ 
-                    flex: isMobile ? 1 : 'none', 
-                    padding: '8px 16px', 
-                    fontSize: '12px', 
-                    borderRadius: '10px', 
-                    background: 'rgba(255, 69, 58, 0.08)', 
-                    border: '1px solid rgba(255, 69, 58, 0.2)', 
+                    padding: '14px 16px', 
+                    fontSize: '13px', 
+                    borderRadius: '12px', 
+                    background: 'rgba(255, 69, 58, 0.1)', 
+                    border: '1px solid rgba(255, 69, 58, 0.3)', 
                     color: '#ff453a',
-                    fontWeight: '600',
+                    fontWeight: '800',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '6px'
+                    gap: '8px',
+                    width: isMobile ? '100%' : 'auto'
                   }}
                 >
-                  <RefreshCw size={12} className={weeklyCloseModal.loading ? "animate-spin" : ""} /> Realizar Cierre Semanal
+                  <RefreshCw size={16} className={weeklyCloseModal.loading ? "animate-spin" : ""} /> Cierre Semanal
                 </button>
               </div>
             </div>
@@ -1651,15 +1652,15 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
               background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.02) 100%)', 
               border: '1px solid rgba(212,175,55,0.3)',
               borderRadius: '24px',
-              padding: '24px',
+              padding: isMobile ? '20px' : '24px',
               marginBottom: '32px',
               display: 'flex',
               flexDirection: isMobile ? 'column' : 'row',
               justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '24px'
+              alignItems: isMobile ? 'flex-start' : 'center',
+              gap: isMobile ? '16px' : '24px'
             }}>
-              <div>
+              <div style={{ width: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold-primary)' }}></div>
                   <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-primary)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
@@ -1669,18 +1670,21 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     })
                   </span>
                 </div>
-                <h4 style={{ fontSize: '20px', fontWeight: '900', color: 'white', margin: 0 }}>Rendimiento General de la Barbería</h4>
+                <h4 style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '900', color: 'white', margin: 0, lineHeight: '1.3' }}>Rendimiento General de la Barbería</h4>
               </div>
               
-              <div style={{ display: 'flex', gap: isMobile ? '16px' : '40px', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
-                <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700', marginBottom: '4px', textTransform: 'uppercase' }}>Ingreso Bruto</div>
-                  <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>{formatCurrency(astroGrossIncomeBs, '')} Bs.</div>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '12px' : '40px', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'flex-start' : 'flex-end', background: isMobile ? 'rgba(0,0,0,0.2)' : 'transparent', padding: isMobile ? '16px' : '0', borderRadius: isMobile ? '16px' : '0' }}>
+                <div style={{ textAlign: 'left', display: 'flex', justifyContent: isMobile ? 'space-between' : 'flex-start', width: '100%', flexDirection: isMobile ? 'row' : 'column', alignItems: isMobile ? 'center' : 'flex-end' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', marginBottom: isMobile ? '0' : '4px' }}>Ingreso Bruto</div>
+                  <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '900', color: 'white' }}>{formatCurrency(astroGrossIncomeBs, '')} Bs</div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800', marginBottom: '4px', textTransform: 'uppercase' }}>Ganancia Neta (Astro)</div>
-                  <div style={{ fontSize: '20px', fontWeight: '950', color: '#32d74b' }}>{formatCurrency(astroNetProfitBs, '')} Bs.</div>
-                  <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginTop: '2px' }}>REF: ${formatCurrency(astroNetProfitUsd, '')}</div>
+                {isMobile && <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', width: '100%' }}></div>}
+                <div style={{ textAlign: 'left', display: 'flex', justifyContent: isMobile ? 'space-between' : 'flex-start', width: '100%', flexDirection: isMobile ? 'row' : 'column', alignItems: isMobile ? 'center' : 'flex-end' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '800', textTransform: 'uppercase', marginBottom: isMobile ? '0' : '4px' }}>Ganancia Neta</div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: '#32d74b' }}>{formatCurrency(astroNetProfitBs, '')} Bs</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginTop: '2px' }}>REF: ${astroNetProfitUsd.toFixed(2)}</div>
+                  </div>
                 </div>
               </div>
             </div>
