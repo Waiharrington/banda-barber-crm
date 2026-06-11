@@ -252,7 +252,7 @@ const DashboardModule = ({
               </div>
 
               {/* Visual Elements (Astro Premium Responsive - Compacted) */}
-              <div style={{ 
+              <div className="chair-entrance" style={{ 
                 position: 'absolute', 
                 right: '-10px', 
                 top: '-70px',

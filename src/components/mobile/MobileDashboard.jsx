@@ -357,7 +357,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
         </div>
 
         {/* Visual Elements (Floating Chair - Identical to PC Dashboard) */}
-        <div style={{ 
+        <div className="chair-entrance" style={{ 
           position: 'absolute', 
           right: '-10px', 
           bottom: '-10px', 

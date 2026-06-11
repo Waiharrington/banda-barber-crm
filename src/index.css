@@ -219,6 +219,22 @@ html, body {
   animation: scaleIn 0.2s ease-out both;
 }
 
+.chair-entrance {
+  animation: chairEntrance 1.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: bottom center;
+}
+
+@keyframes chairEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(50px) scale(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes fadeIn {
   from { 
     opacity: 0; 

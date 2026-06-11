@@ -831,7 +831,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                       50% { transform: translateX(-50%) scaleX(0.8) scaleY(0.9); opacity: 0.3; }
                     }
                   `}</style>
-                  <div style={{ position: 'relative', height: '110px', width: '80px', margin: '0 auto 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
+                  <div className="chair-entrance" style={{ position: 'relative', height: '110px', width: '80px', margin: '0 auto 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
                     <div style={{ 
                       position: 'absolute', 
                       bottom: '-8px', 
