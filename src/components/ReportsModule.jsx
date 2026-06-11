@@ -646,18 +646,10 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
       return { hour: h, label, count: avg, total };
     });
 
-    if (list.every(h => h.count === 0)) {
-      return businessHours.map(h => ({
-        hour: h,
-        label: h === 12 ? '12p.m.' : (h > 12 ? `${h - 12}p.m.` : `${h}a.m.`),
-        count: 0,
-        total: 0
-      }));
-    }
-    return list;
+    return list.filter(h => h.total > 0);
   })();
 
-  const maxHourCount = Math.max(...hoursFlowData.map(h => h.count)) || 1;
+  const maxHourCount = hoursFlowData.length > 0 ? Math.max(...hoursFlowData.map(h => h.count)) || 1 : 1;
   const hoursPoints = hoursFlowData.map((d, i) => {
     const x = 35 + i * (285 / (hoursFlowData.length - 1 || 1));
     const y = 165 - (d.count / maxHourCount) * 135;
@@ -1154,6 +1146,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           </div>
 
           <div style={{ position: 'relative', height: '220px', marginTop: '20px' }}>
+            {hoursPoints.length > 0 ? (
             <svg width="100%" height="210" viewBox="0 0 350 210" style={{ overflow: 'visible' }}>
               {/* Horizontal grid lines */}
               {[35, 70, 105, 140, 175].map((gY, gi) => (
@@ -1180,7 +1173,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
 
               {/* Hourly points */}
               {hoursPoints.map((p, i) => {
-                const isKeyLabel = [9, 12, 15, 18, 21].includes(p.hour);
+                const isKeyLabel = hoursPoints.length <= 7 || [9, 12, 15, 18, 21].includes(p.hour);
                 const isHovered = hoveredHourPoint?.hour === p.hour;
                 return (
                 <g
@@ -1208,7 +1201,22 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
                 </g>
               )})}
             </svg>
-            {hoveredHourPoint && (
+            ) : (
+              <div style={{
+                height: '210px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                color: 'var(--text-secondary)',
+                fontSize: '13px',
+                fontWeight: '700',
+                padding: '20px'
+              }}>
+                No hay servicios con hora registrada en este rango.
+              </div>
+            )}
+            {hoveredHourPoint && hoursPoints.length > 0 && (
               <div style={{
                 position: 'absolute',
                 left: `${Math.min(Math.max((hoveredHourPoint.x / 350) * 100, 8), 80)}%`,
