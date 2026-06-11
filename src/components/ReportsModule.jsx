@@ -646,6 +646,23 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     return `${path} C ${(prev.x + p.x) / 2} ${prev.y}, ${(prev.x + p.x) / 2} ${p.y}, ${p.x} ${p.y}`;
   }, '');
 
+  const barberServiceChartData = barberServices.slice(0, 5);
+  const barberServicePoints = barberServiceChartData.map((d, i) => {
+    const x = 35 + i * (280 / (barberServiceChartData.length - 1 || 1));
+    const y = 140 - (d.count / maxBarberCount) * 100;
+    return { x, y, label: d.name, count: d.count };
+  });
+
+  const barberServicesPath = barberServicePoints.reduce((path, p, i) => {
+    if (i === 0) return `M ${p.x} ${p.y}`;
+    const prev = barberServicePoints[i - 1];
+    return `${path} C ${(prev.x + p.x) / 2} ${prev.y}, ${(prev.x + p.x) / 2} ${p.y}, ${p.x} ${p.y}`;
+  }, '');
+
+  const barberServicesFill = barberServicePoints.length > 0
+    ? `${barberServicesPath} L ${barberServicePoints[barberServicePoints.length - 1].x} 155 L ${barberServicePoints[0].x} 155 Z`
+    : '';
+
   return (
     <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: isMobile ? '80px' : '20px', fontFamily: "'Inter', sans-serif" }}>
       
@@ -949,39 +966,49 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           </div>
         </div>
 
-        {/* CHART 2: Servicios Barbero Horizontal Bar Chart */}
+        {/* CHART 2: Servicios Barbero Line Chart */}
         <div className="glass-card" style={{ padding: '24px', borderRadius: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
             <div style={{ width: '12px', height: '6px', backgroundColor: 'var(--gold-primary)', borderRadius: '2px' }}></div>
             <span style={{ fontSize: '11px', fontWeight: '900', color: '#b3b3b3', textTransform: 'uppercase', letterSpacing: '1px' }}>Servicios Barbero</span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '170px', justifyContent: 'center' }}>
-            {barberServices.slice(0, 3).map((b, idx) => {
-              const pct = (b.count / maxBarberCount) * 80;
-              return (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
-                  <div style={{ width: '70px', fontSize: '12px', fontWeight: '800', color: '#ffffff', textAlign: 'left' }}>
-                    {b.name}
-                  </div>
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                    <div style={{ 
-                      width: `${pct}%`, 
-                      height: '24px', 
-                      background: 'var(--gold-gradient)', 
-                      borderRadius: '3px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'flex-end',
-                      paddingRight: '12px',
-                      boxShadow: '0 4px 10px rgba(212,175,55,0.15)'
-                    }}>
-                      <span style={{ fontSize: '11px', fontWeight: '950', color: '#000000' }}>{b.count}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div style={{ position: 'relative', height: '170px' }}>
+            <svg width="100%" height="160" viewBox="0 0 350 160" style={{ overflow: 'visible' }}>
+              {[35, 70, 105, 140].map((gY, gi) => (
+                <line key={gi} x1="30" y1={gY} x2="320" y2={gY} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+              ))}
+
+              <defs>
+                <linearGradient id="barberGoldGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--gold-primary)" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="var(--gold-primary)" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+
+              {barberServicesFill && (
+                <path d={barberServicesFill} fill="url(#barberGoldGrad)" />
+              )}
+
+              {barberServicesPath && (
+                <path d={barberServicesPath} fill="none" stroke="var(--gold-primary)" strokeWidth="3" strokeLinecap="round" />
+              )}
+
+              {barberServicePoints.map((p, i) => (
+                <g key={i}>
+                  <circle cx={p.x} cy={p.y} r="5" fill="var(--gold-primary)" stroke="#121212" strokeWidth="2" />
+                  <g transform={`translate(${p.x}, ${p.y - 18})`}>
+                    <rect x="-18" y="-8" width="36" height="15" rx="3" fill="#ffffff" />
+                    <text x="0" y="3" fill="#000000" fontSize="9" fontWeight="950" textAnchor="middle">
+                      {p.count}
+                    </text>
+                  </g>
+                  <text x={p.x} y="156" fill="#8c8c8c" fontSize="9" fontWeight="850" textAnchor="middle">
+                    {p.label}
+                  </text>
+                </g>
+              ))}
+            </svg>
           </div>
         </div>
 
