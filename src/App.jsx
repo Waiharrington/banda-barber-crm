@@ -375,10 +375,10 @@ function App() {
           
         const todayDate = new Date().toISOString().split('T')[0];
         const todayApptsProd = barberApps
-          .filter(a => a.created_at.startsWith(todayDate) || (a.scheduled_at && a.scheduled_at.startsWith(todayDate)))
+          .filter(a => a.created_at?.startsWith(todayDate) || a.scheduled_at?.startsWith(todayDate))
           .reduce((acc, a) => acc + Number(a.total_price || 0), 0);
           
-        const todayCount = barberApps.filter(a => a.created_at.startsWith(todayDate) || (a.scheduled_at && a.scheduled_at.startsWith(todayDate))).length;
+        const todayCount = barberApps.filter(a => a.created_at?.startsWith(todayDate) || a.scheduled_at?.startsWith(todayDate)).length;
 
         // Direct Sales without appointment link (new POS logic)
         const directMonthlyProd = t
@@ -386,7 +386,7 @@ function App() {
           .reduce((acc, tr) => acc + Number(tr.amount), 0);
 
         const directTodayProd = t
-          .filter(tr => tr.type === 'income' && tr.created_at.startsWith(todayDate) && !tr.metadata?.appointment_id && tr.metadata?.staffInvolved?.some(si => si.staffId === barber.id))
+          .filter(tr => tr.type === 'income' && tr.created_at?.startsWith(todayDate) && !tr.metadata?.appointment_id && tr.metadata?.staffInvolved?.some(si => si.staffId === barber.id))
           .reduce((acc, tr) => acc + Number(tr.amount), 0);
 
         return { 
@@ -410,7 +410,7 @@ function App() {
         todayAppointments: todayApps
       });
       const today = new Date().toISOString().split('T')[0];
-      const todayTransactions = t.filter(trans => trans.created_at.startsWith(today));
+      const todayTransactions = t.filter(trans => trans.created_at?.startsWith(today));
       const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const sevenDaysAgoISO = sevenDaysAgo.toISOString();
 
@@ -427,7 +427,7 @@ function App() {
           const d = new Date(); d.setDate(d.getDate() - (6 - i));
           return d.toISOString().split('T')[0];
         });
-        const dailyTotals = last7Days.map(day => t.filter(tr => tr.created_at.startsWith(day) && tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0));
+        const dailyTotals = last7Days.map(day => t.filter(tr => tr.created_at?.startsWith(day) && tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0));
         setChartData({
           labels: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
           datasets: [{ label: 'Ventas ($)', data: dailyTotals, borderColor: '#d4af37', backgroundColor: 'rgba(212, 175, 55, 0.1)', fill: true, tension: 0.4 }]
