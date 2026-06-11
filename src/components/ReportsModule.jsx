@@ -107,9 +107,16 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     if (dateRange === 'today') {
       if (tDate.toDateString() !== now.toDateString()) return false;
     } else if (dateRange === 'week') {
-      const weekAgo = new Date();
-      weekAgo.setDate(now.getDate() - 7);
-      if (tDate < weekAgo) return false;
+      const startOfWeek = new Date(now);
+      const dayOffset = (startOfWeek.getDay() + 6) % 7;
+      startOfWeek.setDate(startOfWeek.getDate() - dayOffset);
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      if (tDate < startOfWeek || tDate > endOfWeek) return false;
     } else if (dateRange === 'month') {
       const monthAgo = new Date();
       monthAgo.setMonth(now.getMonth() - 1);
