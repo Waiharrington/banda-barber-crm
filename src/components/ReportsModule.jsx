@@ -118,9 +118,13 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
 
       if (tDate < startOfWeek || tDate > endOfWeek) return false;
     } else if (dateRange === 'month') {
-      const monthAgo = new Date();
-      monthAgo.setMonth(now.getMonth() - 1);
-      if (tDate < monthAgo) return false;
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      endOfMonth.setHours(23, 59, 59, 999);
+
+      if (tDate < startOfMonth || tDate > endOfMonth) return false;
     } else if (dateRange === 'custom') {
       if (customStartDate) {
         const start = new Date(customStartDate + 'T00:00:00');
