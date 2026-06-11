@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import goldChairImg from '../assets/gold_chair.png';
 import { 
   Wallet, 
   Search, 
@@ -172,11 +173,15 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const [dialog, setDialog] = useState({ isOpen: false, type: 'alert', title: '', message: '', onConfirm: null });
   const [editingExtraPriceId, setEditingExtraPriceId] = useState(null);
   const [isChangingBarber, setIsChangingBarber] = useState(false);
+  const [editingAppPrice, setEditingAppPrice] = useState(null);
+  const [newAppPriceVal, setNewAppPriceVal] = useState('');
 
-  const handleUpdateExtraPrice = async (extraId, newPrice) => {
+  const handleUpdateExtraPrice = async (extraId, newPriceBs) => {
     try {
       setLoading(true);
-      await dataService.updateAppointmentExtraPrice(extraId, parseFloat(newPrice) || 0);
+      const priceBs = parseFloat(newPriceBs) || 0;
+      const priceUsd = fixedRate > 0 ? (priceBs / fixedRate) : 0;
+      await dataService.updateAppointmentExtraPrice(extraId, priceUsd);
       showToast("Precio actualizado");
       await loadData();
       if (selectedApp) {
@@ -189,6 +194,28 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     } finally {
       setLoading(false);
       setEditingExtraPriceId(null);
+    }
+  };
+  const handleSaveServicePrice = async () => {
+    if (!editingAppPrice) return;
+    try {
+      setLoading(true);
+      const newPriceBs = parseFloat(newAppPriceVal) || 0;
+      const newPriceUsd = fixedRate > 0 ? (newPriceBs / fixedRate) : 0;
+      await dataService.updateAppointment(editingAppPrice.id, { total_price: newPriceUsd });
+      showToast("Precio del servicio actualizado");
+      await loadData();
+      
+      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
+      const updatedSelected = updatedApps.find(a => a.id === selectedApp.id);
+      setSelectedApp(updatedSelected);
+      
+      setEditingAppPrice(null);
+    } catch (e) {
+      console.error(e);
+      showToast("Error al actualizar precio", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -404,7 +431,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     }
   };
 
-  const servicePrice = totalAppsInCheckout.reduce((acc, app) => acc + (app.services?.price || 0), 0);
+  const servicePrice = totalAppsInCheckout.reduce((acc, app) => acc + (app.total_price !== undefined && app.total_price !== null && Number(app.total_price) > 0 ? Number(app.total_price) : (app.services?.price || 0)), 0);
   const productsTotal = cart.reduce((acc, p) => acc + (p.price * p.quantity), 0);
   const extrasTotal = totalAppsInCheckout.reduce((acc, app) => acc + (app.appointment_extras?.reduce((subAcc, e) => subAcc + (e.price || 0), 0) || 0), 0);
   const totalTips = tips.reduce((acc, t) => {
@@ -672,7 +699,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         extras: totalAppsInCheckout.flatMap(a => a.appointment_extras || []),
         appointments: totalAppsInCheckout.map(app => {
           const appExtrasTotal = app.appointment_extras?.reduce((sum, e) => sum + (e.price || 0), 0) || 0;
-          const servicePrice = app.services?.price || 0;
+          const servicePrice = app.total_price !== undefined && app.total_price !== null && Number(app.total_price) > 0 ? Number(app.total_price) : (app.services?.price || 0);
           const includesWashing = app.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || false;
           return {
             id: app.id,
@@ -697,7 +724,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
           totalAppsInCheckout.forEach(app => {
             if (!app.staff_id) return;
             const role = app.staff?.role;
-            let price = app.services?.price || 0;
+            let price = app.total_price !== undefined && app.total_price !== null && Number(app.total_price) > 0 ? Number(app.total_price) : (app.services?.price || 0);
             let grossBase = price;
 
             const includesWashing = app.services?.included_items?.some(i => i.toLowerCase().includes('lavado'));
@@ -1195,7 +1222,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   const badgeStatus = group.apps.some(a => a.status === 'En Silla') ? 'En Silla' : (group.apps.some(a => a.status === 'En Lavado') ? 'En Lavado' : 'Por Pagar');
                   const serviceNames = group.apps.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Venta de Productos';
                   const staffNames = Array.from(new Set(group.apps.map(a => a.staff?.name?.split(' ')[0]).filter(Boolean))).join(', ') || 'Caja';
-                  const totalUsd = group.apps.reduce((acc, a) => acc + (a.services?.price || a.total_price || 0), 0);
+                  const totalUsd = group.apps.reduce((acc, a) => acc + (a.total_price !== undefined && a.total_price !== null && Number(a.total_price) > 0 ? Number(a.total_price) : (a.services?.price || 0)), 0);
                   
                   return (
                     <div 
@@ -1220,7 +1247,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           padding: '2px 8px', 
                           borderRadius: '10px', 
                           fontWeight: '900' 
-                        }}>{badgeStatus}</span>
+                        }}>{badgeStatus === 'En Silla' ? <><img src={goldChairImg} alt="silla" style={{ width: '12px', height: '12px', objectFit: 'contain', marginRight: '3px', verticalAlign: 'middle' }} />En Silla</> : badgeStatus}</span>
                       </div>
                       <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1228,7 +1255,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
                           <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>{(totalUsd * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
-                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: ${totalUsd}</span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: ${Number(totalUsd).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -1424,7 +1451,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '8px' : '12px', marginBottom: '24px', padding: isMobile ? '12px 10px' : '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '16px' }}>
                 {totalAppsInCheckout.map(app => {
-                  const sPrice = app.services?.price || 0;
+                  const sPrice = app.total_price !== undefined && app.total_price !== null && Number(app.total_price) > 0 ? Number(app.total_price) : (app.services?.price || 0);
                   const isLinked = app.client_id !== selectedApp?.client_id;
                   return (
                     <div key={app.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '8px' }}>
@@ -1432,10 +1459,10 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                         {isLinked ? (
                           <button 
                             onClick={() => handleUnlinkApp(app.id)} 
-                            style={{ background: 'none', border: 'none', color: '#ff9500', cursor: 'pointer', fontWeight: '800', fontSize: '9px', padding: '2px', marginRight: '2px', flexShrink: 0 }}
+                            style={{ background: 'none', border: 'none', color: '#ff9500', cursor: 'pointer', padding: '2px', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}
                             title="Desenlazar cita"
                           >
-                            [Unlink]
+                            <XCircle size={isMobile ? 12 : 14} style={{ opacity: 0.8 }} />
                           </button>
                         ) : (
                           <button 
@@ -1473,10 +1500,76 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0px', flexShrink: 0 }}>
                         {app.services ? (
                           <>
-                            <span style={{ fontWeight: '800', fontSize: isMobile ? '12px' : '14px', color: 'white' }}>
-                              {isMobile ? `${Math.round(sPrice * fixedRate).toLocaleString('es-VE')} Bs.` : `${(sPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`}
-                            </span>
-                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: ${sPrice}</span>
+                            {editingAppPrice?.id === app.id ? (
+                              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '800' }}>Bs.</span>
+                                <input 
+                                  type="number"
+                                  autoFocus
+                                  defaultValue={(sPrice * fixedRate).toFixed(2)}
+                                  onBlur={async (e) => {
+                                    const val = e.target.value;
+                                    const newPriceBs = parseFloat(val) || 0;
+                                    const newPriceUsd = fixedRate > 0 ? (newPriceBs / fixedRate) : 0;
+                                    try {
+                                      setLoading(true);
+                                      await dataService.updateAppointment(app.id, { total_price: newPriceUsd });
+                                      showToast("Precio del servicio actualizado");
+                                      await loadData();
+                                      const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
+                                      const updatedSelected = updatedApps.find(a => a.id === selectedApp?.id);
+                                      if (updatedSelected) setSelectedApp(updatedSelected);
+                                    } catch (err) {
+                                      console.error(err);
+                                      showToast("Error al actualizar precio", "error");
+                                    } finally {
+                                      setLoading(false);
+                                      setEditingAppPrice(null);
+                                    }
+                                  }}
+                                  onKeyDown={async (e) => {
+                                    if (e.key === 'Enter') {
+                                      const val = e.target.value;
+                                      const newPriceBs = parseFloat(val) || 0;
+                                      const newPriceUsd = fixedRate > 0 ? (newPriceBs / fixedRate) : 0;
+                                      try {
+                                        setLoading(true);
+                                        await dataService.updateAppointment(app.id, { total_price: newPriceUsd });
+                                        showToast("Precio del servicio actualizado");
+                                        await loadData();
+                                        const updatedApps = await dataService.getAppointmentsByState(['En Silla', 'Por Pagar', 'Agendado', 'En Lavado']);
+                                        const updatedSelected = updatedApps.find(a => a.id === selectedApp?.id);
+                                        if (updatedSelected) setSelectedApp(updatedSelected);
+                                      } catch (err) {
+                                        console.error(err);
+                                        showToast("Error al actualizar precio", "error");
+                                      } finally {
+                                        setLoading(false);
+                                        setEditingAppPrice(null);
+                                      }
+                                    } else if (e.key === 'Escape') {
+                                      setEditingAppPrice(null);
+                                    }
+                                  }}
+                                  style={{ width: '95px', height: '28px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--gold-primary)', borderRadius: '6px', color: 'white', paddingLeft: '28px', paddingRight: '6px', fontSize: '12px', fontWeight: '800', textAlign: 'right', outline: 'none' }}
+                                />
+                              </div>
+                            ) : (
+                              <div 
+                                onClick={() => setEditingAppPrice(app)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', padding: '2px 6px', borderRadius: '6px', transition: 'all 0.2s' }}
+                                onMouseOver={(ev) => ev.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+                                onMouseOut={(ev) => ev.currentTarget.style.backgroundColor = 'transparent'}
+                              >
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0px' }}>
+                                  <span style={{ fontWeight: '800', fontSize: isMobile ? '12px' : '14px', color: 'white' }}>
+                                    {isMobile ? `${Math.round(sPrice * fixedRate).toLocaleString('es-VE')} Bs.` : `${(sPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`}
+                                  </span>
+                                  <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: ${Number(sPrice).toFixed(2)}</span>
+                                </div>
+                                <Edit3 size={12} color="var(--gold-primary)" style={{ opacity: 0.8 }} />
+                              </div>
+                            )}
                           </>
                         ) : (
                           <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Monto en extras</span>
@@ -1572,20 +1665,20 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
                       {editingExtraPriceId === extra.id ? (
                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                          <span style={{ position: 'absolute', left: '4px', fontSize: '8px', color: 'var(--gold-primary)', fontWeight: '800' }}>$</span>
+                          <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '800' }}>Bs.</span>
                           <input 
                             type="number"
                             autoFocus
-                            defaultValue={extra.price}
+                            defaultValue={(extra.price * fixedRate).toFixed(2)}
                             onBlur={(e) => handleUpdateExtraPrice(extra.id, e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleUpdateExtraPrice(extra.id, e.target.value)}
-                            style={{ width: '40px', height: '18px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--gold-primary)', borderRadius: '3px', color: 'white', paddingLeft: '10px', fontSize: '9px', fontWeight: '800', textAlign: 'right' }}
+                            style={{ width: '95px', height: '28px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--gold-primary)', borderRadius: '6px', color: 'white', paddingLeft: '28px', paddingRight: '6px', fontSize: '12px', fontWeight: '800', textAlign: 'right', outline: 'none' }}
                           />
                         </div>
                       ) : (
                         <div 
                           onClick={() => setEditingExtraPriceId(extra.id)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '2px', cursor: 'pointer', padding: '1px 3px', borderRadius: '3px', transition: 'all 0.2s' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', padding: '2px 6px', borderRadius: '6px', transition: 'all 0.2s' }}
                           onMouseOver={(ev) => ev.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
                           onMouseOut={(ev) => ev.currentTarget.style.backgroundColor = 'transparent'}
                         >
@@ -1593,9 +1686,9 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                             <span style={{ fontWeight: '800', fontSize: isMobile ? '12px' : '14px' }}>
                               {isMobile ? `${Math.round(extra.price * fixedRate).toLocaleString('es-VE')} Bs.` : `${(extra.price * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`}
                             </span>
-                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: ${extra.price}</span>
+                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: ${Number(extra.price).toFixed(2)}</span>
                           </div>
-                          <Edit3 size={7} color="var(--gold-primary)" style={{ opacity: 0.6 }} />
+                          <Edit3 size={12} color="var(--gold-primary)" style={{ opacity: 0.8 }} />
                         </div>
                       )}
                     </div>
@@ -2365,6 +2458,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         )}
       </AnimatedModal>
 
+
+
       {/* Barber Select Modal */}
       <AnimatedModal isOpen={showBarberModal}>
         {(overlayClass, cardClass) => (
@@ -2438,7 +2533,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                     .filter(g => g.client_id !== selectedApp?.client_id && !linkedApps.some(la => la.client_id === g.client_id))
                     .map(group => {
                       const sNames = group.apps.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Servicio';
-                      const tPrice = group.apps.reduce((acc, a) => acc + (a.services?.price || a.total_price || 0), 0);
+                      const tPrice = group.apps.reduce((acc, a) => acc + (a.total_price !== undefined && a.total_price !== null && Number(a.total_price) > 0 ? Number(a.total_price) : (a.services?.price || 0)), 0);
                       return (
                         <div 
                           key={group.client_id}
@@ -2449,7 +2544,10 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{sNames}</div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <span style={{ fontWeight: '700', color: 'var(--gold-primary)', fontSize: '13px' }}>${tPrice}</span>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontWeight: '700', color: 'var(--gold-primary)', fontSize: '13px' }}>{(tPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: ${Number(tPrice).toFixed(2)}</div>
+                            </div>
                             <button 
                               onClick={() => {
                                 setLinkedApps([...linkedApps, ...group.apps]);

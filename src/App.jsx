@@ -19,6 +19,7 @@ import { dataService } from './services/dataService';
 import MobileLayout from './components/mobile/MobileLayout';
 import ParticleBackground from './components/ParticleBackground';
 import AstroLoader from './components/AstroLoader';
+import Login from './components/Login';
 import { useAuth } from './context/AuthContext';
 import TopBar from './components/TopBar';
 import NotificationsDrawer from './components/NotificationsDrawer';
@@ -28,7 +29,6 @@ import { useScrollLock } from './hooks/useScrollLock';
 import { useModal } from './context/ModalContext';
 
 const DashboardModule = lazy(() => import('./components/DashboardModule'));
-const Login = lazy(() => import('./components/Login'));
 const MobileDashboard = lazy(() => import('./components/mobile/MobileDashboard'));
 const ClientModule = lazy(() => import('./components/ClientModule'));
 const PersonnelModule = lazy(() => import('./components/PersonnelModule'));
@@ -594,20 +594,12 @@ function App() {
   const hasSessionKey = Object.keys(localStorage).some(key => key.startsWith('sb-') && key.endsWith('-auth-token'));
   if (authLoading && !user) {
     if (!hasSessionKey) {
-      return (
-        <Suspense fallback={<AstroLoader visible={true} />}>
-          <Login />
-        </Suspense>
-      );
+      return <Login />;
     }
     return <AstroLoader visible={true} />;
   }
   if (!user) {
-    return (
-      <Suspense fallback={<AstroLoader visible={true} />}>
-        <Login />
-      </Suspense>
-    );
+    return <Login />;
   }
 
   if (isMobile) {
@@ -659,6 +651,7 @@ function App() {
         flex: 1, 
         marginLeft: isMobile ? '0' : (isCollapsed ? '80px' : '260px'), 
         padding: 'var(--spacing-xl)', 
+        paddingBottom: '80px',
         height: '100vh',
         overflowY: 'auto',
         backgroundColor: 'transparent',

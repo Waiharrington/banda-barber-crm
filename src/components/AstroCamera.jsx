@@ -5,7 +5,7 @@ import { Camera, X, Check, RefreshCw, Upload, Image as ImageIcon } from 'lucide-
  * AstroCamera - Un componente premium para capturar o subir fotos.
  * Diseñado para permitir ambas opciones desde el primer momento.
  */
-const AstroCamera = ({ onCapture, onClose }) => {
+const AstroCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -85,7 +85,7 @@ const AstroCamera = ({ onCapture, onClose }) => {
   }, []);
 
   return (
-    <div style={{
+    <div className={overlayClass || 'animate-fade-in'} style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(0,0,0,0.98)',
@@ -96,7 +96,6 @@ const AstroCamera = ({ onCapture, onClose }) => {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '20px',
-      animation: 'fadeIn 0.3s ease'
     }}>
       {/* Header with Close */}
       <div style={{ position: 'absolute', top: '24px', left: 0, right: 0, padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 12 }}>
@@ -110,10 +109,11 @@ const AstroCamera = ({ onCapture, onClose }) => {
       </div>
 
       {/* Main Viewport */}
-      <div style={{ 
+      <div className={cardClass || 'animate-scale-in'} style={{ 
         position: 'relative', 
         width: '100%', 
         maxWidth: '400px',
+        maxHeight: 'calc(100vh - 220px)',
         aspectRatio: '3/4', 
         backgroundColor: '#050505', 
         overflow: 'hidden', 

@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Award,
   Zap,
+  Coins,
   LogOut,
   Trash2,
   RefreshCw,
@@ -26,10 +27,13 @@ import { Plus, ShoppingBag, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { notificationService } from '../services/notificationService';
+import { useDialog } from '../context/DialogContext';
+import AnimatedModal from './AnimatedModal';
 
 const BarberPanel = ({ isMobile, rates }) => {
   const { user } = useAuth();
   const { showToast, triggerConfetti, triggerRocket } = useNotifs();
+  const { confirm } = useDialog();
   const [staff, setStaff] = useState([]);
   const [selectedBarber, setSelectedBarber] = useState(null);
   const [myServices, setMyServices] = useState([]);
@@ -64,7 +68,7 @@ const BarberPanel = ({ isMobile, rates }) => {
     }
   };
 
-  const [stats, setStats] = useState({ production: 0, services: 0, earnings: 0 });
+  const [stats, setStats] = useState({ production: 0, services: 0, earnings: 0, tips: 0 });
 
   useEffect(() => {
     loadStaff();
@@ -219,6 +223,7 @@ const BarberPanel = ({ isMobile, rates }) => {
         const today = new Date().toISOString().split('T')[0];
         let count = 0;
         let earned = 0;
+        let tips = 0;
         data.forEach(s => {
           const createdDate = s.created_at ? new Date(s.created_at).toISOString().split('T')[0] : '';
           if (createdDate === today) {
@@ -226,13 +231,14 @@ const BarberPanel = ({ isMobile, rates }) => {
             if (myRecord) {
               count++;
               earned += Number(myRecord.commission_earned || 0);
+              tips += Number(myRecord.tip_amount || 0);
             }
           }
         });
-        setStats({ production: earned, services: count, earnings: earned });
+        setStats({ production: earned, services: count, earnings: earned, tips: tips });
       } else {
         const data = await dataService.getBarberDailyStats(selectedBarber.id);
-        setStats({ production: data.productionUsd, services: data.services, earnings: data.earningsUsd });
+        setStats({ production: data.productionUsd, services: data.services, earnings: data.earningsUsd, tips: data.tipsUsd || 0 });
       }
     } catch (err) {
       console.error("Error loading stats:", err);
@@ -366,7 +372,7 @@ const BarberPanel = ({ isMobile, rates }) => {
         type: cameraTarget.type,
         date: new Date().toISOString(),
         service_id: app.id,
-        service_name: app.services.name
+        service_name: app.services?.name || 'Servicio'
       };
 
       // 2. Fetch latest gallery from DB to avoid race conditions (overwriting)
@@ -387,6 +393,33 @@ const BarberPanel = ({ isMobile, rates }) => {
       showToast("Error al guardar foto", "error");
     } finally {
       setShowCamera(false);
+    }
+  };
+
+  const handleDeletePhoto = async (appId, type) => {
+    try {
+      const app = myServices.find(s => s.id === appId);
+      if (!app) return;
+
+      if (!await confirm("¿Quieres borrar la foto de esta cita?")) return;
+
+      showToast("Borrando foto...", "info");
+
+      const { data: latestClient } = await supabase
+        .from('clients')
+        .select('work_gallery')
+        .eq('id', app.client_id)
+        .single();
+
+      const currentGallery = Array.isArray(latestClient?.work_gallery) ? latestClient.work_gallery : [];
+      const newGallery = currentGallery.filter(p => !(p.service_id === appId && p.type === type));
+
+      await dataService.updateClient(app.client_id, { work_gallery: newGallery });
+      showToast("Foto eliminada", "success");
+      await loadMyWork();
+    } catch (err) {
+      console.error(err);
+      showToast("Error al eliminar la foto", "error");
     }
   };
 
@@ -803,8 +836,30 @@ const BarberPanel = ({ isMobile, rates }) => {
                         </div>
                       )}
                     </div>
-                    <span style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', background: 'rgba(212,175,55,0.1)', padding: '4px 10px', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.2)' }}>
-                      EN SILLA 💈
+                    <span style={{ 
+                      fontSize: '11px', 
+                      fontWeight: '900', 
+                      color: 'var(--gold-primary)', 
+                      background: 'rgba(212,175,55,0.1)', 
+                      padding: '6px 12px', 
+                      borderRadius: '12px', 
+                      border: '1px solid rgba(212,175,55,0.2)',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      EN SILLA 
+                      <img 
+                        src="/barber-chair.png" 
+                        alt="Silla" 
+                        style={{ 
+                          width: '16px', 
+                          height: '16px', 
+                          objectFit: 'contain',
+                          filter: 'drop-shadow(0 1px 2px rgba(212, 175, 55, 0.6))'
+                        }} 
+                      />
                     </span>
                   </div>
                 ))
@@ -814,7 +869,11 @@ const BarberPanel = ({ isMobile, rates }) => {
         ) : (
           <section>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <Zap size={18} color="var(--gold-primary)" fill="var(--gold-primary)" />
+              <Scissors 
+                size={18} 
+                color="var(--gold-primary)" 
+                style={{ filter: 'drop-shadow(0 1px 3px rgba(212, 175, 55, 0.4))' }} 
+              />
               <span style={{ fontWeight: '800', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>Tu Silla Hoy</span>
             </div>
 
@@ -863,53 +922,207 @@ const BarberPanel = ({ isMobile, rates }) => {
                   const includesWashing = app.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || 
                                           app.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'));
                   return (
-                    <div key={app.id} className="glass-card animate-slide-up" style={{ borderRadius: '28px', padding: '24px', background: app.status === 'En Silla' ? 'linear-gradient(135deg, rgba(28,28,30,0.95), rgba(212,175,55,0.03))' : 'var(--bg-secondary)' }}>
+                    <div key={app.id} className="glass-card animate-slide-up" style={{ 
+                      borderRadius: '28px', 
+                      padding: '24px', 
+                      background: app.status === 'En Silla' ? 'linear-gradient(135deg, rgba(28,28,30,0.98), rgba(212,175,55,0.02))' : 'var(--bg-secondary)',
+                      border: app.status === 'En Silla' ? '1px solid rgba(212,175,55,0.15)' : '1px solid rgba(255,255,255,0.05)',
+                      boxShadow: '0 20px 45px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)'
+                    }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
                         <div>
-                          <span style={{ fontSize: '10px', fontWeight: '900', color: app.status === 'En Lavado' ? '#007aff' : 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                            {app.status} {app.status === 'En Lavado' && '💧'}
+                          <span style={{ 
+                            fontSize: '9px', 
+                            fontWeight: '900', 
+                            color: app.status === 'En Lavado' ? '#007aff' : 'var(--gold-primary)', 
+                            textTransform: 'uppercase', 
+                            letterSpacing: '1.5px',
+                            background: app.status === 'En Lavado' ? 'rgba(0,122,255,0.12)' : 'rgba(212,175,55,0.1)',
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            border: app.status === 'En Lavado' ? '1px solid rgba(0,122,255,0.2)' : '1px solid rgba(212,175,55,0.15)',
+                            whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}>
+                            {app.status} 
+                            {app.status === 'En Lavado' ? '💧' : (
+                              <img 
+                                src="/barber-chair.png" 
+                                alt="Silla" 
+                                style={{ 
+                                  width: '16px', 
+                                  height: '16px', 
+                                  objectFit: 'contain',
+                                  filter: 'drop-shadow(0 1px 2px rgba(212, 175, 55, 0.6))'
+                                }} 
+                              />
+                            )}
                           </span>
-                          <h3 style={{ fontSize: '22px', fontWeight: '900', marginTop: '4px' }}>{app.clients?.name}</h3>
-                          <div style={{ color: 'var(--text-secondary)', fontSize: '15px', marginTop: '4px' }}>{app.services?.name}</div>
+                          <h3 style={{ fontSize: '24px', fontWeight: '900', marginTop: '10px', color: 'white', letterSpacing: '-0.3px' }}>{app.clients?.name}</h3>
+                          <div style={{ 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            gap: '6px', 
+                            color: 'var(--gold-primary)', 
+                            fontSize: '13px', 
+                            fontWeight: '800', 
+                            marginTop: '6px',
+                            background: 'rgba(212,175,55,0.06)',
+                            padding: '4px 12px',
+                            borderRadius: '10px',
+                            border: '1px solid rgba(212,175,55,0.12)'
+                          }}>
+                            {app.services?.name}
+                          </div>
+                          
                           {app.services?.included_items && app.services.included_items.length > 0 && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
-                              {app.services.included_items.map((item, idx) => (
-                                <span key={idx} style={{ fontSize: '10px', fontWeight: '800', color: item.toLowerCase().includes('lavado') ? '#007aff' : 'var(--text-secondary)', background: item.toLowerCase().includes('lavado') ? 'rgba(0,122,255,0.1)' : 'rgba(255,255,255,0.05)', padding: '3px 8px', borderRadius: '20px', border: item.toLowerCase().includes('lavado') ? '1px solid rgba(0,122,255,0.2)' : '1px solid rgba(255,255,255,0.08)' }}>
-                                  {item.toLowerCase().includes('lavado') ? '💧' : '✦'} {item}
-                                </span>
-                              ))}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '14px' }}>
+                              {app.services.included_items.map((item, idx) => {
+                                const isWashing = item.toLowerCase().includes('lavado');
+                                return (
+                                  <span 
+                                    key={idx} 
+                                    style={{ 
+                                      fontSize: '10px', 
+                                      fontWeight: '800', 
+                                      color: isWashing ? '#007aff' : 'rgba(255,255,255,0.6)', 
+                                      background: isWashing ? 'rgba(0,122,255,0.08)' : 'rgba(255,255,255,0.03)', 
+                                      padding: '4px 10px', 
+                                      borderRadius: '12px', 
+                                      border: isWashing ? '1px solid rgba(0,122,255,0.2)' : '1px solid rgba(255,255,255,0.05)',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    <span style={{ color: isWashing ? '#007aff' : 'var(--gold-primary)', fontSize: '8px' }}>
+                                      {isWashing ? '💧' : '✦'}
+                                    </span>
+                                    {item}
+                                  </span>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '20px', fontWeight: '900' }}>${app.services?.price}</div>
+                          <div style={{ fontSize: '22px', fontWeight: '900', color: 'white' }}>${app.services?.price}</div>
                         </div>
                       </div>
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                        {/* Polaroid Antes */}
                         <div 
                           onClick={() => { setCameraTarget({ appId: app.id, type: 'Antes' }); setShowCamera(true); }}
-                          style={{ height: '110px', borderRadius: '16px', backgroundColor: 'rgba(0,0,0,0.3)', border: '1px dashed rgba(212,175,55,0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', overflow: 'hidden', position: 'relative' }}
+                          style={{ 
+                            height: '120px', 
+                            borderRadius: '20px', 
+                            backgroundColor: 'rgba(0,0,0,0.4)', 
+                            border: '1.5px dashed rgba(212,175,55,0.25)', 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '8px', 
+                            cursor: 'pointer', 
+                            overflow: 'hidden', 
+                            position: 'relative',
+                            boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.5)',
+                            transition: 'all 0.3s ease'
+                          }}
                         >
                           {app.clients?.work_gallery?.find(p => p.type === 'Antes' && p.service_id === app.id) ? (
-                            <img src={app.clients.work_gallery.find(p => p.type === 'Antes' && p.service_id === app.id).url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <>
+                              <img src={app.clients.work_gallery.find(p => p.type === 'Antes' && p.service_id === app.id).url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <div style={{ position: 'absolute', top: '8px', left: '8px', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', padding: '4px 10px', borderRadius: '8px', fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', border: '1px solid rgba(212,175,55,0.3)', letterSpacing: '0.5px' }}>ANTES</div>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleDeletePhoto(app.id, 'Antes'); }}
+                                style={{ 
+                                  position: 'absolute', 
+                                  top: '8px', 
+                                  right: '8px', 
+                                  background: 'rgba(255, 69, 58, 0.25)', 
+                                  backdropFilter: 'blur(8px)', 
+                                  border: '1px solid rgba(255, 69, 58, 0.4)', 
+                                  color: '#ff453a', 
+                                  borderRadius: '50%', 
+                                  width: '28px', 
+                                  height: '28px', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+                                }}
+                              >
+                                <Trash2 size={12} strokeWidth={2.5} />
+                              </button>
+                            </>
                           ) : (
                             <>
-                              <Camera size={20} color="var(--gold-primary)" />
-                              <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)' }}>FOTO ANTES</span>
+                              <div style={{ background: 'rgba(212,175,55,0.06)', padding: '10px', borderRadius: '50%', border: '1px solid rgba(212,175,55,0.15)' }}>
+                                <Camera size={20} color="var(--gold-primary)" />
+                              </div>
+                              <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px' }}>FOTO ANTES</span>
                             </>
                           )}
                         </div>
+
+                        {/* Polaroid Después */}
                         <div 
                           onClick={() => { setCameraTarget({ appId: app.id, type: 'Después' }); setShowCamera(true); }}
-                          style={{ height: '110px', borderRadius: '16px', backgroundColor: 'rgba(0,0,0,0.3)', border: '1px dashed rgba(212,175,55,0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', overflow: 'hidden', position: 'relative' }}
+                          style={{ 
+                            height: '120px', 
+                            borderRadius: '20px', 
+                            backgroundColor: 'rgba(0,0,0,0.4)', 
+                            border: '1.5px dashed rgba(212,175,55,0.25)', 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '8px', 
+                            cursor: 'pointer', 
+                            overflow: 'hidden', 
+                            position: 'relative',
+                            boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.5)',
+                            transition: 'all 0.3s ease'
+                          }}
                         >
                           {app.clients?.work_gallery?.find(p => p.type === 'Después' && p.service_id === app.id) ? (
-                            <img src={app.clients.work_gallery.find(p => p.type === 'Después' && p.service_id === app.id).url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <>
+                              <img src={app.clients.work_gallery.find(p => p.type === 'Después' && p.service_id === app.id).url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <div style={{ position: 'absolute', top: '8px', left: '8px', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', padding: '4px 10px', borderRadius: '8px', fontSize: '9px', fontWeight: '900', color: '#32d74b', border: '1px solid rgba(50,215,75,0.3)', letterSpacing: '0.5px' }}>DESPUÉS</div>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleDeletePhoto(app.id, 'Después'); }}
+                                style={{ 
+                                  position: 'absolute', 
+                                  top: '8px', 
+                                  right: '8px', 
+                                  background: 'rgba(255, 69, 58, 0.25)', 
+                                  backdropFilter: 'blur(8px)', 
+                                  border: '1px solid rgba(255, 69, 58, 0.4)', 
+                                  color: '#ff453a', 
+                                  borderRadius: '50%', 
+                                  width: '28px', 
+                                  height: '28px', 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+                                }}
+                              >
+                                <Trash2 size={12} strokeWidth={2.5} />
+                              </button>
+                            </>
                           ) : (
                             <>
-                              <Camera size={20} color="var(--gold-primary)" />
-                              <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)' }}>FOTO DESPUÉS</span>
+                              <div style={{ background: 'rgba(212,175,55,0.06)', padding: '10px', borderRadius: '50%', border: '1px solid rgba(212,175,55,0.15)' }}>
+                                <Camera size={20} color="var(--gold-primary)" />
+                              </div>
+                              <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px' }}>FOTO DESPUÉS</span>
                             </>
                           )}
                         </div>
@@ -970,18 +1183,50 @@ const BarberPanel = ({ isMobile, rates }) => {
                       )}
 
                       {/* Add Extras/Products */}
-                      <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
+                      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
                         <button 
                           onClick={() => { setActiveAppId(app.id); setAddMode('extra'); setShowAddModal(true); }}
-                          style={{ flex: 1, padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', color: 'white', fontSize: '11px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                          style={{ 
+                            flex: 1, 
+                            padding: '14px', 
+                            borderRadius: '16px', 
+                            background: 'rgba(255,255,255,0.02)', 
+                            border: '1px solid rgba(212,175,55,0.15)', 
+                            color: 'white', 
+                            fontSize: '12px', 
+                            fontWeight: '800', 
+                            cursor: 'pointer', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '8px',
+                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                            transition: 'all 0.2s'
+                          }}
                         >
-                          <Plus size={14} color="var(--gold-primary)" /> Extra
+                          <Plus size={16} color="var(--gold-primary)" style={{ filter: 'drop-shadow(0 0 5px rgba(212,175,55,0.4))' }} /> Extra
                         </button>
                         <button 
                           onClick={() => { setActiveAppId(app.id); setAddMode('product'); setShowAddModal(true); }}
-                          style={{ flex: 1, padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', color: 'white', fontSize: '11px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                          style={{ 
+                            flex: 1, 
+                            padding: '14px', 
+                            borderRadius: '16px', 
+                            background: 'rgba(255,255,255,0.02)', 
+                            border: '1px solid rgba(212,175,55,0.15)', 
+                            color: 'white', 
+                            fontSize: '12px', 
+                            fontWeight: '800', 
+                            cursor: 'pointer', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '8px',
+                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                            transition: 'all 0.2s'
+                          }}
                         >
-                          <ShoppingBag size={14} color="var(--gold-primary)" /> Producto
+                          <ShoppingBag size={15} color="var(--gold-primary)" style={{ filter: 'drop-shadow(0 0 5px rgba(212,175,55,0.4))' }} /> Producto
                         </button>
                       </div>
 
@@ -995,12 +1240,13 @@ const BarberPanel = ({ isMobile, rates }) => {
                               flex: 1.2, 
                               height: '56px', 
                               borderRadius: '16px', 
-                              fontSize: '14px', 
+                              fontSize: '13px', 
                               fontWeight: '800',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              gap: '8px',
+                              gap: '6px',
+                              padding: '0 10px',
                               cursor: 'pointer',
                               background: includesWashing ? 'linear-gradient(135deg, #007aff, #00d2ff)' : 'rgba(0,122,255,0.15)',
                               border: includesWashing ? 'none' : '1px solid rgba(0,122,255,0.3)',
@@ -1010,7 +1256,10 @@ const BarberPanel = ({ isMobile, rates }) => {
                               animation: includesWashing ? 'pulse-blue 2s infinite' : 'none'
                             }}
                           >
-                            <Droplets size={18} /> ENVIAR A LAVADO
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center', width: 'fit-content', margin: '0 auto' }}>
+                              <Droplets size={16} style={{ flexShrink: 0 }} />
+                              <span style={{ whiteSpace: 'nowrap', lineHeight: '1.1' }}>ENVIAR A LAVADO</span>
+                            </div>
                           </button>
                           <button 
                             onClick={() => handleFinishService(app.id)}
@@ -1054,39 +1303,47 @@ const BarberPanel = ({ isMobile, rates }) => {
         )}
 
         {/* Add Modal */}
-        {showAddModal && createPortal(
-          <div className="animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-            <div className="glass-card animate-scale-in" style={{ maxWidth: '400px', width: '100%', borderRadius: '24px', padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h3 style={{ fontWeight: '900' }}>Añadir <span className="text-gold">{addMode === 'extra' ? 'Extra' : 'Producto'}</span></h3>
-                <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto', paddingRight: '10px' }}>
-                {(addMode === 'extra' ? allExtras : inventory).map(item => (
-                  <button 
-                    key={item.id}
-                    onClick={() => addMode === 'extra' ? handleAddExtra(item) : handleAddProduct(item)}
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)', color: 'white', cursor: 'pointer', textAlign: 'left' }}
-                  >
-                    <span style={{ fontWeight: '700' }}>{item.name}</span>
-                    <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>${item.price}</span>
-                  </button>
-                ))}
+        <AnimatedModal isOpen={showAddModal}>
+          {(overlayClass, cardClass) => (
+            <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+              <div className={`glass-card ${cardClass}`} style={{ maxWidth: '400px', width: '100%', borderRadius: '24px', padding: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h3 style={{ fontWeight: '900' }}>Añadir <span className="text-gold">{addMode === 'extra' ? 'Extra' : 'Producto'}</span></h3>
+                  <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto', paddingRight: '10px' }}>
+                  {(addMode === 'extra' ? allExtras : inventory).map(item => (
+                    <button 
+                      key={item.id}
+                      onClick={() => addMode === 'extra' ? handleAddExtra(item) : handleAddProduct(item)}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)', color: 'white', cursor: 'pointer', textAlign: 'left' }}
+                    >
+                      <span style={{ fontWeight: '700' }}>{item.name}</span>
+                      <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>${item.price}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>,
-          document.body
-        )}
+          )}
+        </AnimatedModal>
 
-        {showCamera && (
-          <AstroCamera 
-            onCapture={handlePhotoCaptured}
-            onClose={() => setShowCamera(false)}
-          />
-        )}
+        <AnimatedModal isOpen={showCamera}>
+          {(overlayClass, cardClass) => (
+            <AstroCamera 
+              onCapture={handlePhotoCaptured}
+              onClose={() => setShowCamera(false)}
+              overlayClass={overlayClass}
+              cardClass={cardClass}
+            />
+          )}
+        </AnimatedModal>
 
-        {/* Stats Overlay for the barber / assistant */}
-        <section style={{ display: 'grid', gridTemplateColumns: isAssistant ? '1fr 1fr' : '1fr 1fr 1fr', gap: '16px' }}>
+        <section style={{ 
+          display: 'grid', 
+          gridTemplateColumns: isMobile ? '1fr 1fr' : (isAssistant ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)'), 
+          gap: '16px' 
+        }}>
           <div className="glass-card" style={{ padding: '20px 16px', borderRadius: '24px', textAlign: 'center' }}>
             <TrendingUp size={24} color={isAssistant ? '#007aff' : "var(--gold-primary)"} style={{ margin: '0 auto 12px' }} />
             <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
@@ -1129,6 +1386,21 @@ const BarberPanel = ({ isMobile, rates }) => {
               {isAssistant ? "Lavados" : "Servicios"}
             </div>
             <div style={{ fontSize: '26px', fontWeight: '900', marginTop: '8px', color: 'white' }}>{stats.services}</div>
+          </div>
+
+          <div className="glass-card animate-scale-in" style={{ padding: '20px 16px', borderRadius: '24px', textAlign: 'center', border: '1px solid rgba(255, 159, 10, 0.2)', background: 'linear-gradient(135deg, rgba(28,28,30,0.95), rgba(255, 159, 10, 0.02))' }}>
+            <Coins size={24} color="#ff9f0a" style={{ margin: '0 auto 12px', filter: 'drop-shadow(0 0 5px rgba(255, 159, 10, 0.4))' }} />
+            <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+              Propinas Hoy
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '8px' }}>
+              <div style={{ fontSize: '26px', fontWeight: '900', color: '#ff9f0a', textShadow: '0 0 15px rgba(255, 159, 10, 0.4)' }}>${stats.tips.toFixed(2)}</div>
+              {rates?.usd > 0 && stats.tips > 0 && (
+                <div style={{ fontSize: '12px', color: '#ff9f0a', fontWeight: '800', marginTop: '4px' }}>
+                  {Math.round(stats.tips * rates.usd).toLocaleString()} BS
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
@@ -1286,51 +1558,53 @@ const BarberPanel = ({ isMobile, rates }) => {
       </div>
 
       {/* Detail Modal for Completed Service */}
-      {selectedCompletedApp && createPortal((() => {
-        const app = selectedCompletedApp;
-        const extrasTotal = app.appointment_extras?.reduce((sum, e) => sum + (Number(e.price) || 0), 0) || 0;
-        const productsTotal = app.appointment_products?.reduce((sum, p) => sum + ((Number(p.price) || 0) * (p.quantity || 1)), 0) || 0;
-        const servicePrice = Number(app.services?.price) || 0;
-        const totalUsd = servicePrice + extrasTotal + productsTotal;
-        const totalBs = totalUsd * (rates?.usd || 550);
-        const completedTime = app.completed_at ? new Date(app.completed_at).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true }) : '—';
-        const startedTime = app.started_at ? new Date(app.started_at).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true }) : '—';
-        let durationMin = 0;
-        if (app.started_at && app.completed_at) {
-          durationMin = Math.round((new Date(app.completed_at) - new Date(app.started_at)) / 60000);
-        }
-        const beforePhoto = app.clients?.work_gallery?.find(p => p.type === 'Antes' && p.service_id === app.id);
-        const afterPhoto = app.clients?.work_gallery?.find(p => p.type === 'Después' && p.service_id === app.id);
+      <AnimatedModal isOpen={!!selectedCompletedApp}>
+        {(overlayClass, cardClass) => {
+          const app = selectedCompletedApp;
+          if (!app) return null;
+          const extrasTotal = app.appointment_extras?.reduce((sum, e) => sum + (Number(e.price) || 0), 0) || 0;
+          const productsTotal = app.appointment_products?.reduce((sum, p) => sum + ((Number(p.price) || 0) * (p.quantity || 1)), 0) || 0;
+          const servicePrice = Number(app.services?.price) || 0;
+          const totalUsd = servicePrice + extrasTotal + productsTotal;
+          const totalBs = totalUsd * (rates?.usd || 550);
+          const completedTime = app.completed_at ? new Date(app.completed_at).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true }) : '—';
+          const startedTime = app.started_at ? new Date(app.started_at).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true }) : '—';
+          let durationMin = 0;
+          if (app.started_at && app.completed_at) {
+            durationMin = Math.round((new Date(app.completed_at) - new Date(app.started_at)) / 60000);
+          }
+          const beforePhoto = app.clients?.work_gallery?.find(p => p.type === 'Antes' && p.service_id === app.id);
+          const afterPhoto = app.clients?.work_gallery?.find(p => p.type === 'Después' && p.service_id === app.id);
 
-        return (
-          <div 
-            className="animate-fade-in"
-            onClick={() => setSelectedCompletedApp(null)}
-            style={{ 
-              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-              backgroundColor: 'rgba(0,0,0,0.85)', 
-              backdropFilter: 'blur(12px)', 
-              zIndex: 99999, 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center', 
-              padding: '20px' 
-            }}
-          >
+          return (
             <div 
-              onClick={(e) => e.stopPropagation()}
-              className="animate-scale-in" 
+              className={overlayClass}
+              onClick={() => setSelectedCompletedApp(null)}
               style={{ 
-                maxWidth: '480px', 
-                width: '100%', 
-                maxHeight: '90vh',
-                overflowY: 'auto',
-                borderRadius: '28px', 
-                background: 'linear-gradient(180deg, rgba(28,28,30,0.98), rgba(20,20,22,0.99))', 
-                border: isAssistant ? '1px solid rgba(0,122,255,0.15)' : '1px solid rgba(50,215,75,0.15)',
-                boxShadow: '0 30px 80px rgba(0,0,0,0.7)'
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+                backgroundColor: 'rgba(0,0,0,0.85)', 
+                backdropFilter: 'blur(12px)', 
+                zIndex: 99999, 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                padding: '20px' 
               }}
             >
+              <div 
+                onClick={(e) => e.stopPropagation()}
+                className={cardClass}
+                style={{ 
+                  maxWidth: '480px', 
+                  width: '100%', 
+                  maxHeight: '90vh',
+                  overflowY: 'auto',
+                  borderRadius: '28px', 
+                  background: 'linear-gradient(180deg, rgba(28,28,30,0.98), rgba(20,20,22,0.99))', 
+                  border: isAssistant ? '1px solid rgba(0,122,255,0.15)' : '1px solid rgba(50,215,75,0.15)',
+                  boxShadow: '0 30px 80px rgba(0,0,0,0.7)'
+                }}
+              >
               {/* Header */}
               <div style={{ 
                 padding: '24px 24px 20px', 
@@ -1495,9 +1769,10 @@ const BarberPanel = ({ isMobile, rates }) => {
 
               </div>
             </div>
-          </div>
-        );
-      })(), document.body)}
+            </div>
+          );
+        }}
+      </AnimatedModal>
 
       <style>{`
         .hover-item:hover {

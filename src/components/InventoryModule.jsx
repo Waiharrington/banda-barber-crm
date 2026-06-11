@@ -353,12 +353,16 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
         </div>
       )}
 
-      {showCamera && (
-        <AstroCamera 
-          onCapture={(img) => setNewItem({...newItem, image_url: img})} 
-          onClose={() => setShowCamera(false)} 
-        />
-      )}
+      <AnimatedModal isOpen={showCamera}>
+        {(overlayClass, cardClass) => (
+          <AstroCamera 
+            onCapture={(img) => setNewItem({...newItem, image_url: img})} 
+            onClose={() => setShowCamera(false)} 
+            overlayClass={overlayClass}
+            cardClass={cardClass}
+          />
+        )}
+      </AnimatedModal>
 
       {/* Search & Alerts Header */}
       <div style={{ 
@@ -943,12 +947,16 @@ const EditInventoryModal = ({ isOpen, item, onClose, onSave }) => {
               </button>
             </div>
 
-            {showCamera && (
-              <AstroCamera 
-                onCapture={(img) => { setFormData({...formData, image_url: img}); setShowCamera(false); }} 
-                onClose={() => setShowCamera(false)} 
-              />
-            )}
+            <AnimatedModal isOpen={showCamera}>
+              {(overlayClass, cardClass) => (
+                <AstroCamera 
+                  onCapture={(img) => { setFormData({...formData, image_url: img}); setShowCamera(false); }} 
+                  onClose={() => setShowCamera(false)} 
+                  overlayClass={overlayClass}
+                  cardClass={cardClass}
+                />
+              )}
+            </AnimatedModal>
           </div>
         </div>
       )}

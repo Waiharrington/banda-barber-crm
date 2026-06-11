@@ -126,7 +126,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
   };
 
   return (
-    <div className="client-module animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="client-module animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '60px' }}>
       {!selectedClient ? (
         <>
           <div style={{
@@ -827,7 +827,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
   };
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in" style={{ paddingBottom: '60px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <button onClick={onBack} style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
           &larr; Volver al Listado
@@ -1474,12 +1474,16 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
       </div>
       )}
 
-      {showCamera && (
-        <AstroCamera 
-          onCapture={handlePhotoCaptured} 
-          onClose={() => setShowCamera(false)} 
-        />
-      )}
+      <AnimatedModal isOpen={showCamera}>
+        {(overlayClass, cardClass) => (
+          <AstroCamera 
+            onCapture={handlePhotoCaptured} 
+            onClose={() => setShowCamera(false)} 
+            overlayClass={overlayClass}
+            cardClass={cardClass}
+          />
+        )}
+      </AnimatedModal>
 
       <VisitDetailModal 
         isOpen={!!selectedVisit}

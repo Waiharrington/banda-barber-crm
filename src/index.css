@@ -785,3 +785,19 @@ input[type="submit"]:active {
     transform: none !important;
   }
 }
+
+/* Micro-floating animation for inline text-level icons */
+.chair-micro-float {
+  animation: chairMicroFloat 3s infinite ease-in-out;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes chairMicroFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-2px) rotate(3deg);
+  }
+}

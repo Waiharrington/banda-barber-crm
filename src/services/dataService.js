@@ -26,6 +26,10 @@ function _cacheInvalidate(...keys) {
   keys.forEach(k => delete _cache[k]);
 }
 
+function _cacheInvalidateAppts() {
+  Object.keys(_cache).filter(k => k.startsWith('appts_')).forEach(k => delete _cache[k]);
+}
+
 function _asArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -535,12 +539,14 @@ export const dataService = {
   },
 
   async addExtraToAppointment(appointmentId, extraId, price) {
+    _cacheInvalidateAppts();
     const { data, error } = await supabase.from('appointment_extras').insert([{ appointment_id: appointmentId, extra_id: extraId, price }]).select().single();
     if (error) throw error;
     return data;
   },
 
   async updateAppointmentExtraPrice(id, price) {
+    _cacheInvalidateAppts();
     const { data, error } = await supabase.from('appointment_extras').update({ price }).eq('id', id).select().single();
     if (error) throw error;
     return data;
@@ -553,17 +559,20 @@ export const dataService = {
   },
 
   async removeExtraFromAppointment(id) {
+    _cacheInvalidateAppts();
     const { error } = await supabase.from('appointment_extras').delete().eq('id', id);
     if (error) throw error;
   },
 
   async addProductToAppointment(appointmentId, productId, quantity, price) {
+    _cacheInvalidateAppts();
     const { data, error } = await supabase.from('appointment_products').insert([{ appointment_id: appointmentId, product_id: productId, quantity, price }]).select().single();
     if (error) throw error;
     return data;
   },
 
   async updateAppointmentProductQuantity(id, quantity) {
+    _cacheInvalidateAppts();
     const { data, error } = await supabase.from('appointment_products').update({ quantity }).eq('id', id).select().single();
     if (error) throw error;
     return data;
@@ -576,6 +585,7 @@ export const dataService = {
   },
 
   async removeProductFromAppointment(id) {
+    _cacheInvalidateAppts();
     const { error } = await supabase.from('appointment_products').delete().eq('id', id);
     if (error) throw error;
   },
@@ -837,7 +847,7 @@ export const dataService = {
 
   async createAppointment(appointment) {
     // Invalidate all appointment caches
-    Object.keys(_cache).filter(k => k.startsWith('appts_')).forEach(k => delete _cache[k]);
+    _cacheInvalidateAppts();
     const { data, error } = await supabase
       .from('appointments')
       .insert([{
@@ -854,7 +864,7 @@ export const dataService = {
   },
 
   async updateAppointment(id, updates) {
-    Object.keys(_cache).filter(k => k.startsWith('appts_')).forEach(k => delete _cache[k]);
+    _cacheInvalidateAppts();
     const { data, error } = await supabase
       .from('appointments')
       .update(updates)
@@ -866,6 +876,7 @@ export const dataService = {
   },
 
   async updateAppointmentStatus(id, newStatus) {
+    _cacheInvalidateAppts();
     const updates = { status: newStatus };
     if (newStatus === 'En Silla') updates.started_at = new Date().toISOString();
     if (newStatus === 'Completado' || newStatus === 'Por Pagar') updates.completed_at = new Date().toISOString();
@@ -910,6 +921,7 @@ export const dataService = {
   },
 
   async assignAssistantToAppointment(appointmentId, assistantId) {
+    _cacheInvalidateAppts();
     // Delete any existing washer records for this appointment in appointment_staff to avoid duplicates
     const { data: staffList } = await supabase
       .from('appointment_staff')
@@ -941,6 +953,7 @@ export const dataService = {
   },
 
   async deleteAppointment(id) {
+    _cacheInvalidateAppts();
     const { error } = await supabase
       .from('appointments')
       .delete()
@@ -950,6 +963,7 @@ export const dataService = {
   },
 
   async deleteAppointmentExtra(id) {
+    _cacheInvalidateAppts();
     const { error } = await supabase
       .from('appointment_extras')
       .delete()
@@ -959,6 +973,7 @@ export const dataService = {
   },
 
   async deleteAppointmentProduct(id) {
+    _cacheInvalidateAppts();
     const { error } = await supabase
       .from('appointment_products')
       .delete()
@@ -988,6 +1003,7 @@ export const dataService = {
 
     let totalUsd = 0;
     let earningsUsd = 0;
+    let tipsUsd = 0;
     const apps = _asArray(data).map(_normalizeAppointment);
     let serviceCount = apps.length;
 
@@ -1000,6 +1016,7 @@ export const dataService = {
       const myStaffRecord = app.appointment_staff?.find(as => String(as.staff_id) === String(staffId));
       if (myStaffRecord) {
         earningsUsd += Number(myStaffRecord.commission_earned || 0) + Number(myStaffRecord.product_commission || 0) + Number(myStaffRecord.tip_amount || 0);
+        tipsUsd += Number(myStaffRecord.tip_amount || 0);
       } else {
         const pct = app.services?.commission_barber ?? 40;
         const serviceComm = sPrice * (pct / 100);
@@ -1011,7 +1028,7 @@ export const dataService = {
       }
     });
 
-    return { productionUsd: totalUsd, services: serviceCount, earningsUsd: earningsUsd };
+    return { productionUsd: totalUsd, services: serviceCount, earningsUsd: earningsUsd, tipsUsd: tipsUsd };
   },
 
   // Final Checkout Logic

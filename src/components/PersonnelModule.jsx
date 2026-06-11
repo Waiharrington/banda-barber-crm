@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNotifs } from '../context/NotificationContext';
 import { 
   Scissors, 
@@ -36,6 +37,7 @@ import { formatName } from '../utils/stringUtils';
 import { useAuth } from '../context/AuthContext';
 import { useDialog } from '../context/DialogContext';
 import RoleManagerModal from './RoleManagerModal';
+import AnimatedModal from './AnimatedModal';
 
 const availableModules = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -1093,15 +1095,19 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         </div>
       )}
 
-      {showCamera && (
-        <AstroCamera 
-          onClose={() => setShowCamera(false)}
-          onCapture={(image) => {
-            setFormData({ ...formData, image_url: image });
-            setShowCamera(false);
-          }}
-        />
-      )}
+      <AnimatedModal isOpen={showCamera}>
+        {(overlayClass, cardClass) => (
+          <AstroCamera 
+            onClose={() => setShowCamera(false)}
+            onCapture={(image) => {
+              setFormData({ ...formData, image_url: image });
+              setShowCamera(false);
+            }}
+            overlayClass={overlayClass}
+            cardClass={cardClass}
+          />
+        )}
+      </AnimatedModal>
 
       <StaffProfileModal 
         isOpen={!!profileModalData}
