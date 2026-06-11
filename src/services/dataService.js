@@ -91,7 +91,7 @@ export const dataService = {
     if (cached) return cached;
     const { data, error } = await supabase
       .from('clients')
-      .select('id, name, phone, birth_date, id_card, image_url, hair_type, notes, work_gallery')
+      .select('*')
       .order('name');
     if (error) throw error;
     const result = _asArray(data).map(c => ({ ...c, total_visits: 0, total_spent: 0 }));

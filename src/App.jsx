@@ -204,12 +204,6 @@ function App() {
       localStorage.setItem('astro_bday_cleaned_v6', 'true');
     }
 
-    const bdayMsg = localStorage.getItem('astro_default_bday_message');
-    if (bdayMsg) {
-      console.log('DEBUG BDAY MSG:', bdayMsg);
-      console.log('DEBUG BDAY MSG CODES:', Array.from(bdayMsg).map(c => c.charCodeAt(0)));
-    }
-
     // Fast-Path Load Sequence
     // Phase 1: Load only what's needed to show the UI (fast)
     // Phase 2: Load heavy data silently in background

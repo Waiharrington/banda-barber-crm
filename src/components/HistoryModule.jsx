@@ -41,8 +41,13 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
     try {
       setLoading(true);
       let data = [];
+      // Default to last 30 days for fast initial load
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const startDate = thirtyDaysAgo.toISOString();
+
       if (isAdmin) {
-        data = await dataService.getAppointmentsByState(['Completado']);
+        data = await dataService.getAppointmentsByState(['Completado'], startDate);
       } else {
         // Fetch from appointment_staff to include all services where the user participated
         const { data: staffData, error } = await dataService.supabase
