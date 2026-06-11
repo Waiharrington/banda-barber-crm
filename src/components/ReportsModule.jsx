@@ -489,35 +489,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           ]}
         />
 
-        {/* Week selector (clickable circles) */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
-          {weeks.map((w) => (
-            <button
-              key={w.start.getTime()}
-              onClick={() => handleWeekClick(w)}
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                background: selectedWeek === w.start.getTime() ? 'var(--gold-gradient)' : 'rgba(255,255,255,0.1)',
-                color: selectedWeek === w.start.getTime() ? 'black' : 'white',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '11px',
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: selectedWeek === w.start.getTime() ? 'var(--gold-glow)' : 'none',
-                transition: 'transform 0.2s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              {w.label}
-            </button>
-          ))}
-        </div>
+
 
         {/* Custom Date Picker Fields (Only visible when "custom" is selected) */}
         {dateRange === 'custom' && (
