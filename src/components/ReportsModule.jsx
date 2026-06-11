@@ -22,6 +22,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   const [selectedService, setSelectedService] = useState('all');
   const [selectedWeek, setSelectedWeek] = useState(null); // timestamp of week start
   const [selectedStaff, setSelectedStaff] = useState('all');
+  const [selectedAssistant, setSelectedAssistant] = useState('all');
   const [chartGranularity, setChartGranularity] = useState('week'); // 'day', 'week', 'month'
   const [hoveredTimelinePoint, setHoveredTimelinePoint] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -101,7 +102,8 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
 
   const isBarberRole = (role = '') => {
     const normalizedRole = role.toLowerCase();
-    return normalizedRole.includes('barber') || normalizedRole.includes('barbero');
+    const isExcluded = normalizedRole.includes('admin') || normalizedRole.includes('asistente') || normalizedRole.includes('lavado') || normalizedRole.includes('caja') || normalizedRole.includes('recepcion');
+    return !isExcluded && (normalizedRole.includes('barber') || normalizedRole.includes('barbero'));
   };
 
   const isAssistantRole = (role = '') => {
@@ -112,6 +114,13 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   const reportStaffOptions = (() => {
     return staff
       .filter((s) => isBarberRole(s.role))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((s) => ({ value: s.id, label: s.name }));
+  })();
+
+  const assistantOptions = (() => {
+    return staff
+      .filter((s) => isAssistantRole(s.role))
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((s) => ({ value: s.id, label: s.name }));
   })();
@@ -328,9 +337,11 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     const byDay = dayOrder.reduce((acc, day) => ({ ...acc, [day]: 0 }), {});
     const byHour = { '9a.m.': 0, '12p.m.': 0, '3p.m.': 0, '6p.m.': 0, '9p.m.': 0 };
     let unassignedWashes = 0;
+    const assistantsCatalog = staff.filter((s) => isAssistantRole(s.role));
+    const soleAssistant = assistantsCatalog.length === 1 ? assistantsCatalog[0] : null;
 
-    staff
-      .filter((s) => isAssistantRole(s.role))
+    assistantsCatalog
+      .filter((s) => selectedAssistant === 'all' || String(s.id) === String(selectedAssistant))
       .forEach((s) => {
         byAssistant[s.id] = {
           id: s.id,
@@ -346,11 +357,24 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     filteredTransactions.forEach(t => {
       if (t.type !== 'income') return;
       const staffInvolved = t.metadata?.staffInvolved || [];
-      const assistantStaff = staffInvolved.filter(s => isAssistantRole(s.role));
+      let assistantStaff = staffInvolved.filter(s => isAssistantRole(s.role));
       const washCount = Number(t.metadata?.washCount || 0) || (t.metadata?.didWash ? 1 : 0);
 
+      if (assistantStaff.length === 0 && washCount > 0 && soleAssistant) {
+        assistantStaff = [{
+          staffId: soleAssistant.id,
+          id: soleAssistant.id,
+          name: soleAssistant.name,
+          role: soleAssistant.role,
+          commissionEarned: Number(soleAssistant.washing_rate || 0) * washCount,
+          tip: 0
+        }];
+      }
+
+      assistantStaff = assistantStaff.filter((assistant) => selectedAssistant === 'all' || String(assistant.staffId || assistant.id) === String(selectedAssistant));
+
       if (assistantStaff.length === 0) {
-        if (washCount > 0) unassignedWashes += washCount;
+        if (washCount > 0 && selectedAssistant === 'all') unassignedWashes += washCount;
         return;
       }
 
@@ -1134,11 +1158,31 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
 
       {/* ASSISTANT WASHING REPORT */}
       <div style={{ marginTop: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-          <div style={{ width: '12px', height: '6px', backgroundColor: '#0a84ff', borderRadius: '2px' }}></div>
-          <h3 style={{ margin: 0, color: '#ffffff', fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Reporte de Asistentes
-          </h3>
+        <div style={{
+          display: 'flex',
+          alignItems: isMobile ? 'stretch' : 'center',
+          justifyContent: 'space-between',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: '14px',
+          marginBottom: '16px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '12px', height: '6px', backgroundColor: '#0a84ff', borderRadius: '2px' }}></div>
+            <h3 style={{ margin: 0, color: '#ffffff', fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Reporte de Asistentes
+            </h3>
+          </div>
+          <div style={{ width: isMobile ? '100%' : '280px' }}>
+            <AstroSelect
+              label="Asistente"
+              value={selectedAssistant}
+              onChange={setSelectedAssistant}
+              options={[
+                { value: 'all', label: 'Todas las Asistentes' },
+                ...assistantOptions
+              ]}
+            />
+          </div>
         </div>
 
         <div style={{
