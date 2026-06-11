@@ -2038,7 +2038,11 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     {Object.values(analysisData.barberStats).map(b => (
                       <tr key={b.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                         <td style={{ padding: '12px', fontWeight: '700' }}>
-                          {staff.find(s => String(s.id) === String(b.id))?.name || `ID: ${b.id}`}
+                          {staff.find(s => String(s.id) === String(b.id))?.name || (
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', opacity: 0.7 }}>
+                              Eliminado ({String(b.id).substring(0, 5)})
+                            </span>
+                          )}
                         </td>
                         <td style={{ padding: '12px', textAlign: 'center' }}>{b.services}</td>
                         <td style={{ padding: '12px', textAlign: 'right', color: 'var(--gold-primary)', fontWeight: '800' }}>
