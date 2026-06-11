@@ -25,6 +25,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   const [selectedAssistant, setSelectedAssistant] = useState('all');
   const [chartGranularity, setChartGranularity] = useState('week'); // 'day', 'week', 'month'
   const [hoveredTimelinePoint, setHoveredTimelinePoint] = useState(null);
+  const [hoveredHourPoint, setHoveredHourPoint] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   
@@ -200,6 +201,28 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     .length || 0;
 
   const avgTicket = totalServices > 0 ? totalIncome / totalServices : 0;
+
+  const selectedRangeDays = (() => {
+    if (dateRange === 'today') return 1;
+    if (dateRange === 'week') return 7;
+    if (dateRange === 'month') {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    }
+    if (dateRange === 'custom' && customStartDate && customEndDate) {
+      const start = new Date(`${customStartDate}T00:00:00`);
+      const end = new Date(`${customEndDate}T00:00:00`);
+      return Math.max(1, Math.round((end - start) / 86400000) + 1);
+    }
+
+    const dates = filteredTransactions.map(t => new Date(t.created_at).getTime());
+    if (dates.length > 1) {
+      const minDate = Math.min(...dates);
+      const maxDate = Math.max(...dates);
+      return Math.max(1, Math.ceil((maxDate - minDate) / 86400000) + 1);
+    }
+    return 1;
+  })();
 
   // Estimate weeks represented in the dateRange
   const weeksCount = (() => {
@@ -610,41 +633,44 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     const hrs = Array(24).fill(0);
     filteredTransactions.forEach(t => {
       if (t.type !== 'income') return;
+      if (t.metadata?.timeMissing) return;
       const h = new Date(t.created_at).getHours();
       hrs[h] += 1;
     });
     
-    const keyHours = [9, 12, 15, 18, 21];
-    const list = keyHours.map(h => {
-      const label = h === 12 ? '12p.m.' : (h > 12 ? `${h-12}p.m.` : `${h}a.m.`);
-      const count = hrs[h] + (hrs[h-1] || 0) + (hrs[h+1] || 0);
-      return { label, count };
+    const businessHours = Array.from({ length: 13 }, (_, i) => i + 9);
+    const list = businessHours.map(h => {
+      const label = h === 12 ? '12p.m.' : (h > 12 ? `${h - 12}p.m.` : `${h}a.m.`);
+      const total = hrs[h] || 0;
+      const avg = total / selectedRangeDays;
+      return { hour: h, label, count: avg, total };
     });
 
     if (list.every(h => h.count === 0)) {
-      return [
-        { label: "9a. m.", count: 10 },
-        { label: "12p. m.", count: 180 },
-        { label: "3p. m.", count: 45 },
-        { label: "6p. m.", count: 50 },
-        { label: "9p. m.", count: 95 }
-      ];
+      return businessHours.map(h => ({
+        hour: h,
+        label: h === 12 ? '12p.m.' : (h > 12 ? `${h - 12}p.m.` : `${h}a.m.`),
+        count: 0,
+        total: 0
+      }));
     }
     return list;
   })();
 
   const maxHourCount = Math.max(...hoursFlowData.map(h => h.count)) || 1;
   const hoursPoints = hoursFlowData.map((d, i) => {
-    const x = 40 + i * 70;
-    const y = 130 - (d.count / maxHourCount) * 110;
-    return { x, y, label: d.label, count: d.count };
+    const x = 35 + i * (285 / (hoursFlowData.length - 1 || 1));
+    const y = 165 - (d.count / maxHourCount) * 135;
+    return { x, y, label: d.label, hour: d.hour, count: d.count, total: d.total };
   });
 
   const hoursPath = hoursPoints.reduce((path, p, i) => {
-    if (i === 0) return `M ${p.x} ${p.y}`;
-    const prev = hoursPoints[i - 1];
-    return `${path} C ${(prev.x + p.x) / 2} ${prev.y}, ${(prev.x + p.x) / 2} ${p.y}, ${p.x} ${p.y}`;
+    return i === 0 ? `M ${p.x} ${p.y}` : `${path} L ${p.x} ${p.y}`;
   }, '');
+
+  const hoursFill = hoursPoints.length > 0
+    ? `${hoursPath} L ${hoursPoints[hoursPoints.length - 1].x} 175 L ${hoursPoints[0].x} 175 Z`
+    : '';
 
   return (
     <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: isMobile ? '80px' : '20px', fontFamily: "'Inter', sans-serif" }}>
@@ -1120,7 +1146,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           </div>
         </div>
 
-        {/* WIDGET 2: Horas Flujo Curved Line Chart */}
+        {/* WIDGET 2: Horas Flujo Peak Line Chart */}
         <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', minHeight: '340px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
             <div style={{ width: '12px', height: '6px', backgroundColor: 'var(--gold-primary)', borderRadius: '2px' }}></div>
@@ -1130,27 +1156,88 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           <div style={{ position: 'relative', height: '220px', marginTop: '20px' }}>
             <svg width="100%" height="210" viewBox="0 0 350 210" style={{ overflow: 'visible' }}>
               {/* Horizontal grid lines */}
-              {[40, 80, 120, 160].map((gY, gi) => (
-                <line key={gi} x1="30" y1={gY} x2="320" y2={gY} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+              {[35, 70, 105, 140, 175].map((gY, gi) => (
+                <line key={gi} x1="30" y1={gY} x2="325" y2={gY} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
               ))}
 
-              {/* Curved line path */}
+              <line x1="30" y1="175" x2="325" y2="175" stroke="var(--gold-primary)" strokeWidth="1" opacity="0.75" />
+
+              <defs>
+                <linearGradient id="hoursGoldGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--gold-primary)" stopOpacity="0.28" />
+                  <stop offset="100%" stopColor="var(--gold-primary)" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+
+              {hoursFill && (
+                <path d={hoursFill} fill="url(#hoursGoldGrad)" />
+              )}
+
+              {/* Peak line path */}
               {hoursPath && (
-                <path d={hoursPath} fill="none" stroke="var(--gold-primary)" strokeWidth="3" strokeLinecap="round" />
+                <path d={hoursPath} fill="none" stroke="var(--gold-primary)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
               )}
 
               {/* Hourly points */}
-              {hoursPoints.map((p, i) => (
-                <g key={i}>
-                  <circle cx={p.x} cy={p.y} r="4" fill="var(--gold-primary)" stroke="#121212" strokeWidth="2" />
+              {hoursPoints.map((p, i) => {
+                const isKeyLabel = [9, 12, 15, 18, 21].includes(p.hour);
+                const isHovered = hoveredHourPoint?.hour === p.hour;
+                return (
+                <g
+                  key={i}
+                  onMouseEnter={() => setHoveredHourPoint(p)}
+                  onMouseLeave={() => setHoveredHourPoint(null)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <circle cx={p.x} cy={p.y} r="12" fill="transparent" pointerEvents="all" />
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={isHovered ? "7" : "4.5"}
+                    fill="var(--gold-primary)"
+                    stroke={isHovered ? "#ffffff" : "#121212"}
+                    strokeWidth="2"
+                  />
                   
                   {/* Axis labels */}
-                  <text x={p.x} y="180" fill="#8c8c8c" fontSize="9" fontWeight="800" textAnchor="middle">
-                    {p.label}
-                  </text>
+                  {isKeyLabel && (
+                    <text x={p.x} y="198" fill="#d8d8d8" fontSize="10" fontWeight="900" textAnchor="middle">
+                      {p.label}
+                    </text>
+                  )}
                 </g>
-              ))}
+              )})}
             </svg>
+            {hoveredHourPoint && (
+              <div style={{
+                position: 'absolute',
+                left: `${Math.min(Math.max((hoveredHourPoint.x / 350) * 100, 8), 80)}%`,
+                top: `${Math.max(hoveredHourPoint.y - 10, 20)}px`,
+                transform: 'translate(-50%, -100%)',
+                minWidth: '190px',
+                padding: '12px 14px',
+                borderRadius: '8px',
+                background: '#f4f4f6',
+                color: '#1b1b1f',
+                boxShadow: '0 18px 40px rgba(0,0,0,0.35)',
+                pointerEvents: 'none',
+                zIndex: 25
+              }}>
+                <div style={{ fontSize: '13px', fontWeight: '900', marginBottom: '10px' }}>
+                  {hoveredHourPoint.label}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '18px', fontSize: '12px', fontWeight: '850' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '22px', height: '3px', background: 'var(--gold-primary)', borderRadius: '8px', display: 'inline-block' }} />
+                    Promedio
+                  </span>
+                  <span>{hoveredHourPoint.count.toLocaleString('es-VE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+                </div>
+                <div style={{ marginTop: '8px', color: '#5e6068', fontSize: '10px', fontWeight: '800' }}>
+                  Total: {hoveredHourPoint.total} servicios
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
