@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 import { 
-  Home, 
+  BarChart3, 
   Users, 
+  UserCircle, 
+  Scissors, 
   Package, 
   Wallet, 
-  MoreHorizontal,
-  X,
-  Calendar,
-  UserCircle,
-  Scissors,
   Star,
-  Plus,
+  Calendar,
   History,
-  Settings,
-  BarChart3
+  ClipboardList,
+  CreditCard,
+  UserCheck,
+  PieChart,
+  MoreHorizontal,
+  X
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
@@ -23,20 +24,20 @@ const MobileBottomNav = ({ activeTab, setActiveTab }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const allMainItems = [
-    { id: 'dashboard', label: 'Inicio', icon: Home, roles: ['Admin', 'Asistente de Lavado'] },
+    { id: 'dashboard', label: 'Inicio', icon: BarChart3, roles: ['Admin', 'Asistente de Lavado'] },
     { id: 'clients', label: 'Clientes', icon: Users, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja'] },
     { id: 'inventory', label: 'Stock', icon: Package, roles: ['Admin', 'Caja'] },
-    { id: 'checkout', label: 'Caja', icon: Wallet, roles: ['Admin', 'Caja'] },
+    { id: 'checkout', label: 'Caja', icon: CreditCard, roles: ['Admin', 'Caja'] },
   ];
 
   const allSecondaryItems = [
     { id: 'scheduling', label: 'Agenda', icon: Calendar, roles: ['Admin', 'Barbero', 'Recepcionista'] },
-    { id: 'reception', label: 'Recepción', icon: UserCircle, roles: ['Admin', 'Recepcionista'] },
+    { id: 'reception', label: 'Recepción', icon: ClipboardList, roles: ['Admin', 'Recepcionista'] },
     { id: 'finance', label: 'Finanzas', icon: Wallet, roles: ['Admin', 'Caja'] },
     { id: 'barber', label: 'Panel Barber', icon: Scissors, roles: ['Admin', 'Barbero', 'Asistente de Lavado'] },
     { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
-    { id: 'personnel', label: 'Equipo', icon: Scissors, roles: ['Admin'] },
-    { id: 'reports', label: 'Reportes', icon: BarChart3, roles: ['Admin'] },
+    { id: 'personnel', label: 'Equipo', icon: UserCheck, roles: ['Admin'] },
+    { id: 'reports', label: 'Reportes', icon: PieChart, roles: ['Admin'] },
     { id: 'services', label: 'Servicios', icon: Star, roles: ['Admin'] },
   ];
 
