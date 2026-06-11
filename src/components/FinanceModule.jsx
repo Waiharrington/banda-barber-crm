@@ -1175,7 +1175,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
         {isMobile ? (
           /* Mobile Card List */
-          <div className="hide-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '65vh', overflowY: 'auto', paddingRight: '4px' }}>
+          <div className="astro-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '65vh', overflowY: 'auto', paddingRight: '8px' }}>
             {filteredTransactions.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No hay transacciones registradas que coincidan.</div>
             ) : filteredTransactions.map((t, idx) => {
