@@ -1434,14 +1434,14 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
                   {(showAllHistory ? history : history.slice(0, 5)).map(h => (
                     <HistoryItem 
                       key={h.id} 
-                      date={new Date(h.created_at).toLocaleString('es-VE', { 
+                      date={h.created_at ? new Date(h.created_at).toLocaleString('es-VE', { 
                         day: 'numeric', 
                         month: 'numeric', 
                         year: 'numeric', 
                         hour: '2-digit', 
                         minute: '2-digit', 
                         hour12: true 
-                      })} 
+                      }) : 'Fecha no registrada'} 
                       service={h.service_name || h.description.split(' - ')[0].replace('Servicio: ', '')} 
                       price={h.amount} 
                       onClick={() => setSelectedVisit(h)}
