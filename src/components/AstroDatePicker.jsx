@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 
 const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", className = "", style = {}, min, max }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(value ? new Date(value) : new Date());
+  const [dropdownStyle, setDropdownStyle] = useState({});
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -16,29 +18,67 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
     }
   }, [value]);
 
-  const [popDirection, setPopDirection] = useState('down');
-
   useEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
-      if (spaceBelow < 320) {
-        setPopDirection('up');
+      const calendarWidth = 280;
+      const calendarHeight = 330;
+      const viewportPadding = 12;
+      const left = Math.min(
+        Math.max(rect.left, viewportPadding),
+        window.innerWidth - calendarWidth - viewportPadding
+      );
+
+      if (spaceBelow < calendarHeight + 16) {
+        setDropdownStyle({
+          position: 'fixed',
+          bottom: window.innerHeight - rect.top + 8,
+          left,
+          zIndex: 99999,
+          width: `${calendarWidth}px`,
+          top: 'auto'
+        });
       } else {
-        setPopDirection('down');
+        setDropdownStyle({
+          position: 'fixed',
+          top: rect.bottom + 8,
+          left,
+          zIndex: 99999,
+          width: `${calendarWidth}px`,
+          bottom: 'auto'
+        });
       }
     }
   }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target) &&
+        !event.target.closest('.astro-datepicker-dropdown')
+      ) {
         setIsOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const close = (event) => {
+      if (event.target && event.target.closest && event.target.closest('.astro-datepicker-dropdown')) return;
+      setIsOpen(false);
+    };
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [isOpen]);
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
@@ -103,16 +143,11 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
         <CalendarIcon size={18} color={value ? "var(--gold-primary)" : "rgba(255,255,255,0.4)"} />
       </div>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <div 
-          className="glass-card animate-scale-in" 
+          className="glass-card animate-scale-in astro-datepicker-dropdown" 
           style={{ 
-            position: 'absolute', 
-            top: popDirection === 'down' ? 'calc(100% + 8px)' : 'auto', 
-            bottom: popDirection === 'up' ? 'calc(100% + 8px)' : 'auto',
-            left: 0, 
-            zIndex: 9999,
-            width: '280px',
+            ...dropdownStyle,
             padding: '16px',
             backgroundColor: 'rgba(22, 22, 22, 0.95)',
             backdropFilter: 'blur(20px)',
@@ -196,7 +231,8 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
               );
             })}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
