@@ -99,12 +99,17 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     return Array.from(list).sort();
   })();
 
-  const reportStaffOptions = (() => {
-    const isBarberRole = (role = '') => {
-      const normalizedRole = role.toLowerCase();
-      return normalizedRole.includes('barber') || normalizedRole.includes('barbero');
-    };
+  const isBarberRole = (role = '') => {
+    const normalizedRole = role.toLowerCase();
+    return normalizedRole.includes('barber') || normalizedRole.includes('barbero');
+  };
 
+  const isAssistantRole = (role = '') => {
+    const normalizedRole = role.toLowerCase();
+    return normalizedRole.includes('asistente') || normalizedRole.includes('lavado') || normalizedRole.includes('operaciones');
+  };
+
+  const reportStaffOptions = (() => {
     return staff
       .filter((s) => isBarberRole(s.role))
       .sort((a, b) => a.name.localeCompare(b.name))
@@ -315,7 +320,99 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
 
   const maxDayCount = Math.max(...daysFlow.map(d => d.count)) || 1;
 
-  // 4. REF $ OVER TIME (Line Chart with Custom Granularity)
+  // 4. ASSISTANT WASHING REPORT
+  const assistantReport = (() => {
+    const byAssistant = {};
+    const dayNames = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+    const dayOrder = ['sabado', 'viernes', 'jueves', 'miercoles', 'martes', 'domingo', 'lunes'];
+    const byDay = dayOrder.reduce((acc, day) => ({ ...acc, [day]: 0 }), {});
+    const byHour = { '9a.m.': 0, '12p.m.': 0, '3p.m.': 0, '6p.m.': 0, '9p.m.': 0 };
+    let unassignedWashes = 0;
+
+    staff
+      .filter((s) => isAssistantRole(s.role))
+      .forEach((s) => {
+        byAssistant[s.id] = {
+          id: s.id,
+          name: s.name,
+          lavados: 0,
+          clientes: 0,
+          comision: 0,
+          propinas: 0,
+          total: 0
+        };
+      });
+
+    filteredTransactions.forEach(t => {
+      if (t.type !== 'income') return;
+      const staffInvolved = t.metadata?.staffInvolved || [];
+      const assistantStaff = staffInvolved.filter(s => isAssistantRole(s.role));
+      const washCount = Number(t.metadata?.washCount || 0) || (t.metadata?.didWash ? 1 : 0);
+
+      if (assistantStaff.length === 0) {
+        if (washCount > 0) unassignedWashes += washCount;
+        return;
+      }
+
+      const tDate = new Date(t.created_at);
+      const dayKey = dayNames[tDate.getDay()];
+      const hour = tDate.getHours();
+      const hourKey = hour < 11 ? '9a.m.' : hour < 14 ? '12p.m.' : hour < 17 ? '3p.m.' : hour < 20 ? '6p.m.' : '9p.m.';
+      const washesPerAssistant = Math.max(1, washCount) / assistantStaff.length;
+
+      assistantStaff.forEach((assistant) => {
+        const id = assistant.staffId || assistant.id || assistant.name;
+        if (!byAssistant[id]) {
+          byAssistant[id] = {
+            id,
+            name: assistant.name || 'Asistente',
+            lavados: 0,
+            clientes: 0,
+            comision: 0,
+            propinas: 0,
+            total: 0
+          };
+        }
+
+        const commission = Number(assistant.commissionEarned || 0);
+        const tip = Number(assistant.tip || 0);
+
+        byAssistant[id].lavados += washesPerAssistant;
+        byAssistant[id].clientes += washesPerAssistant;
+        byAssistant[id].comision += commission;
+        byAssistant[id].propinas += tip;
+        byAssistant[id].total += commission + tip;
+
+        byDay[dayKey] = (byDay[dayKey] || 0) + washesPerAssistant;
+        byHour[hourKey] = (byHour[hourKey] || 0) + washesPerAssistant;
+      });
+    });
+
+    const assistants = Object.values(byAssistant)
+      .filter(a => a.lavados > 0 || a.comision > 0 || a.propinas > 0)
+      .sort((a, b) => b.lavados - a.lavados);
+
+    const totalLavadosAssistant = assistants.reduce((sum, a) => sum + a.lavados, 0);
+    const totalComisionAssistant = assistants.reduce((sum, a) => sum + a.comision, 0);
+    const totalTipsAssistant = assistants.reduce((sum, a) => sum + a.propinas, 0);
+    const maxAssistantDay = Math.max(...Object.values(byDay), 1);
+    const maxAssistantHour = Math.max(...Object.values(byHour), 1);
+
+    return {
+      assistants,
+      byDay: dayOrder.map(day => ({ name: day, count: byDay[day] || 0 })),
+      byHour: Object.entries(byHour).map(([label, count]) => ({ label, count })),
+      totalLavados: totalLavadosAssistant,
+      totalClientes: totalLavadosAssistant,
+      totalComision: totalComisionAssistant,
+      totalPropinas: totalTipsAssistant,
+      unassignedWashes,
+      maxDay: maxAssistantDay,
+      maxHour: maxAssistantHour
+    };
+  })();
+
+  // 5. REF $ OVER TIME (Line Chart with Custom Granularity)
   const toInputDate = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -1033,6 +1130,146 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           </div>
         </div>
 
+      </div>
+
+      {/* ASSISTANT WASHING REPORT */}
+      <div style={{ marginTop: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+          <div style={{ width: '12px', height: '6px', backgroundColor: '#0a84ff', borderRadius: '2px' }}></div>
+          <h3 style={{ margin: 0, color: '#ffffff', fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Reporte de Asistentes
+          </h3>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
+          gap: '14px',
+          marginBottom: '20px'
+        }}>
+          {[
+            { label: 'Lavados', value: Math.round(assistantReport.totalLavados).toString() },
+            { label: 'Clientes asistidos', value: Math.round(assistantReport.totalClientes).toString() },
+            { label: 'Tarifa Ref. $', value: `$${assistantReport.totalComision.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+            { label: 'Propinas Ref. $', value: `$${assistantReport.totalPropinas.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+            { label: 'Sin asignar', value: Math.round(assistantReport.unassignedWashes).toString() }
+          ].map((m, idx) => (
+            <div key={idx} style={{
+              padding: '14px',
+              borderRadius: '12px',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              minHeight: '78px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              textAlign: 'center'
+            }}>
+              <span style={{ fontSize: '10px', color: '#b3b3b3', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '8px' }}>
+                {m.label}
+              </span>
+              <span style={{ fontSize: m.value.length > 8 ? '16px' : '22px', color: idx === 3 ? 'var(--gold-primary)' : '#ffffff', fontWeight: '950' }}>
+                {m.value}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+          gap: '24px'
+        }}>
+          <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', minHeight: '300px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
+              <div style={{ width: '12px', height: '6px', backgroundColor: '#0a84ff', borderRadius: '2px' }}></div>
+              <span style={{ fontSize: '11px', fontWeight: '900', color: '#b3b3b3', textTransform: 'uppercase', letterSpacing: '1px' }}>Asistentes</span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {assistantReport.assistants.length > 0 ? assistantReport.assistants.map((assistant) => (
+                <div key={assistant.id} style={{ padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                    <span style={{ color: '#ffffff', fontWeight: '900', fontSize: '14px' }}>{assistant.name}</span>
+                    <span style={{ color: 'var(--gold-primary)', fontWeight: '950', fontSize: '16px' }}>{Math.round(assistant.lavados)}</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                    <div>
+                      <div style={{ color: '#8c8c8c', fontSize: '9px', fontWeight: '900', textTransform: 'uppercase' }}>Tarifa</div>
+                      <div style={{ color: '#ffffff', fontSize: '12px', fontWeight: '800' }}>${assistant.comision.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div style={{ color: '#8c8c8c', fontSize: '9px', fontWeight: '900', textTransform: 'uppercase' }}>Propina</div>
+                      <div style={{ color: '#ffffff', fontSize: '12px', fontWeight: '800' }}>${assistant.propinas.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div style={{ color: '#8c8c8c', fontSize: '9px', fontWeight: '900', textTransform: 'uppercase' }}>Total</div>
+                      <div style={{ color: 'var(--gold-primary)', fontSize: '12px', fontWeight: '900' }}>${assistant.total.toFixed(2)}</div>
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <div style={{ color: 'var(--text-secondary)', fontSize: '13px', textAlign: 'center', padding: '38px 10px' }}>
+                  No hay lavados asignados a asistentes en este rango.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', minHeight: '300px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
+              <div style={{ width: '12px', height: '6px', backgroundColor: '#0a84ff', borderRadius: '2px' }}></div>
+              <span style={{ fontSize: '11px', fontWeight: '900', color: '#b3b3b3', textTransform: 'uppercase', letterSpacing: '1px' }}>Lavados por Dia</span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '190px', gap: '8px' }}>
+              {assistantReport.byDay.map((d) => {
+                const height = (d.count / assistantReport.maxDay) * 120;
+                return (
+                  <div key={d.name} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#0a84ff', fontSize: '10px', fontWeight: '950' }}>{Math.round(d.count)}</span>
+                    <div style={{
+                      width: '20px',
+                      height: `${Math.max(height, 4)}px`,
+                      borderRadius: '3px 3px 0 0',
+                      background: 'linear-gradient(135deg, #0a84ff, #64d2ff)',
+                      boxShadow: '0 6px 14px rgba(10,132,255,0.18)'
+                    }} />
+                    <span style={{ color: '#8c8c8c', fontSize: '9px', fontWeight: '800', textTransform: 'lowercase' }}>{d.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', minHeight: '300px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
+              <div style={{ width: '12px', height: '6px', backgroundColor: '#0a84ff', borderRadius: '2px' }}></div>
+              <span style={{ fontSize: '11px', fontWeight: '900', color: '#b3b3b3', textTransform: 'uppercase', letterSpacing: '1px' }}>Lavados por Hora</span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '14px', height: '210px' }}>
+              {assistantReport.byHour.map((h) => {
+                const width = (h.count / assistantReport.maxHour) * 82;
+                return (
+                  <div key={h.label} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ width: '48px', color: '#ffffff', fontSize: '12px', fontWeight: '850' }}>{h.label}</span>
+                    <div style={{ flex: 1, height: '20px', borderRadius: '4px', background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+                      <div style={{
+                        width: `${Math.max(width, h.count > 0 ? 6 : 0)}%`,
+                        height: '100%',
+                        background: 'linear-gradient(90deg, #0a84ff, #64d2ff)',
+                        borderRadius: '4px'
+                      }} />
+                    </div>
+                    <span style={{ width: '26px', color: '#0a84ff', fontSize: '12px', fontWeight: '950', textAlign: 'right' }}>{Math.round(h.count)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
