@@ -1676,13 +1676,13 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '12px' : '40px', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'flex-start' : 'flex-end', background: isMobile ? 'rgba(0,0,0,0.2)' : 'transparent', padding: isMobile ? '16px' : '0', borderRadius: isMobile ? '16px' : '0' }}>
                 <div style={{ textAlign: 'left', display: 'flex', justifyContent: isMobile ? 'space-between' : 'flex-start', width: '100%', flexDirection: isMobile ? 'row' : 'column', alignItems: isMobile ? 'center' : 'flex-end' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', marginBottom: isMobile ? '0' : '4px' }}>Ingreso Bruto</div>
-                  <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '900', color: 'white' }}>{formatCurrency(astroGrossIncomeBs, '')} Bs</div>
+                  <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '900', color: 'white', whiteSpace: 'nowrap' }}>{formatCurrency(astroGrossIncomeBs, '')} Bs</div>
                 </div>
                 {isMobile && <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', width: '100%' }}></div>}
                 <div style={{ textAlign: 'left', display: 'flex', justifyContent: isMobile ? 'space-between' : 'flex-start', width: '100%', flexDirection: isMobile ? 'row' : 'column', alignItems: isMobile ? 'center' : 'flex-end' }}>
                   <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '800', textTransform: 'uppercase', marginBottom: isMobile ? '0' : '4px' }}>Ganancia Neta</div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: '#32d74b' }}>{formatCurrency(astroNetProfitBs, '')} Bs</div>
+                    <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: '#32d74b', whiteSpace: 'nowrap' }}>{formatCurrency(astroNetProfitBs, '')} Bs</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginTop: '2px' }}>REF: ${astroNetProfitUsd.toFixed(2)}</div>
                   </div>
                 </div>
