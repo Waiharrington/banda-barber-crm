@@ -1904,36 +1904,36 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
         return (
           <div className="animate-fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '16px' : '0', marginBottom: '32px' }}>
               <h3 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-secondary)', letterSpacing: '1px' }}>DASHBOARD DE RENTABILIDAD Y OCUPACIÓN</h3>
-              <button onClick={() => setIsEditingCosts(true)} className="btn-gold" style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '10px' }}>
+              <button onClick={() => setIsEditingCosts(true)} className="btn-gold" style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '10px', width: isMobile ? '100%' : 'auto' }}>
                 Configurar Costos Fijos
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '20px', marginBottom: '32px' }}>
-              <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', textAlign: 'center' }}>
-                <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>UTILIDAD NETA</div>
-                <div style={{ fontSize: '24px', fontWeight: '900', color: utilidadNetaCalculada >= 0 ? '#32d74b' : '#ff453a' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? '12px' : '20px', marginBottom: '32px' }}>
+              <div className="glass-card" style={{ padding: isMobile ? '16px' : '24px', borderRadius: isMobile ? '16px' : '24px', textAlign: 'center' }}>
+                <div style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>UTILIDAD NETA</div>
+                <div style={{ fontSize: isMobile ? '18px' : '24px', fontWeight: '900', color: utilidadNetaCalculada >= 0 ? '#32d74b' : '#ff453a' }}>
                   ${formatCurrency(utilidadNetaCalculada)}
                 </div>
               </div>
-              <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', textAlign: 'center' }}>
-                <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>RENTABILIDAD</div>
-                <div style={{ fontSize: '24px', fontWeight: '900', color: rentabilidadReal >= 0 ? 'var(--gold-primary)' : '#ff453a' }}>
+              <div className="glass-card" style={{ padding: isMobile ? '16px' : '24px', borderRadius: isMobile ? '16px' : '24px', textAlign: 'center' }}>
+                <div style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>RENTABILIDAD</div>
+                <div style={{ fontSize: isMobile ? '18px' : '24px', fontWeight: '900', color: rentabilidadReal >= 0 ? 'var(--gold-primary)' : '#ff453a' }}>
                   {rentabilidadReal.toFixed(1)}%
                 </div>
               </div>
-              <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', textAlign: 'center' }}>
-                <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>PUNTO DE EQUILIBRIO</div>
-                <div style={{ fontSize: '24px', fontWeight: '900' }}>
+              <div className="glass-card" style={{ padding: isMobile ? '16px' : '24px', borderRadius: isMobile ? '16px' : '24px', textAlign: 'center' }}>
+                <div style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>PTO. DE EQUILIBRIO</div>
+                <div style={{ fontSize: isMobile ? '18px' : '24px', fontWeight: '900' }}>
                   ${formatCurrency(ptoEquilibrio)}
                 </div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Facturación Necesaria</div>
+                <div style={{ fontSize: isMobile ? '8px' : '10px', color: 'var(--text-muted)' }}>Facturación Necesaria</div>
               </div>
-              <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', textAlign: 'center' }}>
-                <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>TICKET PROMEDIO</div>
-                <div style={{ fontSize: '24px', fontWeight: '900' }}>
+              <div className="glass-card" style={{ padding: isMobile ? '16px' : '24px', borderRadius: isMobile ? '16px' : '24px', textAlign: 'center' }}>
+                <div style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px' }}>TICKET PROMEDIO</div>
+                <div style={{ fontSize: isMobile ? '18px' : '24px', fontWeight: '900' }}>
                   ${formatCurrency(ticketProm)}
                 </div>
               </div>
