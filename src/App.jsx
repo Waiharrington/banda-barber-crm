@@ -178,7 +178,7 @@ function App() {
     { id: 'personnel', label: 'Astro Team', icon: Scissors },
     { id: 'services', label: 'Servicios', icon: Star },
     { id: 'inventory', label: 'Inventario', icon: Package, roles: ['Admin', 'Caja'] },
-    { id: 'finance', label: 'Caja Chica', icon: Wallet, roles: ['Admin', 'Caja'] },
+    { id: 'finance', label: 'Finanzas', icon: Wallet, roles: ['Admin', 'Caja'] },
     { id: 'reports', label: 'Reportes', icon: BarChart3, roles: ['Admin'] },
     { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente'] },
   ];

@@ -26,7 +26,7 @@ const MobileBottomNav = ({ activeTab, setActiveTab }) => {
     { id: 'dashboard', label: 'Inicio', icon: Home, roles: ['Admin', 'Asistente de Lavado'] },
     { id: 'clients', label: 'Clientes', icon: Users, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja'] },
     { id: 'inventory', label: 'Stock', icon: Package, roles: ['Admin', 'Caja'] },
-    { id: 'finance', label: 'Caja', icon: Wallet, roles: ['Admin', 'Caja'] },
+    { id: 'finance', label: 'Finanzas', icon: Wallet, roles: ['Admin', 'Caja'] },
   ];
 
   const allSecondaryItems = [

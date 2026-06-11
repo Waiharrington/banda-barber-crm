@@ -751,7 +751,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       }}>
         <div>
           <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>
-            Caja <span className="text-gold">Chica</span>
+            Finanzas
           </h2>
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Control de flujo y conciliación.</p>
         </div>
