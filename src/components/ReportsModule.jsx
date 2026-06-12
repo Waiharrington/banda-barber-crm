@@ -109,21 +109,29 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         pdf.rect(0, 0, 210, 297, 'F');
 
         // Draw logo if loaded
+        let logoWidth = 0;
         if (logoImg) {
-          pdf.addImage(logoImg, 'PNG', 15, 11, 14, 14);
+          const aspectRatio = logoImg.width / (logoImg.height || 1);
+          const logoHeight = 12; // Standard height inside header
+          logoWidth = logoHeight * aspectRatio;
+          // Safeguard: limit logo width if it's extremely wide
+          if (logoWidth > 45) {
+            logoWidth = 45;
+          }
+          pdf.addImage(logoImg, 'PNG', 15, 11, logoWidth, logoHeight);
         }
 
         // Draw header branding
-        const textX = logoImg ? 32 : 15;
+        const textX = logoImg ? 15 + logoWidth + 4 : 15;
         pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(18);
+        pdf.setFontSize(15);
         pdf.setTextColor(212, 175, 55);
-        pdf.text("ASTRO BARBERSHOP", textX, 19);
+        pdf.text("ASTRO BARBERSHOP", textX, 18);
 
         pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(8);
+        pdf.setFontSize(7.5);
         pdf.setTextColor(160, 160, 165);
-        pdf.text("REPORTE OPERATIVO DE ANALÍTICA Y RENDIMIENTO", textX, 24);
+        pdf.text("REPORTE OPERATIVO DE ANALÍTICA Y RENDIMIENTO", textX, 23);
 
         // Header horizontal separator line
         pdf.setDrawColor(212, 175, 55);
