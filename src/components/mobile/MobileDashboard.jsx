@@ -146,7 +146,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
     if (!dbData?.staff || dbData.staff.length === 0) return { name: "Marco Silva", count: 12 };
     const barbers = dbData.staff.filter(s => {
       const r = s.role?.toLowerCase() || '';
-      return r.includes('barbero') || r.includes('barber');
+      return (r.includes('barbero') || r.includes('barber')) && !r.includes('admin');
     });
     if (barbers.length === 0) return { name: "Marco Silva", count: 12 };
     const sorted = [...barbers].sort((a, b) => (b.stats?.income || 0) - (a.stats?.income || 0));
@@ -163,7 +163,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
   const teamOverview = (dbData?.staff || [])
     .filter(s => {
       const r = s.role?.toLowerCase() || '';
-      return (r.includes('barbero') || r.includes('barber')) && !r.includes('archived');
+      return (r.includes('barbero') || r.includes('barber')) && !r.includes('archived') && !r.includes('admin');
     })
     .sort((a, b) => (b.stats?.monthlyIncome || 0) - (a.stats?.monthlyIncome || 0))
     .slice(0, 3);

@@ -369,7 +369,7 @@ const DashboardModule = ({
                 data={(dbData?.staff || [])
                   .filter(s => {
                     const role = (s.role || 'Barbero').toLowerCase();
-                    return role.includes('barber') && !role.includes('asistente');
+                    return role.includes('barber') && !role.includes('asistente') && !role.includes('admin');
                   })
                   .sort((a,b) => (b.stats?.monthlyIncome || 0) - (a.stats?.monthlyIncome || 0))
                   .slice(0, 3)
