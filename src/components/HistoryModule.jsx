@@ -122,7 +122,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
   }, 0);
 
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '40px' }}>
+    <div style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '40px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
         <div>
           <h2 style={{ fontSize: '32px', fontWeight: '900', letterSpacing: '-0.5px' }}>
@@ -175,8 +175,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                 color: dateRange === range ? 'black' : 'white', 
                 fontWeight: '700', 
                 fontSize: '13px', 
-                cursor: 'pointer',
-                transition: 'all 0.2s'
+                cursor: 'pointer'
               }}
             >
               {range === 'all' ? 'Todo' : range === 'today' ? 'Hoy' : 'Semana'}
@@ -219,8 +218,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                         style={{ 
                           borderBottom: '1px solid rgba(255,255,255,0.03)', 
                           cursor: 'pointer',
-                          backgroundColor: isSelected ? 'rgba(212,175,55,0.05)' : 'transparent',
-                          transition: 'all 0.2s'
+                          backgroundColor: isSelected ? 'rgba(212,175,55,0.05)' : 'transparent'
                         }}
                       >
                         <td style={{ padding: isMobile ? '12px 8px' : '18px 24px', fontSize: isMobile ? '12px' : '14px', fontWeight: '500', color: 'var(--text-secondary)' }}>
@@ -233,7 +231,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                               onNavigate('clients', { clientId: item.clients?.id });
                             }}
                             className="client-link"
-                            style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '700', color: 'white', cursor: 'pointer', display: 'inline-block', transition: '0.2s' }}
+                            style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: '700', color: 'white', cursor: 'pointer', display: 'inline-block' }}
                           >
                             {item.clients?.name}
                           </div>
@@ -275,7 +273,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                           </div>
                         </td>
                         <td style={{ padding: isMobile ? '12px 4px' : '18px 24px', textAlign: 'right' }}>
-                          <div style={{ color: isSelected ? 'var(--gold-primary)' : 'var(--text-muted)', transition: 'all 0.3s', transform: isSelected ? 'rotate(180deg)' : 'rotate(0)' }}>
+                          <div style={{ color: isSelected ? 'var(--gold-primary)' : 'var(--text-muted)', transform: isSelected ? 'rotate(180deg)' : 'rotate(0)' }}>
                             <ChevronDown size={isMobile ? 14 : 18} />
                           </div>
                         </td>
@@ -283,7 +281,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                       {isSelected && (
                         <tr style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
                           <td colSpan="5" style={{ padding: '0' }}>
-                            <div className="animate-slide-down" style={{ padding: isMobile ? '20px' : '32px 40px' }}>
+                            <div style={{ padding: isMobile ? '20px' : '32px 40px' }}>
                               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.3fr 1fr', gap: '32px', alignItems: 'start' }}>
                                 
                                 {/* LEFT COLUMN: Client, Services and Extras */}
@@ -311,7 +309,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                       <div 
                                         onClick={() => onNavigate('clients', { clientId: item.clients?.id })}
                                         className="client-link"
-                                        style={{ cursor: 'pointer', transition: '0.2s' }}
+                                        style={{ cursor: 'pointer' }}
                                       >
                                         <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Nombre</span>
                                         <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--gold-primary)', textDecoration: 'underline' }}>{item.clients?.name || 'Cliente sin registrar'}</span>
@@ -674,7 +672,6 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
         }
         .client-link:hover {
           color: var(--gold-primary) !important;
-          transform: translateX(4px);
         }
       `}</style>
     </div>
