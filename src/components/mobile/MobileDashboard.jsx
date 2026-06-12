@@ -309,70 +309,72 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
         </div>
       </div>
 
-      {/* Main Hero Card (Quotes & Floating Chair - Identical to PC Dashboard) */}
-      <div className="glass-card" style={{ 
-        minHeight: '220px', 
-        borderRadius: '28px', 
-        padding: '24px 20px', 
-        position: 'relative', 
-        overflow: 'visible',
-        marginBottom: '24px',
-        background: 'linear-gradient(135deg, rgba(20, 20, 20, 0.9) 0%, rgba(42, 34, 15, 0.65) 100%)',
-        border: '1px solid rgba(212, 175, 55, 0.35)',
-        boxShadow: '0 16px 45px rgba(0, 0, 0, 0.75), inset 0 0 35px rgba(212, 175, 55, 0.08)',
-        transition: 'all 0.3s ease'
-      }}>
-        <div style={{ position: 'relative', zIndex: 2, maxWidth: '60%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <div style={{ width: '12px', height: '2px', backgroundColor: 'var(--gold-primary)' }} />
-            <span style={{ fontSize: '10px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '1px', textTransform: 'uppercase' }}>PENSAMIENTO ASTRO</span>
-            <button 
-              onClick={() => setQuoteIndex((prev) => (prev + 1) % QUOTES.length)}
-              style={{ 
-                background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', 
-                display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
-                transition: 'transform 0.2s ease, background-color 0.2s ease'
-              }}
-              title="Descubrir otro Pensamiento Astro"
-            >
-              <Rocket size={12} color="var(--gold-primary)" className="animate-pulse" />
-            </button>
+      {/* Wrapper to allow 3D floating chair overflow and prevent backdrop-filter clipping */}
+      <div style={{ position: 'relative', overflow: 'visible', marginBottom: '24px' }}>
+        {/* Main Hero Card (Quotes & Floating Chair Background - Identical to PC Dashboard) */}
+        <div className="glass-card" style={{ 
+          minHeight: '220px', 
+          borderRadius: '28px', 
+          padding: '24px 20px', 
+          position: 'relative', 
+          overflow: 'visible',
+          background: 'linear-gradient(135deg, rgba(20, 20, 20, 0.9) 0%, rgba(42, 34, 15, 0.65) 100%)',
+          border: '1px solid rgba(212, 175, 55, 0.35)',
+          boxShadow: '0 16px 45px rgba(0, 0, 0, 0.75), inset 0 0 35px rgba(212, 175, 55, 0.08)',
+          transition: 'all 0.3s ease'
+        }}>
+          <div style={{ position: 'relative', zIndex: 2, maxWidth: '60%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <div style={{ width: '12px', height: '2px', backgroundColor: 'var(--gold-primary)' }} />
+              <span style={{ fontSize: '10px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '1px', textTransform: 'uppercase' }}>PENSAMIENTO ASTRO</span>
+              <button 
+                onClick={() => setQuoteIndex((prev) => (prev + 1) % QUOTES.length)}
+                style={{ 
+                  background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
+                  transition: 'transform 0.2s ease, background-color 0.2s ease'
+                }}
+                title="Descubrir otro Pensamiento Astro"
+              >
+                <Rocket size={12} color="var(--gold-primary)" className="animate-pulse" />
+              </button>
+            </div>
+            <h2 style={{ 
+              fontSize: '17px', 
+              fontWeight: '700', 
+              lineHeight: '1.35', 
+              marginBottom: '12px', 
+              color: 'white',
+              fontFamily: "'Georgia', serif",
+              fontStyle: 'italic',
+              textShadow: '0 2px 12px rgba(0,0,0,0.6)',
+              textWrap: 'pretty'
+            }}>
+              “{QUOTES[quoteIndex].text}”
+            </h2>
+            <p style={{ color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '800', opacity: 0.9, letterSpacing: '0.5px' }}>
+              — {QUOTES[quoteIndex].creator}
+            </p>
           </div>
-          <h2 style={{ 
-            fontSize: '17px', 
-            fontWeight: '700', 
-            lineHeight: '1.35', 
-            marginBottom: '12px', 
-            color: 'white',
-            fontFamily: "'Georgia', serif",
-            fontStyle: 'italic',
-            textShadow: '0 2px 12px rgba(0,0,0,0.6)',
-            textWrap: 'pretty'
-          }}>
-            “{QUOTES[quoteIndex].text}”
-          </h2>
-          <p style={{ color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '800', opacity: 0.9, letterSpacing: '0.5px' }}>
-            — {QUOTES[quoteIndex].creator}
-          </p>
         </div>
 
-        {/* Visual Elements (Floating Chair - Identical to PC Dashboard) */}
+        {/* Visual Elements (Floating Chair - Placed OUTSIDE glass-card to bypass backdrop-filter clip bugs) */}
         <div className="chair-entrance" style={{ 
           position: 'absolute', 
           right: '-10px', 
           bottom: '-10px', 
           width: '45%', 
-          height: '110%',
+          height: '125%', // Increased to pop out beautifully at the top
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'center',
-          zIndex: 10,
+          zIndex: 12,
           pointerEvents: 'none'
         }}>
           {/* Soft Golden Glow behind the chair */}
           <div style={{
             position: 'absolute',
-            top: '45%',
+            top: '40%',
             left: '42%',
             transform: 'translate(-50%, -50%)',
             width: '200px',
@@ -399,10 +401,10 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
             style={{ 
               width: '100%', 
               height: 'auto',
-              maxHeight: '115%',
+              maxHeight: '130%', // Pop up to prevent any top cut-offs
               objectFit: 'contain',
               zIndex: 3,
-              filter: 'drop-shadow(0 10px 25px rgba(0,0,0,0.7)) drop-shadow(0 0 15px rgba(212, 175, 55, 0.3))',
+              filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.85)) drop-shadow(0 0 20px rgba(212, 175, 55, 0.35))',
               animation: 'float 8s infinite ease-in-out'
             }} 
           />
