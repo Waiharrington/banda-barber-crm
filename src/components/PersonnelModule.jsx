@@ -70,6 +70,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
   // Form & Editing State
   const [showForm, setShowForm] = useState(false);
+  const [isFormExiting, setIsFormExiting] = useState(false);
   const [profileModalData, setProfileModalData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -188,24 +189,28 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   };
 
   const handleCloseForm = () => {
-    setShowForm(false);
-    setIsEditing(false);
-    setEditingId(null);
-    setFormData({ 
-      name: '', 
-      role: 'Barbero', 
-      image_url: '',
-      phone: '',
-      address: '',
-      email: '',
-      username: '',
-      permissions: rolePresets['Barbero'],
-      washing_rate: 0,
-      roles: ['Barbero'],
-      birth_date: ''
-    });
-    setIsCreatingNewRole(false);
-    setNewRoleName('');
+    setIsFormExiting(true);
+    setTimeout(() => {
+      setShowForm(false);
+      setIsEditing(false);
+      setEditingId(null);
+      setIsFormExiting(false);
+      setFormData({ 
+        name: '', 
+        role: 'Barbero', 
+        image_url: '',
+        phone: '',
+        address: '',
+        email: '',
+        username: '',
+        permissions: rolePresets['Barbero'],
+        washing_rate: 0,
+        roles: ['Barbero'],
+        birth_date: ''
+      });
+      setIsCreatingNewRole(false);
+      setNewRoleName('');
+    }, 250);
   };
 
   const handleSaveCustomRole = async (name, perms, oldName) => {
@@ -387,8 +392,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         </div>
       </div>
 
-      {showForm && !isEditing && (
-        <div className="glass-card animate-slide-up" style={{ 
+      {(showForm || isFormExiting) && !isEditing && (
+        <div className={`glass-card ${isFormExiting ? 'animate-slide-down-fade' : 'animate-slide-up'}`} style={{ 
           marginBottom: '32px', 
           padding: '32px', 
           borderRadius: '28px', 
@@ -903,8 +908,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
               )}
 
               {/* Inline Edit Form directly under the card being edited */}
-              {showForm && isEditing && editingId === person.id && (
-                <div className="glass-card animate-slide-up" style={{ 
+              {(showForm || isFormExiting) && isEditing && editingId === person.id && (
+                <div className={`glass-card ${isFormExiting ? 'animate-slide-down-fade' : 'animate-slide-up'}`} style={{ 
                   marginTop: '-8px',
                   marginBottom: '24px', 
                   marginLeft: isMobile ? '0' : '20px',

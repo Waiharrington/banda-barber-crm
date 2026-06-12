@@ -706,6 +706,34 @@ input[type="submit"],
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
+@keyframes slideDownFadeOut {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+}
+
+.animate-slide-down-fade {
+  animation: slideDownFadeOut 0.25s cubic-bezier(0.4, 0, 0.2, 1) both !important;
+}
+
+.astro-tab-btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.astro-tab-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
+}
+.astro-tab-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+
 /* --- Inventory Module Enhancements --- */
 .inventory-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

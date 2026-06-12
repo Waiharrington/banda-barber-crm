@@ -233,6 +233,7 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobileView ? '8px' : '16px', marginTop: isMobileView ? '20px' : '32px' }}>
             <button 
               onClick={() => setActiveTab('rendimiento')}
+              className="astro-tab-btn"
               style={{ 
                 padding: isMobileView ? '10px 8px' : '12px 24px', 
                 borderRadius: '50px', 
@@ -241,20 +242,18 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                 fontWeight: '800', 
                 border: 'none', 
                 cursor: 'pointer', 
-                transition: 'all 0.2s', 
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center', 
                 gap: '8px', 
                 fontSize: isMobileView ? '11px' : '14px' 
               }}
-              onMouseOver={e => { if (activeTab !== 'rendimiento') e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-              onMouseOut={e => { if (activeTab !== 'rendimiento') e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
             >
               <TrendingUp size={isMobileView ? 14 : 18} /> {isMobileView ? 'Rendimiento' : 'Rendimiento Histórico'}
             </button>
             <button 
               onClick={() => setActiveTab('inventario')}
+              className="astro-tab-btn"
               style={{ 
                 padding: isMobileView ? '10px 8px' : '12px 24px', 
                 borderRadius: '50px', 
@@ -263,15 +262,12 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                 fontWeight: '800', 
                 border: 'none', 
                 cursor: 'pointer', 
-                transition: 'all 0.2s', 
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center', 
                 gap: '8px', 
                 fontSize: isMobileView ? '11px' : '14px' 
               }}
-              onMouseOver={e => { if (activeTab !== 'inventario') e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-              onMouseOut={e => { if (activeTab !== 'inventario') e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
             >
               <Wrench size={isMobileView ? 14 : 18} /> {isMobileView ? 'Inventario' : 'Inventario Personal'}
             </button>
