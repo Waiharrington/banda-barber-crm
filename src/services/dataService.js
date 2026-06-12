@@ -209,7 +209,7 @@ export const dataService = {
     const { data, error } = await supabase
       .from('staff')
       .insert([member])
-      .select()
+      .select(STAFF_PUBLIC_SELECT)
       .single();
     if (error) throw error;
     return data;
@@ -221,7 +221,7 @@ export const dataService = {
       .from('staff')
       .update(updates)
       .eq('id', id)
-      .select()
+      .select(STAFF_PUBLIC_SELECT)
       .single();
     if (error) throw error;
     return data;
@@ -305,7 +305,7 @@ export const dataService = {
       .from('staff')
       .update({ tools: toolsArray })
       .eq('id', id)
-      .select()
+      .select(STAFF_PUBLIC_SELECT)
       .single();
     if (error) throw error;
     return data;
