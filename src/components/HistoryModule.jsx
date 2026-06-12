@@ -673,6 +673,13 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
         .client-link:hover {
           color: var(--gold-primary) !important;
         }
+        .glass-card {
+          transition: none !important;
+          animation: none !important;
+        }
+        .glass-card:hover {
+          transform: none !important;
+        }
       `}</style>
     </div>
   );
