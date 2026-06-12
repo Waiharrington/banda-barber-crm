@@ -122,8 +122,8 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
   }, 0);
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '40px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+    <div className="animate-fade-in" style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '40px' }}>
+      <header className="animate-slide-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
         <div>
           <h2 style={{ fontSize: '32px', fontWeight: '900', letterSpacing: '-0.5px' }}>
             {isAdmin ? 'Historial' : 'Mi Historial'} <span className="text-gold">Astro</span>
@@ -150,7 +150,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
       </header>
 
       {/* Filters Bar */}
-      <div className="glass-card" style={{ padding: '16px', borderRadius: '20px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+      <div className="glass-card animate-slide-up" style={{ padding: '16px', borderRadius: '20px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
           <Search size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--text-muted)' }} />
           <input 
@@ -195,7 +195,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
           <p>No se encontraron servicios que coincidan con los filtros.</p>
         </div>
       ) : (
-        <div className="glass-card" style={{ borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="glass-card animate-slide-up" style={{ borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
@@ -675,7 +675,6 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
         }
         .glass-card {
           transition: none !important;
-          animation: none !important;
         }
         .glass-card:hover {
           transform: none !important;
