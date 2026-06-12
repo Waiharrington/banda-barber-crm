@@ -180,78 +180,81 @@ const DashboardModule = ({
             minHeight: (isMobile || (isTablet && !isCollapsed)) ? 'auto' : '190px'
           }}>
             
-            {/* Main Hero Card (Premium View) */}
-            <div className="hero-card-container animate-slide-up animate-stagger-1" style={{ 
-              minHeight: '200px', 
-              padding: '20px 28px', 
-              position: 'relative', 
-              overflow: 'visible',
-              zIndex: 5,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              height: '100%'
-            }}>
-              {/* Inner container to clip the soft background glow and prevent bleeding to neighbor cards */}
-              <div className="hero-card-bg">
-                <div style={{
-                  position: 'absolute',
-                  top: '45%',
-                  right: '-40px',
-                  transform: 'translateY(-50%)',
-                  width: '320px',
-                  height: '320px',
-                  background: 'radial-gradient(circle, rgba(212, 175, 55, 0.16) 0%, rgba(212, 175, 55, 0.05) 35%, rgba(212, 175, 55, 0.01) 65%, transparent 100%)',
-                  pointerEvents: 'none'
-                }} />
-              </div>
-
-              <div style={{ position: 'relative', zIndex: 2, maxWidth: isMobile ? '65%' : '55%' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                  <div style={{ width: '24px', height: '2px', backgroundColor: 'var(--gold-primary)' }} />
-                  <span style={{ fontSize: '11px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '2px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Pensamiento Astro</span>
-                  <button 
-                    onClick={() => setQuoteIndex((prev) => (prev + 1) % QUOTES.length)}
-                    style={{ 
-                      background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
-                      transition: 'transform 0.2s ease, background-color 0.2s ease'
-                    }}
-                    title="Descubrir otro Pensamiento Astro"
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'scale(1.2) rotate(15deg)';
-                      e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                  >
-                    <Rocket size={14} color="var(--gold-primary)" className="animate-pulse" />
-                  </button>
+            {/* Wrapper to allow 3D floating chair overflow and prevent clipping */}
+            <div style={{ position: 'relative', overflow: 'visible', height: '100%' }}>
+              {/* Main Hero Card (Premium View) */}
+              <div className="hero-card-container animate-slide-up animate-stagger-1" style={{ 
+                minHeight: '200px', 
+                padding: '20px 28px', 
+                position: 'relative', 
+                overflow: 'visible',
+                zIndex: 5,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                height: '100%'
+              }}>
+                {/* Inner container to clip the soft background glow and prevent bleeding to neighbor cards */}
+                <div className="hero-card-bg">
+                  <div style={{
+                    position: 'absolute',
+                    top: '45%',
+                    right: '-40px',
+                    transform: 'translateY(-50%)',
+                    width: '320px',
+                    height: '320px',
+                    background: 'radial-gradient(circle, rgba(212, 175, 55, 0.16) 0%, rgba(212, 175, 55, 0.05) 35%, rgba(212, 175, 55, 0.01) 65%, transparent 100%)',
+                    pointerEvents: 'none'
+                  }} />
                 </div>
-                <h2 style={{ 
-                  fontSize: isMobile ? '18px' : (isTablet ? '20px' : (isCollapsed ? '25px' : '19px')), 
-                  fontWeight: '700', 
-                  lineHeight: '1.35', 
-                  marginBottom: '14px', 
-                  letterSpacing: '-0.3px', 
-                  position: 'relative', 
-                  zIndex: 20, 
-                  textWrap: 'pretty',
-                  fontFamily: "'Georgia', serif",
-                  fontStyle: 'italic',
-                  color: 'white',
-                  textShadow: '0 2px 12px rgba(0,0,0,0.6)'
-                }}>
-                  “{QUOTES[quoteIndex].text}”
-                </h2>
-                <p style={{ color: 'var(--gold-primary)', fontSize: '13px', fontWeight: '800', position: 'relative', zIndex: 20, opacity: 0.9, letterSpacing: '0.5px' }}>
-                  — {QUOTES[quoteIndex].creator}
-                </p>
+
+                <div style={{ position: 'relative', zIndex: 2, maxWidth: isMobile ? '65%' : '55%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                    <div style={{ width: '24px', height: '2px', backgroundColor: 'var(--gold-primary)' }} />
+                    <span style={{ fontSize: '11px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '2px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Pensamiento Astro</span>
+                    <button 
+                      onClick={() => setQuoteIndex((prev) => (prev + 1) % QUOTES.length)}
+                      style={{ 
+                        background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
+                        transition: 'transform 0.2s ease, background-color 0.2s ease'
+                      }}
+                      title="Descubrir otro Pensamiento Astro"
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.2) rotate(15deg)';
+                        e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                    >
+                      <Rocket size={14} color="var(--gold-primary)" className="animate-pulse" />
+                    </button>
+                  </div>
+                  <h2 style={{ 
+                    fontSize: isMobile ? '18px' : (isTablet ? '20px' : (isCollapsed ? '25px' : '19px')), 
+                    fontWeight: '700', 
+                    lineHeight: '1.35', 
+                    marginBottom: '14px', 
+                    letterSpacing: '-0.3px', 
+                    position: 'relative', 
+                    zIndex: 20, 
+                    textWrap: 'pretty',
+                    fontFamily: "'Georgia', serif",
+                    fontStyle: 'italic',
+                    color: 'white',
+                    textShadow: '0 2px 12px rgba(0,0,0,0.6)'
+                  }}>
+                    “{QUOTES[quoteIndex].text}”
+                  </h2>
+                  <p style={{ color: 'var(--gold-primary)', fontSize: '13px', fontWeight: '800', position: 'relative', zIndex: 20, opacity: 0.9, letterSpacing: '0.5px' }}>
+                    — {QUOTES[quoteIndex].creator}
+                  </p>
+                </div>
               </div>
 
-              {/* Visual Elements (Astro Premium Responsive - Compacted) */}
+              {/* Visual Elements (Astro Premium Responsive - Compacted) - Placed OUTSIDE card container to bypass transform/backdrop clipping */}
               <div className="chair-entrance" style={{ 
                 position: 'absolute', 
                 right: '-10px', 
@@ -261,7 +264,7 @@ const DashboardModule = ({
                 display: 'flex',
                 alignItems: 'flex-end',
                 justifyContent: 'center',
-                zIndex: 10,
+                zIndex: 12,
                 pointerEvents: 'none'
               }}>
                 <div className="chair-shadow" style={{ 
@@ -285,7 +288,7 @@ const DashboardModule = ({
                     height: 'auto',
                     objectFit: 'contain',
                     zIndex: 3,
-                    filter: 'drop-shadow(0 10px 25px rgba(0,0,0,0.7)) drop-shadow(0 0 15px rgba(212, 175, 55, 0.3))',
+                    filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.85)) drop-shadow(0 0 20px rgba(212, 175, 55, 0.35))',
                     animation: 'float 8s infinite ease-in-out'
                   }} 
                 />
