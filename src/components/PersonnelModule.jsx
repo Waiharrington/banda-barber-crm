@@ -658,10 +658,9 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* List Header */}
-          <div style={{ 
+                    <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: isMobile ? '1fr auto' : '80px 1.5fr 1fr 1.5fr 1fr auto', 
+            gridTemplateColumns: isMobile ? '1fr auto' : '80px 1.5fr 1fr 1.5fr 1.2fr 140px', 
             gap: '20px', 
             padding: '0 24px',
             color: 'var(--text-muted)',
@@ -681,7 +680,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
               </>
             )}
           </div>
-
+ 
           {staff.map(person => (
             <React.Fragment key={person.id}>
               <div className="glass-card animate-slide-up" style={{ 
@@ -689,7 +688,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                 borderRadius: '20px',
                 border: '1px solid rgba(255,255,255,0.05)',
                 display: 'grid',
-                gridTemplateColumns: isMobile ? 'auto 1fr auto' : '80px 1.5fr 1fr 1.5fr 1fr auto',
+                gridTemplateColumns: isMobile ? 'auto 1fr auto' : '80px 1.5fr 1fr 1.5fr 1.2fr 140px',
                 alignItems: 'center',
                 gap: '20px',
                 transition: 'all 0.3s'
