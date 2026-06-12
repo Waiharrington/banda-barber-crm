@@ -354,12 +354,13 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   };
 
   const getRoleIcon = (role) => {
+    const iconStyle = { flexShrink: 0 };
     switch(role) {
-      case 'Barbero': return <Scissors size={18} />;
-      case 'Recepcionista': return <Headset size={18} />;
-      case 'Caja': return <CreditCard size={18} />;
-      case 'Asistente de Lavado': return <Droplets size={18} />;
-      default: return <User size={18} />;
+      case 'Barbero': return <Scissors size={16} style={iconStyle} />;
+      case 'Recepcionista': return <Headset size={16} style={iconStyle} />;
+      case 'Caja': return <CreditCard size={16} style={iconStyle} />;
+      case 'Asistente de Lavado': return <Droplets size={16} style={iconStyle} />;
+      default: return <User size={16} style={iconStyle} />;
     }
   };
 
