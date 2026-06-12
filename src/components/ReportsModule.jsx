@@ -15,6 +15,7 @@ import AstroDatePicker from './AstroDatePicker';
 import AstroSelect from './AstroSelect';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import logo from '../assets/logo.png';
 
 const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   const [transactions, setTransactions] = useState([]);
@@ -81,6 +82,20 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
       // Small delay to let loading state update
       await new Promise(resolve => setTimeout(resolve, 200));
 
+      // Preload logo
+      let logoImg = null;
+      try {
+        logoImg = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'Anonymous';
+          img.src = logo;
+          img.onload = () => resolve(img);
+          img.onerror = (e) => reject(e);
+        });
+      } catch (e) {
+        console.warn("No se pudo cargar el logo para el PDF:", e);
+      }
+
       const pdf = new jsPDF('p', 'mm', 'a4');
       const now = new Date();
       const pad = n => String(n).padStart(2, '0');
@@ -93,16 +108,22 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         pdf.setFillColor(12, 12, 14);
         pdf.rect(0, 0, 210, 297, 'F');
 
+        // Draw logo if loaded
+        if (logoImg) {
+          pdf.addImage(logoImg, 'PNG', 15, 11, 14, 14);
+        }
+
         // Draw header branding
+        const textX = logoImg ? 32 : 15;
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(18);
         pdf.setTextColor(212, 175, 55);
-        pdf.text("ASTRO BARBERSHOP", 15, 20);
+        pdf.text("ASTRO BARBERSHOP", textX, 19);
 
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(8);
         pdf.setTextColor(160, 160, 165);
-        pdf.text("REPORTE OPERATIVO DE ANALÍTICA Y RENDIMIENTO", 15, 25);
+        pdf.text("REPORTE OPERATIVO DE ANALÍTICA Y RENDIMIENTO", textX, 24);
 
         // Header horizontal separator line
         pdf.setDrawColor(212, 175, 55);
