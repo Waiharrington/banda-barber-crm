@@ -683,61 +683,150 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
  
           {staff.map(person => (
             <React.Fragment key={person.id}>
-              <div className="glass-card animate-slide-up" style={{ 
-                padding: '16px 24px', 
-                borderRadius: '20px',
-                border: '1px solid rgba(255,255,255,0.05)',
-                display: 'grid',
-                gridTemplateColumns: isMobile ? 'auto 1fr auto' : '80px 1.5fr 1fr 1.5fr 1.2fr 140px',
-                alignItems: 'center',
-                gap: '20px',
-                transition: 'all 0.3s'
-              }}>
-                {/* Photo Column */}
-                <div style={{ 
-                  width: '56px', 
-                  height: '56px', 
-                  borderRadius: '14px', 
-                  backgroundColor: 'rgba(255,255,255,0.02)',
-                  overflow: 'hidden',
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  border: '1px solid rgba(255,255,255,0.08)'
+              {isMobile ? (
+                <div className="glass-card animate-slide-up" style={{ 
+                  padding: '16px', 
+                  borderRadius: '20px',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '14px',
+                  transition: 'all 0.3s'
                 }}>
-                  {person.image_url ? (
-                    <img src={person.image_url} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <span style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.5 }}>
-                      {person.name.substring(0, 1).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Name/Role Column */}
-                <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                  <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{person.name}</h4>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '700', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {getRoleIcon(person.role?.split('|')[0]?.split(', ')[0])}
-                    <span>{person.role?.split('|')[0]}</span>
-                    {person.role?.split('|')[0]?.includes(', ') && (
-                      <span style={{ 
-                        padding: '2px 6px', 
-                        backgroundColor: 'rgba(212,175,55,0.1)', 
-                        borderRadius: '4px', 
-                        fontSize: '9px',
-                        marginLeft: '4px',
-                        border: '1px solid rgba(212,175,55,0.2)',
+                  {/* Top section: Photo + Name/Role + Actions */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                      {/* Photo */}
+                      <div style={{ 
+                        width: '48px', 
+                        height: '48px', 
+                        borderRadius: '12px', 
+                        backgroundColor: 'rgba(255,255,255,0.02)',
+                        overflow: 'hidden',
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        border: '1px solid rgba(255,255,255,0.08)',
                         flexShrink: 0
                       }}>
-                        MULTI-ROL
+                        {person.image_url ? (
+                          <img src={person.image_url} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <span style={{ fontSize: '18px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.5 }}>
+                            {person.name.substring(0, 1).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Name and Role */}
+                      <div style={{ minWidth: 0 }}>
+                        <h4 style={{ fontSize: '15px', fontWeight: '800', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{person.name}</h4>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '700', marginTop: '2px' }}>
+                          {getRoleIcon(person.role?.split('|')[0]?.split(', ')[0])}
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{person.role?.split('|')[0]}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                      <button className="action-btn" onClick={() => setProfileModalData(person)} title="Ver Perfil" style={{ color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)', width: '34px', height: '34px', borderRadius: '8px' }}>
+                        <User size={15} />
+                      </button>
+                      <button className="action-btn" onClick={() => handleEditClick(person)} title="Editar Miembro" style={{ width: '34px', height: '34px', borderRadius: '8px' }}>
+                        <Edit2 size={15} />
+                      </button>
+                      <button className="action-btn" onClick={() => handleDeleteStaff(person.id, person.name)} style={{ color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.05)', width: '34px', height: '34px', borderRadius: '8px' }} title="Dar de baja">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Divider line */}
+                  <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', width: '100%' }} />
+
+                  {/* Details Section */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+                    {/* Phone */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: person.phone ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
+                      <Phone size={13} color={person.phone ? "var(--gold-primary)" : "rgba(255,255,255,0.2)"} style={{ flexShrink: 0 }} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{person.phone || 'Sin teléfono'}</span>
+                    </div>
+
+                    {/* Address */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: person.address ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
+                      <MapPin size={13} color={person.address ? "var(--gold-primary)" : "rgba(255,255,255,0.2)"} style={{ marginTop: '2px', flexShrink: 0 }} />
+                      <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {person.address || 'Sin dirección'}
+                      </span>
+                    </div>
+
+                    {/* Access */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Mail size={13} color={person.email ? '#32d74b' : '#ff453a'} style={{ flexShrink: 0 }} />
+                      {person.email ? (
+                        <span style={{ color: '#32d74b', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{person.email}</span>
+                      ) : (
+                        <span style={{ color: '#ff453a', fontWeight: '700' }}>Sin email de acceso</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="glass-card animate-slide-up" style={{ 
+                  padding: '16px 24px', 
+                  borderRadius: '20px',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  display: 'grid',
+                  gridTemplateColumns: '80px 1.5fr 1fr 1.5fr 1.2fr 140px',
+                  alignItems: 'center',
+                  gap: '20px',
+                  transition: 'all 0.3s'
+                }}>
+                  {/* Photo Column */}
+                  <div style={{ 
+                    width: '56px', 
+                    height: '56px', 
+                    borderRadius: '14px', 
+                    backgroundColor: 'rgba(255,255,255,0.02)',
+                    overflow: 'hidden',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    border: '1px solid rgba(255,255,255,0.08)'
+                  }}>
+                    {person.image_url ? (
+                      <img src={person.image_url} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.5 }}>
+                        {person.name.substring(0, 1).toUpperCase()}
                       </span>
                     )}
                   </div>
-                </div>
+                  
+                  {/* Name/Role Column */}
+                  <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{person.name}</h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '700', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {getRoleIcon(person.role?.split('|')[0]?.split(', ')[0])}
+                      <span>{person.role?.split('|')[0]}</span>
+                      {person.role?.split('|')[0]?.includes(', ') && (
+                        <span style={{ 
+                          padding: '2px 6px', 
+                          backgroundColor: 'rgba(212,175,55,0.1)', 
+                          borderRadius: '4px', 
+                          fontSize: '9px',
+                          marginLeft: '4px',
+                          border: '1px solid rgba(212,175,55,0.2)',
+                          flexShrink: 0
+                        }}>
+                          MULTI-ROL
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-                {/* Phone Column */}
-                {!isMobile && (
+                  {/* Phone Column */}
                   <div style={{ color: person.phone ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '14px', minWidth: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Phone size={14} color={person.phone ? "var(--gold-primary)" : "rgba(255,255,255,0.2)"} style={{ flexShrink: 0 }} />
@@ -750,10 +839,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       </div>
                     )}
                   </div>
-                )}
 
-                {/* Address Column */}
-                {!isMobile && (
+                  {/* Address Column */}
                   <div style={{ color: person.address ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '13px', minWidth: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                       <MapPin size={14} color={person.address ? "var(--gold-primary)" : "rgba(255,255,255,0.2)"} style={{ marginTop: '2px', flexShrink: 0 }} />
@@ -762,10 +849,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       </span>
                     </div>
                   </div>
-                )}
 
-                {/* Access Column */}
-                {!isMobile && (
+                  {/* Access Column */}
                   <div style={{ minWidth: 0, overflow: 'hidden' }}>
                     {person.email ? (
                       <div style={{ 
@@ -801,21 +886,21 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       </div>
                     )}
                   </div>
-                )}
 
-                {/* Actions Column */}
-                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                  <button className="action-btn" onClick={() => setProfileModalData(person)} title="Ver Perfil" style={{ color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)' }}>
-                    <User size={18} />
-                  </button>
-                  <button className="action-btn" onClick={() => handleEditClick(person)} title="Editar Miembro">
-                    <Edit2 size={18} />
-                  </button>
-                  <button className="action-btn" onClick={() => handleDeleteStaff(person.id, person.name)} style={{ color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.05)' }} title="Dar de baja">
-                    <Trash2 size={18} />
-                  </button>
+                  {/* Actions Column */}
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <button className="action-btn" onClick={() => setProfileModalData(person)} title="Ver Perfil" style={{ color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)' }}>
+                      <User size={18} />
+                    </button>
+                    <button className="action-btn" onClick={() => handleEditClick(person)} title="Editar Miembro">
+                      <Edit2 size={18} />
+                    </button>
+                    <button className="action-btn" onClick={() => handleDeleteStaff(person.id, person.name)} style={{ color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.05)' }} title="Dar de baja">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Inline Edit Form directly under the card being edited */}
               {showForm && isEditing && editingId === person.id && (
