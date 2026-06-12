@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   BarChart3, 
   Calendar, 
@@ -7,15 +7,20 @@ import {
   TrendingUp, 
   Download,
   Clock,
-  ChevronDown
+  ChevronDown,
+  X
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import AstroDatePicker from './AstroDatePicker';
 import AstroSelect from './AstroSelect';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const ReportsModule = ({ isMobile, rates, staff = [] }) => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const reportRef = useRef(null);
   const [dateRange, setDateRange] = useState('all'); // 'today', 'week', 'month', 'custom', 'all'
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
@@ -68,7 +73,287 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     setSelectedWeek(week.start.getTime());
   };
 
-  const handleCaptureFullPage = async () => {};
+  const handleCaptureFullPage = async () => {
+    if (generatingPdf) return;
+    setGeneratingPdf(true);
+
+    try {
+      // Small delay to let loading state update
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const dateLabel = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+      const timeLabel = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+      // Helper function to draw page background and header/footer borders
+      const initPage = (pageNum, totalPagesCount) => {
+        // Dark background for full page
+        pdf.setFillColor(12, 12, 14);
+        pdf.rect(0, 0, 210, 297, 'F');
+
+        // Draw header branding
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(18);
+        pdf.setTextColor(212, 175, 55);
+        pdf.text("ASTRO BARBERSHOP", 15, 20);
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(160, 160, 165);
+        pdf.text("REPORTE OPERATIVO DE ANALÍTICA Y RENDIMIENTO", 15, 25);
+
+        // Header horizontal separator line
+        pdf.setDrawColor(212, 175, 55);
+        pdf.setLineWidth(0.5);
+        pdf.line(15, 28, 195, 28);
+
+        // Footer
+        pdf.setFontSize(7);
+        pdf.setTextColor(112, 112, 117);
+        pdf.text(`Astro Barbershop  \u2022  Reporte generado el ${dateLabel} a las ${timeLabel}`, 15, 290);
+        pdf.text(`Página ${pageNum} de ${totalPagesCount}`, 195, 290, { align: 'right' });
+      };
+
+      // PAGE 1: KPI Cards and Overview
+      initPage(1, 2);
+
+      // Filter metadata card
+      pdf.setFillColor(18, 18, 21);
+      pdf.setDrawColor(32, 32, 37);
+      pdf.setLineWidth(0.3);
+      pdf.roundedRect(15, 32, 180, 16, 2, 2, 'F');
+      
+      pdf.setFontSize(7);
+      pdf.setTextColor(112, 112, 117);
+      pdf.text("RANGO DE FECHAS", 20, 37);
+      pdf.text("SERVICIO FILTRADO", 85, 37);
+      pdf.text("PERSONAL FILTRADO", 145, 37);
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(8);
+      pdf.setTextColor(255, 255, 255);
+      
+      const rangeText = dateRange === 'all' ? 'Histórico Total' :
+                        dateRange === 'today' ? 'Hoy' :
+                        dateRange === 'week' ? 'Esta Semana' :
+                        dateRange === 'month' ? 'Este Mes' :
+                        `Pers. (${customStartDate} a ${customEndDate})`;
+      pdf.text(rangeText, 20, 43);
+      pdf.text(selectedService === 'all' ? 'Todos los Servicios' : selectedService, 85, 43);
+      
+      const staffName = selectedStaff === 'all' ? 'Todo el Personal' : 
+                        (staff.find(s => String(s.id) === String(selectedStaff))?.name || selectedStaff);
+      pdf.text(staffName, 145, 43);
+
+      // KPI Grid - Row 1 (y = 53 to 73)
+      const cardW = 56.6;
+      const kpis = [
+        { title: "TOTAL REF. $", value: `$${totalIncome.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, isGold: true },
+        { title: "TICKET PROMEDIO", value: `$${avgTicket.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, isGold: false },
+        { title: "PROMEDIO SEMANAL", value: `${weeklyAvg}`, isGold: false },
+        { title: "SERVICIOS REALIZADOS", value: `${totalServices}`, isGold: false },
+        { title: "LAVADOS REALIZADOS", value: `${totalLavados}`, isGold: false },
+        { title: "RATIO LAVADOS", value: `${washRatio.toFixed(1)}%`, isGold: false }
+      ];
+
+      kpis.forEach((kpi, idx) => {
+        const col = idx % 3;
+        const row = Math.floor(idx / 3);
+        const kpiX = 15 + col * (cardW + 5);
+        const kpiY = 53 + row * 24;
+
+        pdf.setFillColor(18, 18, 21);
+        pdf.roundedRect(kpiX, kpiY, cardW, 20, 3, 3, 'F');
+        
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(6.5);
+        pdf.setTextColor(160, 160, 165);
+        pdf.text(kpi.title, kpiX + 4, kpiY + 6);
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(12);
+        pdf.setTextColor(kpi.isGold ? 212 : 255, kpi.isGold ? 175 : 255, kpi.isGold ? 55 : 255);
+        pdf.text(kpi.value, kpiX + 4, kpiY + 15);
+      });
+
+      // Split layout for Desglose Operativo
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.setTextColor(212, 175, 55);
+      pdf.text("DESGLOSE OPERATIVO", 15, 110);
+      
+      pdf.setDrawColor(212, 175, 55);
+      pdf.setLineWidth(0.2);
+      pdf.line(15, 112, 195, 112);
+
+      // Left column: Servicios por Barbero
+      pdf.setFontSize(9);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text("Servicios por Barbero", 15, 120);
+
+      let barberY = 128;
+      barberServices.slice(0, 5).forEach(b => {
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(230, 230, 230);
+        pdf.text(String(b.name || ''), 15, barberY);
+        
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(212, 175, 55);
+        pdf.text(`${b.count} serv.`, 95, barberY, { align: 'right' });
+
+        // Draw custom progress bar
+        pdf.setFillColor(30, 30, 35);
+        pdf.rect(15, barberY + 2, 80, 1.5, 'F');
+        
+        const pct = b.count / maxBarberCount;
+        pdf.setFillColor(212, 175, 55);
+        pdf.rect(15, barberY + 2, Math.max(2, 80 * pct), 1.5, 'F');
+
+        barberY += 12;
+      });
+
+      // Right column: Actividad por Día de la Semana
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text("Rendimiento por Día", 110, 120);
+
+      let dayY = 128;
+      daysFlow.forEach(d => {
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(230, 230, 230);
+        const dayLabel = d.name.charAt(0).toUpperCase() + d.name.slice(1);
+        pdf.text(String(dayLabel || ''), 110, dayY);
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(212, 175, 55);
+        pdf.text(`${d.count}`, 195, dayY, { align: 'right' });
+
+        // Draw progress bar
+        pdf.setFillColor(30, 30, 35);
+        pdf.rect(110, dayY + 2, 85, 1.5, 'F');
+
+        const pct = d.count / maxDayCount;
+        pdf.setFillColor(212, 175, 55);
+        pdf.rect(110, dayY + 2, Math.max(1, 85 * pct), 1.5, 'F');
+
+        dayY += 9;
+      });
+
+      // Assistant Washing Section
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.setTextColor(212, 175, 55);
+      pdf.text("RENDIMIENTO DE ASISTENTES DE LAVADO", 15, 205);
+      pdf.line(15, 207, 195, 207);
+
+      const assistList = assistantReport.assistants || [];
+      if (assistList.length === 0) {
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(140, 140, 140);
+        pdf.text("No se encontraron registros de asistentes para este período.", 15, 215);
+      } else {
+        let assistX = 15;
+        assistList.slice(0, 3).forEach(as => {
+          pdf.setFillColor(18, 18, 21);
+          pdf.roundedRect(assistX, 212, 56.6, 32, 2, 2, 'F');
+
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(8.5);
+          pdf.setTextColor(255, 255, 255);
+          pdf.text(String(as.name || 'Asistente'), assistX + 4, 218);
+
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(7.5);
+          pdf.setTextColor(160, 160, 165);
+          pdf.text(`Lavados: ${Math.round(as.lavados || 0)}`, assistX + 4, 226);
+          pdf.text(`Comisión: $${(as.comision || 0).toFixed(2)}`, assistX + 4, 233);
+          pdf.text(`Propinas: $${(as.propinas || 0).toFixed(2)}`, assistX + 4, 240);
+
+          assistX += 61.6;
+        });
+      }
+
+      // PAGE 2: Detailed Transactions Table
+      pdf.addPage();
+      initPage(2, 2);
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.setTextColor(212, 175, 55);
+      pdf.text("HISTORIAL DE TRANSACCIONES DEL PERÍODO", 15, 34);
+      pdf.line(15, 36, 195, 36);
+
+      // Table Header
+      pdf.setFillColor(18, 18, 21);
+      pdf.rect(15, 40, 180, 7, 'F');
+      pdf.setFontSize(8);
+      pdf.setTextColor(212, 175, 55);
+      pdf.text("FECHA", 18, 45);
+      pdf.text("DESCRIPCIÓN / SERVICIO", 50, 45);
+      pdf.text("PERSONAL INVOLUCRADO", 125, 45);
+      pdf.text("MONTO", 192, 45, { align: 'right' });
+
+      // Draw rows
+      let rowY = 47;
+      const tList = filteredTransactions.filter(t => t.type === 'income').slice(0, 30);
+      
+      tList.forEach((t, idx) => {
+        if (idx % 2 === 0) {
+          pdf.setFillColor(25, 25, 28);
+          pdf.rect(15, rowY, 180, 6.5, 'F');
+        }
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(230, 230, 230);
+        
+        const dateStr = new Date(t.created_at).toLocaleDateString('es-VE', {
+          day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        pdf.text(dateStr, 18, rowY + 4.5);
+
+        const descText = t.description.length > 42 ? t.description.slice(0, 39) + "..." : t.description;
+        pdf.text(descText, 50, rowY + 4.5);
+
+        const staffInvolved = t.metadata?.staffInvolved || [];
+        const staffNames = staffInvolved.map(s => s.name.split(' ')[0]).join(' + ') || 'N/A';
+        pdf.text(staffNames, 125, rowY + 4.5);
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(255, 255, 255);
+        pdf.text(`$${t.amount.toFixed(2)}`, 192, rowY + 4.5, { align: 'right' });
+
+        rowY += 6.5;
+      });
+
+      if (filteredTransactions.length > 30) {
+        pdf.setFont("helvetica", "italic");
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(140, 140, 140);
+        pdf.text(`* Mostrando las primeras 30 transacciones de un total de ${filteredTransactions.length}.`, 15, rowY + 6);
+      }
+
+      // Save PDF
+      const dateStr = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()}`;
+      const rangeLabel = dateRange === 'all' ? 'Historico'
+        : dateRange === 'today' ? 'Hoy'
+        : dateRange === 'week' ? 'Semana'
+        : dateRange === 'month' ? 'Mes'
+        : 'Personalizado';
+
+      pdf.save(`Astro_Reporte_${rangeLabel}_${dateStr}.pdf`);
+    } catch (err) {
+      console.error('Error generando PDF:', err);
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -665,7 +950,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     : '';
 
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: isMobile ? '80px' : '20px', fontFamily: "'Inter', sans-serif" }}>
+    <div ref={reportRef} className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: isMobile ? '80px' : '20px', fontFamily: "'Inter', sans-serif" }}>
       
       {/* Header (Premium Google Looker Studio Title) */}
       <div style={{
@@ -683,27 +968,67 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Auditoría y rendimiento operativo.</p>
         </div>
         
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <button style={{ 
-            backgroundColor: 'var(--bg-tertiary)', 
-            border: '1px solid var(--border-color)', 
-            color: 'white', 
-            padding: '10px 16px', 
-            borderRadius: '12px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}>
-            <Download size={16} /> PDF
+        <div data-pdf-exclude="true" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <button 
+            onClick={handleCaptureFullPage}
+            disabled={generatingPdf}
+            style={{ 
+              backgroundColor: generatingPdf ? 'rgba(212,175,55,0.15)' : 'var(--bg-tertiary)', 
+              border: `1px solid ${generatingPdf ? 'var(--gold-primary)' : 'var(--border-color)'}`, 
+              color: generatingPdf ? 'var(--gold-primary)' : 'white', 
+              padding: '10px 16px', 
+              borderRadius: '12px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: generatingPdf ? 'wait' : 'pointer',
+              transition: 'all 0.3s ease'
+            }}>
+            {generatingPdf ? '⏳ Generando PDF...' : <><Download size={16} /> PDF</>}
           </button>
         </div>
       </div>
 
+      {generatingPdf && (
+        <div style={{
+          backgroundColor: 'rgba(18, 18, 21, 0.95)',
+          padding: '24px',
+          borderRadius: '24px',
+          border: '1px solid rgba(212, 175, 55, 0.3)',
+          marginBottom: '32px',
+          color: 'white'
+        }}>
+          <h1 style={{ fontSize: '24px', color: 'var(--gold-primary)', margin: '0 0 8px 0', fontWeight: '900', letterSpacing: '1px' }}>ASTRO BARBERSHOP</h1>
+          <p style={{ fontSize: '13px', margin: '0 0 16px 0', color: '#b3b3b3', fontWeight: '600' }}>
+            Reporte Ejecutivo de Analítica y Rendimiento Operativo
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', fontSize: '12px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
+            <div>
+              <span style={{ color: '#888', fontWeight: '700' }}>RANGO DE FECHA: </span>
+              <span style={{ fontWeight: '850', color: 'white' }}>{
+                dateRange === 'all' ? 'Histórico Total' :
+                dateRange === 'today' ? 'Hoy' :
+                dateRange === 'week' ? 'Esta Semana' :
+                dateRange === 'month' ? 'Este Mes' :
+                `Personalizado (${customStartDate} a ${customEndDate})`
+              }</span>
+            </div>
+            <div>
+              <span style={{ color: '#888', fontWeight: '700' }}>SERVICIO: </span>
+              <span style={{ fontWeight: '850', color: 'white' }}>{selectedService === 'all' ? 'Todos los Servicios' : selectedService}</span>
+            </div>
+            <div>
+              <span style={{ color: '#888', fontWeight: '700' }}>PERSONAL: </span>
+              <span style={{ fontWeight: '850', color: 'white' }}>{selectedStaff === 'all' ? 'Todo el Personal' : (staff.find(s => String(s.id) === String(selectedStaff))?.name || selectedStaff)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* FILTER CONTROL BAR (Looker Studio Style) */}
-      <div className="glass-card" style={{
+      <div className="glass-card" data-pdf-exclude="true" style={{
         padding: '20px',
         borderRadius: '20px',
         marginBottom: '32px',
@@ -768,6 +1093,8 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           <div className="animate-fade-in" style={{
             gridColumn: isMobile ? 'span 1' : 'span 4',
             display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'stretch' : 'flex-end',
             gap: '16px',
             marginTop: '8px',
             background: 'rgba(0,0,0,0.2)',
@@ -787,6 +1114,44 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
               />
+            </div>
+            <div style={{ flexShrink: 0 }}>
+              <button 
+                onClick={() => {
+                  setDateRange('all');
+                  setCustomStartDate('');
+                  setCustomEndDate('');
+                }}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '12px',
+                  height: '42px',
+                  fontSize: '13px',
+                  fontWeight: '800',
+                  whiteSpace: 'nowrap',
+                  cursor: 'pointer',
+                  backgroundColor: 'rgba(212,175,55,0.15)',
+                  border: '1px solid var(--gold-primary)',
+                  color: 'var(--gold-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.2s',
+                  width: isMobile ? '100%' : 'auto',
+                  justifyContent: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--gold-primary)';
+                  e.currentTarget.style.color = 'black';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(212,175,55,0.15)';
+                  e.currentTarget.style.color = 'var(--gold-primary)';
+                }}
+              >
+                <X size={14} />
+                Quitar Filtro
+              </button>
             </div>
           </div>
         )}
@@ -927,16 +1292,20 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
             {hoveredTimelinePoint && (
               <div style={{
                 position: 'absolute',
-                left: `${Math.min(Math.max((hoveredTimelinePoint.x / timelineWidth) * 100, 12), 82)}%`,
+                left: `${(hoveredTimelinePoint.x / timelineWidth) * 100}%`,
                 top: `${Math.max(hoveredTimelinePoint.y - 8, 28)}px`,
-                transform: 'translate(-50%, -100%)',
+                transform: hoveredTimelinePoint.x < 120 
+                  ? 'translate(-10%, -105%)' 
+                  : hoveredTimelinePoint.x > 240 
+                    ? 'translate(-90%, -105%)' 
+                    : 'translate(-50%, -105%)',
                 minWidth: '270px',
                 padding: '12px 14px',
                 background: '#f4f4f6',
                 color: '#1b1b1f',
                 borderRadius: '8px',
                 boxShadow: '0 18px 40px rgba(0,0,0,0.35)',
-                zIndex: 20,
+                zIndex: 200,
                 pointerEvents: 'none'
               }}>
                 <div style={{ fontSize: '12px', fontWeight: '900', marginBottom: '10px', lineHeight: 1.35 }}>

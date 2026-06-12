@@ -104,8 +104,17 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
               </button>
 
               <header style={{ marginBottom: '32px' }}>
-                <h2 style={{ fontSize: '24px', fontWeight: '900', color: 'white', marginBottom: '8px' }}>
-                  Nuevo <span className="text-gold">Cliente</span>
+                <h2 style={{ 
+                  fontSize: '24px', 
+                  fontWeight: '900', 
+                  color: 'white', 
+                  marginBottom: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  <User size={24} color="var(--gold-primary)" />
+                  <span>Nuevo <span className="text-gold">Cliente</span></span>
                 </h2>
                 <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
                   Completa los datos para registrarlo en el sistema.

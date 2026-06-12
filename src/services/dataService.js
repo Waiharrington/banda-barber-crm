@@ -137,6 +137,7 @@ export const dataService = {
 
   async updateClient(id, updates) {
     _cacheInvalidate('clients');
+    _cacheInvalidateAppts();
     const { data, error } = await supabase
       .from('clients')
       .update(updates)
@@ -412,14 +413,24 @@ export const dataService = {
 
     const categories = _asArray(data)
       .filter(e => e.name?.startsWith('SYSTEM_CATEGORY:'))
-      .map(e => e.name.replace('SYSTEM_CATEGORY:', ''));
+      .map(e => {
+        const fullString = e.name.replace('SYSTEM_CATEGORY:', '');
+        const parts = fullString.split('|');
+        const name = parts[0];
+        const icon = parts[1] || '';
+        return { name, icon };
+      });
 
     if (categories.length === 0) {
       // Seed default categories
-      const defaults = ['Barbería', 'Estilismo', 'Tratamientos'];
+      const defaults = [
+        { name: 'Barbería', icon: 'Scissors' },
+        { name: 'Estilismo', icon: 'Rocket' },
+        { name: 'Tratamientos', icon: 'Droplets' }
+      ];
       await Promise.all(
         defaults.map(cat =>
-          supabase.from('service_extras').insert([{ name: 'SYSTEM_CATEGORY:' + cat, price: 0, cost: 0 }])
+          supabase.from('service_extras').insert([{ name: 'SYSTEM_CATEGORY:' + cat.name + '|' + cat.icon, price: 0, cost: 0 }])
         )
       );
       return defaults;
@@ -427,22 +438,62 @@ export const dataService = {
     return categories;
   },
 
-  async addServiceCategory(name) {
+  async addServiceCategory(name, icon) {
+    const fullName = 'SYSTEM_CATEGORY:' + name + '|' + (icon || 'Zap');
     const { error } = await supabase
       .from('service_extras')
-      .insert([{ name: 'SYSTEM_CATEGORY:' + name, price: 0, cost: 0 }])
+      .insert([{ name: fullName, price: 0, cost: 0 }])
       .select()
       .single();
     if (error) throw error;
-    return name;
+    return { name, icon: icon || 'Zap' };
   },
 
-  async deleteServiceCategory(name) {
+  async deleteServiceCategory(name, icon) {
+    const fullName = 'SYSTEM_CATEGORY:' + name + (icon ? '|' + icon : '');
     const { error } = await supabase
       .from('service_extras')
       .delete()
-      .eq('name', 'SYSTEM_CATEGORY:' + name);
+      .eq('name', fullName);
     if (error) throw error;
+
+    if (icon) {
+      await supabase
+        .from('service_extras')
+        .delete()
+        .eq('name', 'SYSTEM_CATEGORY:' + name);
+    }
+  },
+
+  async updateServiceCategory(oldName, oldIcon, newName, newIcon) {
+    const oldFullName = 'SYSTEM_CATEGORY:' + oldName + (oldIcon ? '|' + oldIcon : '');
+    const newFullName = 'SYSTEM_CATEGORY:' + newName + '|' + (newIcon || 'Zap');
+    
+    const { data, error } = await supabase
+      .from('service_extras')
+      .update({ name: newFullName })
+      .eq('name', oldFullName)
+      .select();
+      
+    if (error) throw error;
+    
+    if (!data || data.length === 0) {
+      const { error: fallbackError } = await supabase
+        .from('service_extras')
+        .update({ name: newFullName })
+        .eq('name', 'SYSTEM_CATEGORY:' + oldName);
+      if (fallbackError) throw fallbackError;
+    }
+    
+    if (oldName !== newName) {
+      const { error: serviceError } = await supabase
+        .from('services')
+        .update({ category: newName })
+        .eq('category', oldName);
+      if (serviceError) console.error('Error updating services category link:', serviceError);
+    }
+    
+    return { name: newName, icon: newIcon };
   },
 
   // Strategies

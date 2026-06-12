@@ -149,6 +149,10 @@ html, body {
 /* Advanced Animations */
 .animate-fade-in {
   animation: fadeInOnly 0.4s ease-out both;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .animate-fade-in > * {
@@ -167,6 +171,10 @@ html, body {
 
 .animate-page-fade-in {
   animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .animate-page-fade-in > * {
@@ -204,15 +212,23 @@ html, body {
 
 .animate-slide-up {
   animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 @keyframes fadeInOnly {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: translate3d(0, 0, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 .animate-slide-up {
   animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .animate-scale-in {
@@ -829,3 +845,294 @@ input[type="submit"]:active {
     transform: translateY(-2px) rotate(3deg);
   }
 }
+
+/* Modals Responsiveness Improvements */
+.modal-main-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 32px;
+  width: 100%;
+}
+
+.modal-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+.price-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.bs-badge {
+  padding: 0 16px;
+  height: 48px;
+  background-color: rgba(212, 175, 55, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold-primary);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Premium Integrated Price Input Field */
+.premium-price-input-container {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  height: 48px;
+  padding: 0 16px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.premium-price-input-container:focus-within {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.price-currency-symbol {
+  color: var(--gold-primary);
+  font-weight: 700;
+  font-size: 16px;
+  margin-right: 8px;
+  user-select: none;
+}
+
+.price-input-field {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
+  color: white !important;
+  padding: 0 !important;
+  height: 100% !important;
+  font-size: 15px !important;
+  outline: none !important;
+  box-shadow: none !important;
+  width: 100%;
+}
+
+.price-bs-equivalent {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold-primary);
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+  padding: 4px 10px;
+  border-radius: 8px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.modal-commissions {
+  padding: 20px;
+  border-radius: 20px;
+  background-color: rgba(212, 175, 55, 0.03);
+  border: 1px solid rgba(212, 175, 55, 0.1);
+  grid-column: span 2;
+}
+
+.modal-actions-wrapper {
+  margin-top: 32px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.extra-add-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.details-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 20px;
+  margin-bottom: 20px;
+}
+
+.strategy-add-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Media Queries for Modals */
+@media (max-width: 768px) {
+  .modal-main-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+  .modal-commissions {
+    grid-column: span 1 !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .modal-grid-2col {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .modal-actions-wrapper {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .modal-actions-wrapper button {
+    width: 100% !important;
+    height: 48px !important;
+    font-size: 15px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .price-input-wrapper {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .price-input-wrapper > input {
+    width: 100% !important;
+  }
+  .price-input-wrapper > .bs-badge {
+    width: 100% !important;
+  }
+  .extra-add-row {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  .extra-add-row > div {
+    width: 100% !important;
+  }
+  .extra-add-row button {
+    width: 100% !important;
+    height: 44px !important;
+  }
+  .strategy-add-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .details-price-row {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+  .details-price-row > div {
+    text-align: left !important;
+  }
+}
+
+.commissions-fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 576px) {
+  .commissions-fields-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+
+/* ==========================================
+   GLOBAL SCROLLBAR STYLING FOR MODALS & SCROLL CONTAINERS
+   ========================================== */
+
+/* 1. Show and style scrollbars for Webkit/Chromium browsers (Chrome, Edge, Safari, Opera) */
+.astro-scrollbar::-webkit-scrollbar,
+.glass-card::-webkit-scrollbar,
+.glass-card ::-webkit-scrollbar,
+.modal-card-enter::-webkit-scrollbar,
+.modal-card-enter ::-webkit-scrollbar,
+.modal-card-exit::-webkit-scrollbar,
+.modal-card-exit ::-webkit-scrollbar,
+.modal-overlay-enter ::-webkit-scrollbar,
+.modal-overlay-exit ::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+  display: block !important;
+}
+
+.astro-scrollbar::-webkit-scrollbar-track,
+.glass-card::-webkit-scrollbar-track,
+.glass-card ::-webkit-scrollbar-track,
+.modal-card-enter::-webkit-scrollbar-track,
+.modal-card-enter ::-webkit-scrollbar-track,
+.modal-card-exit::-webkit-scrollbar-track,
+.modal-card-exit ::-webkit-scrollbar-track,
+.modal-overlay-enter ::-webkit-scrollbar-track,
+.modal-overlay-exit ::-webkit-scrollbar-track {
+  background: transparent !important;
+  margin: 16px 0 !important; /* Keeps scrollbar away from rounded corners */
+}
+
+.astro-scrollbar::-webkit-scrollbar-thumb,
+.glass-card::-webkit-scrollbar-thumb,
+.glass-card ::-webkit-scrollbar-thumb,
+.modal-card-enter::-webkit-scrollbar-thumb,
+.modal-card-enter ::-webkit-scrollbar-thumb,
+.modal-card-exit::-webkit-scrollbar-thumb,
+.modal-card-exit ::-webkit-scrollbar-thumb,
+.modal-overlay-enter::-webkit-scrollbar-thumb,
+.modal-overlay-exit ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border-radius: 10px !important;
+  border: none !important;
+}
+
+/* 2. Hover and active (drag/click) states - must be gold! */
+.astro-scrollbar::-webkit-scrollbar-thumb:hover,
+.astro-scrollbar::-webkit-scrollbar-thumb:active,
+.glass-card::-webkit-scrollbar-thumb:hover,
+.glass-card::-webkit-scrollbar-thumb:active,
+.glass-card ::-webkit-scrollbar-thumb:hover,
+.glass-card ::-webkit-scrollbar-thumb:active,
+.modal-card-enter::-webkit-scrollbar-thumb:hover,
+.modal-card-enter::-webkit-scrollbar-thumb:active,
+.modal-card-enter ::-webkit-scrollbar-thumb:hover,
+.modal-card-enter ::-webkit-scrollbar-thumb:active,
+.modal-card-exit::-webkit-scrollbar-thumb:hover,
+.modal-card-exit::-webkit-scrollbar-thumb:active,
+.modal-card-exit ::-webkit-scrollbar-thumb:hover,
+.modal-card-exit ::-webkit-scrollbar-thumb:active,
+.modal-overlay-enter ::-webkit-scrollbar-thumb:hover,
+.modal-overlay-enter ::-webkit-scrollbar-thumb:active,
+.modal-overlay-exit ::-webkit-scrollbar-thumb:hover,
+.modal-overlay-exit ::-webkit-scrollbar-thumb:active {
+  background: var(--gold-primary) !important;
+}
+
+/* 3. Hide arrow buttons on Chrome/Edge scrollbars */
+.astro-scrollbar::-webkit-scrollbar-button,
+.glass-card::-webkit-scrollbar-button,
+.glass-card ::-webkit-scrollbar-button,
+.modal-card-enter::-webkit-scrollbar-button,
+.modal-card-enter ::-webkit-scrollbar-button,
+.modal-card-exit::-webkit-scrollbar-button,
+.modal-card-exit ::-webkit-scrollbar-button,
+.modal-overlay-enter ::-webkit-scrollbar-button,
+.modal-overlay-exit ::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+

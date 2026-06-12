@@ -1,14 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Plus, Search, Edit2, Trash2, Clock, Scissors, 
-  Rocket, Droplets, Zap, Check, X, Loader2,
+  Plus, Search, Edit2, Trash2, Clock, Scissors, Rocket,
+  Droplets, Zap, Check, X, Loader2,
   Settings, DollarSign, LayoutList, Star, Crown,
-  LayoutGrid, Table, Eye, Info, Pencil
+  LayoutGrid, Table, Eye, Info, Pencil,
+  Sparkles, Smile, Heart, Wind, Palette,
+  Brush, Flower2, UserRound, Waves, Feather
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useDialog } from '../context/DialogContext';
 import { useNotifs } from '../context/NotificationContext';
 import AstroSelect from './AstroSelect';
+import AnimatedModal from './AnimatedModal';
+
+// Custom SVG: nail polish bottle
+const NailPolishIcon = ({ size = 20 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    {/* Cap */}
+    <rect x="8" y="2" width="8" height="4" rx="1" />
+    {/* Neck */}
+    <rect x="10" y="6" width="4" height="3" />
+    {/* Bottle body */}
+    <rect x="6" y="9" width="12" height="11" rx="2" />
+    {/* Brush line at bottom */}
+    <line x1="12" y1="20" x2="12" y2="23" />
+  </svg>
+);
+
+const AVAILABLE_ICONS = [
+  { name: 'Scissors',    label: 'Corte general' },
+  { name: 'UserRound',   label: 'Barbería / Barba' },
+  { name: 'Wind',        label: 'Secado / Blower' },
+  { name: 'Palette',     label: 'Colorimetría / Tintes' },
+  { name: 'NailPolish',  label: 'Manicura / Esmalte' },
+  { name: 'Droplets',    label: 'Lavado / Hidratación' },
+  { name: 'Brush',       label: 'Maquillaje / Cejas' },
+  { name: 'Sparkles',    label: 'Estilismo / Peinados' },
+  { name: 'Flower2',     label: 'Spa / Masajes' },
+  { name: 'Feather',     label: 'Tratamientos suaves' },
+  { name: 'Heart',       label: 'Depilación / Bienestar' },
+  { name: 'Waves',       label: 'Keratina / Alaciado' },
+  { name: 'Crown',       label: 'VIP / Astro Elite' },
+  { name: 'Smile',       label: 'Faciales / Afeitado' },
+  { name: 'Star',        label: 'Tendencias / Adicional' }
+];
+
+const getIconComponent = (iconName, size = 20) => {
+  switch (iconName) {
+    case 'Scissors':    return <Scissors size={size} />;
+    case 'UserRound':   return <UserRound size={size} />;
+    case 'Wind':        return <Wind size={size} />;
+    case 'Palette':     return <Palette size={size} />;
+    case 'NailPolish':  return <NailPolishIcon size={size} />;
+    case 'Droplets':    return <Droplets size={size} />;
+    case 'Brush':       return <Brush size={size} />;
+    case 'Sparkles':    return <Sparkles size={size} />;
+    case 'Flower2':     return <Flower2 size={size} />;
+    case 'Feather':     return <Feather size={size} />;
+    case 'Heart':       return <Heart size={size} />;
+    case 'Waves':       return <Waves size={size} />;
+    case 'Crown':       return <Crown size={size} />;
+    case 'Star':        return <Star size={size} />;
+    case 'Smile':       return <Smile size={size} />;
+    default:            return <Zap size={size} />;
+  }
+};
 
 const ServicesModule = ({ isMobile, currency, rates }) => {
   const [services, setServices] = useState([]);
@@ -21,6 +86,8 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
   const [categories, setCategories] = useState([]);
   const [strategies, setStrategies] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [selectedCategoryIcon, setSelectedCategoryIcon] = useState('Scissors');
+  const [editingCategory, setEditingCategory] = useState(null);
   const [newStrategyValue, setNewStrategyValue] = useState('');
   const [newStrategyLabel, setNewStrategyLabel] = useState('');
   const [baseItems, setBaseItems] = useState([]);
@@ -91,22 +158,47 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
     }
   };
 
-  const handleAddCategory = async () => {
+  const handleSaveCategory = async () => {
     if (!newCategoryName.trim()) return;
     try {
-      await dataService.addServiceCategory(newCategoryName.trim());
+      if (editingCategory) {
+        await dataService.updateServiceCategory(
+          editingCategory.name, 
+          editingCategory.icon, 
+          newCategoryName.trim(), 
+          selectedCategoryIcon
+        );
+        showToast('Categoría actualizada.');
+        setEditingCategory(null);
+      } else {
+        await dataService.addServiceCategory(newCategoryName.trim(), selectedCategoryIcon);
+        showToast('Nueva categoría creada.');
+      }
       setNewCategoryName('');
+      setSelectedCategoryIcon('Scissors');
       await fetchCategories();
-      showToast('Nueva categoría creada.');
+      await fetchServices();
     } catch (e) {
-      showToast('Error al crear categoría.', 'error');
+      showToast(editingCategory ? 'Error al actualizar categoría.' : 'Error al crear categoría.', 'error');
     }
   };
 
-  const handleDeleteCategory = async (name) => {
-    if (!await confirm(`¿Estás seguro de eliminar la categoría "${name}"?`)) return;
+  const handleEditCategoryClick = (catObj) => {
+    setEditingCategory(catObj);
+    setNewCategoryName(catObj.name);
+    setSelectedCategoryIcon(catObj.icon || getFallbackIconName(catObj.name));
+  };
+
+  const handleCancelEditCategory = () => {
+    setEditingCategory(null);
+    setNewCategoryName('');
+    setSelectedCategoryIcon('Scissors');
+  };
+
+  const handleDeleteCategory = async (catObj) => {
+    if (!await confirm(`¿Estás seguro de eliminar la categoría "${catObj.name}"?`)) return;
     try {
-      await dataService.deleteServiceCategory(name);
+      await dataService.deleteServiceCategory(catObj.name, catObj.icon);
       await fetchCategories();
       showToast('Categoría eliminada.');
     } catch (e) {
@@ -236,6 +328,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
   const [newService, setNewService] = useState({ 
     name: '', 
     price: '', 
+    icon: 'Scissors',
     category: 'Barbería',
     strategy_type: 'MVP',
     duration: 30,
@@ -248,21 +341,29 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
     commission_receptionist: 0
   });
 
+  const totalCommissions = 
+    (Number(newService.commission_barber) || 0) + 
+    (Number(newService.commission_washer) || 0) + 
+    (Number(newService.commission_cashier) || 0) + 
+    (Number(newService.commission_receptionist) || 0);
+  const netMargin = (Number(newService.price) || 0) - ((Number(newService.price) || 0) * totalCommissions / 100);
+
   const handleEditClick = (service) => {
     setIsEditing(true);
     setNewService({
       id: service.id,
       name: service.name,
       price: service.price,
+      icon: service.icon || 'Scissors',
       category: service.category,
       strategy_type: service.strategy_type || 'MVP',
       duration: service.duration || 30,
       description: service.description || '',
       included_items: service.included_items || [],
-      commission_barber: service.commission_barber || 40,
-      commission_washer: 0,
-      commission_cashier: 0,
-      commission_receptionist: 0
+      commission_barber: service.commission_barber !== undefined ? service.commission_barber : 40,
+      commission_washer: service.commission_washer || 0,
+      commission_cashier: service.commission_cashier || 0,
+      commission_receptionist: service.commission_receptionist || 0
     });
     setShowAddForm(true);
   };
@@ -315,13 +416,19 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
     }));
   }, [newService.included_items, newService.variable_cost, baseItems]);
 
-  const getCategoryIcon = (cat) => {
-    switch(cat) {
-      case 'Barbería': return <Scissors size={20} />;
-      case 'Estilismo': return <Rocket size={20} />;
-      case 'Tratamientos': return <Droplets size={20} />;
-      default: return <Zap size={20} />;
+  const getFallbackIconName = (catName) => {
+    switch(catName) {
+      case 'Barbería': return 'Scissors';
+      case 'Estilismo': return 'Sparkles';
+      case 'Tratamientos': return 'Droplets';
+      default: return 'Wind';
     }
+  };
+
+  const getCategoryIcon = (catName) => {
+    const catObj = categories.find(c => c.name === catName);
+    const iconName = catObj ? catObj.icon : null;
+    return getIconComponent(iconName || getFallbackIconName(catName), 20);
   };
 
   return (
@@ -409,246 +516,31 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
           <button 
             className="btn-gold" 
             onClick={() => {
-              if (showAddForm) {
-                setShowAddForm(false);
-                setIsEditing(false);
-                setNewService({ 
-                  name: '', 
-                  price: '', 
-                  category: 'Barbería',
-                  strategy_type: 'MVP',
-                  duration: 30,
-                  insumo_cost: 0,
-                  variable_cost: 0.50,
-                  description: '',
-                  included_items: [],
-                  commission_barber: 40,
-                  commission_washer: 0,
-                  commission_cashier: 0,
-                  commission_receptionist: 0
-                });
-              } else {
-                setShowAddForm(true);
-              }
+              setIsEditing(false);
+              setNewService({ 
+                name: '', 
+                price: '', 
+                icon: 'Scissors',
+                category: 'Barbería',
+                strategy_type: 'MVP',
+                duration: 30,
+                insumo_cost: 0,
+                variable_cost: 0.50,
+                description: '',
+                included_items: [],
+                commission_barber: 40,
+                commission_washer: 0,
+                commission_cashier: 0,
+                commission_receptionist: 0
+              });
+              setShowAddForm(true);
             }} 
             style={{ height: '48px', padding: isMobile ? '10px 8px' : '0 24px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: isMobile ? '100%' : 'auto', fontSize: isMobile ? '12px' : undefined }}
           >
-            {showAddForm ? <X size={18} /> : <Plus size={18} />}
-            {showAddForm ? 'Cancelar' : 'Nuevo Servicio'}
+            <Plus size={18} />
+            Nuevo Servicio
           </button>
         </div>
-        {showAddForm && !isEditing && (
-        <div className="glass-card animate-slide-up" style={{ 
-          marginBottom: '32px', 
-          padding: '32px', 
-          borderRadius: '28px', 
-          position: 'relative', 
-          zIndex: 999,
-          overflow: 'visible' 
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '22px', fontWeight: '800', margin: 0 }}>
-              Nuevo Servicio al Catálogo
-            </h3>
-            <button 
-              onClick={() => { setShowAddForm(false); setIsEditing(false); }}
-              style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', color: 'white', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <X size={16} />
-            </button>
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr', gap: '32px' }}>
-            {/* Left Column: Form Fields */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div className="form-group">
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>NOMBRE DEL SERVICIO</label>
-                <div style={{ position: 'relative' }}>
-                  <Scissors size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                  <input className="form-input" placeholder="Ej. Corte Suprema" value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>DESCRIPCIÓN DEL SERVICIO</label>
-                <textarea 
-                  className="form-input" 
-                  placeholder="Describe los beneficios premium del servicio..." 
-                  value={newService.description || ''} 
-                  onChange={e => setNewService({...newService, description: e.target.value})} 
-                  onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
-                  ref={el => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }}
-                  style={{ width: '100%', minHeight: '80px', paddingTop: '12px', resize: 'none', fontSize: '13px', lineHeight: '1.5', overflow: 'hidden' }} 
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>PRECIO ($)</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <input className="form-input" type="number" placeholder="25" value={newService.price === 0 ? '' : newService.price} onChange={e => setNewService({...newService, price: e.target.value === '' ? '' : Number(e.target.value)})} style={{ flex: 1 }} />
-                    {rates?.usd > 0 && (
-                      <div style={{ padding: '0 16px', height: '48px', backgroundColor: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', color: 'var(--gold-primary)', fontSize: '13px', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                        {Math.round((Number(newService.price) || 0) * rates.usd).toLocaleString()} Bs.
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>DURACIÓN (MIN)</label>
-                  <input className="form-input" type="number" placeholder="45" value={newService.duration === 0 ? '' : newService.duration} onChange={e => setNewService({...newService, duration: e.target.value === '' ? '' : Number(e.target.value)})} style={{ width: '100%' }} />
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <AstroSelect 
-                  label="CATEGORÍA"
-                  value={newService.category}
-                  onChange={val => setNewService({...newService, category: val})}
-                  options={categories.map(cat => ({ label: cat, value: cat }))}
-                />
-                <AstroSelect 
-                  label="ESTRATEGIA"
-                  value={newService.strategy_type}
-                  onChange={val => setNewService({...newService, strategy_type: val})}
-                  options={strategies.map(strat => ({ label: strat.label, value: strat.value }))}
-                />
-              </div>
-            </div>
-
-
-            {/* Right Column: Checklist */}
-            <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>
-                  <LayoutList size={16} /> CHECKLIST (INCLUIDO)
-                </label>
-                <button 
-                  onClick={() => setIsExtrasModalOpen(true)}
-                  style={{ 
-                    background: 'rgba(212,175,55,0.1)', 
-                    border: '1px solid rgba(212,175,55,0.2)', 
-                    borderRadius: '8px', 
-                    padding: '4px 12px', 
-                    fontSize: '10px',
-                    fontWeight: '800',
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '6px',
-                    cursor: 'pointer', 
-                    color: 'var(--gold-primary)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  <Settings size={12} /> Items
-                </button>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
-                {baseItems.map(item => (
-                  <div key={item.id} style={{ position: 'relative' }} className="group">
-                    <button 
-                      onClick={() => {
-                        const current = newService.included_items || [];
-                        const next = current.includes(item.name) 
-                          ? current.filter(i => i !== item.name)
-                          : [...current, item.name];
-                        setNewService({...newService, included_items: next});
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '12px',
-                        fontSize: '13px',
-                        textAlign: 'left',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: newService.included_items?.includes(item.name) ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.02)',
-                        border: newService.included_items?.includes(item.name) ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
-                        color: newService.included_items?.includes(item.name) ? 'white' : 'var(--text-muted)'
-                      }}
-                    >
-                      <div style={{ 
-                        width: '18px', 
-                        height: '18px', 
-                        borderRadius: '4px', 
-                        border: '1px solid var(--border-color)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: newService.included_items?.includes(item.name) ? 'var(--gold-primary)' : 'transparent'
-                      }}>
-                        {newService.included_items?.includes(item.name) && <Check size={12} color="black" strokeWidth={4} />}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '700' }}>{item.name}</div>
-                      </div>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Commissions Distribution */}
-            <div style={{ padding: '20px', borderRadius: '20px', backgroundColor: 'rgba(212,175,55,0.03)', border: '1px solid rgba(212,175,55,0.1)', gridColumn: isMobile ? 'span 1' : 'span 2' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>
-                <DollarSign size={14} /> DISTRIBUCIÓN DE COMISIONES (%)
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div className="form-group">
-                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>COMISIÓN BARBERO (%)</label>
-                  <input 
-                    className="form-input" 
-                    type="number" 
-                    value={newService.commission_barber === 0 ? '' : newService.commission_barber} 
-                    onChange={e => setNewService({...newService, commission_barber: e.target.value === '' ? '' : Number(e.target.value)})} 
-                    style={{ width: '100%', fontSize: '16px', fontWeight: '900', color: 'var(--gold-primary)', height: '54px' }} 
-                  />
-                </div>
-              </div>
-              
-              {/* Business Net Margin Indicator */}
-              {(newService.price > 0) && (
-                <div style={{ 
-                  marginTop: '20px', 
-                  padding: '16px', 
-                  borderRadius: '16px', 
-                  background: 'rgba(50, 215, 75, 0.05)', 
-                  border: '1px solid rgba(50, 215, 75, 0.2)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div>
-                    <div style={{ fontSize: '10px', fontWeight: '800', color: '#32d74b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Margen Real Astro</div>
-                    <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>
-                      ${((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)).toFixed(2)}
-                    </div>
-                  </div>
-                  {rates?.usd > 0 && (
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
-                      <div style={{ fontSize: '14px', fontWeight: '800', color: '#32d74b' }}>
-                        {Math.round(((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)) * rates.usd).toLocaleString()} Bs.
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end' }}>
-            <button className="btn-gold" onClick={handleCreateService} style={{ height: '54px', padding: '0 40px', fontSize: '16px', borderRadius: '16px' }}>
-              Lanzar Servicio al Catálogo
-            </button>
-          </div>
-        </div>
-      )}
       </div>
 
       {loading ? (
@@ -671,7 +563,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   return (
                     <React.Fragment key={service.id}>
                       <div 
-                        className="glass-card animate-slide-up" 
+                        className="glass-card" 
                         onClick={() => setSelectedServiceDetail(service)}
                         style={{ 
                           borderRadius: '24px',
@@ -688,7 +580,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
                             <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(212, 175, 55, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--gold-primary)' }}>
-                              {getCategoryIcon(service.category)}
+                              {service.icon ? getIconComponent(service.icon, 20) : getCategoryIcon(service.category)}
                             </div>
                             <div style={{ minWidth: 0, flex: 1 }}>
                               <div style={{ fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{service.category}</div>
@@ -767,67 +659,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         </div>
                       </div>
 
-                      {/* Inline Edit Form for mobile grid item */}
-                      {showAddForm && isEditing && newService.id === service.id && (
-                        <div className="glass-card animate-slide-up" style={{ 
-                          marginTop: '-6px',
-                          marginBottom: '16px', 
-                          padding: '20px', 
-                          borderRadius: '20px', 
-                          border: '1px solid rgba(212,175,55,0.3)',
-                          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '16px'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h4 style={{ fontSize: '16px', fontWeight: '800', margin: 0 }}>
-                              Editar: <span className="text-gold">{service.name}</span>
-                            </h4>
-                            <button 
-                              onClick={() => { setShowAddForm(false); setIsEditing(false); }}
-                              style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', color: 'white', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                          
-                          <div className="form-group">
-                            <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)' }}>NOMBRE</label>
-                            <input className="form-input" value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})} style={{ width: '100%', height: '44px' }} />
-                          </div>
 
-                          <div className="form-group">
-                            <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)' }}>DESCRIPCIÓN</label>
-                            <textarea className="form-input" value={newService.description || ''} onChange={e => setNewService({...newService, description: e.target.value})} onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }} ref={el => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }} style={{ width: '100%', minHeight: '60px', paddingTop: '8px', resize: 'none', overflow: 'hidden' }} />
-                          </div>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <div className="form-group">
-                              <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)' }}>PRECIO ($)</label>
-                              <input className="form-input" type="number" value={newService.price} onChange={e => setNewService({...newService, price: Number(e.target.value)})} style={{ width: '100%' }} />
-                            </div>
-                            <div className="form-group">
-                              <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)' }}>DURACIÓN (MIN)</label>
-                              <input className="form-input" type="number" value={newService.duration} onChange={e => setNewService({...newService, duration: Number(e.target.value)})} style={{ width: '100%' }} />
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <AstroSelect label="CATEGORÍA" value={newService.category} onChange={val => setNewService({...newService, category: val})} options={categories.map(cat => ({ label: cat, value: cat }))} />
-                            <AstroSelect label="ESTRATEGIA" value={newService.strategy_type} onChange={val => setNewService({...newService, strategy_type: val})} options={strategies.map(strat => ({ label: strat.label, value: strat.value }))} />
-                          </div>
-
-                          <div className="form-group">
-                            <label style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)' }}>COMISIÓN BARBERO (%)</label>
-                            <input className="form-input" type="number" value={newService.commission_barber} onChange={e => setNewService({...newService, commission_barber: Number(e.target.value)})} style={{ width: '100%', color: 'var(--gold-primary)', fontWeight: '900' }} />
-                          </div>
-
-                          <button className="btn-gold" onClick={handleCreateService} style={{ height: '48px', borderRadius: '12px', fontSize: '14px', fontWeight: '800' }}>
-                            Guardar Cambios
-                          </button>
-                        </div>
-                      )}
                     </React.Fragment>
                   );
                 }
@@ -835,7 +667,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                 // Desktop / non-mobile card
                 return (
                   <React.Fragment key={service.id}>
-                    <div className="glass-card animate-slide-up" style={{ 
+                    <div className="glass-card" style={{ 
                       borderRadius: '20px',
                       padding: '16px 24px',
                       border: '1px solid rgba(255,255,255,0.05)',
@@ -845,7 +677,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: '200px' }}>
                         <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(212, 175, 55, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          {getCategoryIcon(service.category)}
+                          {service.icon ? getIconComponent(service.icon, 20) : getCategoryIcon(service.category)}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{service.category}</div>
@@ -899,228 +731,13 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                       </div>
                     </div>
 
-                    {/* Inline Edit Form for desktop card item */}
-                    {showAddForm && isEditing && newService.id === service.id && (
-                      <div className="glass-card animate-slide-up" style={{ 
-                        marginTop: '-12px',
-                        marginBottom: '24px', 
-                        marginLeft: '20px',
-                        padding: '32px', 
-                        borderRadius: '28px', 
-                        position: 'relative', 
-                        zIndex: 998,
-                        overflow: 'visible',
-                        border: '1px solid rgba(212,175,55,0.3)',
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                          <h3 style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>
-                            Editar Servicio: <span className="text-gold">{service.name}</span>
-                          </h3>
-                          <button 
-                            onClick={() => { setShowAddForm(false); setIsEditing(false); }}
-                            style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', color: 'white', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                        
-                        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '32px' }}>
-                          {/* Left Column: Form Fields */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                            <div className="form-group">
-                              <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>NOMBRE DEL SERVICIO</label>
-                              <div style={{ position: 'relative' }}>
-                                <Scissors size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                                <input className="form-input" placeholder="Ej. Corte Suprema" value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
-                              </div>
-                            </div>
 
-                            <div className="form-group">
-                              <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>DESCRIPCIÓN DEL SERVICIO</label>
-                              <textarea 
-                                className="form-input" 
-                                placeholder="Describe los beneficios premium del servicio..." 
-                                value={newService.description || ''} 
-                                onChange={e => setNewService({...newService, description: e.target.value})} 
-                                onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
-                                ref={el => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }}
-                                style={{ width: '100%', minHeight: '80px', paddingTop: '12px', resize: 'none', fontSize: '13px', lineHeight: '1.5', overflow: 'hidden' }} 
-                              />
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                              <div className="form-group">
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>PRECIO ($)</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                  <input className="form-input" type="number" placeholder="25" value={newService.price === 0 ? '' : newService.price} onChange={e => setNewService({...newService, price: e.target.value === '' ? '' : Number(e.target.value)})} style={{ flex: 1 }} />
-                                  {rates?.usd > 0 && (
-                                    <div style={{ padding: '0 16px', height: '48px', backgroundColor: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', color: 'var(--gold-primary)', fontSize: '13px', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                                      {Math.round((Number(newService.price) || 0) * rates.usd).toLocaleString()} Bs.
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="form-group">
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>DURACIÓN (MIN)</label>
-                                <input className="form-input" type="number" placeholder="45" value={newService.duration === 0 ? '' : newService.duration} onChange={e => setNewService({...newService, duration: e.target.value === '' ? '' : Number(e.target.value)})} style={{ width: '100%' }} />
-                              </div>
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                              <AstroSelect 
-                                label="CATEGORÍA"
-                                value={newService.category}
-                                onChange={val => setNewService({...newService, category: val})}
-                                options={categories.map(cat => ({ label: cat, value: cat }))}
-                              />
-                              <AstroSelect 
-                                label="ESTRATEGIA"
-                                value={newService.strategy_type}
-                                onChange={val => setNewService({...newService, strategy_type: val})}
-                                options={strategies.map(strat => ({ label: strat.label, value: strat.value }))}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Right Column: Checklist */}
-                          <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>
-                                <LayoutList size={16} /> CHECKLIST (INCLUIDO)
-                              </label>
-                              <button 
-                                onClick={() => setIsExtrasModalOpen(true)}
-                                style={{ 
-                                  background: 'rgba(212,175,55,0.1)', 
-                                  border: '1px solid rgba(212,175,55,0.2)', 
-                                  borderRadius: '8px', 
-                                  padding: '4px 12px', 
-                                  fontSize: '10px',
-                                  fontWeight: '800',
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  gap: '6px',
-                                  cursor: 'pointer', 
-                                  color: 'var(--gold-primary)',
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.5px'
-                                }}
-                              >
-                                <Settings size={12} /> Items
-                              </button>
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
-                              {baseItems.map(item => (
-                                <div key={item.id} style={{ position: 'relative' }} className="group">
-                                  <button 
-                                    onClick={() => {
-                                      const current = newService.included_items || [];
-                                      const next = current.includes(item.name) 
-                                        ? current.filter(i => i !== item.name)
-                                        : [...current, item.name];
-                                      setNewService({...newService, included_items: next});
-                                    }}
-                                    style={{
-                                      width: '100%',
-                                      padding: '10px 14px',
-                                      borderRadius: '12px',
-                                      fontSize: '13px',
-                                      textAlign: 'left',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '10px',
-                                      cursor: 'pointer',
-                                      transition: 'all 0.2s',
-                                      background: newService.included_items?.includes(item.name) ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.02)',
-                                      border: newService.included_items?.includes(item.name) ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
-                                      color: newService.included_items?.includes(item.name) ? 'white' : 'var(--text-muted)'
-                                    }}
-                                  >
-                                    <div style={{ 
-                                      width: '18px', 
-                                      height: '18px', 
-                                      borderRadius: '4px', 
-                                      border: '1px solid var(--border-color)',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      backgroundColor: newService.included_items?.includes(item.name) ? 'var(--gold-primary)' : 'transparent'
-                                    }}>
-                                      {newService.included_items?.includes(item.name) && <Check size={12} color="black" strokeWidth={4} />}
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                      <div style={{ fontWeight: '700' }}>{item.name}</div>
-                                    </div>
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Commissions Distribution */}
-                          <div style={{ padding: '20px', borderRadius: '20px', backgroundColor: 'rgba(212,175,55,0.03)', border: '1px solid rgba(212,175,55,0.1)', gridColumn: 'span 2' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>
-                              <DollarSign size={14} /> DISTRIBUCIÓN DE COMISIONES (%)
-                            </label>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                              <div className="form-group">
-                                <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>COMISIÓN BARBERO (%)</label>
-                                <input 
-                                  className="form-input" 
-                                  type="number" 
-                                  value={newService.commission_barber === 0 ? '' : newService.commission_barber} 
-                                  onChange={e => setNewService({...newService, commission_barber: e.target.value === '' ? '' : Number(e.target.value)})} 
-                                  style={{ width: '100%', fontSize: '16px', fontWeight: '900', color: 'var(--gold-primary)', height: '54px' }} 
-                                />
-                              </div>
-                            </div>
-                            
-                            {/* Business Net Margin Indicator */}
-                            {(newService.price > 0) && (
-                              <div style={{ 
-                                marginTop: '20px', 
-                                padding: '16px', 
-                                borderRadius: '16px', 
-                                background: 'rgba(50, 215, 75, 0.05)', 
-                                border: '1px solid rgba(50, 215, 75, 0.2)',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                              }}>
-                                <div>
-                                  <div style={{ fontSize: '10px', fontWeight: '800', color: '#32d74b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Margen Real Astro</div>
-                                  <div style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>
-                                    ${((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)).toFixed(2)}
-                                  </div>
-                                </div>
-                                {rates?.usd > 0 && (
-                                  <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
-                                    <div style={{ fontSize: '14px', fontWeight: '800', color: '#32d74b' }}>
-                                      {Math.round(((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)) * rates.usd).toLocaleString()} Bs.
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end' }}>
-                          <button className="btn-gold" onClick={handleCreateService} style={{ height: '54px', padding: '0 40px', fontSize: '16px', borderRadius: '16px' }}>
-                            Guardar Cambios
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </React.Fragment>
                 );
               })}
             </div>
           ) : (
-            <div className="glass-card animate-fade-in" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.03)' }}>
+            <div className="animate-slide-up" style={{ background: 'rgba(28, 28, 30, 0.95)', padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -1177,495 +794,868 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
         </div>
       )}
 
-       {/* Extras Manager Modal */}
-      {isExtrasModalOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(15px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 3000, padding: '20px'
-        }}>
-          <div className="glass-card animate-scale-in" style={{
-            width: '100%', maxWidth: '420px', maxHeight: '80vh',
-            display: 'flex', flexDirection: 'column', padding: '24px',
-            borderRadius: '28px', border: '1px solid rgba(212,175,55,0.2)',
-            boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)'
+      {/* Extras Manager Modal */}
+      <AnimatedModal isOpen={isExtrasModalOpen}>
+        {(overlayClass, cardClass) => (
+          <div className={overlayClass} style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(15px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 99999, padding: isMobile ? '12px' : '20px'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div>
-                <h3 style={{ fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}><span className="text-gold">Items</span></h3>
+            <div className={`${cardClass} glass-card astro-scrollbar`} style={{
+              width: '100%', maxWidth: '420px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
+              display: 'flex', flexDirection: 'column', padding: isMobile ? '20px 16px' : '24px',
+              borderRadius: '28px', border: '1px solid rgba(212,175,55,0.2)',
+              boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '800', letterSpacing: '-0.5px' }}><span className="text-gold">Items</span></h3>
+                </div>
+                <button 
+                  onClick={() => setIsExtrasModalOpen(false)} 
+                  style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <X size={20} />
+                </button>
               </div>
-              <button 
-                onClick={() => setIsExtrasModalOpen(false)} 
-                style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <X size={18} />
-              </button>
-            </div>
 
-            <div style={{ overflowY: 'auto', flex: 1, paddingRight: '4px', overflowX: 'hidden' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {baseItems.map(item => (
-                  <div key={item.id} style={{ 
-                    display: 'flex', gap: '8px', alignItems: 'center', 
-                    padding: '6px 10px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.02)',
-                    border: '1px solid rgba(255,255,255,0.05)'
-                  }}>
-                    <input 
-                      className="form-input" 
-                      value={editingItem?.id === item.id ? editingItem.name : item.name} 
-                      onChange={(e) => setEditingItem({ ...(editingItem || item), id: item.id, name: e.target.value })}
-                      onFocus={() => setEditingItem(item)}
-                      style={{ flex: 1, fontSize: '13px', height: '36px', background: 'transparent', border: 'none', fontWeight: '600', minWidth: 0 }}
-                    />
+              <div style={{ overflowY: 'auto', flex: 1, paddingRight: '4px', overflowX: 'hidden' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {baseItems.map(item => (
+                    <div key={item.id} style={{ 
+                      display: 'flex', gap: '8px', alignItems: 'center', 
+                      padding: '6px 10px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.05)'
+                    }}>
+                      <input 
+                        className="form-input" 
+                        value={editingItem?.id === item.id ? editingItem.name : item.name} 
+                        onChange={(e) => setEditingItem({ ...(editingItem || item), id: item.id, name: e.target.value })}
+                        onFocus={() => setEditingItem(item)}
+                        style={{ flex: 1, fontSize: '13px', height: '36px', background: 'transparent', border: 'none', fontWeight: '600', minWidth: 0 }}
+                      />
 
-                    
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                      {editingItem?.id === item.id ? (
-                        <button 
-                          onClick={() => {
-                            handleUpdateMasterItem(item.id, editingItem.name, editingItem.base_cost);
-                            setEditingItem(null);
-                          }}
-                          style={{ backgroundColor: '#32d74b', color: 'black', border: 'none', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                        >
-                          <Check size={16} strokeWidth={3} />
-                        </button>
-                      ) : (
-                        <>
-                          <button 
-                            onClick={() => setEditingItem(item)}
-                            style={{ backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: 'none', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button 
-                            onClick={(e) => handleDeleteMasterItem(e, item.id, item.name)}
-                            style={{ backgroundColor: 'rgba(255,69,58,0.1)', color: '#ff453a', border: 'none', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                          >
+                      
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {editingItem?.id === item.id ? (
+                          <>
+                            <button onClick={e => handleUpdateMasterItem(item.id, editingItem.name, item.base_cost)} style={{ background: 'transparent', border: 'none', color: '#32d74b', cursor: 'pointer' }}>
+                              <Check size={18} />
+                            </button>
+                            <button onClick={() => setEditingItem(null)} style={{ background: 'transparent', border: 'none', color: '#ff453a', cursor: 'pointer' }}>
+                              <X size={18} />
+                            </button>
+                          </>
+                        ) : (
+                          <button onClick={(e) => handleDeleteMasterItem(e, item.id, item.name)} style={{ background: 'transparent', border: 'none', color: '#ff453a', cursor: 'pointer', opacity: 0.7 }}>
                             <Trash2 size={16} />
                           </button>
-                        </>
-                      )}
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Agregar nuevo */}
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px', marginTop: '16px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input 
+                    className="form-input" 
+                    placeholder="Nuevo ítem..." 
+                    value={newItemName}
+                    onChange={e => setNewItemName(e.target.value)}
+                    style={{ flex: 1, height: '40px', fontSize: '13px', minWidth: 0 }}
+                  />
+
+                  <button onClick={handleAddMasterChecklistItem} className="btn-gold" style={{ width: '40px', height: '40px', borderRadius: '10px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Plus size={20} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatedModal>
+
+      {/* Billable Extras Management Modal */}
+      <AnimatedModal isOpen={isBillableExtrasModalOpen}>
+        {(overlayClass, cardClass) => (
+          <div className={overlayClass} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '12px' : '20px' }}>
+            <div className={`${cardClass} glass-card astro-scrollbar`} style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '20px 16px' : '32px', borderRadius: '32px', border: '1px solid rgba(212,175,55,0.2)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '16px' }}>
+                <div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Rocket size={24} color="var(--gold-primary)" /> Servicios Extras
+                  </h3>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>Servicios con costo extra que se añaden en caja.</p>
+                </div>
+                <button onClick={() => setIsBillableExtrasModalOpen(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="astro-scrollbar" style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '8px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {billableExtras.map(extra => (
+                    <div key={extra.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <input 
+                          className="form-input"
+                          value={editingExtra?.id === extra.id ? editingExtra.name : extra.name}
+                          onChange={e => setEditingExtra({ ...(editingExtra || extra), id: extra.id, name: e.target.value })}
+                          readOnly={editingExtra?.id !== extra.id}
+                          style={{ 
+                            background: 'transparent', 
+                            border: 'none', 
+                            padding: 0, 
+                            height: 'auto', 
+                            fontSize: '14px', 
+                            fontWeight: '700', 
+                            width: '100%',
+                            color: editingExtra?.id === extra.id ? 'var(--gold-primary)' : 'white',
+                            pointerEvents: editingExtra?.id === extra.id ? 'auto' : 'none'
+                          }}
+                        />
+                        <div style={{ fontSize: '11px', color: 'var(--gold-primary)', marginTop: '4px', fontWeight: '800' }}>PRECIO EN CAJA</div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                        <div style={{ position: 'relative', width: '80px' }}>
+                          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '800' }}>$</span>
+                          <input 
+                            className="form-input"
+                            type="number"
+                            step="0.01"
+                            value={editingExtra?.id === extra.id ? editingExtra.price : extra.price}
+                            onChange={e => setEditingExtra({ ...(editingExtra || extra), id: extra.id, price: e.target.value })}
+                            readOnly={editingExtra?.id !== extra.id}
+                            style={{ 
+                              height: '36px', 
+                              paddingLeft: '22px', 
+                              fontSize: '13px', 
+                              fontWeight: '800', 
+                              textAlign: 'right', 
+                              background: editingExtra?.id === extra.id ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.2)', 
+                              border: editingExtra?.id === extra.id ? '1px solid var(--gold-primary)' : '1px solid transparent', 
+                              width: '100%',
+                              pointerEvents: editingExtra?.id === extra.id ? 'auto' : 'none'
+                            }}
+                          />
+                        </div>
+                        
+                        {editingExtra?.id === extra.id ? (
+                          <button onClick={() => { handleUpdateBillableExtra(extra.id, { name: editingExtra.name, price: Number(editingExtra.price) }); setEditingExtra(null); }} className="action-btn" style={{ backgroundColor: '#32d74b', color: 'black', flexShrink: 0 }}>
+                            <Check size={16} strokeWidth={3} />
+                          </button>
+                        ) : (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button onClick={() => setEditingExtra(extra)} className="action-btn" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'white', flexShrink: 0 }}>
+                              <Pencil size={14} />
+                            </button>
+                            <button onClick={(e) => handleDeleteBillableExtra(e, extra.id, extra.name)} className="action-btn" style={{ backgroundColor: 'rgba(255,69,58,0.1)', color: '#ff453a', flexShrink: 0 }}>
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <div className="extra-add-row">
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '0.5px' }}>NOMBRE DEL EXTRA</label>
+                    <input className="form-input" placeholder="Ej. Mascarilla..." value={newExtraName} onChange={e => setNewExtraName(e.target.value)} style={{ height: '44px', fontSize: '13px', width: '100%' }} />
+                  </div>
+                  <div style={{ width: '90px', flexShrink: 0 }}>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '0.5px' }}>PRECIO</label>
+                    <div style={{ position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '12px', fontWeight: '800' }}>$</span>
+                      <input className="form-input" type="number" step="0.01" value={newExtraPrice} onChange={e => setNewExtraPrice(e.target.value)} style={{ height: '44px', paddingLeft: '24px', fontSize: '13px', fontWeight: '800', width: '100%' }} />
+                    </div>
+                  </div>
+                  <button onClick={handleAddBillableExtra} className="btn-gold" style={{ height: '44px', width: '44px', borderRadius: '12px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Plus size={24} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatedModal>
+       {/* Details Modal */}
+      <AnimatedModal isOpen={!!selectedServiceDetail}>
+        {(overlayClass, cardClass) => (
+          selectedServiceDetail && (
+            <div className={overlayClass} style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 99999, padding: isMobile ? '12px' : '20px'
+            }}>
+              <div className={`${cardClass} glass-card astro-scrollbar`} style={{
+                width: '100%', maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
+                padding: isMobile ? '20px 16px' : '24px', borderRadius: '28px',
+                border: '1px solid rgba(212,175,55,0.2)',
+                boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
+                position: 'relative'
+              }}>
+                <button 
+                  onClick={() => setSelectedServiceDetail(null)} 
+                  style={{ position: 'absolute', right: isMobile ? '32px' : '48px', top: '20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <X size={20} />
+                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', paddingRight: '40px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-primary)' }}>
+                    {selectedServiceDetail.icon ? getIconComponent(selectedServiceDetail.icon, 20) : getCategoryIcon(selectedServiceDetail.category)}
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{selectedServiceDetail.category}</span>
+                    {selectedServiceDetail.strategy_type && (
+                      <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: '900', backgroundColor: 'rgba(212,175,55,0.1)', padding: '2px 8px', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', color: 'var(--gold-primary)' }}>
+                        {selectedServiceDetail.strategy_type}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <h3 style={{ fontSize: '22px', fontWeight: '800', color: 'white', marginBottom: '16px', paddingRight: '40px' }}>{selectedServiceDetail.name}</h3>
+
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '10px' }}>
+                    <Clock size={14} color="var(--gold-primary)" />
+                    <strong>Duración:</strong> {selectedServiceDetail.duration || 30} min
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '10px' }}>
+                    <Scissors size={14} color="var(--gold-primary)" />
+                    <strong>Comisión:</strong> {selectedServiceDetail.commission_barber}%
+                  </div>
+                </div>
+
+                {selectedServiceDetail.description && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase' }}>Guión de Venta / Descripción</div>
+                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', lineHeight: '1.5', margin: 0, padding: '12px', borderRadius: '12px', backgroundColor: 'rgba(0,0,0,0.2)', fontStyle: 'italic', border: '1px solid rgba(255,255,255,0.03)' }}>
+                      "{selectedServiceDetail.description}"
+                    </p>
+                  </div>
+                )}
+
+                {selectedServiceDetail.included_items && selectedServiceDetail.included_items.length > 0 && (
+                  <div style={{ marginBottom: '24px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Checklist Incluido ({selectedServiceDetail.included_items.length})</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {selectedServiceDetail.included_items.map((item, idx) => (
+                        <span key={idx} style={{ fontSize: '11px', padding: '6px 12px', borderRadius: '8px', backgroundColor: 'rgba(212,175,55,0.05)', color: 'white', border: '1px solid rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Check size={12} color="var(--gold-primary)" strokeWidth={3} /> {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="details-price-row">
+                  <div>
+                    <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Precio Base</div>
+                    <div style={{ fontSize: '24px', fontWeight: '900', color: 'white' }}>${selectedServiceDetail.price}</div>
+                  </div>
+                  {rates?.usd > 0 && (
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Precio en Bolívares</div>
+                      <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+                        {Math.round(selectedServiceDetail.price * rates.usd).toLocaleString()} Bs.
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button 
+                    onClick={() => {
+                      setSelectedServiceDetail(null);
+                      handleEditClick(selectedServiceDetail);
+                    }} 
+                    className="btn-gold" 
+                    style={{ flex: 1, height: '44px', borderRadius: '12px' }}
+                  >
+                    Editar Servicio
+                  </button>
+                  <button 
+                    onClick={() => setSelectedServiceDetail(null)} 
+                    style={{ flex: 1, height: '44px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', fontWeight: '700', transition: 'background-color 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        )}
+      </AnimatedModal>
+
+      {/* Modal de Categorías */}
+      <AnimatedModal isOpen={isCategoriesModalOpen}>
+        {(overlayClass, cardClass) => (
+          <div className={overlayClass} style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 99999, padding: isMobile ? '12px' : '20px'
+          }}>
+            <div className={`${cardClass} glass-card astro-scrollbar`} style={{
+              width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
+              padding: isMobile ? '20px 16px' : '28px', borderRadius: '28px',
+              border: '1px solid rgba(212,175,55,0.2)',
+              boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
+              position: 'relative'
+            }}>
+              <button 
+                onClick={() => setIsCategoriesModalOpen(false)} 
+                style={{ position: 'absolute', right: '20px', top: '20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X size={20} />
+              </button>
+
+              <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'white', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '40px' }}>
+                <Settings size={20} color="var(--gold-primary)" /> Categorías
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '20px' }}>Agrega o elimina las categorías disponibles para clasificar tus servicios.</p>
+
+              {/* Agregar Categoría */}
+              <div style={{ marginBottom: '24px', backgroundColor: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.5px' }}>
+                  {editingCategory ? 'EDITAR CATEGORÍA' : 'NUEVA CATEGORÍA'}
+                </label>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                  <input 
+                    className="form-input" 
+                    placeholder="Ej. Manicura, Masajes" 
+                    value={newCategoryName} 
+                    onChange={e => setNewCategoryName(e.target.value)} 
+                    style={{ height: '44px', flex: 1 }} 
+                  />
+                  {editingCategory && (
+                    <button 
+                      onClick={handleCancelEditCategory} 
+                      className="btn-gold" 
+                      style={{ height: '44px', width: '44px', borderRadius: '12px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
+                      type="button"
+                    >
+                      <X size={20} />
+                    </button>
+                  )}
+                  <button 
+                    onClick={handleSaveCategory} 
+                    className="btn-gold" 
+                    style={{ height: '44px', width: '44px', borderRadius: '12px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                  >
+                    {editingCategory ? <Check size={20} /> : <Plus size={24} />}
+                  </button>
+                </div>
+
+                <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.5px' }}>ICONO ASOCIADO</label>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(6, 1fr)', 
+                  gap: '8px', 
+                  backgroundColor: 'rgba(0,0,0,0.2)', 
+                  padding: '10px', 
+                  borderRadius: '12px' 
+                }}>
+                  {AVAILABLE_ICONS.map(icon => {
+                    const isSelected = selectedCategoryIcon === icon.name;
+                    return (
+                      <button
+                        key={icon.name}
+                        title={icon.label}
+                        type="button"
+                        onClick={() => setSelectedCategoryIcon(icon.name)}
+                        style={{
+                          height: '40px',
+                          borderRadius: '8px',
+                          border: isSelected ? '1px solid var(--gold-primary)' : '1px solid transparent',
+                          background: isSelected ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
+                          color: isSelected ? 'var(--gold-primary)' : 'rgba(255,255,255,0.6)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {getIconComponent(icon.name, 18)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Listado de Categorías */}
+              <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                {categories.map((catObj, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ color: 'var(--gold-primary)' }}>
+                        {getIconComponent(catObj.icon || getFallbackIconName(catObj.name), 20)}
+                      </div>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{catObj.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        onClick={() => handleEditCategoryClick(catObj)} 
+                        style={{ background: 'rgba(212,175,55,0.1)', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteCategory(catObj)} 
+                        style={{ background: 'rgba(255,69,58,0.1)', border: 'none', color: '#ff453a', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
 
-            <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input 
-                  className="form-input" 
-                  placeholder="Nuevo ítem..." 
-                  value={newItemName}
-                  onChange={e => setNewItemName(e.target.value)}
-                  style={{ flex: 1, height: '40px', fontSize: '13px', minWidth: 0 }}
-                />
-
-                <button onClick={handleAddMasterChecklistItem} className="btn-gold" style={{ width: '40px', height: '40px', borderRadius: '10px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Plus size={20} />
+              <div style={{ display: 'flex', gap: '12px', marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px' }}>
+                <button 
+                  onClick={() => setIsCategoriesModalOpen(false)} 
+                  className="btn-gold" 
+                  style={{ flex: 1, height: '44px', borderRadius: '12px' }}
+                >
+                  Cerrar
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatedModal>
 
-      {/* Billable Extras Management Modal */}
-      {isBillableExtrasModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div className="glass-card animate-scale-in" style={{ width: '100%', maxWidth: '500px', padding: '32px', borderRadius: '32px', border: '1px solid rgba(212,175,55,0.2)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <div>
-                <h3 style={{ fontSize: '20px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Rocket size={24} color="var(--gold-primary)" /> Servicios Adicionales (Extras)
-                </h3>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>Servicios con costo extra que se añaden en caja.</p>
-              </div>
-              <button onClick={() => setIsBillableExtrasModalOpen(false)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {/* Modal de Estrategias */}
+      <AnimatedModal isOpen={isStrategiesModalOpen}>
+        {(overlayClass, cardClass) => (
+          <div className={overlayClass} style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 99999, padding: isMobile ? '12px' : '20px'
+          }}>
+            <div className={`${cardClass} glass-card astro-scrollbar`} style={{
+              width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
+              padding: isMobile ? '20px 16px' : '28px', borderRadius: '28px',
+              border: '1px solid rgba(212,175,55,0.2)',
+              boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
+              position: 'relative'
+            }}>
+              <button 
+                onClick={() => setIsStrategiesModalOpen(false)} 
+                style={{ position: 'absolute', right: '20px', top: '20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
                 <X size={20} />
               </button>
-            </div>
 
-            <div style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '8px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {billableExtras.map(extra => (
-                  <div key={extra.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <input 
-                        className="form-input"
-                        value={editingExtra?.id === extra.id ? editingExtra.name : extra.name}
-                        onChange={e => setEditingExtra({ ...(editingExtra || extra), id: extra.id, name: e.target.value })}
-                        readOnly={editingExtra?.id !== extra.id}
-                        style={{ 
-                          background: 'transparent', 
-                          border: 'none', 
-                          padding: 0, 
-                          height: 'auto', 
-                          fontSize: '14px', 
-                          fontWeight: '700', 
-                          width: '100%',
-                          color: editingExtra?.id === extra.id ? 'var(--gold-primary)' : 'white',
-                          pointerEvents: editingExtra?.id === extra.id ? 'auto' : 'none'
-                        }}
-                      />
-                      <div style={{ fontSize: '11px', color: 'var(--gold-primary)', marginTop: '4px', fontWeight: '800' }}>PRECIO EN CAJA</div>
+              <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'white', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '40px' }}>
+                <Crown size={20} color="var(--gold-primary)" /> Estrategias de Venta
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '20px' }}>Configura los tipos de estrategias de venta cruzada y retención para tus servicios.</p>
+
+              {/* Agregar Estrategia */}
+              <div style={{ marginBottom: '24px', backgroundColor: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="strategy-add-grid">
+                  <div>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.5px' }}>VALOR CLAVE</label>
+                    <input 
+                      className="form-input" 
+                      placeholder="Ej. VIP, Promo" 
+                      value={newStrategyValue} 
+                      onChange={e => setNewStrategyValue(e.target.value)} 
+                      style={{ height: '44px', width: '100%' }} 
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.5px' }}>ETIQUETA VISIBLE</label>
+                    <input 
+                      className="form-input" 
+                      placeholder="Ej. Servicio VIP Astro" 
+                      value={newStrategyLabel} 
+                      onChange={e => setNewStrategyLabel(e.target.value)} 
+                      style={{ height: '44px', width: '100%' }} 
+                    />
+                  </div>
+                </div>
+                <button 
+                  onClick={handleAddStrategy} 
+                  className="btn-gold" 
+                  style={{ height: '44px', width: '100%', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                  <Plus size={18} /> Agregar Estrategia
+                </button>
+              </div>
+
+              {/* Listado de Estrategias */}
+              <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
+                {strategies.map((strat, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{strat.label}</span>
+                      <span style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '900' }}>VALOR: {strat.value}</span>
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteStrategy(strat.value)} 
+                      style={{ background: 'rgba(255,69,58,0.1)', border: 'none', color: '#ff453a', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px' }}>
+                <button 
+                  onClick={() => setIsStrategiesModalOpen(false)} 
+                  className="btn-gold" 
+                  style={{ flex: 1, height: '44px', borderRadius: '12px' }}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatedModal>
+
+      {/* Modal para Crear/Editar Servicio */}
+      <AnimatedModal isOpen={showAddForm}>
+        {(overlayClass, cardClass) => (
+          showAddForm && (
+            <div className={overlayClass} style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 99999, padding: isMobile ? '12px' : '20px'
+            }}>
+              <div className={`${cardClass} glass-card astro-scrollbar`} style={{
+                width: '100%', maxWidth: '900px',
+                maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+                padding: isMobile ? '20px 16px' : '32px', borderRadius: '28px',
+                border: '1px solid rgba(212,175,55,0.2)',
+                boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
+                position: 'relative'
+              }}>
+                <button 
+                  onClick={() => { setShowAddForm(false); setIsEditing(false); }} 
+                  style={{ position: 'absolute', right: isMobile ? '32px' : '48px', top: '20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <X size={20} />
+                </button>
+
+                <div className="astro-scrollbar" style={{ overflowY: 'auto', overflowX: 'hidden', flex: 1, paddingRight: '8px' }}><h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '24px', paddingRight: '40px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ color: 'var(--gold-primary)', display: 'flex', alignItems: 'center' }}>
+                    {getIconComponent(newService.icon || 'Scissors', 22)}
+                  </span>
+                  {isEditing ? 'Editar Servicio' : 'Nuevo Servicio'}
+                </h3>
+                
+                <div className="modal-main-grid">
+                  {/* Left Column: Form Fields */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div className="form-group">
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>NOMBRE DEL SERVICIO</label>
+                      <div style={{ position: 'relative' }}>
+                        <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center' }}>
+                          {getIconComponent(newService.icon || 'Scissors', 18)}
+                        </span>
+                        <input className="form-input" placeholder="Ej. Corte Suprema" value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                      </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                      <div style={{ position: 'relative', width: '80px' }}>
-                        <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '800' }}>$</span>
-                        <input 
-                          className="form-input"
-                          type="number"
-                          step="0.01"
-                          value={editingExtra?.id === extra.id ? editingExtra.price : extra.price}
-                          onChange={e => setEditingExtra({ ...(editingExtra || extra), id: extra.id, price: e.target.value })}
-                          readOnly={editingExtra?.id !== extra.id}
-                          style={{ 
-                            height: '36px', 
-                            paddingLeft: '22px', 
-                            fontSize: '13px', 
-                            fontWeight: '800', 
-                            textAlign: 'right', 
-                            background: editingExtra?.id === extra.id ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.2)', 
-                            border: editingExtra?.id === extra.id ? '1px solid var(--gold-primary)' : '1px solid transparent', 
-                            width: '100%',
-                            pointerEvents: editingExtra?.id === extra.id ? 'auto' : 'none'
-                          }}
-                        />
+                    {/* Icon Picker */}
+                    <div className="form-group">
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '10px', letterSpacing: '1px' }}>ÍCONO ASOCIADO</label>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {AVAILABLE_ICONS.map(ic => (
+                          <button
+                            key={ic.name}
+                            title={ic.label}
+                            onClick={() => setNewService({...newService, icon: ic.name})}
+                            style={{
+                              width: '40px',
+                              height: '40px',
+                              borderRadius: '10px',
+                              border: newService.icon === ic.name
+                                ? '2px solid var(--gold-primary)'
+                                : '1px solid rgba(255,255,255,0.08)',
+                              background: newService.icon === ic.name
+                                ? 'rgba(212,175,55,0.15)'
+                                : 'rgba(255,255,255,0.04)',
+                              color: newService.icon === ic.name ? 'var(--gold-primary)' : 'var(--text-muted)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              transition: 'all 0.18s',
+                              flexShrink: 0
+                            }}
+                          >
+                            {getIconComponent(ic.name, 17)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>DESCRIPCIÓN DEL SERVICIO</label>
+                      <textarea 
+                        className="form-input" 
+                        placeholder="Describe los beneficios premium del servicio..." 
+                        value={newService.description || ''} 
+                        onChange={e => setNewService({...newService, description: e.target.value})} 
+                        onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
+                        ref={el => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }}
+                        style={{ width: '100%', minHeight: '80px', paddingTop: '12px', resize: 'none', fontSize: '13px', lineHeight: '1.5', overflow: 'hidden' }} 
+                      />
+                    </div>
+
+                    <div className="modal-grid-2col">
+                      <div className="form-group">
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>PRECIO ($)</label>
+                        <div className="premium-price-input-container">
+                          <span className="price-currency-symbol">$</span>
+                          <input 
+                            className="price-input-field" 
+                            type="number" 
+                            placeholder="25" 
+                            value={newService.price === 0 ? '' : newService.price} 
+                            onChange={e => setNewService({...newService, price: e.target.value === '' ? '' : Number(e.target.value)})} 
+                          />
+                          {rates?.usd > 0 && (
+                            <div className="price-bs-equivalent">
+                              ≈ {Math.round((Number(newService.price) || 0) * rates.usd).toLocaleString()} Bs.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>DURACIÓN (MIN)</label>
+                        <input className="form-input" type="number" placeholder="45" value={newService.duration === 0 ? '' : newService.duration} onChange={e => setNewService({...newService, duration: e.target.value === '' ? '' : Number(e.target.value)})} style={{ width: '100%' }} />
+                      </div>
+                    </div>
+
+                    <div className="modal-grid-2col">
+                      <AstroSelect 
+                        label="CATEGORÍA"
+                        value={newService.category}
+                        onChange={val => setNewService({...newService, category: val})}
+                        options={categories.map(c => ({ label: c.name, value: c.name }))}
+                      />
+                      <AstroSelect 
+                        label="ESTRATEGIA"
+                        value={newService.strategy_type}
+                        onChange={val => setNewService({...newService, strategy_type: val})}
+                        options={strategies.map(strat => ({ label: strat.label, value: strat.value }))}
+                      />
+                    </div>
+
+                    {/* Commissions Distribution */}
+                    <div className="modal-commissions">
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>
+                        <DollarSign size={14} /> DISTRIBUCIÓN DE INGRESOS (%)
+                      </label>
+                      
+                      <div className="commissions-fields-grid" style={{ marginBottom: '16px' }}>
+                        <div className="form-group">
+                          <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>COMISIÓN BARBERO (%)</label>
+                          <input 
+                            className="form-input" 
+                            type="number" 
+                            placeholder="40"
+                            value={newService.commission_barber === 0 ? '' : newService.commission_barber} 
+                            onChange={e => setNewService({...newService, commission_barber: e.target.value === '' ? 0 : Number(e.target.value)})} 
+                            style={{ width: '100%', fontSize: '15px', fontWeight: '800', height: '48px', color: 'var(--gold-primary)' }} 
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>GANANCIA BARBERÍA (%)</label>
+                          <input 
+                            className="form-input" 
+                            type="number" 
+                            readOnly
+                            value={100 - (Number(newService.commission_barber) || 0)} 
+                            style={{ width: '100%', fontSize: '15px', fontWeight: '800', height: '48px', color: 'var(--text-muted)', backgroundColor: 'rgba(255,255,255,0.01)', cursor: 'not-allowed' }} 
+                          />
+                        </div>
                       </div>
                       
-                      {editingExtra?.id === extra.id ? (
-                        <button onClick={() => { handleUpdateBillableExtra(extra.id, { name: editingExtra.name, price: Number(editingExtra.price) }); setEditingExtra(null); }} className="action-btn" style={{ backgroundColor: '#32d74b', color: 'black', flexShrink: 0 }}>
-                          <Check size={16} strokeWidth={3} />
-                        </button>
-                      ) : (
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => setEditingExtra(extra)} className="action-btn" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'white', flexShrink: 0 }}>
-                            <Pencil size={14} />
-                          </button>
-                          <button onClick={(e) => handleDeleteBillableExtra(e, extra.id, extra.name)} className="action-btn" style={{ backgroundColor: 'rgba(255,69,58,0.1)', color: '#ff453a', flexShrink: 0 }}>
-                            <Trash2 size={16} />
-                          </button>
+                      {/* Business Net Margin Indicator */}
+                      {(newService.price > 0) && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
+                          
+                          {/* Row 1: Ganancia Barbería */}
+                          <div style={{ 
+                            padding: '12px 16px', 
+                            borderRadius: '14px', 
+                            background: 'rgba(50, 215, 75, 0.05)', 
+                            border: '1px solid rgba(50, 215, 75, 0.15)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}>
+                            <div>
+                              <div style={{ fontSize: '9px', fontWeight: '800', color: '#32d74b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                Ganancia Real Barbería
+                              </div>
+                              <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', marginTop: '2px' }}>
+                                ${((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)).toFixed(2)}
+                              </div>
+                            </div>
+                            {rates?.usd > 0 && (
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
+                                <div style={{ fontSize: '13px', fontWeight: '800', color: '#32d74b', marginTop: '2px' }}>
+                                  {Math.round(((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)) * rates.usd).toLocaleString()} Bs.
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Row 2: Pago Barbero */}
+                          <div style={{ 
+                            padding: '12px 16px', 
+                            borderRadius: '14px', 
+                            background: 'rgba(212, 175, 55, 0.05)', 
+                            border: '1px solid rgba(212, 175, 55, 0.15)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}>
+                            <div>
+                              <div style={{ fontSize: '9px', fontWeight: '800', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                Pago Real Barbero
+                              </div>
+                              <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', marginTop: '2px' }}>
+                                ${(((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0)) / 100).toFixed(2)}
+                              </div>
+                            </div>
+                            {rates?.usd > 0 && (
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
+                                <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--gold-primary)', marginTop: '2px' }}>
+                                  {Math.round((((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0)) / 100) * rates.usd).toLocaleString()} Bs.
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
                         </div>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            <div style={{ paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '0.5px' }}>NOMBRE DEL EXTRA</label>
-                  <input className="form-input" placeholder="Ej. Mascarilla..." value={newExtraName} onChange={e => setNewExtraName(e.target.value)} style={{ height: '44px', fontSize: '13px', width: '100%' }} />
-                </div>
-                <div style={{ width: '90px', flexShrink: 0 }}>
-                  <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '0.5px' }}>PRECIO</label>
-                  <div style={{ position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '12px', fontWeight: '800' }}>$</span>
-                    <input className="form-input" type="number" step="0.01" value={newExtraPrice} onChange={e => setNewExtraPrice(e.target.value)} style={{ height: '44px', paddingLeft: '24px', fontSize: '13px', fontWeight: '800', width: '100%' }} />
-                  </div>
-                </div>
-                <button onClick={handleAddBillableExtra} className="btn-gold" style={{ height: '44px', width: '44px', borderRadius: '12px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Plus size={24} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-       {/* Details Modal */}
-      {selectedServiceDetail && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 3000, padding: '20px'
-        }}>
-          <div className="glass-card animate-scale-in" style={{
-            width: '100%', maxWidth: '440px',
-            padding: '24px', borderRadius: '28px',
-            border: '1px solid rgba(212,175,55,0.2)',
-            boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
-            position: 'relative'
-          }}>
-            <button 
-              onClick={() => setSelectedServiceDetail(null)} 
-              style={{ position: 'absolute', right: '20px', top: '20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <X size={18} />
-            </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-primary)' }}>
-                {getCategoryIcon(selectedServiceDetail.category)}
-              </div>
-              <div>
-                <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{selectedServiceDetail.category}</span>
-                {selectedServiceDetail.strategy_type && (
-                  <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: '900', backgroundColor: 'rgba(212,175,55,0.1)', padding: '2px 8px', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', color: 'var(--gold-primary)' }}>
-                    {selectedServiceDetail.strategy_type}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <h3 style={{ fontSize: '22px', fontWeight: '800', color: 'white', marginBottom: '16px' }}>{selectedServiceDetail.name}</h3>
-
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '10px' }}>
-                <Clock size={14} color="var(--gold-primary)" />
-                <strong>Duración:</strong> {selectedServiceDetail.duration || 30} min
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '10px' }}>
-                <Scissors size={14} color="var(--gold-primary)" />
-                <strong>Comisión:</strong> {selectedServiceDetail.commission_barber}%
-              </div>
-            </div>
-
-            {selectedServiceDetail.description && (
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase' }}>Guión de Venta / Descripción</div>
-                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', lineHeight: '1.5', margin: 0, padding: '12px', borderRadius: '12px', backgroundColor: 'rgba(0,0,0,0.2)', fontStyle: 'italic', border: '1px solid rgba(255,255,255,0.03)' }}>
-                  "{selectedServiceDetail.description}"
-                </p>
-              </div>
-            )}
-
-            {selectedServiceDetail.included_items && selectedServiceDetail.included_items.length > 0 && (
-              <div style={{ marginBottom: '24px' }}>
-                <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Checklist Incluido ({selectedServiceDetail.included_items.length})</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {selectedServiceDetail.included_items.map((item, idx) => (
-                    <span key={idx} style={{ fontSize: '11px', padding: '6px 12px', borderRadius: '8px', backgroundColor: 'rgba(212,175,55,0.05)', color: 'white', border: '1px solid rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Check size={12} color="var(--gold-primary)" strokeWidth={3} /> {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              borderTop: '1px solid rgba(255,255,255,0.08)', 
-              paddingTop: '20px',
-              marginBottom: '20px'
-            }}>
-              <div>
-                <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Precio Base</div>
-                <div style={{ fontSize: '24px', fontWeight: '900', color: 'white' }}>${selectedServiceDetail.price}</div>
-              </div>
-              {rates?.usd > 0 && (
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Precio en Bolívares</div>
-                  <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--gold-primary)' }}>
-                    {Math.round(selectedServiceDetail.price * rates.usd).toLocaleString()} Bs.
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button 
-                onClick={() => {
-                  setSelectedServiceDetail(null);
-                  handleEditClick(selectedServiceDetail);
-                }} 
-                className="btn-gold" 
-                style={{ flex: 1, height: '44px', borderRadius: '12px' }}
-              >
-                Editar Servicio
-              </button>
-              <button 
-                onClick={() => setSelectedServiceDetail(null)} 
-                style={{ flex: 1, height: '44px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', fontWeight: '700', transition: 'background-color 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Categorías */}
-      {isCategoriesModalOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 3000, padding: '20px'
-        }}>
-          <div className="glass-card animate-scale-in" style={{
-            width: '100%', maxWidth: '480px',
-            padding: '28px', borderRadius: '28px',
-            border: '1px solid rgba(212,175,55,0.2)',
-            boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
-            position: 'relative'
-          }}>
-            <button 
-              onClick={() => setIsCategoriesModalOpen(false)} 
-              style={{ position: 'absolute', right: '20px', top: '20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <X size={18} />
-            </button>
-
-            <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'white', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Settings size={20} color="var(--gold-primary)" /> Gestionar Categorías
-            </h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '20px' }}>Agrega o elimina las categorías disponibles para clasificar tus servicios.</p>
-
-            {/* Agregar Categoría */}
-            <div style={{ marginBottom: '24px', backgroundColor: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.5px' }}>NUEVA CATEGORÍA</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input 
-                  className="form-input" 
-                  placeholder="Ej. Manicura, Masajes" 
-                  value={newCategoryName} 
-                  onChange={e => setNewCategoryName(e.target.value)} 
-                  style={{ height: '44px', flex: 1 }} 
-                />
-                <button 
-                  onClick={handleAddCategory} 
-                  className="btn-gold" 
-                  style={{ height: '44px', width: '44px', borderRadius: '12px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                >
-                  <Plus size={24} />
-                </button>
-              </div>
-            </div>
-
-            {/* Listado de Categorías */}
-            <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
-              {categories.map((cat, idx) => (
-                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ color: 'var(--gold-primary)' }}>
-                      {getCategoryIcon(cat)}
+                  {/* Right Column: Checklist */}
+                  <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>
+                        <LayoutList size={16} /> CHECKLIST (INCLUIDO)
+                      </label>
+                      <button 
+                        onClick={() => setIsExtrasModalOpen(true)}
+                        style={{ 
+                          background: 'rgba(212,175,55,0.1)', 
+                          border: '1px solid rgba(212,175,55,0.2)', 
+                          borderRadius: '8px', 
+                          padding: '4px 12px', 
+                          fontSize: '10px',
+                          fontWeight: '800',
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '6px',
+                          cursor: 'pointer', 
+                          color: 'var(--gold-primary)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}
+                      >
+                        <Settings size={12} /> Items
+                      </button>
                     </div>
-                    <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{cat}</span>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
+                      {baseItems.map(item => (
+                        <div key={item.id} style={{ position: 'relative' }} className="group">
+                          <button 
+                            onClick={() => {
+                              const current = newService.included_items || [];
+                              const next = current.includes(item.name) 
+                                ? current.filter(i => i !== item.name)
+                                : [...current, item.name];
+                              setNewService({...newService, included_items: next});
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: '12px',
+                              fontSize: '13px',
+                              textAlign: 'left',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              background: newService.included_items?.includes(item.name) ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.02)',
+                              border: newService.included_items?.includes(item.name) ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
+                              color: newService.included_items?.includes(item.name) ? 'white' : 'var(--text-muted)'
+                            }}
+                          >
+                            <div style={{ 
+                              width: '18px', 
+                              height: '18px', 
+                              borderRadius: '4px', 
+                              border: '1px solid var(--border-color)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: newService.included_items?.includes(item.name) ? 'var(--gold-primary)' : 'transparent'
+                            }}>
+                              {newService.included_items?.includes(item.name) && <Check size={12} color="black" strokeWidth={4} />}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: '700' }}>{item.name}</div>
+                            </div>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                </div>
+
+                <div className="modal-actions-wrapper">
                   <button 
-                    onClick={() => handleDeleteCategory(cat)} 
-                    style={{ background: 'rgba(255,69,58,0.1)', border: 'none', color: '#ff453a', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    onClick={() => { setShowAddForm(false); setIsEditing(false); }} 
+                    style={{ height: '54px', padding: '0 30px', fontSize: '16px', borderRadius: '16px', backgroundColor: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', fontWeight: '700' }}
                   >
-                    <Trash2 size={16} />
+                    Cancelar
+                  </button>
+                  <button className="btn-gold" onClick={handleCreateService} style={{ height: '54px', padding: '0 40px', fontSize: '16px', borderRadius: '16px' }}>
+                    {isEditing ? 'Guardar Cambios' : 'Lanzar Servicio al Catálogo'}
                   </button>
                 </div>
-              ))}
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px' }}>
-              <button 
-                onClick={() => setIsCategoriesModalOpen(false)} 
-                className="btn-gold" 
-                style={{ flex: 1, height: '44px', borderRadius: '12px' }}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Estrategias */}
-      {isStrategiesModalOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 3000, padding: '20px'
-        }}>
-          <div className="glass-card animate-scale-in" style={{
-            width: '100%', maxWidth: '520px',
-            padding: '28px', borderRadius: '28px',
-            border: '1px solid rgba(212,175,55,0.2)',
-            boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
-            position: 'relative'
-          }}>
-            <button 
-              onClick={() => setIsStrategiesModalOpen(false)} 
-              style={{ position: 'absolute', right: '20px', top: '20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <X size={18} />
-            </button>
-
-            <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'white', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Crown size={20} color="var(--gold-primary)" /> Gestionar Estrategias de Venta
-            </h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '20px' }}>Configura los tipos de estrategias de venta cruzada y retención para tus servicios.</p>
-
-            {/* Agregar Estrategia */}
-            <div style={{ marginBottom: '24px', backgroundColor: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '12px', marginBottom: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.5px' }}>VALOR CLAVE</label>
-                  <input 
-                    className="form-input" 
-                    placeholder="Ej. VIP, Promo" 
-                    value={newStrategyValue} 
-                    onChange={e => setNewStrategyValue(e.target.value)} 
-                    style={{ height: '44px', width: '100%' }} 
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.5px' }}>ETIQUETA VISIBLE</label>
-                  <input 
-                    className="form-input" 
-                    placeholder="Ej. Servicio VIP Astro" 
-                    value={newStrategyLabel} 
-                    onChange={e => setNewStrategyLabel(e.target.value)} 
-                    style={{ height: '44px', width: '100%' }} 
-                  />
-                </div>
+              </div> {/* Closing astro-scrollbar */}
               </div>
-              <button 
-                onClick={handleAddStrategy} 
-                className="btn-gold" 
-                style={{ height: '44px', width: '100%', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-              >
-                <Plus size={18} /> Agregar Estrategia
-              </button>
             </div>
-
-            {/* Listado de Estrategias */}
-            <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }}>
-              {strategies.map((strat, idx) => (
-                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{strat.label}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '900' }}>VALOR: {strat.value}</span>
-                  </div>
-                  <button 
-                    onClick={() => handleDeleteStrategy(strat.value)} 
-                    style={{ background: 'rgba(255,69,58,0.1)', border: 'none', color: '#ff453a', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px' }}>
-              <button 
-                onClick={() => setIsStrategiesModalOpen(false)} 
-                className="btn-gold" 
-                style={{ flex: 1, height: '44px', borderRadius: '12px' }}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          )
+        )}
+      </AnimatedModal>
     </div>
   );
 };

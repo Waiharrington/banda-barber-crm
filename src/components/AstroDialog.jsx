@@ -35,7 +35,7 @@ const AstroDialog = ({
           bottom: 0,
           backgroundColor: 'rgba(0, 0, 0, 0.85)',
           backdropFilter: 'blur(10px)',
-          zIndex: 9999,
+          zIndex: 9999999,
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',

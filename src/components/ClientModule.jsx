@@ -20,7 +20,8 @@ import {
   Check,
   LayoutGrid,
   Table as TableIcon,
-  MessageCircle
+  MessageCircle,
+  Receipt
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { supabase } from '../lib/supabase';
@@ -396,7 +397,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
               ))}
             </div>
           ) : (
-            <div className="glass-card animate-fade-in" style={{ padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.03)' }}>
+            <div className="animate-slide-up" style={{ background: 'rgba(28, 28, 30, 0.95)', padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'auto' }}>
                 <thead>
                   <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -1085,7 +1086,15 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
                     <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
                       <div className={`glass-card ${cardClass}`} style={{ maxWidth: '600px', width: '100%', padding: '24px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
-                          <h4 style={{ fontWeight: '900' }}>Elegir Foto {selectingFor}</h4>
+                          <h4 style={{ 
+                            fontWeight: '900',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}>
+                            <ImageIcon size={20} color="var(--gold-primary)" />
+                            <span>Elegir Foto {selectingFor}</span>
+                          </h4>
                           <button onClick={() => setSelectingFor(null)} style={{ background: 'none', border: 'none', color: 'white' }}><X size={20} /></button>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
@@ -1496,7 +1505,16 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
         {(overlayClass, cardClass) => (
           <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
             <div className={`glass-card ${cardClass}`} style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '24px', border: '1.5px solid rgba(212,175,55,0.3)' }}>
-              <h3 style={{ marginBottom: '20px', fontWeight: '900' }}>Configurar <span className="text-gold">Foto</span></h3>
+              <h3 style={{ 
+                marginBottom: '20px', 
+                fontWeight: '900',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <Camera size={22} color="var(--gold-primary)" />
+                <span>Configurar <span className="text-gold">Foto</span></span>
+              </h3>
               
               <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', overflow: 'hidden', marginBottom: '20px' }}>
                 <img src={pendingPhoto} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -1553,7 +1571,16 @@ const VisitDetailModal = ({ isOpen, visit, onClose, gallery = [] }) => {
         <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div className={`glass-card ${cardClass}`} style={{ maxWidth: '480px', width: '100%', borderRadius: '28px', padding: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Recibo de <span className="text-gold">Visita</span></h3>
+              <h3 style={{ 
+                fontSize: '20px', 
+                fontWeight: '900',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <Receipt size={22} color="var(--gold-primary)" />
+                <span>Recibo de <span className="text-gold">Visita</span></span>
+              </h3>
               <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
             </div>
 

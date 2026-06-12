@@ -35,7 +35,7 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
           position: 'fixed',
           bottom: window.innerHeight - rect.top + 8,
           left,
-          zIndex: 99999,
+          zIndex: 999999,
           width: `${calendarWidth}px`,
           top: 'auto'
         });
@@ -44,7 +44,7 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
           position: 'fixed',
           top: rect.bottom + 8,
           left,
-          zIndex: 99999,
+          zIndex: 999999,
           width: `${calendarWidth}px`,
           bottom: 'auto'
         });
@@ -143,7 +143,7 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
       className={`astro-datepicker-container ${className}`} 
       style={{ 
         position: position || 'relative', 
-        zIndex: isOpen ? 99999 : (zIndex || 1), 
+        zIndex: isOpen ? 999999 : (zIndex || 1), 
         width: width || '100%',
         top, left, right, bottom,
         margin, marginTop, marginBottom, marginLeft, marginRight,

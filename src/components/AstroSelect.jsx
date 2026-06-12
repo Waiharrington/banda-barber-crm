@@ -37,7 +37,7 @@ const AstroSelect = ({
           bottom: window.innerHeight - rect.top + 8,
           left: rect.left,
           width: rect.width,
-          zIndex: 99999,
+          zIndex: 999999,
           top: 'auto'
         });
       } else {
@@ -47,7 +47,7 @@ const AstroSelect = ({
           top: rect.bottom + 8,
           left: rect.left,
           width: rect.width,
-          zIndex: 99999,
+          zIndex: 999999,
           bottom: 'auto'
         });
       }

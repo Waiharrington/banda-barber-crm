@@ -386,6 +386,41 @@ const BarberPanel = ({ isMobile, rates }) => {
       const newGallery = [photoObj, ...currentGallery];
       await dataService.updateClient(app.client_id, { work_gallery: newGallery });
       
+      // Update local state instantly for real-time feedback
+      setMyServices(prev => prev.map(s => {
+        if (s.client_id === app.client_id) {
+          return {
+            ...s,
+            clients: {
+              ...s.clients,
+              work_gallery: newGallery
+            }
+          };
+        }
+        return s;
+      }));
+      setCompletedToday(prev => prev.map(s => {
+        if (s.client_id === app.client_id) {
+          return {
+            ...s,
+            clients: {
+              ...s.clients,
+              work_gallery: newGallery
+            }
+          };
+        }
+        return s;
+      }));
+      if (selectedCompletedApp && selectedCompletedApp.client_id === app.client_id) {
+        setSelectedCompletedApp(prev => ({
+          ...prev,
+          clients: {
+            ...prev.clients,
+            work_gallery: newGallery
+          }
+        }));
+      }
+
       showToast("¡Foto guardada con éxito!", "success");
       await loadMyWork();
     } catch (err) {
@@ -415,6 +450,42 @@ const BarberPanel = ({ isMobile, rates }) => {
       const newGallery = currentGallery.filter(p => !(p.service_id === appId && p.type === type));
 
       await dataService.updateClient(app.client_id, { work_gallery: newGallery });
+      
+      // Update local state instantly for real-time feedback
+      setMyServices(prev => prev.map(s => {
+        if (s.client_id === app.client_id) {
+          return {
+            ...s,
+            clients: {
+              ...s.clients,
+              work_gallery: newGallery
+            }
+          };
+        }
+        return s;
+      }));
+      setCompletedToday(prev => prev.map(s => {
+        if (s.client_id === app.client_id) {
+          return {
+            ...s,
+            clients: {
+              ...s.clients,
+              work_gallery: newGallery
+            }
+          };
+        }
+        return s;
+      }));
+      if (selectedCompletedApp && selectedCompletedApp.client_id === app.client_id) {
+        setSelectedCompletedApp(prev => ({
+          ...prev,
+          clients: {
+            ...prev.clients,
+            work_gallery: newGallery
+          }
+        }));
+      }
+
       showToast("Foto eliminada", "success");
       await loadMyWork();
     } catch (err) {

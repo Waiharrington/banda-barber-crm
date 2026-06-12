@@ -14,7 +14,9 @@ import {
   History,
   Tag, 
   Filter, 
-  ShieldAlert
+  ShieldAlert,
+  X,
+  Camera
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -25,7 +27,6 @@ import { createPortal } from 'react-dom';
 import AstroSelect from './AstroSelect';
 import AstroCamera from './AstroCamera';
 import AnimatedModal from './AnimatedModal';
-import { Camera } from 'lucide-react';
 
 const InventoryModule = ({ isMobile, currency, rates }) => {
   const { user } = useAuth();
@@ -98,13 +99,14 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState('all'); // 'all', 'today', 'week', 'month'
 
   useEffect(() => {
-    if (showAddForm || showCamera || showHistoryModal || editingItem) {
+    if (showCamera || showHistoryModal || editingItem) {
       pushModal();
       return () => popModal();
     }
-  }, [showAddForm, showCamera, showHistoryModal, editingItem, pushModal, popModal]);
+  }, [showCamera, showHistoryModal, editingItem, pushModal, popModal]);
 
   const handleAddItem = async () => {
     if (!newItem.name || saving) return;
@@ -212,9 +214,33 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
             <History size={18} style={{ marginRight: '6px' }} />
             {isMobile ? 'Historial' : 'Ver Historial'}
           </button>
-          <button className="btn-gold" onClick={() => setShowAddForm(true)} style={{ flex: isMobile ? '1 1 45%' : 'none', justifyContent: 'center', fontSize: isMobile ? '13px' : '14px', padding: isMobile ? '12px 8px' : '12px 16px', whiteSpace: 'nowrap' }}>
-            <Plus size={18} style={{ marginRight: '6px' }} />
-            {isMobile ? 'Producto' : 'Nuevo Producto'}
+          <button 
+            className="btn-gold" 
+            onClick={() => {
+              if (showAddForm) {
+                setShowAddForm(false);
+                setNewItem({
+                  name: '',
+                  stock: 0,
+                  price: 0,
+                  cost_price: 0,
+                  commission_pct: 10,
+                  category: 'Venta',
+                  image_url: '',
+                  staff_id: null,
+                  cost_price_dirty: false,
+                  price_dirty: false,
+                  stock_dirty: false,
+                  commission_pct_dirty: false
+                });
+              } else {
+                setShowAddForm(true);
+              }
+            }} 
+            style={{ flex: isMobile ? '1 1 45%' : 'none', justifyContent: 'center', fontSize: isMobile ? '13px' : '14px', padding: isMobile ? '12px 8px' : '12px 16px', whiteSpace: 'nowrap' }}
+          >
+            {showAddForm ? <X size={18} style={{ marginRight: '6px' }} /> : <Plus size={18} style={{ marginRight: '6px' }} />}
+            {showAddForm ? 'Cancelar' : (isMobile ? 'Producto' : 'Nuevo Producto')}
           </button>
         </div>
       </header>
@@ -485,11 +511,11 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                           <span style={{ 
                             fontWeight: '950', 
                             fontSize: isMobile ? '13px' : '15px',
-                            color: (item.stock <= 5 && item.category !== 'Accesorios') ? 'var(--gold-primary)' : 'white'
+                            color: (item.stock <= 5 && item.category !== 'Accesorios') ? '#ff4d4d' : 'white'
                           }}>
                             {item.stock}
                           </span>
-                          {(item.stock <= 5 && item.category !== 'Accesorios') && <AlertTriangle size={12} color="var(--gold-primary)" />}
+                          {(item.stock <= 5 && item.category !== 'Accesorios') && <AlertTriangle size={12} color="#ff4d4d" />}
                         </div>
                       </td>
                       <td style={{ padding: isMobile ? '12px 6px' : '16px 20px', textAlign: 'right' }}>
@@ -575,8 +601,8 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                     </span>
                   </div>
                   {isLowStock && (
-                    <span className="animate-pulse" style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', gap: '4px', letterSpacing: '1px' }}>
-                      <Zap size={14} fill="var(--gold-primary)" /> STOCK BAJO
+                    <span className="animate-pulse" style={{ fontSize: '10px', fontWeight: '900', color: '#ff4d4d', display: 'flex', alignItems: 'center', gap: '4px', letterSpacing: '1px' }}>
+                      <AlertTriangle size={14} color="#ff4d4d" fill="rgba(255, 77, 77, 0.2)" /> STOCK BAJO
                     </span>
                   )}
                 </div>
@@ -739,62 +765,190 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
 
       <AnimatedModal isOpen={showHistoryModal}>
         {(overlayClass, cardClass) => (
-          <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-            <div className={`glass-card ${cardClass}`} style={{ maxWidth: '800px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', padding: '24px 32px 0 32px' }}>
+          <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: isMobile ? '12px' : '20px' }}>
+            <div className={`glass-card ${cardClass}`} style={{ maxWidth: '800px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', padding: isMobile ? '24px 20px 0 20px' : '24px 32px 0 32px', gap: '16px' }}>
                 <div>
-                  <h2 style={{ fontWeight: '900', fontSize: '24px' }}>Historial de Movimientos</h2>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Registro detallado de entradas y salidas de almacén.</p>
+                  <h2 style={{ 
+                    fontWeight: '900', 
+                    fontSize: isMobile ? '20px' : '24px', 
+                    lineHeight: '1.2', 
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <History size={isMobile ? 20 : 24} color="var(--gold-primary)" />
+                    {isMobile ? 'Historial Stock' : 'Historial de Movimientos'}
+                  </h2>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>Registro detallado de entradas y salidas de almacén.</p>
                 </div>
-                <button onClick={() => setShowHistoryModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '32px', cursor: 'pointer' }}>&times;</button>
+                <button 
+                  onClick={() => setShowHistoryModal(false)} 
+                  style={{ 
+                    background: 'rgba(255,255,255,0.05)', 
+                    border: 'none', 
+                    color: 'white', 
+                    cursor: 'pointer', 
+                    width: '36px', 
+                    height: '36px', 
+                    borderRadius: '50%', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}
+                >
+                  <X size={20} />
+                </button>
               </div>
 
-              <div style={{ padding: '0 32px 32px 32px' }}>
+              <div style={{ padding: isMobile ? '0 20px 24px 20px' : '0 32px 32px 32px' }}>
+                {/* Time range filters */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                  {[
+                    { label: 'Todos', value: 'all' },
+                    { label: 'Hoy', value: 'today' },
+                    { label: 'Semana', value: 'week' },
+                    { label: 'Mes', value: 'month' }
+                  ].map(tab => (
+                    <button
+                      key={tab.value}
+                      onClick={() => setHistoryFilter(tab.value)}
+                      style={{
+                        padding: isMobile ? '6px 12px' : '8px 16px',
+                        borderRadius: '10px',
+                        fontSize: isMobile ? '11px' : '12px',
+                        fontWeight: '800',
+                        backgroundColor: historyFilter === tab.value ? 'var(--gold-primary)' : 'rgba(255,255,255,0.03)',
+                        color: historyFilter === tab.value ? 'black' : 'white',
+                        border: '1px solid ' + (historyFilter === tab.value ? 'var(--gold-primary)' : 'rgba(255,255,255,0.08)'),
+                        cursor: 'pointer',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
                 {loadingHistory ? (
                   <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
                     <Loader2 className="animate-spin" size={40} color="var(--gold-primary)" />
                   </div>
-                ) : history.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-                    <History size={48} style={{ marginBottom: '16px', opacity: 0.1 }} />
-                    <p>No hay movimientos registrados aún.</p>
-                  </div>
                 ) : (
-                  <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                      <thead style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                        <tr>
-                          <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>FECHA</th>
-                          <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>PRODUCTO</th>
-                          <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>TIPO</th>
-                          <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>CANT.</th>
-                          <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>MOTIVO</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {history.map(move => (
-                          <tr key={move.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                            <td style={{ padding: '16px', fontSize: '12px' }}>{new Date(move.created_at).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
-                            <td style={{ padding: '16px', fontSize: '13px', fontWeight: '700' }}>{move.inventory?.name || 'Producto Eliminado'}</td>
-                            <td style={{ padding: '16px' }}>
-                              <span style={{ 
-                                padding: '4px 10px', 
-                                borderRadius: '8px', 
-                                fontSize: '10px', 
-                                fontWeight: '800',
-                                backgroundColor: move.type === 'entry' ? 'rgba(50,215,75,0.1)' : 'rgba(255,69,58,0.1)',
-                                color: move.type === 'entry' ? '#32d74b' : '#ff453a'
-                              }}>
-                                {move.type === 'entry' ? 'ENTRADA' : 'SALIDA'}
-                              </span>
-                            </td>
-                            <td style={{ padding: '16px', fontSize: '14px', fontWeight: '900' }}>{move.type === 'entry' ? '+' : '-'}{move.amount}</td>
-                            <td style={{ padding: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>{move.reason}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  (() => {
+                    const filteredHistory = history.filter(move => {
+                      if (historyFilter === 'all') return true;
+                      const moveDate = new Date(move.created_at);
+                      const now = new Date();
+                      
+                      if (historyFilter === 'today') {
+                        return moveDate.toDateString() === now.toDateString();
+                      }
+                      
+                      if (historyFilter === 'week') {
+                        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        return moveDate >= oneWeekAgo;
+                      }
+                      
+                      if (historyFilter === 'month') {
+                        return moveDate.getMonth() === now.getMonth() && moveDate.getFullYear() === now.getFullYear();
+                      }
+                      
+                      return true;
+                    });
+
+                    if (filteredHistory.length === 0) {
+                      return (
+                        <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
+                          <History size={48} style={{ marginBottom: '16px', opacity: 0.1 }} />
+                          <p>No hay movimientos registrados en este período.</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div 
+                        style={{ 
+                          maxHeight: '420px', 
+                          overflowY: 'auto', 
+                          overflowX: 'hidden', 
+                          paddingRight: '4px' 
+                        }} 
+                        className="astro-scrollbar"
+                      >
+                        {isMobile ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {filteredHistory.map(move => (
+                              <div key={move.id} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontWeight: '800', fontSize: '14px', color: 'white' }}>{move.inventory?.name || 'Producto Eliminado'}</span>
+                                  <span style={{ 
+                                    padding: '3px 8px', 
+                                    borderRadius: '6px', 
+                                    fontSize: '9px', 
+                                    fontWeight: '900',
+                                    backgroundColor: move.type === 'entry' ? 'rgba(50,215,75,0.1)' : 'rgba(255,69,58,0.1)',
+                                    color: move.type === 'entry' ? '#32d74b' : '#ff453a'
+                                  }}>
+                                    {move.type === 'entry' ? 'ENTRADA' : 'SALIDA'}
+                                  </span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                  <span style={{ whiteSpace: 'nowrap' }}>{new Date(move.created_at).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                                  <span style={{ fontWeight: '900', fontSize: '13px', color: move.type === 'entry' ? '#32d74b' : '#ff453a' }}>
+                                    {move.type === 'entry' ? '+' : '-'}{move.amount}
+                                  </span>
+                                </div>
+                                {move.reason && (
+                                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', borderTop: '1px dashed rgba(255,255,255,0.05)', paddingTop: '6px', marginTop: '2px' }}>
+                                    <span style={{ fontWeight: '700' }}>Motivo:</span> {move.reason}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                              <thead style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                                <tr>
+                                  <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>FECHA</th>
+                                  <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>PRODUCTO</th>
+                                  <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>TIPO</th>
+                                  <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>CANT.</th>
+                                  <th style={{ padding: '16px', fontSize: '11px', color: 'var(--text-muted)' }}>MOTIVO</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {filteredHistory.map(move => (
+                                  <tr key={move.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                    <td style={{ padding: '16px', fontSize: '12px', whiteSpace: 'nowrap' }}>{new Date(move.created_at).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true })}</td>
+                                    <td style={{ padding: '16px', fontSize: '13px', fontWeight: '700' }}>{move.inventory?.name || 'Producto Eliminado'}</td>
+                                    <td style={{ padding: '16px' }}>
+                                      <span style={{ 
+                                        padding: '4px 10px', 
+                                        borderRadius: '8px', 
+                                        fontSize: '10px', 
+                                        fontWeight: '800',
+                                        backgroundColor: move.type === 'entry' ? 'rgba(50,215,75,0.1)' : 'rgba(255,69,58,0.1)',
+                                        color: move.type === 'entry' ? '#32d74b' : '#ff453a'
+                                      }}>
+                                        {move.type === 'entry' ? 'ENTRADA' : 'SALIDA'}
+                                      </span>
+                                    </td>
+                                    <td style={{ padding: '16px', fontSize: '14px', fontWeight: '900', color: move.type === 'entry' ? '#32d74b' : '#ff453a' }}>{move.type === 'entry' ? '+' : '-'}{move.amount}</td>
+                                    <td style={{ padding: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>{move.reason}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()
                 )}
               </div>
             </div>
@@ -829,7 +983,16 @@ const EditInventoryModal = ({ isOpen, item, onClose, onSave }) => {
         <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div className={`glass-card ${cardClass} astro-scrollbar`} style={{ maxWidth: '500px', width: '100%', maxHeight: '90vh', overflowY: 'auto', borderRadius: '28px', padding: '32px', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexShrink: 0 }}>
-              <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Editar <span className="text-gold">Producto</span></h3>
+              <h3 style={{ 
+                fontSize: '20px', 
+                fontWeight: '900',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <Package size={22} color="var(--gold-primary)" />
+                <span>Editar <span className="text-gold">Producto</span></span>
+              </h3>
               <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><Plus size={24} style={{ transform: 'rotate(45deg)' }} /></button>
             </div>
 
