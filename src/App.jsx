@@ -64,6 +64,25 @@ function getLastSundayDateString() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function getStartOfCurrentWeek() {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(now);
+  monday.setDate(diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+function getStartOfCurrentMonth() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+function isImportedHistoricalTransaction(transaction) {
+  return transaction?.metadata?.importedHistorical === true;
+}
+
 function App() {
   const { user, loading: authLoading } = useAuth();
   const { alert, confirm } = useDialog();
@@ -373,27 +392,35 @@ function App() {
   // Phase 2: Heavy data — runs silently after loader is gone
   async function fetchSecondaryData() {
     try {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
+      const currentWeekStartISO = getStartOfCurrentWeek().toISOString();
+      const currentMonthStartISO = getStartOfCurrentMonth().toISOString();
+      const chartStart = new Date();
+      chartStart.setDate(chartStart.getDate() - 6);
+      chartStart.setHours(0, 0, 0, 0);
+      const dashboardStartISO = new Date(Math.min(
+        new Date(currentWeekStartISO).getTime(),
+        new Date(currentMonthStartISO).getTime(),
+        chartStart.getTime()
+      )).toISOString();
 
       const [t, ext, inv, apps, todayApps, fullClients] = await Promise.all([
-        dataService.getTransactions(thirtyDaysAgoISO),
+        dataService.getTransactions(dashboardStartISO),
         dataService.getExtras(),
         dataService.getInventory(),
-        dataService.getAppointmentsByState(['Completado'], thirtyDaysAgoISO),
+        dataService.getAppointmentsByState(['Completado'], dashboardStartISO),
         dataService.getTodayAppointments(),
         dataService.getClients() // Full client data with visit counts
       ]);
 
       const st = await dataService.getStaff();
+      const operationalTransactions = t.filter(tr => !isImportedHistoricalTransaction(tr));
       
       const staffWithStats = st.map(barber => {
         // Historical Appts logic (services and extras)
         const barberApps = apps.filter(a => a.staff_id === barber.id);
         
         const monthlyApptsProd = barberApps
-          .filter(a => (a.created_at >= thirtyDaysAgoISO) || (a.scheduled_at && a.scheduled_at >= thirtyDaysAgoISO))
+          .filter(a => (a.created_at >= currentMonthStartISO) || (a.scheduled_at && a.scheduled_at >= currentMonthStartISO))
           .reduce((acc, a) => acc + Number(a.total_price || 0), 0);
           
         const todayDate = new Date().toISOString().split('T')[0];
@@ -404,11 +431,11 @@ function App() {
         const todayCount = barberApps.filter(a => a.created_at?.startsWith(todayDate) || a.scheduled_at?.startsWith(todayDate)).length;
 
         // Direct Sales without appointment link (new POS logic)
-        const directMonthlyProd = t
-          .filter(tr => tr.type === 'income' && tr.created_at >= thirtyDaysAgoISO && !tr.metadata?.appointment_id && tr.metadata?.staffInvolved?.some(si => si.staffId === barber.id))
+        const directMonthlyProd = operationalTransactions
+          .filter(tr => tr.type === 'income' && tr.created_at >= currentMonthStartISO && !tr.metadata?.appointment_id && tr.metadata?.staffInvolved?.some(si => si.staffId === barber.id))
           .reduce((acc, tr) => acc + Number(tr.amount), 0);
 
-        const directTodayProd = t
+        const directTodayProd = operationalTransactions
           .filter(tr => tr.type === 'income' && tr.created_at?.startsWith(todayDate) && !tr.metadata?.appointment_id && tr.metadata?.staffInvolved?.some(si => si.staffId === barber.id))
           .reduce((acc, tr) => acc + Number(tr.amount), 0);
 
@@ -433,24 +460,22 @@ function App() {
         todayAppointments: todayApps
       }));
       const today = new Date().toISOString().split('T')[0];
-      const todayTransactions = t.filter(trans => trans.created_at?.startsWith(today));
-      const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+      const todayTransactions = operationalTransactions.filter(trans => trans.created_at?.startsWith(today));
 
       setStats({
         income: todayTransactions.filter(tr => tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0),
-        weeklyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= sevenDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
-        monthlyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= thirtyDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
+        weeklyIncome: operationalTransactions.filter(tr => tr.type === 'income' && tr.created_at >= currentWeekStartISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
+        monthlyIncome: operationalTransactions.filter(tr => tr.type === 'income' && tr.created_at >= currentMonthStartISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
         expenses: todayTransactions.filter(tr => tr.type === 'expense').reduce((acc, tr) => acc + Number(tr.amount), 0),
         clients: fullClients.length,
         appointments: todayTransactions.length 
       });
-      if (t.length > 0) {
+      if (operationalTransactions.length > 0) {
         const last7Days = [...Array(7)].map((_, i) => {
           const d = new Date(); d.setDate(d.getDate() - (6 - i));
           return d.toISOString().split('T')[0];
         });
-        const dailyTotals = last7Days.map(day => t.filter(tr => tr.created_at?.startsWith(day) && tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0));
+        const dailyTotals = last7Days.map(day => operationalTransactions.filter(tr => tr.created_at?.startsWith(day) && tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0));
         setChartData({
           labels: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
           datasets: [{ label: 'Ventas ($)', data: dailyTotals, borderColor: '#d4af37', backgroundColor: 'rgba(212, 175, 55, 0.1)', fill: true, tension: 0.4 }]
@@ -463,8 +488,8 @@ function App() {
       // Check goals
       checkGoalsAndNotify({
         income: todayTransactions.filter(tr => tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0),
-        weeklyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= sevenDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
-        monthlyIncome: t.filter(tr => tr.type === 'income' && tr.created_at >= thirtyDaysAgoISO).reduce((acc, tr) => acc + Number(tr.amount), 0)
+        weeklyIncome: operationalTransactions.filter(tr => tr.type === 'income' && tr.created_at >= currentWeekStartISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
+        monthlyIncome: operationalTransactions.filter(tr => tr.type === 'income' && tr.created_at >= currentMonthStartISO).reduce((acc, tr) => acc + Number(tr.amount), 0)
       });
     } catch (error) { console.error('Error fetching secondary data:', error); }
   }

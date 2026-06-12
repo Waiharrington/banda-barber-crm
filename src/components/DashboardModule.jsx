@@ -312,8 +312,8 @@ const DashboardModule = ({
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', flex: isMobile ? 'auto' : '1', minHeight: isMobile ? 'auto' : '90px' }}>
               {[
                 { id: 'daily', title: 'Misión Diaria', current: stats?.income || 0, goal: goals.daily, icon: <Target size={16} />, label: 'HOY' },
-                { id: 'weekly', title: 'Meta Semanal', current: stats?.weeklyIncome || 0, goal: goals.weekly, icon: <TrendingUp size={16} />, label: '7 DÍAS' },
-                { id: 'monthly', title: 'Objetivo Mensual', current: stats?.monthlyIncome || 0, goal: goals.monthly, icon: <Trophy size={16} />, label: '30 DÍAS' }
+                { id: 'weekly', title: 'Meta Semanal', current: stats?.weeklyIncome || 0, goal: goals.weekly, icon: <TrendingUp size={16} />, label: 'SEMANA ACTUAL' },
+                { id: 'monthly', title: 'Objetivo Mensual', current: stats?.monthlyIncome || 0, goal: goals.monthly, icon: <Trophy size={16} />, label: 'MES EN CURSO' }
               ].map((m, i) => (
                 <div key={m.id} className={`glass-card animate-slide-up animate-stagger-${6 + i}`} style={{ padding: '12px 18px', borderRadius: '20px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '95px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -376,7 +376,7 @@ const DashboardModule = ({
                 }
                 labelKey="name"
                 scoreKey={(item) => `$${(item.stats?.monthlyIncome || 0).toFixed(0)}`}
-                scoreLabel="ÚLTIMOS 30 DÍAS"
+                scoreLabel="MES EN CURSO"
                 staggerIndex={6}
               />
             </div>
@@ -1452,3 +1452,4 @@ const PodiumSection = ({ title, icon, data, labelKey, scoreKey, scoreLabel, isCl
 };
 
 export default DashboardModule;
+

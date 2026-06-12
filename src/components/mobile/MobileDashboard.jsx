@@ -430,8 +430,8 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
           {[
             { id: 'daily', title: 'Misión Diaria', current: stats?.income || 0, goal: goals.daily, label: 'HOY' },
-            { id: 'weekly', title: 'Meta Semanal', current: stats?.weeklyIncome || 0, goal: goals.weekly, label: '7 DÍAS' },
-            { id: 'monthly', title: 'Objetivo Mensual', current: stats?.monthlyIncome || 0, goal: goals.monthly, label: '30 DÍAS' }
+            { id: 'weekly', title: 'Meta Semanal', current: stats?.weeklyIncome || 0, goal: goals.weekly, label: 'SEMANA ACTUAL' },
+            { id: 'monthly', title: 'Objetivo Mensual', current: stats?.monthlyIncome || 0, goal: goals.monthly, label: 'MES EN CURSO' }
           ].map((m, i) => (
             <div key={m.id} className="glass-card" style={{ padding: '18px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -480,7 +480,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
           data={teamOverview}
           labelKey="name"
           scoreKey={(item) => `$${(item.stats?.monthlyIncome || 0).toFixed(0)}`}
-          scoreLabel="ÚLTIMOS 30 DÍAS"
+          scoreLabel="MES EN CURSO"
         />
       )}
 
@@ -502,7 +502,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
       {isAdmin && teamOverview.length < 2 && (
         <div className="glass-card" style={{ padding: '20px', borderRadius: '24px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.04)' }}>
           <div style={{ fontWeight: '900', fontSize: '13px', color: '#ffffff', marginBottom: '16px', letterSpacing: '-0.3px', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Trophy size={14} color="var(--gold-primary)" /> TOP BARBEROS (ÚLTIMOS 30 DÍAS)
+            <Trophy size={14} color="var(--gold-primary)" /> TOP BARBEROS (MES EN CURSO)
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {teamOverview.map((st, idx) => (
@@ -1029,3 +1029,4 @@ const PodiumWidget = ({ title, icon, data, labelKey, scoreKey, scoreLabel, isCli
 };
 
 export default MobileDashboard;
+
