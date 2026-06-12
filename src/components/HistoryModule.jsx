@@ -281,14 +281,14 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                       {isSelected && (
                         <tr style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
                           <td colSpan="5" style={{ padding: '0' }}>
-                            <div style={{ padding: isMobile ? '20px' : '32px 40px' }}>
+                            <div className="animate-history-expand" style={{ padding: isMobile ? '20px' : '32px 40px' }}>
                               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.3fr 1fr', gap: '32px', alignItems: 'start' }}>
                                 
                                 {/* LEFT COLUMN: Client, Services and Extras */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                                   
                                   {/* 1. Client Card */}
-                                  <div className="glass-card" style={{
+                                  <div className="glass-card animate-card-1" style={{
                                     padding: '24px',
                                     borderRadius: '20px',
                                     background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
@@ -326,7 +326,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                   </div>
 
                                   {/* 2. Service and Extras Card */}
-                                  <div className="glass-card" style={{
+                                  <div className="glass-card animate-card-2" style={{
                                     padding: '24px',
                                     borderRadius: '20px',
                                     background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
@@ -419,7 +419,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                                   
                                   {/* 3. Ticket Card */}
-                                  <div className="glass-card" style={{
+                                  <div className="glass-card animate-card-3" style={{
                                     padding: '24px',
                                     borderRadius: '24px',
                                     background: 'linear-gradient(135deg, rgba(20,20,22,0.85) 0%, rgba(10,10,12,0.95) 100%)',
@@ -622,7 +622,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
 
                                   {/* Visual Gallery if exists */}
                                   {item.clients?.work_gallery?.some(p => p.service_id === item.id) && (
-                                    <div className="glass-card" style={{
+                                    <div className="glass-card animate-card-4" style={{
                                       padding: '24px',
                                       borderRadius: '20px',
                                       background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
@@ -678,6 +678,46 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
         }
         .glass-card:hover {
           transform: none !important;
+        }
+        @keyframes historyExpand {
+          from {
+            opacity: 0;
+            transform: translateY(-12px) scale(0.99);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        .animate-history-expand {
+          animation: historyExpand 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          transform-origin: top;
+        }
+        @keyframes cardPopIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-card-1 {
+          animation: cardPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation-delay: 0.04s;
+        }
+        .animate-card-2 {
+          animation: cardPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation-delay: 0.1s;
+        }
+        .animate-card-3 {
+          animation: cardPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation-delay: 0.16s;
+        }
+        .animate-card-4 {
+          animation: cardPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation-delay: 0.22s;
         }
       `}</style>
     </div>
