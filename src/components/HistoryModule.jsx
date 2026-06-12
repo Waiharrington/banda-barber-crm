@@ -283,60 +283,124 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                       {isSelected && (
                         <tr style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
                           <td colSpan="5" style={{ padding: '0' }}>
-                            <div className="animate-slide-down" style={{ padding: '32px 48px' }}>
-                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1.2fr', gap: '40px' }}>
-                                {/* Client Section */}
-                                <div>
-                                  <SectionHeader icon={<User size={14} />} title="Detalles del Cliente" />
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    <div 
-                                      onClick={() => onNavigate('clients', { clientId: item.clients?.id })}
-                                      className="client-link"
-                                      style={{ cursor: 'pointer', transition: '0.2s' }}
-                                    >
-                                      <DetailItem label="Nombre" value={item.clients?.name} />
+                            <div className="animate-slide-down" style={{ padding: isMobile ? '20px' : '32px 40px' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.3fr 1fr', gap: '32px', alignItems: 'start' }}>
+                                
+                                {/* LEFT COLUMN: Client, Services and Extras */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                  
+                                  {/* 1. Client Card */}
+                                  <div className="glass-card" style={{
+                                    padding: '24px',
+                                    borderRadius: '20px',
+                                    background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+                                    border: '1px solid rgba(255,255,255,0.05)',
+                                    borderLeft: '4px solid var(--gold-primary)',
+                                    boxShadow: '0 4px 24px rgba(0,0,0,0.15)'
+                                  }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                      <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', display: 'flex' }}>
+                                        <User size={16} />
+                                      </div>
+                                      <span style={{ fontSize: '12px', fontWeight: '900', color: 'white', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                                        Detalles del Cliente
+                                      </span>
                                     </div>
-                                    <DetailItem label="Cédula" value={item.clients?.id_card} />
-                                    <DetailItem label="Teléfono" value={item.clients?.phone || 'No registrado'} />
-                                  </div>
-                                </div>
 
-                                {/* Service Section */}
-                                <div>
-                                  <SectionHeader icon={<Package size={14} />} title="Servicio y Extras" />
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                    <DetailItem 
-                                      label="Servicio Base" 
-                                      value={item.services?.name} 
-                                      subValue={user.role !== 'Asistente de Lavado' ? `${formatCurrency((item.services?.price || 0) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs. ($${formatCurrency(item.services?.price || 0)})` : null} 
-                                    />
-                                    <div>
-                                      <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Extras / Productos</span>
-                                      {item.appointment_extras?.map(ex => (
-                                        <div key={ex.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
-                                          <span>{ex.service_extras?.name}</span>
-                                          <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>
-                                            +{formatCurrency(Number(ex.price) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs. (Ref: +${ex.price})
-                                          </span>
+                                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.5fr 1fr 1fr', gap: '20px' }}>
+                                      <div 
+                                        onClick={() => onNavigate('clients', { clientId: item.clients?.id })}
+                                        className="client-link"
+                                        style={{ cursor: 'pointer', transition: '0.2s' }}
+                                      >
+                                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Nombre</span>
+                                        <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--gold-primary)', textDecoration: 'underline' }}>{item.clients?.name || 'Cliente sin registrar'}</span>
+                                      </div>
+                                      <div>
+                                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Cédula</span>
+                                        <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{item.clients?.id_card || 'No registrada'}</span>
+                                      </div>
+                                      <div>
+                                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Teléfono</span>
+                                        <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>{item.clients?.phone || 'No registrado'}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* 2. Service and Extras Card */}
+                                  <div className="glass-card" style={{
+                                    padding: '24px',
+                                    borderRadius: '20px',
+                                    background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+                                    border: '1px solid rgba(255,255,255,0.05)',
+                                    borderLeft: '4px solid var(--gold-primary)',
+                                    boxShadow: '0 4px 24px rgba(0,0,0,0.15)'
+                                  }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                      <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', display: 'flex' }}>
+                                        <Scissors size={16} />
+                                      </div>
+                                      <span style={{ fontSize: '12px', fontWeight: '900', color: 'white', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                                        Servicio y Extras Realizados
+                                      </span>
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px dashed rgba(255,255,255,0.08)' }}>
+                                        <div>
+                                          <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>Servicio Principal</span>
+                                          <span style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>{item.services?.name}</span>
                                         </div>
-                                      ))}
-                                      {item.appointment_products?.map(pr => (
-                                        <div key={pr.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
-                                          <span>{pr.inventory?.name} ({pr.quantity}u)</span>
-                                          <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>
-                                            +{formatCurrency(Number(pr.price) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs. (Ref: +${pr.price})
-                                          </span>
+                                        {user.role !== 'Asistente de Lavado' && (
+                                          <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+                                              {formatCurrency((item.services?.price || 0) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs.
+                                            </span>
+                                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', fontWeight: '700' }}>
+                                              Ref: ${formatCurrency(item.services?.price || 0)}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      <div>
+                                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Extras, Adicionales y Productos</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                          {item.appointment_extras?.map(ex => (
+                                            <div key={ex.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', background: 'rgba(255,255,255,0.01)', padding: '8px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <span style={{ fontSize: '8px', fontWeight: '900', color: 'var(--gold-primary)', background: 'rgba(212,175,55,0.1)', borderRadius: '4px', padding: '2px 4px' }}>EXTRA</span>
+                                                <span style={{ color: 'white', fontWeight: '700' }}>{ex.service_extras?.name}</span>
+                                              </div>
+                                              <span style={{ fontWeight: '800', color: 'var(--gold-primary)' }}>
+                                                +{formatCurrency(Number(ex.price) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs. (Ref: +${ex.price})
+                                              </span>
+                                            </div>
+                                          ))}
+                                          {item.appointment_products?.map(pr => (
+                                            <div key={pr.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', background: 'rgba(255,255,255,0.01)', padding: '8px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <span style={{ fontSize: '8px', fontWeight: '900', color: '#60a5fa', background: 'rgba(96,165,250,0.1)', borderRadius: '4px', padding: '2px 4px' }}>PRODUCTO</span>
+                                                <span style={{ color: 'white', fontWeight: '700' }}>{pr.inventory?.name} <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>({pr.quantity}u)</span></span>
+                                              </div>
+                                              <span style={{ fontWeight: '800', color: 'var(--gold-primary)' }}>
+                                                +{formatCurrency(Number(pr.price) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs. (Ref: +${pr.price})
+                                              </span>
+                                            </div>
+                                          ))}
+                                          {(!item.appointment_extras?.length && !item.appointment_products?.length) && (
+                                            <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Ninguno adicional registrado</div>
+                                          )}
                                         </div>
-                                      ))}
-                                      {(!item.appointment_extras?.length && !item.appointment_products?.length) && <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Ninguno</div>}
-                                      
+                                      </div>
+
                                       {/* Total Propinas */}
                                       {(() => {
                                         const totalTips = item.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
                                         if (totalTips > 0) {
                                           const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
                                           return (
-                                            <div style={{ marginTop: '12px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '12px' }}>
+                                            <div style={{ marginTop: '12px', borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: '12px' }}>
                                               <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Propinas Recibidas</span>
                                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
                                                 <span>Total Propinas ({item.appointment_staff?.filter(s => Number(s.tip_amount) > 0).length} pers.)</span>
@@ -352,176 +416,230 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                                     </div>
                                   </div>
                                 </div>
- 
-                                {/* Finance Section */}
-                                <div>
-                                  <SectionHeader icon={<TrendingUp size={14} />} title="Liquidación" />
-                                  <div className="glass-card" style={{ padding: '20px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(212,175,55,0.1)', marginBottom: '24px' }}>
+
+                                {/* RIGHT COLUMN: Receipt, Settlements */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                  
+                                  {/* 3. Ticket Card */}
+                                  <div className="glass-card" style={{
+                                    padding: '24px',
+                                    borderRadius: '24px',
+                                    background: 'linear-gradient(135deg, rgba(20,20,22,0.85) 0%, rgba(10,10,12,0.95) 100%)',
+                                    border: '1px solid rgba(212,175,55,0.15)',
+                                    boxShadow: '0 8px 32px 0 rgba(0,0,0,0.4)'
+                                  }}>
+                                    {/* Ticket Header */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '16px' }}>
+                                      <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', display: 'flex' }}>
+                                        <TrendingUp size={16} />
+                                      </div>
+                                      <div>
+                                        <span style={{ fontSize: '12px', fontWeight: '900', color: 'white', letterSpacing: '1px', textTransform: 'uppercase', display: 'block' }}>
+                                          Liquidación de Caja
+                                        </span>
+                                        <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
+                                          Tasa de cambio: {item.exchange_rate || rates?.bcv || rates?.usd || 550} Bs.
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Detalle Cobrado */}
                                     {user.role !== 'Asistente de Lavado' && (
-                                    <>
-                                      {(() => {
-                                        const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
-                                        const servicePrice = Number(item.services?.price || 0);
-                                        const receiptLines = [
-                                          { label: item.services?.name || 'Servicio', type: 'Servicio', amount: servicePrice }
-                                        ];
-
-                                        item.appointment_extras?.forEach(ex => {
-                                          receiptLines.push({
-                                            label: ex.service_extras?.name || 'Extra',
-                                            type: 'Extra',
-                                            amount: Number(ex.price || 0)
-                                          });
-                                        });
-
-                                        item.appointment_products?.forEach(pr => {
-                                          const quantity = Number(pr.quantity || 1);
-                                          const unitPrice = Number(pr.price || 0);
-                                          receiptLines.push({
-                                            label: `${pr.inventory?.name || 'Producto'} x${quantity}`,
-                                            type: 'Producto',
-                                            amount: unitPrice * quantity
-                                          });
-                                        });
-
-                                        item.appointment_staff?.forEach(st => {
-                                          const tip = Number(st.tip_amount || 0);
-                                          if (tip > 0) {
-                                            const firstName = (st.staff?.name || 'Personal').split(' ')[0];
-                                            receiptLines.push({
-                                              label: `Propina ${firstName}`,
-                                              type: 'Propina',
-                                              amount: tip,
-                                              isTip: true
+                                      <div style={{ marginBottom: '20px' }}>
+                                        <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px', display: 'block' }}>Conceptos cobrados</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                          {(() => {
+                                            const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
+                                            const servicePrice = Number(item.services?.price || 0);
+                                            const receiptLines = [
+                                              { label: item.services?.name || 'Servicio', type: 'Servicio', amount: servicePrice }
+                                            ];
+                                            item.appointment_extras?.forEach(ex => {
+                                              receiptLines.push({
+                                                label: ex.service_extras?.name || 'Extra',
+                                                type: 'Extra',
+                                                amount: Number(ex.price || 0)
+                                              });
                                             });
-                                          }
-                                        });
+                                            item.appointment_products?.forEach(pr => {
+                                              const quantity = Number(pr.quantity || 1);
+                                              receiptLines.push({
+                                                label: `${pr.inventory?.name || 'Prod'} x${quantity}`,
+                                                type: 'Producto',
+                                                amount: Number(pr.price || 0) * quantity
+                                              });
+                                            });
+                                            item.appointment_staff?.forEach(st => {
+                                              const tip = Number(st.tip_amount || 0);
+                                              if (tip > 0) {
+                                                receiptLines.push({
+                                                  label: `Propina ${st.staff?.name.split(' ')[0]}`,
+                                                  type: 'Propina',
+                                                  amount: tip,
+                                                  isTip: true
+                                                });
+                                              }
+                                            });
 
-                                        const totalReceipt = receiptLines.reduce((sum, line) => sum + line.amount, 0);
+                                            const totalReceipt = receiptLines.reduce((sum, line) => sum + line.amount, 0);
 
-                                        return (
-                                          <div style={{ marginBottom: '16px' }}>
-                                            <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '10px', display: 'block' }}>Detalle cobrado</span>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                              {receiptLines.map((line, idx) => (
-                                                <ReceiptLine key={`${line.type}-${idx}`} line={line} rate={rate} formatCurrency={formatCurrency} />
-                                              ))}
-                                            </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.14)' }}>
-                                              <span style={{ fontSize: '14px', color: 'white', fontWeight: '900' }}>TOTAL COBRADO</span>
-                                              <div style={{ textAlign: 'right' }}>
-                                                <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--gold-primary)' }}>
-                                                  {formatCurrency(totalReceipt * rate)} Bs.
+                                            return (
+                                              <>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                  {receiptLines.map((line, idx) => (
+                                                    <ReceiptLine key={`${line.type}-${idx}`} line={line} rate={rate} formatCurrency={formatCurrency} />
+                                                  ))}
                                                 </div>
-                                                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '750', marginTop: '2px' }}>
-                                                  Ref: ${formatCurrency(totalReceipt)}
+                                                
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '2px solid rgba(255,255,255,0.08)' }}>
+                                                  <span style={{ fontSize: '12px', color: 'white', fontWeight: '900', letterSpacing: '0.5px' }}>TOTAL COBRADO</span>
+                                                  <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ fontSize: '18px', fontWeight: '950', color: 'var(--gold-primary)' }}>
+                                                      {formatCurrency(totalReceipt * rate)} Bs.
+                                                    </div>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800' }}>
+                                                      Ref: ${formatCurrency(totalReceipt)}
+                                                    </div>
+                                                  </div>
                                                 </div>
+                                              </>
+                                            );
+                                          })()}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Totales de Liquidacion */}
+                                    {isAdmin ? (
+                                      <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
+                                        <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', display: 'block' }}>Distribución de Fondos</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                          {item.appointment_staff?.length > 0 ? item.appointment_staff.map((st, sidx) => {
+                                            const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
+                                            const commission = Number(st.commission_earned || 0);
+                                            const tip = Number(st.tip_amount || 0);
+                                            const staffTotal = commission + tip;
+                                            const firstName = (st.staff?.name || 'Personal').split(' ')[0];
+                                            return (
+                                              <div key={sidx} style={{ padding: '12px', borderRadius: '14px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
+                                                    <span style={{ fontSize: '13px', fontWeight: '800', color: 'white' }}>Total {firstName}</span>
+                                                  </div>
+                                                  <div style={{ textAlign: 'right' }}>
+                                                    <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+                                                      +{formatCurrency(staffTotal * rate)} Bs.
+                                                    </span>
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>
+                                                      Ref: +${formatCurrency(staffTotal)}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                                
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
+                                                  <div style={{ background: 'rgba(0,0,0,0.12)', borderRadius: '8px', padding: '6px' }}>
+                                                    <div style={{ fontSize: '8px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Comisión</div>
+                                                    <div style={{ fontSize: '10.5px', color: 'white', fontWeight: '800', marginTop: '2px' }}>
+                                                      {formatCurrency(commission * rate)} Bs.
+                                                    </div>
+                                                  </div>
+                                                  <div style={{ background: 'rgba(0,0,0,0.12)', borderRadius: '8px', padding: '6px' }}>
+                                                    <div style={{ fontSize: '8px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Propina</div>
+                                                    <div style={{ fontSize: '10.5px', color: 'white', fontWeight: '800', marginTop: '2px' }}>
+                                                      {formatCurrency(tip * rate)} Bs.
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            );
+                                          }) : (
+                                            <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>No hay personal registrado en esta venta.</div>
+                                          )}
+
+                                          {/* Astro Net Profit */}
+                                          {(() => {
+                                            const serviceBase = Number(item.services?.price || 0);
+                                            const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+                                            const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
+                                            const totalVenta = serviceBase + extras + products;
+                                            const commissions = item.appointment_staff?.reduce((sum, s) => sum + Number(s.commission_earned || 0), 0) || 0;
+                                            const astroProfit = totalVenta - commissions;
+                                            const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
+
+                                            return (
+                                              <div style={{ marginTop: '8px', padding: '14px', borderRadius: '16px', background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.18)', boxShadow: 'inset 0 0 12px rgba(212,175,55,0.05)' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold-primary)' }} />
+                                                    <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '0.5px' }}>Total Astro (Neto)</span>
+                                                  </div>
+                                                  <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ fontSize: '14px', fontWeight: '950', color: 'var(--gold-primary)' }}>
+                                                      +{formatCurrency(astroProfit * rate)} Bs.
+                                                    </div>
+                                                    <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: '800' }}>
+                                                      Ref: +${formatCurrency(astroProfit)}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            );
+                                          })()}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      /* Staff view */
+                                      <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
+                                        <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', display: 'block' }}>Tu Liquidación</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '12px' }}>
+                                            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '700' }}>
+                                              {user.role === 'Asistente de Lavado' ? 'Tarifa de Lavado' : 'Tu Comisión'}
+                                            </span>
+                                            <div style={{ textAlign: 'right' }}>
+                                              <span style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>
+                                                {formatCurrency((item.commission_earned || 0) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs.
+                                              </span>
+                                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700' }}>
+                                                Ref: ${formatCurrency(item.commission_earned || 0)}
                                               </div>
                                             </div>
                                           </div>
-                                        );
-                                      })()}
-                                    </>
-                                    )}
-                                    
-                                    {isAdmin ? (
-                                      <div style={{ marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
-                                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px', display: 'block' }}>Totales de liquidacion</span>
-                                        {item.appointment_staff?.length > 0 ? item.appointment_staff.map((st, sidx) => {
-                                          const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
-                                          const commission = Number(st.commission_earned || 0);
-                                          const tip = Number(st.tip_amount || 0);
-                                          const staffTotal = commission + tip;
-                                          const firstName = (st.staff?.name || 'Personal').split(' ')[0];
-                                          return (
-                                            <div key={sidx} style={{ marginBottom: '12px', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)' }}>
-                                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span style={{ fontSize: '14px', fontWeight: '900', color: 'white' }}>Total {firstName}</span>
-                                                <div style={{ textAlign: 'right' }}>
-                                                  <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>
-                                                    +{formatCurrency(staffTotal * rate)} Bs.
-                                                  </div>
-                                                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
-                                                    Ref: +${formatCurrency(staffTotal)}
-                                                  </div>
-                                                </div>
-                                              </div>
-                                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-                                                <MiniBreakdown label="Comision" amount={commission} rate={rate} formatCurrency={formatCurrency} />
-                                                <MiniBreakdown label="Propina" amount={tip} rate={rate} formatCurrency={formatCurrency} />
-                                              </div>
-                                            </div>
-                                          );
-                                        }) : (
-                                          <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>No hay personal registrado en esta venta.</div>
-                                        )}
-                                        {/* GANANCIA ASTRO */}
-                                        <div style={{ marginTop: '16px', padding: '12px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
-                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>Total Astro</span>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(212,175,55,0.05)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.1)' }}>
+                                            <span style={{ fontSize: '13px', color: 'var(--gold-primary)', fontWeight: '900' }}>Tu Propina</span>
                                             <div style={{ textAlign: 'right' }}>
-                                              <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>
-                                                {(() => {
-                                                  const serviceBase = Number(item.services?.price || 0);
-                                                  const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
-                                                  const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
-                                                  const totalVenta = serviceBase + extras + products;
-                                                  const commissions = item.appointment_staff?.reduce((sum, s) => sum + Number(s.commission_earned || 0), 0) || 0;
-                                                  const astroProfit = totalVenta - commissions;
-                                                  const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
-                                                  return `+${formatCurrency(astroProfit * rate)} Bs.`;
-                                                })()}
-                                              </div>
-                                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800' }}>
-                                                {(() => {
-                                                  const serviceBase = Number(item.services?.price || 0);
-                                                  const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
-                                                  const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
-                                                  const totalVenta = serviceBase + extras + products;
-                                                  const commissions = item.appointment_staff?.reduce((sum, s) => sum + Number(s.commission_earned || 0), 0) || 0;
-                                                  const astroProfit = totalVenta - commissions;
-                                                  return `Ref: +$${formatCurrency(astroProfit)}`;
-                                                })()}
+                                              <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+                                                +{formatCurrency((item.tip_amount || 0) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs.
+                                              </span>
+                                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '750' }}>
+                                                Ref: +${formatCurrency(item.tip_amount || 0)}
                                               </div>
                                             </div>
                                           </div>
                                         </div>
                                       </div>
-                                    ) : (
-                                      <>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', alignItems: 'center' }}>
-                                          <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                                            {user.role === 'Asistente de Lavado' ? 'Tu Tarifa de Lavado' : 'Tu Comisión'}
-                                          </span>
-                                          <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontSize: '14px', fontWeight: '700', color: 'white' }}>
-                                              {formatCurrency((item.commission_earned || 0) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs.
-                                            </span>
-                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
-                                              Ref: ${formatCurrency(item.commission_earned || 0)}
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px', alignItems: 'center' }}>
-                                          <span style={{ fontSize: '13px', color: 'var(--gold-primary)', fontWeight: '800' }}>Tu Propina</span>
-                                          <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>
-                                              +{formatCurrency((item.tip_amount || 0) * Number(item.exchange_rate || rates?.bcv || rates?.usd || 550))} Bs.
-                                            </span>
-                                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
-                                              Ref: +${formatCurrency(item.tip_amount || 0)}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </>
                                     )}
                                   </div>
 
-                                  {/* Visual Record in History */}
+                                  {/* Visual Gallery if exists */}
                                   {item.clients?.work_gallery?.some(p => p.service_id === item.id) && (
-                                    <div style={{ marginTop: '24px' }}>
-                                      <SectionHeader icon={<Camera size={14} />} title="Registro Visual" />
-                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                    <div className="glass-card" style={{
+                                      padding: '24px',
+                                      borderRadius: '20px',
+                                      background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+                                      border: '1px solid rgba(255,255,255,0.05)',
+                                      borderLeft: '4px solid var(--gold-primary)'
+                                    }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                        <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', display: 'flex' }}>
+                                          <Camera size={16} />
+                                        </div>
+                                        <span style={{ fontSize: '12px', fontWeight: '900', color: 'white', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                                          Registro Visual del Corte
+                                        </span>
+                                      </div>
+                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                         {item.clients.work_gallery
                                           .filter(p => p.service_id === item.id)
                                           .map((photo, pidx) => (
