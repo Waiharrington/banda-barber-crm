@@ -9,12 +9,23 @@ const AstroCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
-  const [stream, setStream] = useState(null);
+  const streamRef = useRef(null);
   const [capturedImage, setCapturedImage] = useState(null);
   const [error, setError] = useState(null);
 
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
   const startCamera = async () => {
     try {
+      stopCamera();
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           facingMode: 'environment',
@@ -25,8 +36,10 @@ const AstroCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
       });
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
-        setStream(mediaStream);
+        streamRef.current = mediaStream;
         setError(null);
+      } else {
+        mediaStream.getTracks().forEach(track => track.stop());
       }
     } catch (err) {
       setError("Cámara no disponible, pero puedes subir fotos.");
@@ -44,7 +57,7 @@ const AstroCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
       setCapturedImage(dataUrl);
-      if (stream) stream.getTracks().forEach(track => track.stop());
+      stopCamera();
     }
   };
 
@@ -56,7 +69,7 @@ const AstroCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
       reader.onloadend = () => {
         setCapturedImage(reader.result);
         setError(null);
-        if (stream) stream.getTracks().forEach(track => track.stop());
+        stopCamera();
         e.target.value = ''; // Clear for same-file re-uploads
       };
       reader.onerror = () => {
@@ -74,14 +87,13 @@ const AstroCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
 
   const confirm = () => {
     onCapture(capturedImage);
+    stopCamera();
     onClose();
   };
 
   React.useEffect(() => {
     startCamera();
-    return () => {
-      if (stream) stream.getTracks().forEach(track => track.stop());
-    };
+    return stopCamera;
   }, []);
 
   return (

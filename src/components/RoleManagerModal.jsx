@@ -17,6 +17,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useScrollLock } from '../hooks/useScrollLock';
+import { useDialog } from '../context/DialogContext';
 import AnimatedModal from './AnimatedModal';
 
 // Map role names to icons & accent colors
@@ -36,6 +37,7 @@ const getRoleStyle = (name) => {
 };
 
 const RoleManagerModal = ({ isOpen, onClose, roles, onSaveRole, onDeleteRole, availableModules }) => {
+  const { confirm } = useDialog();
   const [editingRole, setEditingRole] = useState(null);
   const [formData, setFormData] = useState({ name: '', permissions: [] });
 
@@ -62,6 +64,12 @@ const RoleManagerModal = ({ isOpen, onClose, roles, onSaveRole, onDeleteRole, av
     if (!formData.name) return;
     onSaveRole(formData.name, formData.permissions, editingRole === '__NEW__' ? null : editingRole);
     setEditingRole(null);
+  };
+
+  const handleDeleteRole = async (roleName) => {
+    const accepted = await confirm(`¿Seguro que deseas eliminar el rol "${roleName}"? Esta acción puede afectar permisos del equipo.`);
+    if (!accepted) return;
+    onDeleteRole(roleName);
   };
 
   return createPortal(
@@ -211,7 +219,7 @@ const RoleManagerModal = ({ isOpen, onClose, roles, onSaveRole, onDeleteRole, av
                             <Edit2 size={16} />
                           </button>
                           <button
-                            onClick={() => onDeleteRole(name)}
+                            onClick={() => handleDeleteRole(name)}
                             style={{
                               background: 'rgba(255,69,58,0.08)', border: '1px solid rgba(255,69,58,0.15)',
                               padding: '8px 10px', borderRadius: '10px', cursor: 'pointer', color: '#ff453a',

@@ -9,15 +9,26 @@ const loadingTexts = [
   "Cargando la Astro Experience..."
 ];
 
+const LOADER_MIN_DURATION_MS = 1200;
+const PROGRESS_INTERVAL_MS = 40;
+const FADE_OUT_MS = 350;
+
 const AstroLoader = ({ visible }) => {
   const [showLoader, setShowLoader] = useState(visible);
   const [progress, setProgress] = useState(0);
   const [textIndex, setTextIndex] = useState(0);
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const startTimeRef = useRef(null);
+  const particleThrottleRef = useRef(0);
+
+  const shouldUseParticles = () => {
+    if (typeof window === 'undefined') return false;
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches;
+    return !reducedMotion && !coarsePointer && window.innerWidth >= 768;
+  };
 
   // Initialize showLoader and animate progress towards 99%
   useEffect(() => {
@@ -32,9 +43,7 @@ const AstroLoader = ({ visible }) => {
       document.body.style.overflow = 'hidden';
       document.documentElement.style.overflow = 'hidden';
 
-      const totalDuration = 2800; // 2.8s minimum
-      const updateInterval = 30; 
-      const steps = totalDuration / updateInterval;
+      const steps = LOADER_MIN_DURATION_MS / PROGRESS_INTERVAL_MS;
       let currentStep = 0;
 
       const progressInterval = setInterval(() => {
@@ -43,7 +52,7 @@ const AstroLoader = ({ visible }) => {
           const target = (currentStep / steps) * 100;
           return Math.min(target, 99);
         });
-      }, updateInterval);
+      }, PROGRESS_INTERVAL_MS);
 
       const textInterval = setInterval(() => {
         setTextIndex(i => (i + 1) % loadingTexts.length);
@@ -61,16 +70,14 @@ const AstroLoader = ({ visible }) => {
   // Handle minimum duration and unmount after fade-out transition
   useEffect(() => {
     if (!visible && showLoader) {
-      const minDuration = 2800;
       const elapsed = Date.now() - (startTimeRef.current || 0);
-      const remaining = Math.max(0, minDuration - elapsed);
+      const remaining = Math.max(0, LOADER_MIN_DURATION_MS - elapsed);
 
       const finishLoading = () => {
         setProgress(100);
-        // Wait 600ms for CSS fade-out opacity transition to complete before unmounting
         setTimeout(() => {
           setShowLoader(false);
-        }, 600);
+        }, FADE_OUT_MS);
       };
 
       if (remaining > 0) {
@@ -84,37 +91,28 @@ const AstroLoader = ({ visible }) => {
 
   // 3D Tilt Effect and Particle Emitter
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !shouldUseParticles()) return;
 
     const handleMouseMove = (e) => {
       const x = e.clientX;
       const y = e.clientY;
-      setMousePos({ x, y });
 
-      // Calculate tilt based on center of screen
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
-      const tiltX = (y - centerY) / centerY * -15; // Limit tilt to -15deg / 15deg
-      const tiltY = (x - centerX) / centerX * 15;
+      const tiltX = (y - centerY) / centerY * -8;
+      const tiltY = (x - centerX) / centerX * 8;
       setTilt({ x: tiltX, y: tiltY });
 
-      // Add particles
-      createParticles(x, y, 4);
-    };
-
-    const handleTouchMove = (e) => {
-      if (e.touches.length > 0) {
-        const x = e.touches[0].clientX;
-        const y = e.touches[0].clientY;
-        createParticles(x, y, 3);
+      const now = Date.now();
+      if (now - particleThrottleRef.current > 55) {
+        particleThrottleRef.current = now;
+        createParticles(x, y, 2);
       }
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('touchmove', handleTouchMove);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('touchmove', handleTouchMove);
     };
   }, [visible]);
 
@@ -150,7 +148,7 @@ const AstroLoader = ({ visible }) => {
 
   // Canvas loop
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !shouldUseParticles()) return;
     let animationFrameId;
 
     const canvas = canvasRef.current;
@@ -249,7 +247,7 @@ const AstroLoader = ({ visible }) => {
         position: 'fixed',
         inset: 0,
         zIndex: 99999,
-        transition: 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+        transition: `opacity ${FADE_OUT_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`
       }}
     >
       {/* Interactive canvas behind elements */}
