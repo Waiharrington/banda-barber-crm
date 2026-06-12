@@ -715,11 +715,11 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                 </div>
                 
                 {/* Name/Role Column */}
-                <div>
-                  <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{person.name}</h4>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '700', marginTop: '2px' }}>
+                <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{person.name}</h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '700', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {getRoleIcon(person.role?.split('|')[0]?.split(', ')[0])}
-                    {person.role?.split('|')[0]}
+                    <span>{person.role?.split('|')[0]}</span>
                     {person.role?.split('|')[0]?.includes(', ') && (
                       <span style={{ 
                         padding: '2px 6px', 
@@ -727,7 +727,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         borderRadius: '4px', 
                         fontSize: '9px',
                         marginLeft: '4px',
-                        border: '1px solid rgba(212,175,55,0.2)'
+                        border: '1px solid rgba(212,175,55,0.2)',
+                        flexShrink: 0
                       }}>
                         MULTI-ROL
                       </span>
@@ -737,15 +738,15 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
                 {/* Phone Column */}
                 {!isMobile && (
-                  <div style={{ color: person.phone ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '14px' }}>
+                  <div style={{ color: person.phone ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '14px', minWidth: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <Phone size={14} color={person.phone ? "var(--gold-primary)" : "rgba(255,255,255,0.2)"} style={{ flexShrink: 0 }} />
-                      <span>{person.phone || 'Sin teléfono'}</span>
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{person.phone || 'Sin teléfono'}</span>
                     </div>
                     {person.birth_date && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', fontSize: '11px', color: 'var(--gold-primary)' }}>
-                        <Cake size={12} fill="var(--gold-primary)" />
-                        <span>{new Date(person.birth_date + 'T00:00:00').toLocaleDateString([], { day: '2-digit', month: 'short' })}</span>
+                        <Cake size={12} fill="var(--gold-primary)" style={{ flexShrink: 0 }} />
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{new Date(person.birth_date + 'T00:00:00').toLocaleDateString([], { day: '2-digit', month: 'short' })}</span>
                       </div>
                     )}
                   </div>
@@ -753,10 +754,10 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
                 {/* Address Column */}
                 {!isMobile && (
-                  <div style={{ color: person.address ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '13px' }}>
+                  <div style={{ color: person.address ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '13px', minWidth: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                       <MapPin size={14} color={person.address ? "var(--gold-primary)" : "rgba(255,255,255,0.2)"} style={{ marginTop: '2px', flexShrink: 0 }} />
-                      <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {person.address || 'Sin dirección'}
                       </span>
                     </div>
@@ -765,7 +766,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
                 {/* Access Column */}
                 {!isMobile && (
-                  <div>
+                  <div style={{ minWidth: 0, overflow: 'hidden' }}>
                     {person.email ? (
                       <div style={{ 
                         display: 'inline-flex', 
@@ -776,10 +777,11 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         color: '#32d74b', 
                         borderRadius: '8px',
                         fontSize: '11px',
-                        fontWeight: '800'
+                        fontWeight: '800',
+                        maxWidth: '100%'
                       }}>
-                        <Mail size={12} />
-                        {person.email}
+                        <Mail size={12} style={{ flexShrink: 0 }} />
+                        <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{person.email}</span>
                       </div>
                     ) : (
                       <div style={{ 
@@ -791,10 +793,11 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         color: '#ff453a', 
                         borderRadius: '8px',
                         fontSize: '11px',
-                        fontWeight: '800'
+                        fontWeight: '800',
+                        maxWidth: '100%'
                       }}>
-                        <Lock size={12} />
-                        SIN EMAIL AUTH
+                        <Lock size={12} style={{ flexShrink: 0 }} />
+                        <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>SIN EMAIL AUTH</span>
                       </div>
                     )}
                   </div>
