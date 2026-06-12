@@ -118,8 +118,39 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
 
+  // Separar estilos de contenedor e input para evitar doble padding/bordes
+  const { 
+    width, 
+    position, 
+    zIndex, 
+    top, 
+    left, 
+    right, 
+    bottom, 
+    margin, 
+    marginTop, 
+    marginBottom, 
+    marginLeft, 
+    marginRight,
+    flex,
+    gridColumn,
+    gridRow,
+    ...inputStyle 
+  } = style;
+
   return (
-    <div className={`astro-datepicker-container ${className}`} style={{ position: 'relative', zIndex: isOpen ? 9999 : 1, ...style }} ref={containerRef}>
+    <div 
+      className={`astro-datepicker-container ${className}`} 
+      style={{ 
+        position: position || 'relative', 
+        zIndex: isOpen ? 99999 : (zIndex || 1), 
+        width: width || '100%',
+        top, left, right, bottom,
+        margin, marginTop, marginBottom, marginLeft, marginRight,
+        flex, gridColumn, gridRow
+      }} 
+      ref={containerRef}
+    >
       <div 
         className="form-input focus-ring" 
         style={{ 
@@ -135,12 +166,15 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
           color: value ? 'white' : 'rgba(255,255,255,0.4)',
           fontSize: '15px',
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-          ...style
+          ...inputStyle,
+          width: '100%'
         }}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span>{value ? formatDateDisplay(value) : placeholder}</span>
-        <CalendarIcon size={18} color={value ? "var(--gold-primary)" : "rgba(255,255,255,0.4)"} />
+        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {value ? formatDateDisplay(value) : placeholder}
+        </span>
+        <CalendarIcon size={18} color={value ? "var(--gold-primary)" : "rgba(255,255,255,0.4)"} style={{ flexShrink: 0, marginLeft: '8px' }} />
       </div>
 
       {isOpen && createPortal(
