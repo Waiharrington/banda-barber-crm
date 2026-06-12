@@ -738,12 +738,10 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                 {/* Phone Column */}
                 {!isMobile && (
                   <div style={{ color: person.phone ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '14px' }}>
-                    {person.phone ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Phone size={14} color="var(--gold-primary)" />
-                        {person.phone}
-                      </div>
-                    ) : 'Sin teléfono'}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Phone size={14} color={person.phone ? "var(--gold-primary)" : "rgba(255,255,255,0.2)"} style={{ flexShrink: 0 }} />
+                      <span>{person.phone || 'Sin teléfono'}</span>
+                    </div>
                     {person.birth_date && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', fontSize: '11px', color: 'var(--gold-primary)' }}>
                         <Cake size={12} fill="var(--gold-primary)" />
@@ -756,14 +754,12 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                 {/* Address Column */}
                 {!isMobile && (
                   <div style={{ color: person.address ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '13px' }}>
-                    {person.address ? (
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                        <MapPin size={14} color="var(--gold-primary)" style={{ marginTop: '2px' }} />
-                        <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {person.address}
-                        </span>
-                      </div>
-                    ) : 'Sin dirección'}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                      <MapPin size={14} color={person.address ? "var(--gold-primary)" : "rgba(255,255,255,0.2)"} style={{ marginTop: '2px', flexShrink: 0 }} />
+                      <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {person.address || 'Sin dirección'}
+                      </span>
+                    </div>
                   </div>
                 )}
 
