@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, authClient } from '../lib/supabase';
 import { notificationService } from './notificationService';
 
 // ─── Smart In-Memory Cache ────────────────────────────────────────────────────
@@ -205,6 +205,26 @@ export const dataService = {
     return _normalizeStaff(data);
   },
 
+  async createAuthUser(email, password) {
+    const isServiceKeyPresent = !!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    if (isServiceKeyPresent && authClient?.auth?.admin) {
+      const { data, error } = await authClient.auth.admin.createUser({
+        email: String(email || '').trim().toLowerCase(),
+        password,
+        email_confirm: true
+      });
+      if (error) throw error;
+      return data.user;
+    } else {
+      const { data, error } = await authClient.auth.signUp({
+        email: String(email || '').trim().toLowerCase(),
+        password
+      });
+      if (error) throw error;
+      return data.user;
+    }
+  },
+
   async addStaff(member) {
     _cacheInvalidate('staff');
     const { data, error } = await supabase
@@ -351,9 +371,21 @@ export const dataService = {
 
   async addService(service) {
     _cacheInvalidate('services');
+    const allowedColumns = [
+      'name', 'price', 'duration', 'active', 'category',
+      'commission_barber', 'commission_washer', 'commission_cashier', 'commission_receptionist',
+      'included_items'
+    ];
+    const filtered = {};
+    allowedColumns.forEach(col => {
+      if (service[col] !== undefined) {
+        filtered[col] = service[col];
+      }
+    });
+
     const { data, error } = await supabase
       .from('services')
-      .insert([service])
+      .insert([filtered])
       .select()
       .single();
     if (error) throw error;
@@ -362,9 +394,21 @@ export const dataService = {
 
   async updateService(id, updates) {
     _cacheInvalidate('services');
+    const allowedColumns = [
+      'name', 'price', 'duration', 'active', 'category',
+      'commission_barber', 'commission_washer', 'commission_cashier', 'commission_receptionist',
+      'included_items'
+    ];
+    const filtered = {};
+    allowedColumns.forEach(col => {
+      if (updates[col] !== undefined) {
+        filtered[col] = updates[col];
+      }
+    });
+
     const { data, error } = await supabase
       .from('services')
-      .update(updates)
+      .update(filtered)
       .eq('id', id)
       .select()
       .single();

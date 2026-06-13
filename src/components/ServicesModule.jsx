@@ -49,7 +49,7 @@ const AVAILABLE_ICONS = [
   { name: 'Feather',     label: 'Tratamientos suaves' },
   { name: 'Heart',       label: 'Depilación / Bienestar' },
   { name: 'Waves',       label: 'Keratina / Alaciado' },
-  { name: 'Crown',       label: 'VIP / Astro Elite' },
+  { name: 'Crown',       label: 'VIP / Panda Elite' },
   { name: 'Smile',       label: 'Faciales / Afeitado' },
   { name: 'Star',        label: 'Tendencias / Adicional' }
 ];
@@ -468,7 +468,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   padding: '8px 12px', 
                   borderRadius: '8px', 
                   border: 'none', 
-                  backgroundColor: viewMode === 'grid' ? 'rgba(255, 255, 255,0.1)' : 'transparent',
+                  backgroundColor: viewMode === 'grid' ? 'rgba(255,255,255,0.1)' : 'transparent',
                   color: viewMode === 'grid' ? 'var(--gold-primary)' : 'var(--text-muted)',
                   cursor: 'pointer',
                   display: 'flex',
@@ -486,7 +486,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   padding: '8px 12px', 
                   borderRadius: '8px', 
                   border: 'none', 
-                  backgroundColor: viewMode === 'table' ? 'rgba(255, 255, 255,0.1)' : 'transparent',
+                  backgroundColor: viewMode === 'table' ? 'rgba(255,255,255,0.1)' : 'transparent',
                   color: viewMode === 'table' ? 'var(--gold-primary)' : 'var(--text-muted)',
                   cursor: 'pointer',
                   display: 'flex',
@@ -501,15 +501,15 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
             </div>
           )}
 
-          <button className="btn-gold" onClick={() => setIsCategoriesModalOpen(true)} style={{ backgroundColor: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(255, 255, 255,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
+          <button className="btn-gold" onClick={() => setIsCategoriesModalOpen(true)} style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(255,255,255,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
             <Settings size={18} style={{ marginRight: '8px' }} />
             Categorías
           </button>
-          <button className="btn-gold" onClick={() => setIsStrategiesModalOpen(true)} style={{ backgroundColor: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(255, 255, 255,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
+          <button className="btn-gold" onClick={() => setIsStrategiesModalOpen(true)} style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(255,255,255,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
             <Crown size={18} style={{ marginRight: '8px' }} />
             Estrategias
           </button>
-          <button className="btn-gold" onClick={() => setIsBillableExtrasModalOpen(true)} style={{ backgroundColor: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(255, 255, 255,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
+          <button className="btn-gold" onClick={() => setIsBillableExtrasModalOpen(true)} style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(255,255,255,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
             <Rocket size={18} style={{ marginRight: '8px' }} />
             Extras
           </button>
@@ -579,18 +579,18 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         {/* Top: Icon + Name & Actions */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
-                            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--gold-primary)' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--gold-primary)' }}>
                               {service.icon ? getIconComponent(service.icon, 20) : getCategoryIcon(service.category)}
                             </div>
                             <div style={{ minWidth: 0, flex: 1 }}>
                               <div style={{ fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{service.category}</div>
-                              <h4 style={{ fontSize: '15px', fontWeight: '800', color: 'white', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{service.name}</h4>
+                              <h4 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{service.name}</h4>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                                 <Clock size={12} /> {service.duration || 30} min
                               </div>
                             </div>
                           </div>
-
+ 
                           <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                             <button 
                               className="action-btn" 
@@ -608,46 +608,46 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                             </button>
                           </div>
                         </div>
-
+ 
                         {/* Description */}
                         {service.description && (
-                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', margin: '0', lineHeight: '1.4', fontStyle: 'italic', borderLeft: '2px solid rgba(255, 255, 255, 0.3)', paddingLeft: '10px' }}>
+                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0', lineHeight: '1.4', fontStyle: 'italic', borderLeft: '2px solid var(--border-color)', paddingLeft: '10px' }}>
                             {service.description}
                           </p>
                         )}
-
+ 
                         {/* Included Checklist Items */}
                         {(service.included_items || []).length > 0 && (
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                             {(service.included_items || []).map((item, idx) => (
-                              <span key={idx} style={{ fontSize: '10px', padding: '4px 10px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.05)', whiteSpace: 'nowrap' }}>
+                              <span key={idx} style={{ fontSize: '10px', padding: '4px 10px', borderRadius: '8px', backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>
                                 {item}
                               </span>
                             ))}
                           </div>
                         )}
-
+ 
                         {/* Bottom Info: Strategy Tag & Price */}
                         <div style={{ 
                           display: 'flex', 
                           alignItems: 'center', 
                           justifyContent: 'space-between',
                           gap: '16px',
-                          borderTop: '1px solid rgba(255,255,255,0.06)',
+                          borderTop: '1px solid var(--border-color)',
                           paddingTop: '12px',
                           marginTop: '4px'
                         }}>
                           <div>
                             {service.strategy_type ? (
-                              <div style={{ padding: '4px 12px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.3)', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+                              <div style={{ padding: '4px 12px', borderRadius: '20px', border: '1px solid var(--border-color)', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'var(--bg-tertiary)' }}>
                                 {service.strategy_type}
                               </div>
                             ) : <div />}
                           </div>
-
+ 
                           <div style={{ textAlign: 'right' }}>
                             <div style={{ fontSize: '9px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PRECIO</div>
-                            <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', display: 'flex', alignItems: 'baseline', gap: '6px', justifyContent: 'flex-end' }}>
+                            <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)', display: 'flex', alignItems: 'baseline', gap: '6px', justifyContent: 'flex-end' }}>
                               <span>${service.price}</span>
                               {rates?.usd > 0 && (
                                 <span style={{ fontSize: '12px', color: 'var(--gold-primary)', fontWeight: '700' }}>
@@ -670,20 +670,20 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                     <div className="glass-card" style={{ 
                       borderRadius: '20px',
                       padding: '16px 24px',
-                      border: '1px solid rgba(255,255,255,0.05)',
+                      border: '1px solid var(--border-color)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '24px'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: '200px' }}>
-                        <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--gold-primary)' }}>
                           {service.icon ? getIconComponent(service.icon, 20) : getCategoryIcon(service.category)}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{service.category}</div>
-                          <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{service.name}</h4>
+                          <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{service.name}</h4>
                           {service.description && (
-                            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: '4px 0', maxWidth: '250px', lineHeight: '1.4', fontStyle: 'italic' }}>{service.description}</p>
+                            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0', maxWidth: '250px', lineHeight: '1.4', fontStyle: 'italic' }}>{service.description}</p>
                           )}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
                             <Clock size={12} /> {service.duration || 30} min
@@ -693,7 +693,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
 
                       <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {(service.included_items || []).map((item, idx) => (
-                          <span key={idx} style={{ fontSize: '10px', padding: '4px 10px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                          <span key={idx} style={{ fontSize: '10px', padding: '4px 10px', borderRadius: '8px', backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}>
                             {item}
                           </span>
                         ))}
@@ -705,14 +705,14 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         gap: '32px'
                       }}>
                         {service.strategy_type && (
-                          <div style={{ padding: '4px 12px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.3)', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+                          <div style={{ padding: '4px 12px', borderRadius: '20px', border: '1px solid var(--border-color)', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'var(--bg-tertiary)' }}>
                             {service.strategy_type}
                           </div>
                         )}
                         
                         <div style={{ textAlign: 'right', minWidth: '100px' }}>
                           <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)' }}>PRECIO</div>
-                          <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>${service.price}</div>
+                          <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)' }}>${service.price}</div>
                           {rates?.usd > 0 && (
                             <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '700' }}>
                               ≈ {Math.round(service.price * rates.usd).toLocaleString()} Bs.
@@ -737,10 +737,10 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
               })}
             </div>
           ) : (
-            <div className="animate-slide-up" style={{ background: 'rgba(28, 28, 30, 0.95)', padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
+            <div className="animate-slide-up" style={{ background: 'var(--bg-secondary)', padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <tr style={{ backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-color)' }}>
                     <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Servicio</th>
                     <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Categoría</th>
                     <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Duración</th>
@@ -751,13 +751,13 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                 </thead>
                 <tbody>
                   {services.map((service) => (
-                    <tr key={service.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', transition: 'background-color 0.2s' }} className="table-row-hover">
+                    <tr key={service.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s' }} className="table-row-hover">
                       <td style={{ padding: '16px 24px' }}>
-                        <div style={{ fontWeight: '700', color: 'white', marginBottom: '4px' }}>{service.name}</div>
+                        <div style={{ fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>{service.name}</div>
                         {service.description && <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{service.description}</div>}
                       </td>
                       <td style={{ padding: '16px 24px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--gold-primary)', backgroundColor: 'rgba(255, 255, 255,0.05)', padding: '4px 10px', borderRadius: '8px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--gold-primary)', backgroundColor: 'var(--bg-tertiary)', padding: '4px 10px', borderRadius: '8px' }}>
                           {service.category}
                         </span>
                       </td>
@@ -765,7 +765,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         {service.duration} min
                       </td>
                       <td style={{ padding: '16px 24px' }}>
-                        <div style={{ fontWeight: '800', color: 'white' }}>${service.price}</div>
+                        <div style={{ fontWeight: '800', color: 'var(--text-primary)' }}>${service.price}</div>
                         {rates?.usd > 0 && <div style={{ fontSize: '11px', color: 'var(--gold-primary)' }}>{Math.round(service.price * rates.usd).toLocaleString()} Bs.</div>}
                       </td>
                       <td style={{ padding: '16px 24px' }}>
@@ -803,10 +803,10 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 99999, padding: isMobile ? '12px' : '20px'
           }}>
-            <div className={`${cardClass} glass-card astro-scrollbar`} style={{
+            <div className={`${cardClass} glass-card panda-scrollbar`} style={{
               width: '100%', maxWidth: '420px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
               display: 'flex', flexDirection: 'column', padding: isMobile ? '20px 16px' : '24px',
-              borderRadius: '28px', border: '1px solid rgba(255, 255, 255,0.2)',
+              borderRadius: '28px', border: '1px solid rgba(255,255,255,0.2)',
               boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -884,7 +884,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
       <AnimatedModal isOpen={isBillableExtrasModalOpen}>
         {(overlayClass, cardClass) => (
           <div className={overlayClass} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '12px' : '20px' }}>
-            <div className={`${cardClass} glass-card astro-scrollbar`} style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '20px 16px' : '32px', borderRadius: '32px', border: '1px solid rgba(255, 255, 255,0.2)' }}>
+            <div className={`${cardClass} glass-card panda-scrollbar`} style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '20px 16px' : '32px', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.2)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '16px' }}>
                 <div>
                   <h3 style={{ fontSize: '20px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -897,7 +897,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                 </button>
               </div>
 
-              <div className="astro-scrollbar" style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '8px', marginBottom: '24px' }}>
+              <div className="panda-scrollbar" style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '8px', marginBottom: '24px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {billableExtras.map(extra => (
                     <div key={extra.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -998,10 +998,10 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               zIndex: 99999, padding: isMobile ? '12px' : '20px'
             }}>
-              <div className={`${cardClass} glass-card astro-scrollbar`} style={{
+              <div className={`${cardClass} glass-card panda-scrollbar`} style={{
                 width: '100%', maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
                 padding: isMobile ? '20px 16px' : '24px', borderRadius: '28px',
-                border: '1px solid rgba(255, 255, 255,0.2)',
+                border: '1px solid rgba(255,255,255,0.2)',
                 boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
                 position: 'relative'
               }}>
@@ -1013,13 +1013,13 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                 </button>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', paddingRight: '40px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-primary)' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-primary)' }}>
                     {selectedServiceDetail.icon ? getIconComponent(selectedServiceDetail.icon, 20) : getCategoryIcon(selectedServiceDetail.category)}
                   </div>
                   <div>
                     <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{selectedServiceDetail.category}</span>
                     {selectedServiceDetail.strategy_type && (
-                      <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: '900', backgroundColor: 'rgba(255, 255, 255,0.1)', padding: '2px 8px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255,0.2)', color: 'var(--gold-primary)' }}>
+                      <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: '900', backgroundColor: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--gold-primary)' }}>
                         {selectedServiceDetail.strategy_type}
                       </span>
                     )}
@@ -1053,7 +1053,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                     <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Checklist Incluido ({selectedServiceDetail.included_items.length})</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {selectedServiceDetail.included_items.map((item, idx) => (
-                        <span key={idx} style={{ fontSize: '11px', padding: '6px 12px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255,0.05)', color: 'white', border: '1px solid rgba(255, 255, 255,0.1)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span key={idx} style={{ fontSize: '11px', padding: '6px 12px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <Check size={12} color="var(--gold-primary)" strokeWidth={3} /> {item}
                         </span>
                       ))}
@@ -1111,10 +1111,10 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 99999, padding: isMobile ? '12px' : '20px'
           }}>
-            <div className={`${cardClass} glass-card astro-scrollbar`} style={{
+            <div className={`${cardClass} glass-card panda-scrollbar`} style={{
               width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
               padding: isMobile ? '20px 16px' : '28px', borderRadius: '28px',
-              border: '1px solid rgba(255, 255, 255,0.2)',
+              border: '1px solid rgba(255,255,255,0.2)',
               boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
               position: 'relative'
             }}>
@@ -1212,7 +1212,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button 
                         onClick={() => handleEditCategoryClick(catObj)} 
-                        style={{ background: 'rgba(255, 255, 255,0.1)', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
                         <Pencil size={14} />
                       </button>
@@ -1250,10 +1250,10 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 99999, padding: isMobile ? '12px' : '20px'
           }}>
-            <div className={`${cardClass} glass-card astro-scrollbar`} style={{
+            <div className={`${cardClass} glass-card panda-scrollbar`} style={{
               width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
               padding: isMobile ? '20px 16px' : '28px', borderRadius: '28px',
-              border: '1px solid rgba(255, 255, 255,0.2)',
+              border: '1px solid rgba(255,255,255,0.2)',
               boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
               position: 'relative'
             }}>
@@ -1286,7 +1286,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                     <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '0.5px' }}>ETIQUETA VISIBLE</label>
                     <input 
                       className="form-input" 
-                      placeholder="Ej. Servicio VIP Astro" 
+                      placeholder="Ej. Servicio VIP Panda" 
                       value={newStrategyLabel} 
                       onChange={e => setNewStrategyLabel(e.target.value)} 
                       style={{ height: '44px', width: '100%' }} 
@@ -1342,315 +1342,317 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
               backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              zIndex: 99999, padding: isMobile ? '12px' : '20px'
+              zIndex: 99999
             }}>
-              <div className={`${cardClass} glass-card astro-scrollbar`} style={{
+              <div className={`${cardClass} glass-card panda-scrollbar`} style={{
                 width: '100%', maxWidth: '900px',
                 maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
                 padding: isMobile ? '20px 16px' : '32px', borderRadius: '28px',
-                border: '1px solid rgba(255, 255, 255,0.2)',
-                boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-color)',
+                boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.15)',
                 position: 'relative'
               }}>
                 <button 
                   onClick={() => { setShowAddForm(false); setIsEditing(false); }} 
-                  style={{ position: 'absolute', right: isMobile ? '32px' : '48px', top: '20px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ position: 'absolute', right: isMobile ? '20px' : '32px', top: '20px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   <X size={20} />
                 </button>
 
-                <div className="astro-scrollbar" style={{ overflowY: 'auto', overflowX: 'hidden', flex: 1, paddingRight: '8px' }}><h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '24px', paddingRight: '40px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: 'var(--gold-primary)', display: 'flex', alignItems: 'center' }}>
-                    {getIconComponent(newService.icon || 'Scissors', 22)}
-                  </span>
-                  {isEditing ? 'Editar Servicio' : 'Nuevo Servicio'}
-                </h3>
+                <div className="panda-scrollbar" style={{ overflowY: 'auto', overflowX: 'hidden', flex: 1, paddingRight: '8px' }}>
+                  <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '24px', paddingRight: '40px', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)' }}>
+                    <span style={{ color: 'var(--gold-primary)', display: 'flex', alignItems: 'center' }}>
+                      {getIconComponent(newService.icon || 'Scissors', 22)}
+                    </span>
+                    {isEditing ? 'Editar Servicio' : 'Nuevo Servicio'}
+                  </h3>
                 
-                <div className="modal-main-grid">
-                  {/* Left Column: Form Fields */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div className="form-group">
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>NOMBRE DEL SERVICIO</label>
-                      <div style={{ position: 'relative' }}>
-                        <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center' }}>
-                          {getIconComponent(newService.icon || 'Scissors', 18)}
-                        </span>
-                        <input className="form-input" placeholder="Ej. Corte Suprema" value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                  <div className="modal-main-grid">
+                    {/* Left Column: Form Fields */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <div className="form-group">
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>NOMBRE DEL SERVICIO</label>
+                        <div style={{ position: 'relative' }}>
+                          <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center' }}>
+                            {getIconComponent(newService.icon || 'Scissors', 18)}
+                          </span>
+                          <input className="form-input" placeholder="Ej. Corte Suprema" value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                        </div>
+                      </div>
+
+                      {/* Icon Picker */}
+                      <div className="form-group">
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '10px', letterSpacing: '1px' }}>ÍCONO ASOCIADO</label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {AVAILABLE_ICONS.map(ic => (
+                            <button
+                              key={ic.name}
+                              title={ic.label}
+                              onClick={() => setNewService({...newService, icon: ic.name})}
+                              style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '10px',
+                                border: newService.icon === ic.name
+                                  ? '2px solid var(--gold-primary)'
+                                  : '1px solid var(--border-color)',
+                                background: newService.icon === ic.name
+                                  ? 'rgba(192, 159, 112, 0.12)'
+                                  : 'var(--bg-tertiary)',
+                                color: newService.icon === ic.name ? 'var(--gold-primary)' : 'var(--text-muted)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.18s',
+                                flexShrink: 0
+                              }}
+                            >
+                              {getIconComponent(ic.name, 17)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>DESCRIPCIÓN DEL SERVICIO</label>
+                        <textarea 
+                          className="form-input" 
+                          placeholder="Describe los benefits premium del servicio..." 
+                          value={newService.description || ''} 
+                          onChange={e => setNewService({...newService, description: e.target.value})} 
+                          onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
+                          ref={el => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }}
+                          style={{ width: '100%', minHeight: '80px', paddingTop: '12px', resize: 'none', fontSize: '13px', lineHeight: '1.5', overflow: 'hidden' }} 
+                        />
+                      </div>
+
+                      <div className="modal-grid-2col">
+                        <div className="form-group">
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>PRECIO ($)</label>
+                          <div className="premium-price-input-container">
+                            <span className="price-currency-symbol">$</span>
+                            <input 
+                              className="price-input-field" 
+                              type="number" 
+                              placeholder="25" 
+                              value={newService.price === 0 ? '' : newService.price} 
+                              onChange={e => setNewService({...newService, price: e.target.value === '' ? '' : Number(e.target.value)})} 
+                            />
+                            {rates?.usd > 0 && (
+                              <div className="price-bs-equivalent" style={{ color: 'var(--text-muted)' }}>
+                                ≈ {Math.round((Number(newService.price) || 0) * rates.usd).toLocaleString()} Bs.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="form-group">
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>DURACIÓN (MIN)</label>
+                          <input className="form-input" type="number" placeholder="45" value={newService.duration === 0 ? '' : newService.duration} onChange={e => setNewService({...newService, duration: e.target.value === '' ? '' : Number(e.target.value)})} style={{ width: '100%' }} />
+                        </div>
+                      </div>
+
+                      <div className="modal-grid-2col">
+                        <AstroSelect 
+                          label="CATEGORÍA"
+                          value={newService.category}
+                          onChange={val => setNewService({...newService, category: val})}
+                          options={categories.map(c => ({ label: c.name, value: c.name }))}
+                        />
+                        <AstroSelect 
+                          label="ESTRATEGIA"
+                          value={newService.strategy_type}
+                          onChange={val => setNewService({...newService, strategy_type: val})}
+                          options={strategies.map(strat => ({ label: strat.label, value: strat.value }))}
+                        />
+                      </div>
+
+                      {/* Commissions Distribution */}
+                      <div className="modal-commissions">
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>
+                          <DollarSign size={14} /> DISTRIBUCIÓN DE INGRESOS (%)
+                        </label>
+                        
+                        <div className="commissions-fields-grid" style={{ marginBottom: '16px' }}>
+                          <div className="form-group">
+                            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>COMISIÓN BARBERO (%)</label>
+                            <input 
+                              className="form-input" 
+                              type="number" 
+                              placeholder="40"
+                              value={newService.commission_barber === 0 ? '' : newService.commission_barber} 
+                              onChange={e => setNewService({...newService, commission_barber: e.target.value === '' ? 0 : Number(e.target.value)})} 
+                              style={{ width: '100%', fontSize: '15px', fontWeight: '800', height: '48px', color: 'var(--gold-primary)' }} 
+                            />
+                          </div>
+
+                          <div className="form-group">
+                            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>GANANCIA BARBERÍA (%)</label>
+                            <input 
+                              className="form-input" 
+                              type="number" 
+                              readOnly
+                              value={100 - (Number(newService.commission_barber) || 0)} 
+                              style={{ width: '100%', fontSize: '15px', fontWeight: '800', height: '48px', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-tertiary)', cursor: 'not-allowed' }} 
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Business Net Margin Indicator */}
+                        {(newService.price > 0) && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
+                            
+                            {/* Row 1: Ganancia Real Barbería */}
+                            <div style={{ 
+                              padding: '12px 16px', 
+                              borderRadius: '14px', 
+                              background: 'rgba(50, 215, 75, 0.08)', 
+                              border: '1px solid rgba(50, 215, 75, 0.25)',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}>
+                              <div>
+                                <div style={{ fontSize: '9px', fontWeight: '800', color: '#32d74b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                  Ganancia Real Barbería
+                                </div>
+                                <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)', marginTop: '2px' }}>
+                                  ${((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)).toFixed(2)}
+                                </div>
+                              </div>
+                              {rates?.usd > 0 && (
+                                <div style={{ textAlign: 'right' }}>
+                                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
+                                  <div style={{ fontSize: '13px', fontWeight: '800', color: '#32d74b', marginTop: '2px' }}>
+                                    {Math.round(((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)) * rates.usd).toLocaleString()} Bs.
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Row 2: Pago Real Barbero */}
+                            <div style={{ 
+                              padding: '12px 16px', 
+                              borderRadius: '14px', 
+                              background: 'var(--bg-tertiary)', 
+                              border: '1px solid var(--border-color)',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}>
+                              <div>
+                                <div style={{ fontSize: '9px', fontWeight: '800', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                  Pago Real Barbero
+                                </div>
+                                <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)', marginTop: '2px' }}>
+                                  ${(((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0)) / 100).toFixed(2)}
+                                </div>
+                              </div>
+                              {rates?.usd > 0 && (
+                                <div style={{ textAlign: 'right' }}>
+                                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
+                                  <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--gold-primary)', marginTop: '2px' }}>
+                                    {Math.round((((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0)) / 100) * rates.usd).toLocaleString()} Bs.
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Icon Picker */}
-                    <div className="form-group">
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '10px', letterSpacing: '1px' }}>ÍCONO ASOCIADO</label>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                        {AVAILABLE_ICONS.map(ic => (
-                          <button
-                            key={ic.name}
-                            title={ic.label}
-                            onClick={() => setNewService({...newService, icon: ic.name})}
-                            style={{
-                              width: '40px',
-                              height: '40px',
-                              borderRadius: '10px',
-                              border: newService.icon === ic.name
-                                ? '2px solid var(--gold-primary)'
-                                : '1px solid rgba(255,255,255,0.08)',
-                              background: newService.icon === ic.name
-                                ? 'rgba(255, 255, 255,0.15)'
-                                : 'rgba(255,255,255,0.04)',
-                              color: newService.icon === ic.name ? 'var(--gold-primary)' : 'var(--text-muted)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'pointer',
-                              transition: 'all 0.18s',
-                              flexShrink: 0
-                            }}
-                          >
-                            {getIconComponent(ic.name, 17)}
-                          </button>
+                    {/* Right Column: Checklist */}
+                    <div style={{ backgroundColor: 'var(--bg-tertiary)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>
+                          <LayoutList size={16} /> CHECKLIST (INCLUIDO)
+                        </label>
+                        <button 
+                          onClick={() => setIsExtrasModalOpen(true)}
+                          style={{ 
+                            background: 'var(--bg-secondary)', 
+                            border: '1px solid var(--border-color)', 
+                            borderRadius: '8px', 
+                            padding: '4px 12px', 
+                            fontSize: '10px',
+                            fontWeight: '800',
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '6px',
+                            cursor: 'pointer', 
+                            color: 'var(--gold-primary)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                          }}
+                        >
+                          <Settings size={12} /> Items
+                        </button>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
+                        {baseItems.map(item => (
+                          <div key={item.id} style={{ position: 'relative' }} className="group">
+                            <button 
+                              onClick={() => {
+                                const current = newService.included_items || [];
+                                const next = current.includes(item.name) 
+                                  ? current.filter(i => i !== item.name)
+                                  : [...current, item.name];
+                                setNewService({...newService, included_items: next});
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                borderRadius: '12px',
+                                fontSize: '13px',
+                                textAlign: 'left',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: newService.included_items?.includes(item.name) ? 'var(--bg-secondary)' : 'var(--bg-tertiary)',
+                                border: newService.included_items?.includes(item.name) ? '1px solid var(--gold-primary)' : '1px solid var(--border-color)',
+                                color: newService.included_items?.includes(item.name) ? 'var(--text-primary)' : 'var(--text-secondary)'
+                              }}
+                            >
+                              <div style={{ 
+                                width: '18px', 
+                                height: '18px', 
+                                borderRadius: '4px', 
+                                border: '1px solid var(--border-color)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: newService.included_items?.includes(item.name) ? 'var(--gold-primary)' : 'transparent'
+                              }}>
+                                {newService.included_items?.includes(item.name) && <Check size={12} color="black" strokeWidth={4} />}
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: '700' }}>{item.name}</div>
+                              </div>
+                            </button>
+                          </div>
                         ))}
                       </div>
                     </div>
-
-                    <div className="form-group">
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>DESCRIPCIÓN DEL SERVICIO</label>
-                      <textarea 
-                        className="form-input" 
-                        placeholder="Describe los beneficios premium del servicio..." 
-                        value={newService.description || ''} 
-                        onChange={e => setNewService({...newService, description: e.target.value})} 
-                        onInput={e => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
-                        ref={el => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }}
-                        style={{ width: '100%', minHeight: '80px', paddingTop: '12px', resize: 'none', fontSize: '13px', lineHeight: '1.5', overflow: 'hidden' }} 
-                      />
-                    </div>
-
-                    <div className="modal-grid-2col">
-                      <div className="form-group">
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>PRECIO ($)</label>
-                        <div className="premium-price-input-container">
-                          <span className="price-currency-symbol">$</span>
-                          <input 
-                            className="price-input-field" 
-                            type="number" 
-                            placeholder="25" 
-                            value={newService.price === 0 ? '' : newService.price} 
-                            onChange={e => setNewService({...newService, price: e.target.value === '' ? '' : Number(e.target.value)})} 
-                          />
-                          {rates?.usd > 0 && (
-                            <div className="price-bs-equivalent">
-                              ≈ {Math.round((Number(newService.price) || 0) * rates.usd).toLocaleString()} Bs.
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="form-group">
-                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>DURACIÓN (MIN)</label>
-                        <input className="form-input" type="number" placeholder="45" value={newService.duration === 0 ? '' : newService.duration} onChange={e => setNewService({...newService, duration: e.target.value === '' ? '' : Number(e.target.value)})} style={{ width: '100%' }} />
-                      </div>
-                    </div>
-
-                    <div className="modal-grid-2col">
-                      <AstroSelect 
-                        label="CATEGORÍA"
-                        value={newService.category}
-                        onChange={val => setNewService({...newService, category: val})}
-                        options={categories.map(c => ({ label: c.name, value: c.name }))}
-                      />
-                      <AstroSelect 
-                        label="ESTRATEGIA"
-                        value={newService.strategy_type}
-                        onChange={val => setNewService({...newService, strategy_type: val})}
-                        options={strategies.map(strat => ({ label: strat.label, value: strat.value }))}
-                      />
-                    </div>
-
-                    {/* Commissions Distribution */}
-                    <div className="modal-commissions">
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>
-                        <DollarSign size={14} /> DISTRIBUCIÓN DE INGRESOS (%)
-                      </label>
-                      
-                      <div className="commissions-fields-grid" style={{ marginBottom: '16px' }}>
-                        <div className="form-group">
-                          <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>COMISIÓN BARBERO (%)</label>
-                          <input 
-                            className="form-input" 
-                            type="number" 
-                            placeholder="40"
-                            value={newService.commission_barber === 0 ? '' : newService.commission_barber} 
-                            onChange={e => setNewService({...newService, commission_barber: e.target.value === '' ? 0 : Number(e.target.value)})} 
-                            style={{ width: '100%', fontSize: '15px', fontWeight: '800', height: '48px', color: 'var(--gold-primary)' }} 
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>GANANCIA BARBERÍA (%)</label>
-                          <input 
-                            className="form-input" 
-                            type="number" 
-                            readOnly
-                            value={100 - (Number(newService.commission_barber) || 0)} 
-                            style={{ width: '100%', fontSize: '15px', fontWeight: '800', height: '48px', color: 'var(--text-muted)', backgroundColor: 'rgba(255,255,255,0.01)', cursor: 'not-allowed' }} 
-                          />
-                        </div>
-                      </div>
-                      
-                      {/* Business Net Margin Indicator */}
-                      {(newService.price > 0) && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
-                          
-                          {/* Row 1: Ganancia Barbería */}
-                          <div style={{ 
-                            padding: '12px 16px', 
-                            borderRadius: '14px', 
-                            background: 'rgba(50, 215, 75, 0.05)', 
-                            border: '1px solid rgba(50, 215, 75, 0.15)',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                          }}>
-                            <div>
-                              <div style={{ fontSize: '9px', fontWeight: '800', color: '#32d74b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                Ganancia Real Barbería
-                              </div>
-                              <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', marginTop: '2px' }}>
-                                ${((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)).toFixed(2)}
-                              </div>
-                            </div>
-                            {rates?.usd > 0 && (
-                              <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
-                                <div style={{ fontSize: '13px', fontWeight: '800', color: '#32d74b', marginTop: '2px' }}>
-                                  {Math.round(((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)) * rates.usd).toLocaleString()} Bs.
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Row 2: Pago Barbero */}
-                          <div style={{ 
-                            padding: '12px 16px', 
-                            borderRadius: '14px', 
-                            background: 'rgba(255, 255, 255, 0.05)', 
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                          }}>
-                            <div>
-                              <div style={{ fontSize: '9px', fontWeight: '800', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                Pago Real Barbero
-                              </div>
-                              <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', marginTop: '2px' }}>
-                                ${(((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0)) / 100).toFixed(2)}
-                              </div>
-                            </div>
-                            {rates?.usd > 0 && (
-                              <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
-                                <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--gold-primary)', marginTop: '2px' }}>
-                                  {Math.round((((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0)) / 100) * rates.usd).toLocaleString()} Bs.
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                        </div>
-                      )}
-                    </div>
                   </div>
 
-                  {/* Right Column: Checklist */}
-                  <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>
-                        <LayoutList size={16} /> CHECKLIST (INCLUIDO)
-                      </label>
-                      <button 
-                        onClick={() => setIsExtrasModalOpen(true)}
-                        style={{ 
-                          background: 'rgba(255, 255, 255,0.1)', 
-                          border: '1px solid rgba(255, 255, 255,0.2)', 
-                          borderRadius: '8px', 
-                          padding: '4px 12px', 
-                          fontSize: '10px',
-                          fontWeight: '800',
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '6px',
-                          cursor: 'pointer', 
-                          color: 'var(--gold-primary)',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px'
-                        }}
-                      >
-                        <Settings size={12} /> Items
-                      </button>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
-                      {baseItems.map(item => (
-                        <div key={item.id} style={{ position: 'relative' }} className="group">
-                          <button 
-                            onClick={() => {
-                              const current = newService.included_items || [];
-                              const next = current.includes(item.name) 
-                                ? current.filter(i => i !== item.name)
-                                : [...current, item.name];
-                              setNewService({...newService, included_items: next});
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '10px 14px',
-                              borderRadius: '12px',
-                              fontSize: '13px',
-                              textAlign: 'left',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s',
-                              background: newService.included_items?.includes(item.name) ? 'rgba(255, 255, 255,0.15)' : 'rgba(255,255,255,0.02)',
-                              border: newService.included_items?.includes(item.name) ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
-                              color: newService.included_items?.includes(item.name) ? 'white' : 'var(--text-muted)'
-                            }}
-                          >
-                            <div style={{ 
-                              width: '18px', 
-                              height: '18px', 
-                              borderRadius: '4px', 
-                              border: '1px solid var(--border-color)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              backgroundColor: newService.included_items?.includes(item.name) ? 'var(--gold-primary)' : 'transparent'
-                            }}>
-                              {newService.included_items?.includes(item.name) && <Check size={12} color="black" strokeWidth={4} />}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: '700' }}>{item.name}</div>
-                            </div>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="modal-actions-wrapper">
+                    <button 
+                      onClick={() => { setShowAddForm(false); setIsEditing(false); }} 
+                      style={{ height: '54px', padding: '0 30px', fontSize: '16px', borderRadius: '16px', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: '700' }}
+                    >
+                      Cancelar
+                    </button>
+                    <button className="btn-gold" onClick={handleCreateService} style={{ height: '54px', padding: '0 40px', fontSize: '16px', borderRadius: '16px' }}>
+                      {isEditing ? 'Guardar Cambios' : 'Lanzar Servicio al Catálogo'}
+                    </button>
                   </div>
                 </div>
-
-                <div className="modal-actions-wrapper">
-                  <button 
-                    onClick={() => { setShowAddForm(false); setIsEditing(false); }} 
-                    style={{ height: '54px', padding: '0 30px', fontSize: '16px', borderRadius: '16px', backgroundColor: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', cursor: 'pointer', fontWeight: '700' }}
-                  >
-                    Cancelar
-                  </button>
-                  <button className="btn-gold" onClick={handleCreateService} style={{ height: '54px', padding: '0 40px', fontSize: '16px', borderRadius: '16px' }}>
-                    {isEditing ? 'Guardar Cambios' : 'Lanzar Servicio al Catálogo'}
-                  </button>
-                </div>
-              </div> {/* Closing astro-scrollbar */}
               </div>
             </div>
           )
