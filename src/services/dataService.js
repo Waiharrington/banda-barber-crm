@@ -105,9 +105,19 @@ export const dataService = {
 
   async addClient(client) {
     _cacheInvalidate('clients');
+    const allowedColumns = [
+      'name', 'phone', 'id_card', 'email', 'status', 'points', 'last_visit', 'work_gallery'
+    ];
+    const filtered = {};
+    allowedColumns.forEach(col => {
+      if (client[col] !== undefined) {
+        filtered[col] = client[col];
+      }
+    });
+
     const { data, error } = await supabase
       .from('clients')
-      .insert([client])
+      .insert([filtered])
       .select()
       .single();
     if (error) throw error;
@@ -138,9 +148,19 @@ export const dataService = {
   async updateClient(id, updates) {
     _cacheInvalidate('clients');
     _cacheInvalidateAppts();
+    const allowedColumns = [
+      'name', 'phone', 'id_card', 'email', 'status', 'points', 'last_visit', 'work_gallery'
+    ];
+    const filtered = {};
+    allowedColumns.forEach(col => {
+      if (updates[col] !== undefined) {
+        filtered[col] = updates[col];
+      }
+    });
+
     const { data, error } = await supabase
       .from('clients')
-      .update(updates)
+      .update(filtered)
       .eq('id', id)
       .select()
       .single();
