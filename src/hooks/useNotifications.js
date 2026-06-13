@@ -39,7 +39,7 @@ export const useNotifications = () => {
         body,
         icon: '/favicon.ico', // Default icon
         badge: '/favicon.ico',
-        tag: 'astro-alert',
+        tag: 'panda-alert',
         renotify: true
       });
     }

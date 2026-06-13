@@ -31,7 +31,7 @@ const TopBar = ({
     };
 
     updateUnread();
-    window.addEventListener('astro_new_notification', updateUnread);
+    window.addEventListener('panda_new_notification', updateUnread);
     
     // Set current date in Spanish
     const today = new Date();
@@ -45,7 +45,7 @@ const TopBar = ({
     setCurrentDayStr(capitalizedDay);
 
     return () => {
-      window.removeEventListener('astro_new_notification', updateUnread);
+      window.removeEventListener('panda_new_notification', updateUnread);
     };
   }, []);
 
@@ -266,7 +266,7 @@ const TopBar = ({
 
         {/* Calendar Button (mockup style) */}
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent('astro_navigate', { detail: 'scheduling' }))}
+          onClick={() => window.dispatchEvent(new CustomEvent('panda_navigate', { detail: 'scheduling' }))}
           style={{
             width: '40px',
             height: '40px',

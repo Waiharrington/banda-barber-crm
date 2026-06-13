@@ -24,8 +24,8 @@ import { useAuth } from '../context/AuthContext';
 import { useDialog } from '../context/DialogContext';
 import { useModal } from '../context/ModalContext';
 import { createPortal } from 'react-dom';
-import AstroSelect from './AstroSelect';
-import AstroCamera from './AstroCamera';
+import PandaSelect from './PandaSelect';
+import PandaCamera from './PandaCamera';
 import AnimatedModal from './AnimatedModal';
 
 const InventoryModule = ({ isMobile, currency, rates }) => {
@@ -253,7 +253,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>NOMBRE</label>
               <input type="text" placeholder="Ej. Cera Gold Premium" value={newItem.name} onChange={(e) => setNewItem({...newItem, name: e.target.value})} style={{ width: '100%', height: '48px' }} />
             </div>
-            <AstroSelect 
+            <PandaSelect 
               label="CATEGORÍA"
               value={newItem.category}
               onChange={(val) => setNewItem({...newItem, category: val})}
@@ -266,7 +266,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
             />
 
             {newItem.category === 'Herramienta' && (
-              <AstroSelect 
+              <PandaSelect 
                 label="ASIGNAR A"
                 placeholder="Selecciona barbero"
                 value={newItem.staff_id}
@@ -381,7 +381,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
 
       <AnimatedModal isOpen={showCamera}>
         {(overlayClass, cardClass) => (
-          <AstroCamera 
+          <PandaCamera 
             onCapture={(img) => setNewItem({...newItem, image_url: img})} 
             onClose={() => setShowCamera(false)} 
             overlayClass={overlayClass}
@@ -876,7 +876,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                           overflowX: 'hidden', 
                           paddingRight: '4px' 
                         }} 
-                        className="astro-scrollbar"
+                        className="panda-scrollbar"
                       >
                         {isMobile ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -981,7 +981,7 @@ const EditInventoryModal = ({ isOpen, item, onClose, onSave }) => {
     <AnimatedModal isOpen={isOpen}>
       {(overlayClass, cardClass) => (
         <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div className={`glass-card ${cardClass} astro-scrollbar`} style={{ maxWidth: '500px', width: '100%', maxHeight: '90vh', overflowY: 'auto', borderRadius: '28px', padding: '32px', display: 'flex', flexDirection: 'column' }}>
+          <div className={`glass-card ${cardClass} panda-scrollbar`} style={{ maxWidth: '500px', width: '100%', maxHeight: '90vh', overflowY: 'auto', borderRadius: '28px', padding: '32px', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexShrink: 0 }}>
               <h3 style={{ 
                 fontSize: '20px', 
@@ -999,10 +999,10 @@ const EditInventoryModal = ({ isOpen, item, onClose, onSave }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>NOMBRE</label>
-                <input type="text" className="astro-input" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ width: '100%' }} />
+                <input type="text" className="panda-input" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ width: '100%' }} />
               </div>
 
-              <AstroSelect 
+              <PandaSelect 
                 label="CATEGORÍA"
                 value={formData.category}
                 onChange={(val) => setFormData({...formData, category: val})}
@@ -1015,7 +1015,7 @@ const EditInventoryModal = ({ isOpen, item, onClose, onSave }) => {
               />
 
               {formData.category === 'Herramienta' && (
-                <AstroSelect 
+                <PandaSelect 
                   label="ASIGNAR A"
                   placeholder="Selecciona barbero"
                   value={formData.staff_id}
@@ -1029,18 +1029,18 @@ const EditInventoryModal = ({ isOpen, item, onClose, onSave }) => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO COSTO ($)</label>
-                  <input type="number" className="astro-input" value={formData.cost_price || 0} onChange={(e) => setFormData({...formData, cost_price: Number(e.target.value)})} style={{ width: '100%' }} />
+                  <input type="number" className="panda-input" value={formData.cost_price || 0} onChange={(e) => setFormData({...formData, cost_price: Number(e.target.value)})} style={{ width: '100%' }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO VENTA ($)</label>
-                  <input type="number" className="astro-input" value={formData.price || 0} onChange={(e) => setFormData({...formData, price: Number(e.target.value)})} style={{ width: '100%' }} />
+                  <input type="number" className="panda-input" value={formData.price || 0} onChange={(e) => setFormData({...formData, price: Number(e.target.value)})} style={{ width: '100%' }} />
                 </div>
               </div>
 
               {(formData.category === 'Venta' || formData.category === 'Accesorios') && (
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>COMISIÓN VENDEDOR (%)</label>
-                  <input type="number" className="astro-input" value={formData.commission_pct ?? 10} onChange={(e) => setFormData({...formData, commission_pct: Number(e.target.value)})} style={{ width: '100%' }} />
+                  <input type="number" className="panda-input" value={formData.commission_pct ?? 10} onChange={(e) => setFormData({...formData, commission_pct: Number(e.target.value)})} style={{ width: '100%' }} />
                 </div>
               )}
 
@@ -1112,7 +1112,7 @@ const EditInventoryModal = ({ isOpen, item, onClose, onSave }) => {
 
             <AnimatedModal isOpen={showCamera}>
               {(overlayClass, cardClass) => (
-                <AstroCamera 
+                <PandaCamera 
                   onCapture={(img) => { setFormData({...formData, image_url: img}); setShowCamera(false); }} 
                   onClose={() => setShowCamera(false)} 
                   overlayClass={overlayClass}

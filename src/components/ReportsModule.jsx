@@ -11,8 +11,8 @@ import {
   X
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
-import AstroDatePicker from './AstroDatePicker';
-import AstroSelect from './AstroSelect';
+import PandaDatePicker from './PandaDatePicker';
+import PandaSelect from './PandaSelect';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import logo from '../assets/logo.png';
@@ -126,7 +126,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(16);
         pdf.setTextColor(255, 255, 255);
-        pdf.text("ASTRO BARBERSHOP", 15, 18);
+        pdf.text("PANDA BARBERSHOP", 15, 18);
 
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(7.5);
@@ -376,7 +376,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         : dateRange === 'month' ? 'Mes'
         : 'Personalizado';
 
-      pdf.save(`Astro_Reporte_${rangeLabel}_${dateStr}.pdf`);
+      pdf.save(`Panda_Reporte_${rangeLabel}_${dateStr}.pdf`);
     } catch (err) {
       console.error('Error generando PDF:', err);
     } finally {
@@ -1000,7 +1000,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           marginBottom: '32px',
           color: 'white'
         }}>
-          <h1 style={{ fontSize: '24px', color: 'var(--gold-primary)', margin: '0 0 8px 0', fontWeight: '900', letterSpacing: '1px' }}>ASTRO BARBERSHOP</h1>
+          <h1 style={{ fontSize: '24px', color: 'var(--gold-primary)', margin: '0 0 8px 0', fontWeight: '900', letterSpacing: '1px' }}>PANDA BARBERSHOP</h1>
           <p style={{ fontSize: '13px', margin: '0 0 16px 0', color: '#b3b3b3', fontWeight: '600' }}>
             Reporte Ejecutivo de Analítica y Rendimiento Operativo
           </p>
@@ -1039,7 +1039,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         background: 'rgba(255, 255, 255, 0.01)'
       }}>
         {/* Date Range Selector */}
-        <AstroSelect 
+        <PandaSelect 
           label="Rango de Fecha"
           value={dateRange}
           onChange={setDateRange}
@@ -1053,7 +1053,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         />
 
         {/* Service Selector */}
-        <AstroSelect 
+        <PandaSelect 
           label="Servicio"
           value={selectedService}
           onChange={setSelectedService}
@@ -1064,7 +1064,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         />
 
         {/* Staff Selector */}
-        <AstroSelect 
+        <PandaSelect 
           label="Miembro del Equipo"
           value={selectedStaff}
           onChange={setSelectedStaff}
@@ -1075,7 +1075,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         />
 
         {/* Chart Granularity Selector */}
-        <AstroSelect 
+        <PandaSelect 
           label="Agrupamiento Ref. $"
           value={chartGranularity}
           onChange={setChartGranularity}
@@ -1103,14 +1103,14 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           }}>
             <div style={{ flex: 1 }}>
               <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '6px' }}>Fecha Inicial (Desde)</label>
-              <AstroDatePicker 
+              <PandaDatePicker 
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
               />
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '6px' }}>Fecha Final (Hasta)</label>
-              <AstroDatePicker 
+              <PandaDatePicker 
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
               />
@@ -1663,7 +1663,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
             </h3>
           </div>
           <div style={{ width: isMobile ? '100%' : '280px' }}>
-            <AstroSelect
+            <PandaSelect
               label="Asistente"
               value={selectedAssistant}
               onChange={setSelectedAssistant}

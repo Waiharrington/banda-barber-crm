@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 
-const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", className = "", style = {}, min, max }) => {
+const PandaDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", className = "", style = {}, min, max }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(value ? new Date(value) : new Date());
   const [dropdownStyle, setDropdownStyle] = useState({});
@@ -57,7 +57,7 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
       if (
         containerRef.current &&
         !containerRef.current.contains(event.target) &&
-        !event.target.closest('.astro-datepicker-dropdown')
+        !event.target.closest('.panda-datepicker-dropdown')
       ) {
         setIsOpen(false);
       }
@@ -69,7 +69,7 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
   useEffect(() => {
     if (!isOpen) return;
     const close = (event) => {
-      if (event.target && event.target.closest && event.target.closest('.astro-datepicker-dropdown')) return;
+      if (event.target && event.target.closest && event.target.closest('.panda-datepicker-dropdown')) return;
       setIsOpen(false);
     };
     window.addEventListener('scroll', close, true);
@@ -140,7 +140,7 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
 
   return (
     <div 
-      className={`astro-datepicker-container ${className}`} 
+      className={`panda-datepicker-container ${className}`} 
       style={{ 
         position: position || 'relative', 
         zIndex: isOpen ? 999999 : (zIndex || 1), 
@@ -179,7 +179,7 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
 
       {isOpen && createPortal(
         <div 
-          className="glass-card animate-scale-in astro-datepicker-dropdown" 
+          className="glass-card animate-scale-in panda-datepicker-dropdown" 
           style={{ 
             ...dropdownStyle,
             padding: '16px',
@@ -272,4 +272,4 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
   );
 };
 
-export default AstroDatePicker;
+export default PandaDatePicker;

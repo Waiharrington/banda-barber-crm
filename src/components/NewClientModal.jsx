@@ -4,7 +4,7 @@ import { X, User, Phone, CreditCard, Loader2, Calendar } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import { ModalShield } from '../context/ModalContext';
-import AstroDatePicker from './AstroDatePicker';
+import PandaDatePicker from './PandaDatePicker';
 import AnimatedModal from './AnimatedModal';
 import { formatName } from '../utils/stringUtils';
 import { useScrollLock } from '../hooks/useScrollLock';

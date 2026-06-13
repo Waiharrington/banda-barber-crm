@@ -16,7 +16,7 @@ import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import { useDialog } from '../context/DialogContext';
 import { useAuth } from '../context/AuthContext';
-import AstroSelect from './AstroSelect';
+import PandaSelect from './PandaSelect';
 import { useScrollLock } from '../hooks/useScrollLock';
 import AnimatedModal from './AnimatedModal';
 import { createPortal } from 'react-dom';
@@ -233,7 +233,7 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobileView ? '8px' : '16px', marginTop: isMobileView ? '20px' : '32px' }}>
             <button 
               onClick={() => setActiveTab('rendimiento')}
-              className="astro-tab-btn"
+              className="panda-tab-btn"
               style={{ 
                 padding: isMobileView ? '10px 8px' : '12px 24px', 
                 borderRadius: '50px', 
@@ -253,7 +253,7 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
             </button>
             <button 
               onClick={() => setActiveTab('inventario')}
-              className="astro-tab-btn"
+              className="panda-tab-btn"
               style={{ 
                 padding: isMobileView ? '10px 8px' : '12px 24px', 
                 borderRadius: '50px', 
@@ -469,7 +469,7 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                       </>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', gridColumn: 'span 2' }}>
-                        <AstroSelect 
+                        <PandaSelect 
                           label="Seleccionar del almacén (herramientas libres)"
                           value={newTool.inventory_id} 
                           onChange={(val) => setNewTool({...newTool, inventory_id: val})} 
@@ -482,19 +482,19 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                     )}
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <AstroSelect 
+                      <PandaSelect 
                         label="Pertenencia"
                         value={newTool.ownership} 
                         onChange={(val) => setNewTool({...newTool, ownership: val})} 
                         disabled={!isAdmin}
                         options={[
                           { value: 'Propia', label: 'Propia del Barbero' },
-                          ...(isAdmin ? [{ value: 'Asignada', label: 'Asignada (Astro)' }] : [])
+                          ...(isAdmin ? [{ value: 'Asignada', label: 'Asignada (Panda)' }] : [])
                         ]}
                       />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <AstroSelect 
+                      <PandaSelect 
                         label="Estado"
                         value={newTool.status} 
                         onChange={(val) => setNewTool({...newTool, status: val})} 

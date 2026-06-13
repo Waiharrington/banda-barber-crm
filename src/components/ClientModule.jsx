@@ -25,10 +25,10 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { supabase } from '../lib/supabase';
-import AstroSelect from './AstroSelect';
-import AstroCamera from './AstroCamera';
-import AstroDatePicker from './AstroDatePicker';
-import AstroDialog from './AstroDialog';
+import PandaSelect from './PandaSelect';
+import PandaCamera from './PandaCamera';
+import PandaDatePicker from './PandaDatePicker';
+import PandaDialog from './PandaDialog';
 import AnimatedModal from './AnimatedModal';
 import { formatName, normalizeForSearch } from '../utils/stringUtils';
 import { useDialog } from '../context/DialogContext';
@@ -44,14 +44,14 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
   useScrollLock(showMessageModal);
 
   const getInitialBdayMessage = () => {
-    let msg = localStorage.getItem('astro_default_bday_message');
+    let msg = localStorage.getItem('panda_default_bday_message');
     const isCorrupted = !msg || 
       msg.includes('\uFFFD') || 
       msg.includes('ï¿½') ||
       /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/.test(msg);
     if (isCorrupted) {
       msg = `¡Hola {name}! ${String.fromCodePoint(0x1F389)} Te deseamos un muy feliz cumpleaños de parte de todo el equipo de Panda Barber Studio. ${String.fromCodePoint(0x1F488)} ¡Que tengas un día excelente!`;
-      localStorage.setItem('astro_default_bday_message', msg);
+      localStorage.setItem('panda_default_bday_message', msg);
     }
     return msg;
   };
@@ -255,7 +255,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Cumpleaños</label>
                   <input type="date" className="form-input" value={newClient.birth_date} onChange={(e) => setNewClient({...newClient, birth_date: e.target.value})} style={{ width: '100%' }} />
                 </div>
-                <AstroSelect 
+                <PandaSelect 
                   label="Tipo de Cabello"
                   value={newClient.hair_type}
                   onChange={(val) => setNewClient({...newClient, hair_type: val})}
@@ -266,7 +266,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                     { label: 'Mixto', value: 'Mixto' }
                   ]}
                 />
-                <AstroSelect 
+                <PandaSelect 
                   label="Cuero Cabelludo"
                   value={newClient.scalp_type}
                   onChange={(val) => setNewClient({...newClient, scalp_type: val})}
@@ -588,7 +588,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
             <div style={{ display: 'flex', gap: '10px' }}>
               <button 
                 onClick={() => {
-                  localStorage.setItem('astro_default_bday_message', defaultBdayMessage);
+                  localStorage.setItem('panda_default_bday_message', defaultBdayMessage);
                   setShowMessageModal(false);
                   showToast('Mensaje de cumpleaños guardado');
                 }}
@@ -610,7 +610,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
               
               <button 
                 onClick={() => {
-                  setDefaultBdayMessage(localStorage.getItem('astro_default_bday_message') || `¡Hola {name}! ${String.fromCodePoint(0x1F389)} Te deseamos un muy feliz cumpleaños de parte de todo el equipo de Panda Barber Studio. ${String.fromCodePoint(0x1F488)} ¡Que tengas un día excelente!`);
+                  setDefaultBdayMessage(localStorage.getItem('panda_default_bday_message') || `¡Hola {name}! ${String.fromCodePoint(0x1F389)} Te deseamos un muy feliz cumpleaños de parte de todo el equipo de Panda Barber Studio. ${String.fromCodePoint(0x1F488)} ¡Que tengas un día excelente!`);
                   setShowMessageModal(false);
                 }}
                 style={{
@@ -903,7 +903,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
               <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <input className="form-input" value={editData.id_card} onChange={e => setEditData({...editData, id_card: e.target.value})} placeholder="Cédula" style={{ width: '100%', fontSize: '12px', padding: '8px' }} />
                 <input type="date" className="form-input" value={editData.birth_date} onChange={e => setEditData({...editData, birth_date: e.target.value})} style={{ width: '100%' }} />
-                <AstroSelect 
+                <PandaSelect 
                   label="Tipo de Cabello"
                   value={editData.hair_type}
                   onChange={(val) => setEditData({...editData, hair_type: val})}
@@ -914,7 +914,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
                     { label: 'Mixto', value: 'Mixto' }
                   ]}
                 />
-                <AstroSelect 
+                <PandaSelect 
                   label="Cuero Cabelludo"
                   value={editData.scalp_type}
                   onChange={(val) => setEditData({...editData, scalp_type: val})}
@@ -1192,7 +1192,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
                   <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Cumpleaños</label>
                   <input type="date" className="form-input" value={editData.birth_date} onChange={e => setEditData({...editData, birth_date: e.target.value})} style={{ width: '100%', padding: '0 16px', fontSize: '13px' }} />
                 </div>
-                <AstroSelect 
+                <PandaSelect 
                   label="Tipo de Cabello"
                   value={editData.hair_type}
                   onChange={(val) => setEditData({...editData, hair_type: val})}
@@ -1204,7 +1204,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
                   ]}
                   style={{ marginBottom: '12px' }}
                 />
-                <AstroSelect 
+                <PandaSelect 
                   label="Cuero Cabelludo"
                   value={editData.scalp_type}
                   onChange={(val) => setEditData({...editData, scalp_type: val})}
@@ -1494,7 +1494,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
 
       <AnimatedModal isOpen={showCamera}>
         {(overlayClass, cardClass) => (
-          <AstroCamera 
+          <PandaCamera 
             onCapture={handlePhotoCaptured} 
             onClose={() => setShowCamera(false)} 
             overlayClass={overlayClass}
@@ -1530,7 +1530,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <AstroSelect 
+                <PandaSelect 
                   label="TIPO DE FOTO"
                   value={photoMeta.type}
                   onChange={(val) => setPhotoMeta({ ...photoMeta, type: val })}
@@ -1541,7 +1541,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
                   ]}
                 />
 
-                <AstroSelect 
+                <PandaSelect 
                   label="ASOCIAR A VISITA (OPCIONAL)"
                   value={photoMeta.serviceId}
                   onChange={(val) => setPhotoMeta({ ...photoMeta, serviceId: val })}

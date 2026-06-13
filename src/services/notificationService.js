@@ -2,7 +2,7 @@
 
 class NotificationService {
   constructor() {
-    this.notificationsKey = 'astro_notifications_list';
+    this.notificationsKey = 'panda_notifications_list';
     this.swRegistered = false;
     this.initServiceWorker();
   }
@@ -52,7 +52,7 @@ class NotificationService {
           icon: '/pwa-icon.png',
           badge: '/favicon.svg',
           vibrate: [200, 100, 200],
-          tag: 'astro-crm-alert',
+          tag: 'panda-crm-alert',
           renotify: true
         });
       } else {
@@ -79,7 +79,7 @@ class NotificationService {
     localStorage.setItem(this.notificationsKey, JSON.stringify(list.slice(0, 50))); // Límite de 50 en historial
     
     // Disparar un evento personalizado de ventana para que React se entere al instante de la actualización
-    window.dispatchEvent(new Event('astro_new_notification'));
+    window.dispatchEvent(new Event('panda_new_notification'));
   }
 
   // Obtener historial
@@ -97,19 +97,19 @@ class NotificationService {
     const list = this.getHistory();
     list.forEach(n => n.read = true);
     localStorage.setItem(this.notificationsKey, JSON.stringify(list));
-    window.dispatchEvent(new Event('astro_new_notification'));
+    window.dispatchEvent(new Event('panda_new_notification'));
   }
 
   // Eliminar historial
   clearHistory() {
     localStorage.setItem(this.notificationsKey, JSON.stringify([]));
-    window.dispatchEvent(new Event('astro_new_notification'));
+    window.dispatchEvent(new Event('panda_new_notification'));
   }
 
   // Enviar una notificación broadcast a través de Supabase Realtime
   broadcastNotification(supabase, title, body, options = {}) {
     try {
-      const channel = supabase.channel('astro-notifications');
+      const channel = supabase.channel('panda-notifications');
       channel.send({
         type: 'broadcast',
         event: 'crm-notification',

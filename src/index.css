@@ -79,7 +79,7 @@ html, body {
 
 /* Hide scrollbars globally on all elements by default (layout, body, html, etc) */
 ::-webkit-scrollbar,
-.astro-scrollbar::-webkit-scrollbar {
+.panda-scrollbar::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
@@ -420,7 +420,7 @@ input:focus, select:focus, textarea:focus {
   transform: rotate(5deg) scale(1.1);
 }
 
-/* --- Astro Experience Additions --- */
+/* --- Panda Experience Additions --- */
 
 /* Notification Toasts */
 .toast-container {
@@ -456,7 +456,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Particle Background */
-#astro-particles {
+#panda-particles {
   position: fixed;
   top: 0;
   left: 0;
@@ -563,8 +563,8 @@ input:focus, select:focus, textarea:focus {
   from { transform: translate(-50%, 0) scale(1); opacity: 0.6; }
   to { transform: translate(-50%, -100px) scale(5); opacity: 0; }
 }
-/* --- Astro Loader --- */
-.astro-loader-container {
+/* --- Panda Loader --- */
+.panda-loader-container {
   position: fixed;
   top: 0;
   left: 0;
@@ -731,15 +731,15 @@ input[type="submit"],
   animation: slideDownFadeOut 0.25s cubic-bezier(0.4, 0, 0.2, 1) both !important;
 }
 
-.astro-tab-btn {
+.panda-tab-btn {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
-.astro-tab-btn:hover {
+.panda-tab-btn:hover {
   transform: translateY(-2px);
   filter: brightness(1.1);
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
 }
-.astro-tab-btn:active {
+.panda-tab-btn:active {
   transform: translateY(0) scale(0.97);
 }
 
@@ -1052,7 +1052,7 @@ input[type="submit"]:active {
    ========================================== */
 
 /* 1. Show and style scrollbars for Webkit/Chromium browsers (Chrome, Edge, Safari, Opera) */
-.astro-scrollbar::-webkit-scrollbar,
+.panda-scrollbar::-webkit-scrollbar,
 .glass-card::-webkit-scrollbar,
 .glass-card ::-webkit-scrollbar,
 .modal-card-enter::-webkit-scrollbar,
@@ -1066,7 +1066,7 @@ input[type="submit"]:active {
   display: block !important;
 }
 
-.astro-scrollbar::-webkit-scrollbar-track,
+.panda-scrollbar::-webkit-scrollbar-track,
 .glass-card::-webkit-scrollbar-track,
 .glass-card ::-webkit-scrollbar-track,
 .modal-card-enter::-webkit-scrollbar-track,
@@ -1079,7 +1079,7 @@ input[type="submit"]:active {
   margin: 16px 0 !important; /* Keeps scrollbar away from rounded corners */
 }
 
-.astro-scrollbar::-webkit-scrollbar-thumb,
+.panda-scrollbar::-webkit-scrollbar-thumb,
 .glass-card::-webkit-scrollbar-thumb,
 .glass-card ::-webkit-scrollbar-thumb,
 .modal-card-enter::-webkit-scrollbar-thumb,
@@ -1094,8 +1094,8 @@ input[type="submit"]:active {
 }
 
 /* 2. Hover and active (drag/click) states - must be gold! */
-.astro-scrollbar::-webkit-scrollbar-thumb:hover,
-.astro-scrollbar::-webkit-scrollbar-thumb:active,
+.panda-scrollbar::-webkit-scrollbar-thumb:hover,
+.panda-scrollbar::-webkit-scrollbar-thumb:active,
 .glass-card::-webkit-scrollbar-thumb:hover,
 .glass-card::-webkit-scrollbar-thumb:active,
 .glass-card ::-webkit-scrollbar-thumb:hover,
@@ -1116,7 +1116,7 @@ input[type="submit"]:active {
 }
 
 /* 3. Hide arrow buttons on Chrome/Edge scrollbars */
-.astro-scrollbar::-webkit-scrollbar-button,
+.panda-scrollbar::-webkit-scrollbar-button,
 .glass-card::-webkit-scrollbar-button,
 .glass-card ::-webkit-scrollbar-button,
 .modal-card-enter::-webkit-scrollbar-button,

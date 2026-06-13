@@ -114,8 +114,8 @@ export const AuthProvider = ({ children }) => {
       await dataService.supabase.auth.signOut();
     } finally {
       setUser(null);
-      localStorage.removeItem('astro_active_tab');
-      localStorage.removeItem('astro_auth_user');
+      localStorage.removeItem('panda_active_tab');
+      localStorage.removeItem('panda_auth_user');
       setLoading(false);
     }
   };

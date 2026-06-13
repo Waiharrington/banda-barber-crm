@@ -10,7 +10,7 @@ import {
 import { dataService } from '../services/dataService';
 import { useDialog } from '../context/DialogContext';
 import { useNotifs } from '../context/NotificationContext';
-import AstroSelect from './AstroSelect';
+import PandaSelect from './PandaSelect';
 import AnimatedModal from './AnimatedModal';
 
 // Custom SVG: nail polish bottle
@@ -1454,13 +1454,13 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                       </div>
 
                       <div className="modal-grid-2col">
-                        <AstroSelect 
+                        <PandaSelect 
                           label="CATEGORÍA"
                           value={newService.category}
                           onChange={val => setNewService({...newService, category: val})}
                           options={categories.map(c => ({ label: c.name, value: c.name }))}
                         />
-                        <AstroSelect 
+                        <PandaSelect 
                           label="ESTRATEGIA"
                           value={newService.strategy_type}
                           onChange={val => setNewService({...newService, strategy_type: val})}

@@ -13,7 +13,7 @@ const LOADER_MIN_DURATION_MS = 1200;
 const PROGRESS_INTERVAL_MS = 40;
 const FADE_OUT_MS = 350;
 
-const AstroLoader = ({ visible }) => {
+const PandaLoader = ({ visible }) => {
   const [showLoader, setShowLoader] = useState(visible);
   const [progress, setProgress] = useState(0);
   const [textIndex, setTextIndex] = useState(0);
@@ -234,7 +234,7 @@ const AstroLoader = ({ visible }) => {
   return (
     <div 
       ref={containerRef}
-      className="astro-loader-container" 
+      className="panda-loader-container" 
       style={{ 
         opacity: visible ? 1 : 0, 
         pointerEvents: visible ? 'all' : 'none',
@@ -405,4 +405,4 @@ const AstroLoader = ({ visible }) => {
   );
 };
 
-export default AstroLoader;
+export default PandaLoader;

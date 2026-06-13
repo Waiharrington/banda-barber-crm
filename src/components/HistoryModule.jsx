@@ -426,14 +426,14 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>No hay personal registrado en esta venta.</div>
                   )}
 
-                  {/* Astro Net Profit */}
+                  {/* Panda Net Profit */}
                   {(() => {
                     const serviceBase = Number(item.services?.price || 0);
                     const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
                     const products = item.appointment_products?.reduce((sum, pr) => sum + (Number(pr.price || 0) * (pr.quantity || 1)), 0) || 0;
                     const totalVenta = serviceBase + extras + products;
                     const commissions = item.appointment_staff?.reduce((sum, s) => sum + Number(s.commission_earned || 0), 0) || 0;
-                    const astroProfit = totalVenta - commissions;
+                    const pandaProfit = totalVenta - commissions;
                     const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
 
                     return (
@@ -447,14 +447,14 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold-primary)' }} />
-                            <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '0.5px' }}>Total Astro (Neto)</span>
+                            <span style={{ fontSize: '13px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '0.5px' }}>Total Panda (Neto)</span>
                           </div>
                           <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
                             <div style={{ fontSize: '14px', fontWeight: '950', color: 'var(--gold-primary)', whiteSpace: 'nowrap' }}>
-                              +{formatCurrency(astroProfit * rate)} Bs.
+                              +{formatCurrency(pandaProfit * rate)} Bs.
                             </div>
                             <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                              Ref: +${formatCurrency(astroProfit)}
+                              Ref: +${formatCurrency(pandaProfit)}
                             </div>
                           </div>
                         </div>
@@ -539,7 +539,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
       <header className="animate-slide-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
         <div>
           <h2 style={{ fontSize: '32px', fontWeight: '900', letterSpacing: '-0.5px' }}>
-            {isAdmin ? 'Historial' : 'Mi Historial'} <span className="text-gold">Astro</span>
+            {isAdmin ? 'Historial' : 'Mi Historial'} <span className="text-gold">Panda</span>
           </h2>
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
             {isAdmin ? 'Registro completo de servicios y transacciones.' : 'Consulta tus servicios realizados y propinas.'}

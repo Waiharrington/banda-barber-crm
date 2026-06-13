@@ -28,10 +28,10 @@ import {
   Cake
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
-import AstroSelect from './AstroSelect';
-import AstroCamera from './AstroCamera';
+import PandaSelect from './PandaSelect';
+import PandaCamera from './PandaCamera';
 import StaffProfileModal from './StaffProfileModal';
-import AstroDatePicker from './AstroDatePicker';
+import PandaDatePicker from './PandaDatePicker';
 import { formatName } from '../utils/stringUtils';
 
 import { useAuth } from '../context/AuthContext';
@@ -97,7 +97,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   // Advanced Roles Management
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [customRolePresets, setCustomRolePresets] = useState(() => {
-    const saved = localStorage.getItem('astro_custom_roles');
+    const saved = localStorage.getItem('panda_custom_roles');
     return saved ? JSON.parse(saved) : {};
   });
 
@@ -122,7 +122,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       if (Object.keys(foundRoles).length > 0) {
         const updated = { ...customRolePresets, ...foundRoles };
         setCustomRolePresets(updated);
-        localStorage.setItem('astro_custom_roles', JSON.stringify(updated));
+        localStorage.setItem('panda_custom_roles', JSON.stringify(updated));
       }
     }
   }, [staff]);
@@ -139,7 +139,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     try {
       const ratesData = await dataService.getExchangeRates();
       if (ratesData) {
-        const activeType = localStorage.getItem('astro_active_rate') || 'usdt';
+        const activeType = localStorage.getItem('panda_active_rate') || 'usdt';
         setExchangeRate(activeType === 'bcv' ? (ratesData.bcv || 36.5) : (ratesData.usdt || 43.2));
       }
     } catch (err) {
@@ -253,7 +253,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       
       updated[name] = perms;
       setCustomRolePresets(updated);
-      localStorage.setItem('astro_custom_roles', JSON.stringify(updated));
+      localStorage.setItem('panda_custom_roles', JSON.stringify(updated));
       showToast(`Rol "${name}" guardado correctamente.`);
       await fetchStaff();
     } catch (err) {
@@ -277,7 +277,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     }
     
     setCustomRolePresets(updated);
-    localStorage.setItem('astro_custom_roles', JSON.stringify(updated));
+    localStorage.setItem('panda_custom_roles', JSON.stringify(updated));
     showToast(`Rol "${name}" eliminado.`);
   };
 
@@ -458,7 +458,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '1px' }}>ROL EN EL EQUIPO</label>
                   
-                  <AstroSelect 
+                  <PandaSelect 
                     options={[
                       ...Object.entries(allRolePresets)
                         .filter(([_, v]) => v !== '__DELETED__')
@@ -986,7 +986,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '1px' }}>ROL EN EL EQUIPO</label>
                           
-                          <AstroSelect 
+                          <PandaSelect 
                             options={[
                               ...Object.entries(allRolePresets)
                                 .filter(([_, v]) => v !== '__DELETED__')
@@ -1186,7 +1186,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
       <AnimatedModal isOpen={showCamera}>
         {(overlayClass, cardClass) => (
-          <AstroCamera 
+          <PandaCamera 
             onClose={() => setShowCamera(false)}
             onCapture={(image) => {
               setFormData({ ...formData, image_url: image });

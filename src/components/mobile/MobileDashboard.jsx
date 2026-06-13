@@ -34,10 +34,10 @@ const QUOTES = [
   { text: "La disciplina es el puente entre metas y logros.", creator: "Jim Rohn" },
   { text: "El estilo es una forma de decir quién eres sin hablar.", creator: "Rachel Zoe" },
   { text: "Invierte en tu imagen, es tu carta de presentación.", creator: "Negocios" },
-  { text: "Un corte de pelo puede cambiar una vida.", creator: "Arte Astro" },
+  { text: "Un corte de pelo puede cambiar una vida.", creator: "Arte Panda" },
   { text: "La calidad atrae, el detalle retiene.", creator: "Estrategia" },
   { text: "No busques clientes, busca fans.", creator: "Crecimiento" },
-  { text: "La barbería es el arte de esculpir confianza.", creator: "Mística Astro" },
+  { text: "La barbería es el arte de esculpir confianza.", creator: "Mística Panda" },
   { text: "El éxito es la suma de pequeños esfuerzos diarios.", creator: "Robert Collier" },
   { text: "Domina tu oficio, luego rompe las reglas.", creator: "Maestros" },
   { text: "Cada cliente es una oportunidad de crear una obra maestra.", creator: "Visión" },
@@ -54,9 +54,9 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
   const [isEditingGoals, setIsEditingGoals] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [goals, setGoals] = useState({
-    daily: parseFloat(localStorage.getItem('astro_daily_goal') || '500'),
-    weekly: parseFloat(localStorage.getItem('astro_weekly_goal') || '3000'),
-    monthly: parseFloat(localStorage.getItem('astro_monthly_goal') || '12000')
+    daily: parseFloat(localStorage.getItem('panda_daily_goal') || '500'),
+    weekly: parseFloat(localStorage.getItem('panda_weekly_goal') || '3000'),
+    monthly: parseFloat(localStorage.getItem('panda_monthly_goal') || '12000')
   });
 
   const [whatsappModalData, setWhatsappModalData] = useState(null);
@@ -76,27 +76,27 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
     };
 
     updateUnread();
-    window.addEventListener('astro_new_notification', updateUnread);
-    return () => window.removeEventListener('astro_new_notification', updateUnread);
+    window.addEventListener('panda_new_notification', updateUnread);
+    return () => window.removeEventListener('panda_new_notification', updateUnread);
   }, []);
 
   const handleSaveGoals = (newGoals) => {
-    localStorage.setItem('astro_daily_goal', newGoals.daily);
-    localStorage.setItem('astro_weekly_goal', newGoals.weekly);
-    localStorage.setItem('astro_monthly_goal', newGoals.monthly);
+    localStorage.setItem('panda_daily_goal', newGoals.daily);
+    localStorage.setItem('panda_weekly_goal', newGoals.weekly);
+    localStorage.setItem('panda_monthly_goal', newGoals.monthly);
     setGoals(newGoals);
     setIsEditingGoals(false);
   };
 
   const handleWhatsAppCongratulate = (person) => {
-    let template = localStorage.getItem('astro_default_bday_message');
+    let template = localStorage.getItem('panda_default_bday_message');
     const isCorrupted = !template || 
       template.includes('\uFFFD') || 
       template.includes('ï¿½') ||
       /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/.test(template);
     if (isCorrupted) {
       template = `¡Hola {name}! ${String.fromCodePoint(0x1F389)} Te deseamos un muy feliz cumpleaños de parte de todo el equipo de Panda Barbershop. ${String.fromCodePoint(0x1F488)} ¡Que tengas un día excelente!`;
-      localStorage.setItem('astro_default_bday_message', template);
+      localStorage.setItem('panda_default_bday_message', template);
     }
     const whatsappMsg = template.replace('{name}', person.name);
     setEditedPhone(person.phone || '');
@@ -396,7 +396,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
           }} />
           <img 
             src="/barber-chair.png" 
-            alt="Astro Chair" 
+            alt="Panda Chair" 
             className="chair-float"
             style={{ 
               width: '100%', 
@@ -692,7 +692,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
               <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255, 255, 255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Target color="var(--gold-primary)" size={18} />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>Metas <span className="text-gold">Astro</span></h3>
+              <h3 style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>Metas <span className="text-gold">Panda</span></h3>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>

@@ -22,9 +22,9 @@ import {
 } from 'lucide-react';
 
 import { dataService } from '../services/dataService';
-import AstroDialog from './AstroDialog';
-import AstroDatePicker from './AstroDatePicker';
-import AstroSelect from './AstroSelect';
+import PandaDialog from './PandaDialog';
+import PandaDatePicker from './PandaDatePicker';
+import PandaSelect from './PandaSelect';
 import AnimatedModal from './AnimatedModal';
 
 const getStartOfWeek = () => {
@@ -138,7 +138,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
   // Business Logic States (from Excel 2)
   const [fixedCosts, setFixedCosts] = useState(() => {
-    const saved = localStorage.getItem('astro_fixed_costs');
+    const saved = localStorage.getItem('panda_fixed_costs');
     const defaults = { 
       rent: 522, 
       services: 300, 
@@ -170,7 +170,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
   // Payroll / Nómina States
   const [assistantConfig, setAssistantConfig] = useState(() => {
-    const saved = localStorage.getItem('astro_assistant_config');
+    const saved = localStorage.getItem('panda_assistant_config');
     const defaults = {
       weeklyVacaUsd: 20,
       splits: {}
@@ -360,7 +360,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
   const handleSaveAssistantConfig = (e) => {
     e.preventDefault();
-    localStorage.setItem('astro_assistant_config', JSON.stringify(assistantConfig));
+    localStorage.setItem('panda_assistant_config', JSON.stringify(assistantConfig));
     setIsConfiguringPayroll(false);
     showToast('Configuración de Asistente guardada', 'success');
   };
@@ -507,7 +507,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `finanzas_astro_${new Date().toLocaleDateString()}.csv`);
+      link.setAttribute("download", `finanzas_panda_${new Date().toLocaleDateString()}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -816,14 +816,14 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   }), [staff, weeklyTransactions, operationalTransactions, dateFilterStart, dateFilterEnd, rates, assistantConfig])
     .filter(s => s.balanceBs !== 0 || s.earnedBs > 0 || s.paidBs > 0 || s.valesBs > 0);
 
-  const astroGrossIncomeBs = processedPayroll.reduce((sum, s) => sum + (s.isBarber ? s.grossIncomeBs : 0), 0);
+  const pandaGrossIncomeBs = processedPayroll.reduce((sum, s) => sum + (s.isBarber ? s.grossIncomeBs : 0), 0);
   const totalStaffNetIncomeBs = processedPayroll.reduce((sum, s) => sum + s.netIncomeBs, 0);
-  const astroNetProfitBs = Math.max(0, astroGrossIncomeBs - totalStaffNetIncomeBs);
-  const astroNetProfitUsd = astroNetProfitBs / (rates?.usd || 550);
+  const pandaNetProfitBs = Math.max(0, pandaGrossIncomeBs - totalStaffNetIncomeBs);
+  const pandaNetProfitUsd = pandaNetProfitBs / (rates?.usd || 550);
 
   const handleSaveCosts = (e) => {
     e.preventDefault();
-    localStorage.setItem('astro_fixed_costs', JSON.stringify(fixedCosts));
+    localStorage.setItem('panda_fixed_costs', JSON.stringify(fixedCosts));
     setIsEditingCosts(false);
     showToast("Estructura de costos actualizada.");
   };
@@ -1025,7 +1025,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
         </div>
       </section>
 
-      {/* Astro Cash Closing (AUTOCONCILIATION) */}
+      {/* Panda Cash Closing (AUTOCONCILIATION) */}
       <section className="glass-card animate-slide-up" style={{ 
         marginBottom: '40px', 
         padding: '32px', 
@@ -1041,7 +1041,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Cierre de Caja <span className="text-gold">Panda</span></h3>
           </div>
           <div style={{ width: isMobile ? '100%' : '260px' }}>
-            <AstroSelect
+            <PandaSelect
               label="Rango de Cierre"
               value={cashCloseDate}
               onChange={setCashCloseDate}
@@ -1072,14 +1072,14 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: isMobile ? '1 1 100%' : '1' }}>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700' }}>Desde:</span>
-              <AstroDatePicker
+              <PandaDatePicker
                 value={cashCloseStartDate}
                 onChange={(e) => setCashCloseStartDate(e.target.value)}
               />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: isMobile ? '1 1 100%' : '1' }}>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700' }}>Hasta:</span>
-              <AstroDatePicker
+              <PandaDatePicker
                 value={cashCloseEndDate}
                 onChange={(e) => setCashCloseEndDate(e.target.value)}
               />
@@ -1219,7 +1219,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 {/* Service Filter */}
                 {/* Service Filter */}
                 <div style={{ flex: 1, minWidth: '150px' }}>
-                  <AstroSelect 
+                  <PandaSelect 
                     label="Servicio"
                     value={filterService}
                     onChange={setFilterService}
@@ -1232,7 +1232,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
                 {/* Type Select */}
                 <div style={{ flex: 1, minWidth: '150px' }}>
-                  <AstroSelect 
+                  <PandaSelect 
                     label="Tipo de Movimiento"
                     value={filterType}
                     onChange={setFilterType}
@@ -1246,7 +1246,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
                 {/* Barber Select */}
                 <div style={{ flex: 1, minWidth: '150px' }}>
-                  <AstroSelect 
+                  <PandaSelect 
                     label="Barbero Asignado"
                     value={filterBarber}
                     onChange={setFilterBarber}
@@ -1262,7 +1262,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
                 {/* Date Select */}
                 <div style={{ flex: 1, minWidth: '150px' }}>
-                  <AstroSelect 
+                  <PandaSelect 
                     label="Fecha"
                     value={filterDate}
                     onChange={setFilterDate}
@@ -1294,14 +1294,14 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700' }}>Desde:</span>
-                    <AstroDatePicker 
+                    <PandaDatePicker 
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
                     />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '700' }}>Hasta:</span>
-                    <AstroDatePicker 
+                    <PandaDatePicker 
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
                     />
@@ -1314,7 +1314,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
         {isMobile ? (
           /* Mobile Card List */
-          <div className="astro-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '65vh', overflowY: 'auto', paddingRight: '8px' }}>
+          <div className="panda-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '65vh', overflowY: 'auto', paddingRight: '8px' }}>
             {filteredTransactions.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No hay transacciones registradas que coincidan.</div>
             ) : filteredTransactions.map((t, idx) => {
@@ -1421,7 +1421,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           </div>
         ) : (
           /* Desktop Table - EXCEL STYLE */
-          <div className="astro-scrollbar" style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '500px', paddingRight: '8px' }}>
+          <div className="panda-scrollbar" style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '500px', paddingRight: '8px' }}>
             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px', textAlign: 'left' }}>
               <thead style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'rgba(28,28,30,0.98)' }}>
                 <tr style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '900' }}>
@@ -1663,7 +1663,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                                       )}
                                     </div>
 
-                                    {/* GANANCIA ASTRO */}
+                                    {/* GANANCIA PANDA */}
                                     <div style={{ marginTop: '16px', padding: '16px', borderRadius: '12px', background: 'rgba(255, 255, 255,0.1)', border: '1px solid rgba(255, 255, 255,0.2)' }}>
                                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                         <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>Ganancia Panda</span>
@@ -1714,7 +1714,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 
                 {/* DATE RANGE FILTER */}
                 <div style={{ width: isMobile ? '100%' : '240px' }}>
-                  <AstroSelect
+                  <PandaSelect
                     value={payrollFilterDate}
                     onChange={setPayrollFilterDate}
                     options={[
@@ -1727,12 +1727,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 {payrollFilterDate === 'custom' && (
                   <div className="animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Desde:</span>
-                    <AstroDatePicker 
+                    <PandaDatePicker 
                       value={payrollStartDate}
                       onChange={(e) => setPayrollStartDate(e.target.value)}
                     />
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Hasta:</span>
-                    <AstroDatePicker 
+                    <PandaDatePicker 
                       value={payrollEndDate}
                       onChange={(e) => setPayrollEndDate(e.target.value)}
                     />
@@ -1786,7 +1786,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
               </div>
             </div>
 
-            {/* ASTRO GENERAL RESULTS (Resultados Panda) */}
+            {/* PANDA GENERAL RESULTS (Resultados Panda) */}
             <div className="glass-card animate-fade-in" style={{ 
               background: 'linear-gradient(135deg, rgba(255, 255, 255,0.15) 0%, rgba(255, 255, 255,0.02) 100%)', 
               border: '1px solid rgba(255, 255, 255,0.3)',
@@ -1815,14 +1815,14 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '12px' : '40px', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'flex-start' : 'flex-end', background: isMobile ? 'rgba(0,0,0,0.2)' : 'transparent', padding: isMobile ? '16px' : '0', borderRadius: isMobile ? '16px' : '0' }}>
                 <div style={{ textAlign: 'left', display: 'flex', justifyContent: isMobile ? 'space-between' : 'flex-start', width: '100%', flexDirection: isMobile ? 'row' : 'column', alignItems: isMobile ? 'center' : 'flex-end' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', marginBottom: isMobile ? '0' : '4px' }}>Ingreso Bruto</div>
-                  <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '900', color: 'white', whiteSpace: 'nowrap' }}>{formatCurrency(astroGrossIncomeBs, '')} Bs</div>
+                  <div style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '900', color: 'white', whiteSpace: 'nowrap' }}>{formatCurrency(pandaGrossIncomeBs, '')} Bs</div>
                 </div>
                 {isMobile && <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', width: '100%' }}></div>}
                 <div style={{ textAlign: 'left', display: 'flex', justifyContent: isMobile ? 'space-between' : 'flex-start', width: '100%', flexDirection: isMobile ? 'row' : 'column', alignItems: isMobile ? 'center' : 'flex-end' }}>
                   <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '800', textTransform: 'uppercase', marginBottom: isMobile ? '0' : '4px' }}>Ganancia Neta</div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: '#32d74b', whiteSpace: 'nowrap' }}>{formatCurrency(astroNetProfitBs, '')} Bs</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginTop: '2px' }}>REF: ${astroNetProfitUsd.toFixed(2)}</div>
+                    <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '900', color: '#32d74b', whiteSpace: 'nowrap' }}>{formatCurrency(pandaNetProfitBs, '')} Bs</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', marginTop: '2px' }}>REF: ${pandaNetProfitUsd.toFixed(2)}</div>
                   </div>
                 </div>
               </div>
@@ -2501,7 +2501,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
 
                   <div>
-                    <AstroSelect 
+                    <PandaSelect 
                       label="Método de Pago"
                       value={payrollModal.paymentMethod} 
                       onChange={(val) => setPayrollModal({...payrollModal, paymentMethod: val})} 
@@ -2579,7 +2579,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
 
                   <div>
-                    <AstroSelect 
+                    <PandaSelect 
                       label="Método de Pago"
                       value={valeModal.paymentMethod} 
                       onChange={(val) => setValeModal({...valeModal, paymentMethod: val})} 
@@ -2802,7 +2802,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           </AnimatedModal>
         
 
-      <AstroDialog 
+      <PandaDialog 
         isOpen={dialog.isOpen}
         title={dialog.title}
         message={dialog.message}

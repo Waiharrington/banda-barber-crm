@@ -20,12 +20,12 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
-import AstroSelect from './AstroSelect';
-import AstroDatePicker from './AstroDatePicker';
+import PandaSelect from './PandaSelect';
+import PandaDatePicker from './PandaDatePicker';
 import { normalizeForSearch } from '../utils/stringUtils';
 import NewClientModal from './NewClientModal';
 import ScheduleModal from './ScheduleModal';
-import AstroDialog from './AstroDialog';
+import PandaDialog from './PandaDialog';
 import { useAuth } from '../context/AuthContext';
 import { useScrollLock } from '../hooks/useScrollLock';
 import { supabase } from '../lib/supabase';
@@ -102,7 +102,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
       setUpcomingAppointments(allApps.filter(a => a.scheduled_at?.startsWith(today) || a.created_at?.startsWith(today)));
 
       if (ratesData) {
-        const activeType = localStorage.getItem('astro_active_rate') || 'usdt';
+        const activeType = localStorage.getItem('panda_active_rate') || 'usdt';
         setExchangeRate(activeType === 'bcv' ? (ratesData.bcv || 36.5) : (ratesData.usdt || 43.2));
       }
     } catch (err) {
@@ -932,7 +932,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
         onSchedule={(date) => handleSubmit('Agendado', date)}
       />
 
-      <AstroDialog 
+      <PandaDialog 
         isOpen={dialog.isOpen}
         title={dialog.title}
         message={dialog.message}

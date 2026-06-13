@@ -19,8 +19,8 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
-import AstroSelect from './AstroSelect';
-import AstroDatePicker from './AstroDatePicker';
+import PandaSelect from './PandaSelect';
+import PandaDatePicker from './PandaDatePicker';
 import { normalizeForSearch } from '../utils/stringUtils';
 import NewClientModal from './NewClientModal';
 import AnimatedModal from './AnimatedModal';
@@ -169,7 +169,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
       
       triggerRocket();
       showToast(`¡Operación registrada! ${selectedClient.name} enviado a caja.`);
-      sendPushNotification('🚀 Operación Astro', `${selectedClient.name} — ${selectedService?.name || 'Venta'}`);
+      sendPushNotification('🚀 Operación Panda', `${selectedClient.name} — ${selectedService?.name || 'Venta'}`);
       
       onClose();
     } catch (error) {
@@ -245,7 +245,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
         </div>
 
         {/* Content Area - Scrollable */}
-        <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px', marginBottom: '24px' }} className="astro-scrollbar">
+        <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px', marginBottom: '24px' }} className="panda-scrollbar">
           
           {step === 1 && (
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -304,14 +304,14 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
 
               {/* Service & Staff */}
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
-                <AstroSelect 
+                <PandaSelect 
                   label="Servicio"
                   value={selectedService?.id || ''}
                   onChange={val => setSelectedService(services.find(s => s.id == val))}
                   options={services.map(s => ({ label: `${s.name} — $${s.price}`, value: s.id }))}
                   icon={<Rocket size={18} color="var(--gold-primary)" />}
                 />
-                <AstroSelect 
+                <PandaSelect 
                   label="Atendido por"
                   value={involvedStaff[0].staffId}
                   onChange={val => setInvolvedStaff([{ ...involvedStaff[0], staffId: val }])}
@@ -464,9 +464,9 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
             .client-search-item:hover {
               background-color: rgba(255, 255, 255,0.05) !important;
             }
-            .astro-scrollbar::-webkit-scrollbar { width: 4px; }
-            .astro-scrollbar::-webkit-scrollbar-track { background: transparent; }
-            .astro-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255,0.2); borderRadius: 10px; }
+            .panda-scrollbar::-webkit-scrollbar { width: 4px; }
+            .panda-scrollbar::-webkit-scrollbar-track { background: transparent; }
+            .panda-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255,0.2); borderRadius: 10px; }
           `}</style>
         </div>
       </div>

@@ -18,7 +18,7 @@ import { dataService } from './services/dataService';
 // Mobile Components
 import MobileLayout from './components/mobile/MobileLayout';
 import ParticleBackground from './components/ParticleBackground';
-import AstroLoader from './components/AstroLoader';
+import PandaLoader from './components/PandaLoader';
 import Login from './components/Login';
 import { useAuth } from './context/AuthContext';
 import TopBar from './components/TopBar';
@@ -87,7 +87,7 @@ function App() {
   const { user, loading: authLoading } = useAuth();
   const { alert, confirm } = useDialog();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('astro_active_tab') || 'dashboard');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('panda_active_tab') || 'dashboard');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
   const [isCollapsed, setIsCollapsed] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
@@ -107,7 +107,7 @@ function App() {
   
   // Active Rate Toggle (BCV or USDT) - persisted
   const [activeRateType, setActiveRateType] = useState(() => {
-    return localStorage.getItem('astro_active_rate') || 'usdt';
+    return localStorage.getItem('panda_active_rate') || 'usdt';
   });
 
   // Calculate Exchange Gap
@@ -140,7 +140,7 @@ function App() {
   useEffect(() => {
     if (!user) return;
 
-    const channel = dataService.supabase.channel('astro-notifications')
+    const channel = dataService.supabase.channel('panda-notifications')
       .on('broadcast', { event: 'crm-notification' }, ({ payload }) => {
         const userRole = user?.role || '';
         const roleName = userRole.split('|')[0];
@@ -174,7 +174,7 @@ function App() {
   // Persist active rate type
   const handleSetActiveRateType = (type) => {
     setActiveRateType(type);
-    localStorage.setItem('astro_active_rate', type);
+    localStorage.setItem('panda_active_rate', type);
   };
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -225,12 +225,12 @@ function App() {
       handleTabChange(e.detail);
     };
     window.addEventListener('resize', handleResize);
-    window.addEventListener('astro_navigate', handleNavigation);
+    window.addEventListener('panda_navigate', handleNavigation);
     
     // One-time cleanup of corrupted default birthday templates in localStorage
-    if (!localStorage.getItem('astro_bday_cleaned_v6')) {
-      localStorage.removeItem('astro_default_bday_message');
-      localStorage.setItem('astro_bday_cleaned_v6', 'true');
+    if (!localStorage.getItem('panda_bday_cleaned_v6')) {
+      localStorage.removeItem('panda_default_bday_message');
+      localStorage.setItem('panda_bday_cleaned_v6', 'true');
     }
 
     // Fast-Path Load Sequence
@@ -255,7 +255,7 @@ function App() {
     initApp();
     return () => {
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('astro_navigate', handleNavigation);
+      window.removeEventListener('panda_navigate', handleNavigation);
     };
   }, [user]);
 
@@ -302,7 +302,7 @@ function App() {
       const todayDay = today.getDate();
       const todayStr = today.toISOString().split('T')[0];
 
-      const lastNotifiedDate = localStorage.getItem('astro_birthday_notified_date');
+      const lastNotifiedDate = localStorage.getItem('panda_birthday_notified_date');
       if (lastNotifiedDate === todayStr) return;
 
       const birthdayClients = clients.filter(c => {
@@ -320,7 +320,7 @@ function App() {
           `Hoy cumplen años: ${names}. ¡Recuerda felicitarlos o enviarles una promoción especial!`
         );
       }
-      localStorage.setItem('astro_birthday_notified_date', todayStr);
+      localStorage.setItem('panda_birthday_notified_date', todayStr);
     } catch (e) {
       console.error('Error en checkBirthdaysAndNotify:', e);
     }
@@ -328,9 +328,9 @@ function App() {
 
   const checkGoalsAndNotify = (computedStats) => {
     try {
-      const dailyGoal = parseFloat(localStorage.getItem('astro_daily_goal') || '500');
-      const weeklyGoal = parseFloat(localStorage.getItem('astro_weekly_goal') || '3000');
-      const monthlyGoal = parseFloat(localStorage.getItem('astro_monthly_goal') || '12000');
+      const dailyGoal = parseFloat(localStorage.getItem('panda_daily_goal') || '500');
+      const weeklyGoal = parseFloat(localStorage.getItem('panda_weekly_goal') || '3000');
+      const monthlyGoal = parseFloat(localStorage.getItem('panda_monthly_goal') || '12000');
 
       const todayStr = new Date().toISOString().split('T')[0];
       const lastSundayStr = getLastSundayDateString();
@@ -338,37 +338,37 @@ function App() {
 
       // 1. Daily Goal
       if (computedStats.income >= dailyGoal) {
-        const lastNotifiedDaily = localStorage.getItem('astro_goal_notified_daily');
+        const lastNotifiedDaily = localStorage.getItem('panda_goal_notified_daily');
         if (lastNotifiedDaily !== todayStr) {
           notificationService.sendNotification(
             '🎯 ¡Meta Diaria Alcanzada! 🎉',
             `¡Espectacular! Se ha alcanzado la meta diaria de $${dailyGoal} USD (Total hoy: $${computedStats.income.toFixed(2)} USD).`
           );
-          localStorage.setItem('astro_goal_notified_daily', todayStr);
+          localStorage.setItem('panda_goal_notified_daily', todayStr);
         }
       }
 
       // 2. Weekly Goal
       if (computedStats.weeklyIncome >= weeklyGoal) {
-        const lastNotifiedWeekly = localStorage.getItem('astro_goal_notified_weekly');
+        const lastNotifiedWeekly = localStorage.getItem('panda_goal_notified_weekly');
         if (lastNotifiedWeekly !== lastSundayStr) {
           notificationService.sendNotification(
             '🏆 ¡Meta Semanal Alcanzada! 🌟',
             `¡Increíble trabajo equipo! Se alcanzó la meta semanal de $${weeklyGoal} USD (Total semanal: $${computedStats.weeklyIncome.toFixed(2)} USD).`
           );
-          localStorage.setItem('astro_goal_notified_weekly', lastSundayStr);
+          localStorage.setItem('panda_goal_notified_weekly', lastSundayStr);
         }
       }
 
       // 3. Monthly Goal
       if (computedStats.monthlyIncome >= monthlyGoal) {
-        const lastNotifiedMonthly = localStorage.getItem('astro_goal_notified_monthly');
+        const lastNotifiedMonthly = localStorage.getItem('panda_goal_notified_monthly');
         if (lastNotifiedMonthly !== currentMonthStr) {
           notificationService.sendNotification(
             '👑 ¡Objetivo Mensual Completado! 🚀',
             `¡Histórico! Se ha completado el objetivo mensual de $${monthlyGoal} USD (Total mensual: $${computedStats.monthlyIncome.toFixed(2)} USD).`
           );
-          localStorage.setItem('astro_goal_notified_monthly', currentMonthStr);
+          localStorage.setItem('panda_goal_notified_monthly', currentMonthStr);
         }
       }
     } catch (e) {
@@ -517,14 +517,14 @@ function App() {
     if (tabId === 'my-profile') {
       setTabParams(params);
       setActiveTab('my-profile');
-      localStorage.setItem('astro_active_tab', 'my-profile');
+      localStorage.setItem('panda_active_tab', 'my-profile');
       if (isMobile) setIsSidebarOpen(false);
       return;
     }
     setTabParams(params);
     if (tabId === activeTab) return;
     setActiveTab(tabId);
-    localStorage.setItem('astro_active_tab', tabId);
+    localStorage.setItem('panda_active_tab', tabId);
     if (isMobile) setIsSidebarOpen(false);
   };
 
@@ -546,7 +546,7 @@ function App() {
         height: document.documentElement.scrollHeight,
       });
       const link = document.createElement('a');
-      link.download = `astro-barber-crm-${activeTab}-${Date.now()}.png`;
+      link.download = `panda-barber-crm-${activeTab}-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (e) {
@@ -631,7 +631,7 @@ function App() {
     if (!hasSessionKey) {
       return <Login />;
     }
-    return <AstroLoader visible={true} />;
+    return <PandaLoader visible={true} />;
   }
   if (!user) {
     return <Login />;
@@ -640,7 +640,7 @@ function App() {
   if (isMobile) {
     return (
       <MobileLayout activeTab={activeTab} setActiveTab={handleTabChange} onOpenSale={() => setIsSaleModalOpen(true)}>
-        <AstroLoader visible={isAppLoading} />
+        <PandaLoader visible={isAppLoading} />
         <div key={activeTab} className={isAppLoading ? "opacity-0" : "animate-page-fade-in"} style={{ minHeight: '100%' }}>
           <Suspense fallback={<ModuleFallback />}>
             {renderContent()}
@@ -672,7 +672,7 @@ function App() {
 
   return (
     <div className="app-container no-scrollbar" style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'transparent', position: 'relative', overflowX: 'hidden' }}>
-      <AstroLoader visible={isAppLoading} />
+      <PandaLoader visible={isAppLoading} />
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={(id) => handleTabChange(id, {})} 

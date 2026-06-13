@@ -18,8 +18,8 @@ const NotificationsDrawer = ({ isOpen, onClose }) => {
       loadNotifications();
     };
 
-    window.addEventListener('astro_new_notification', handleUpdate);
-    return () => window.removeEventListener('astro_new_notification', handleUpdate);
+    window.addEventListener('panda_new_notification', handleUpdate);
+    return () => window.removeEventListener('panda_new_notification', handleUpdate);
   }, [isOpen]);
 
   const loadNotifications = () => {
@@ -106,7 +106,7 @@ const NotificationsDrawer = ({ isOpen, onClose }) => {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Bell size={22} className="text-gold" />
-            <h3 style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: 0 }}>Notificaciones Astro</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: 0 }}>Notificaciones Panda</h3>
           </div>
           <button 
             onClick={onClose}

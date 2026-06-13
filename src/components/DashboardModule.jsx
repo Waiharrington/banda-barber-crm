@@ -108,9 +108,9 @@ const DashboardModule = ({
     };
 
     updateUnread();
-    window.addEventListener('astro_new_notification', updateUnread);
+    window.addEventListener('panda_new_notification', updateUnread);
     return () => {
-      window.removeEventListener('astro_new_notification', updateUnread);
+      window.removeEventListener('panda_new_notification', updateUnread);
     };
   }, []);
   
@@ -896,7 +896,7 @@ const DashboardModule = ({
                 <h4 style={{ fontSize: '10px', fontWeight: '800', color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Servicios más vendidos</h4>
               </div>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1, margin: '2px 0' }} className="astro-scrollbar">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1, margin: '2px 0' }} className="panda-scrollbar">
                 {[
                   { name: 'Degradado + Barba', val: 236 },
                   { name: 'Corte Clásico', val: 189 },
@@ -1022,7 +1022,7 @@ const DashboardModule = ({
               <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.75)', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => onNavigate && onNavigate('scheduling')}>Ver calendario</span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1 }} className="astro-scrollbar">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1 }} className="panda-scrollbar">
               {[
                 { time: '10:00 AM', name: 'Miguel Torres', service: 'Corte Clásico', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60', status: 'active' },
                 { time: '10:45 AM', name: 'Andrés Gómez', service: 'Fade + Barba', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60', status: 'active' },

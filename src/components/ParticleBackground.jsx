@@ -187,7 +187,7 @@ const ParticleBackground = () => {
     };
   }, []);
 
-  return <canvas id="astro-particles" ref={canvasRef} />;
+  return <canvas id="panda-particles" ref={canvasRef} />;
 };
 
 export default ParticleBackground;

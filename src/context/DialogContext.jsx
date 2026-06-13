@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import AstroDialog from '../components/AstroDialog';
+import PandaDialog from '../components/PandaDialog';
 
 const DialogContext = createContext();
 
@@ -59,7 +59,7 @@ export const DialogProvider = ({ children }) => {
   return (
     <DialogContext.Provider value={{ confirm, alert }}>
       {children}
-      <AstroDialog
+      <PandaDialog
         isOpen={dialogState.isOpen}
         title={dialogState.title}
         message={dialogState.message}

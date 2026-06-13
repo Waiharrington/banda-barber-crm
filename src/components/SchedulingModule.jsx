@@ -30,10 +30,10 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
-import AstroDatePicker from './AstroDatePicker';
+import PandaDatePicker from './PandaDatePicker';
 import { normalizeForSearch } from '../utils/stringUtils';
-import AstroSelect from './AstroSelect';
-import AstroDialog from './AstroDialog';
+import PandaSelect from './PandaSelect';
+import PandaDialog from './PandaDialog';
 import ScheduleModal from './ScheduleModal';
 import { useAuth } from '../context/AuthContext';
 import { ModalShield } from '../context/ModalContext';
@@ -1352,7 +1352,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
         </main>
       </div>
 
-      <AstroDialog 
+      <PandaDialog 
         isOpen={dialog.isOpen} 
         type="confirm"
         title="Gestionar Cita" 
@@ -1508,7 +1508,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                     </div>
 
                     {/* Service Selection */}
-                    <AstroSelect 
+                    <PandaSelect 
                       label="SERVICIO" 
                       placeholder="Selecciona servicio" 
                       value={newApp.serviceId} 
@@ -1517,7 +1517,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                     />
 
                     {/* Barber Selection */}
-                    <AstroSelect 
+                    <PandaSelect 
                       label="BARBERO" 
                       placeholder="Selecciona barbero" 
                       value={newApp.staffId} 
@@ -1574,7 +1574,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                     {/* Products Selection */}
                     <div>
                       <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PRODUCTOS ADICIONALES</label>
-                      <AstroSelect 
+                      <PandaSelect 
                         placeholder="Añadir producto..." 
                         onChange={(val) => {
                           const exists = newApp.products.find(p => p.id === val);

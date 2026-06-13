@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
-import AstroCamera from './AstroCamera';
+import PandaCamera from './PandaCamera';
 import { Plus, ShoppingBag, Loader2 } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
@@ -97,7 +97,7 @@ const BarberPanel = ({ isMobile, rates }) => {
         const me = staff.find(s => s.id === user.id);
         if (me) {
           setSelectedBarber(me);
-          window.dispatchEvent(new CustomEvent('astro_active_barber_changed', { detail: me }));
+          window.dispatchEvent(new CustomEvent('panda_active_barber_changed', { detail: me }));
         }
       }
     }
@@ -201,7 +201,7 @@ const BarberPanel = ({ isMobile, rates }) => {
         supabase.removeChannel(subscription);
       };
     } else {
-      window.dispatchEvent(new CustomEvent('astro_active_barber_changed', { detail: null }));
+      window.dispatchEvent(new CustomEvent('panda_active_barber_changed', { detail: null }));
     }
   }, [selectedBarber, loadMyWork, loadCompletedToday]);
 
@@ -573,7 +573,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                 key={s.id} 
                 onClick={() => {
                   setSelectedBarber(s);
-                  window.dispatchEvent(new CustomEvent('astro_active_barber_changed', { detail: s }));
+                  window.dispatchEvent(new CustomEvent('panda_active_barber_changed', { detail: s }));
                 }}
                 className="glass-card hover-item" 
                 style={{ padding: '30px 10px', borderRadius: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', cursor: 'pointer', width: '100%' }}
@@ -646,7 +646,7 @@ const BarberPanel = ({ isMobile, rates }) => {
             <button 
               onClick={() => {
                 setSelectedBarber(null);
-                window.dispatchEvent(new CustomEvent('astro_active_barber_changed', { detail: null }));
+                window.dispatchEvent(new CustomEvent('panda_active_barber_changed', { detail: null }));
               }}
               style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)', padding: '10px 16px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', transition: 'all 0.2s' }}
               onMouseEnter={(e) => { e.currentTarget.style.color = '#ff4d4d'; e.currentTarget.style.borderColor = 'rgba(255,77,77,0.3)'; e.currentTarget.style.background = 'rgba(255,77,77,0.05)'; }}
@@ -1401,7 +1401,7 @@ const BarberPanel = ({ isMobile, rates }) => {
 
         <AnimatedModal isOpen={showCamera}>
           {(overlayClass, cardClass) => (
-            <AstroCamera 
+            <PandaCamera 
               onCapture={handlePhotoCaptured}
               onClose={() => setShowCamera(false)}
               overlayClass={overlayClass}
