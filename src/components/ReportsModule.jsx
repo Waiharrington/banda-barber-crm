@@ -621,13 +621,6 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     });
     // Map with default barbero statistics if database is fresh
     const list = Object.entries(stats).map(([name, count]) => ({ name, count }));
-    if (list.length === 0) {
-      return [
-        { name: "Manuel", count: 287 },
-        { name: "Aidan", count: 193 },
-        { name: "Jesus", count: 76 }
-      ];
-    }
     return list.sort((a, b) => b.count - a.count);
   })();
 
@@ -650,17 +643,6 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
       count: stats[day] || 0
     }));
 
-    if (list.every(d => d.count === 0)) {
-      return [
-        { name: "sábado", count: 330 },
-        { name: "viernes", count: 80 },
-        { name: "jueves", count: 55 },
-        { name: "miércoles", count: 44 },
-        { name: "martes", count: 38 },
-        { name: "domingo", count: 8 },
-        { name: "lunes", count: 3 }
-      ];
-    }
     return list;
   })();
 
@@ -861,7 +843,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
       .slice()
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     
-    if (incomeTransactions.length === 0) return groupTimelinePlaceholder();
+    if (incomeTransactions.length === 0) return [];
     
     incomeTransactions.forEach(t => {
       const tDate = new Date(t.created_at);
@@ -891,21 +873,10 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     }
 
     const list = Object.values(groups).sort((a, b) => a.sortKey - b.sortKey);
-    if (list.length === 0) return groupTimelinePlaceholder();
     return list.slice(-7);
   })();
 
-  function groupTimelinePlaceholder() {
-    return [
-      { date: "20/04", amount: 2430, startDate: "2026-04-20", endDate: "2026-04-26", rangeLabel: "Del 20 abr 2026 al 26 abr 2026 (Semana 17)", sortKey: 0 },
-      { date: "27/04", amount: 888, startDate: "2026-04-27", endDate: "2026-05-03", rangeLabel: "Del 27 abr 2026 al 3 may 2026 (Semana 18)", sortKey: 1 },
-      { date: "04/05", amount: 951, startDate: "2026-05-04", endDate: "2026-05-10", rangeLabel: "Del 4 may 2026 al 10 may 2026 (Semana 19)", sortKey: 2 },
-      { date: "11/05", amount: 712, startDate: "2026-05-11", endDate: "2026-05-17", rangeLabel: "Del 11 may 2026 al 17 may 2026 (Semana 20)", sortKey: 3 },
-      { date: "18/05", amount: 800, startDate: "2026-05-18", endDate: "2026-05-24", rangeLabel: "Del 18 may 2026 al 24 may 2026 (Semana 21)", sortKey: 4 }
-    ];
-  }
-
-  const maxTimelineAmount = Math.max(...timelineData.map(d => d.amount)) || 1;
+  const maxTimelineAmount = timelineData.length > 0 ? Math.max(...timelineData.map(d => d.amount)) || 1 : 1;
   const timelineHeight = 110;
   const timelineWidth = 360;
   const timelinePoints = timelineData.map((d, i) => {
@@ -1258,66 +1229,81 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           </div>
           
           <div style={{ position: 'relative', height: '170px' }}>
-            <svg width="100%" height="160" viewBox="0 0 360 160" style={{ overflow: 'visible' }}>
-              {/* Horizontal grid lines */}
-              {[40, 75, 110, 145].map((gY, gi) => (
-                <line key={gi} x1="30" y1={gY} x2="330" y2={gY} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-              ))}
-              
-              {/* Timeline Fill Area */}
-              {timelineFill && (
-                <path d={timelineFill} fill="url(#goldGrad)" opacity="0.15" />
-              )}
-              
-              {/* Timeline Path Line */}
-              {timelinePath && (
-                <path d={timelinePath} fill="none" stroke="var(--gold-primary)" strokeWidth="3" strokeLinecap="round" />
-              )}
+            {timelineData.length === 0 ? (
+              <div style={{
+                position: 'absolute',
+                top: 0, left: 0, right: 0, bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'rgba(255,255,255,0.4)',
+                fontSize: '13px',
+                fontWeight: '600'
+              }}>
+                No hay datos para mostrar
+              </div>
+            ) : (
+              <svg width="100%" height="160" viewBox="0 0 360 160" style={{ overflow: 'visible' }}>
+                {/* Horizontal grid lines */}
+                {[40, 75, 110, 145].map((gY, gi) => (
+                  <line key={gi} x1="30" y1={gY} x2="330" y2={gY} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                ))}
+                
+                {/* Timeline Fill Area */}
+                {timelineFill && (
+                  <path d={timelineFill} fill="url(#goldGrad)" opacity="0.15" />
+                )}
+                
+                {/* Timeline Path Line */}
+                {timelinePath && (
+                  <path d={timelinePath} fill="none" stroke="var(--gold-primary)" strokeWidth="3" strokeLinecap="round" />
+                )}
 
-              {/* Data points and badges */}
-              {timelinePoints.map((p, i) => {
-                const isHovered = hoveredTimelinePoint?.sortKey === p.sortKey;
-                return (
-                <g
-                  key={i}
-                  onMouseEnter={() => setHoveredTimelinePoint(p)}
-                  onMouseLeave={() => setHoveredTimelinePoint(null)}
-                  onClick={() => handleTimelinePointClick(p)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <circle cx={p.x} cy={p.y} r="13" fill="transparent" pointerEvents="all" />
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r={isHovered ? "7" : "5"}
-                    fill="var(--gold-primary)"
-                    stroke={isHovered ? "#ffffff" : "#121212"}
-                    strokeWidth="2"
-                  />
-                  
-                  {/* Point Labels bubbles matching the white Looker bubbles */}
-                  <g transform={`translate(${p.x}, ${p.y - 18})`}>
-                    <rect x="-30" y="-8" width="60" height="15" rx="3" fill="#ffffff" />
-                    <text x="0" y="3" fill="#000000" fontSize="9" fontWeight="950" textAnchor="middle">
-                      {p.amount >= 1000 ? `$${(p.amount/1000).toFixed(2)} mil` : `$${Math.round(p.amount)}`}
+                {/* Data points and badges */}
+                {timelinePoints.map((p, i) => {
+                  const isHovered = hoveredTimelinePoint?.sortKey === p.sortKey;
+                  return (
+                  <g
+                    key={i}
+                    onMouseEnter={() => setHoveredTimelinePoint(p)}
+                    onMouseLeave={() => setHoveredTimelinePoint(null)}
+                    onClick={() => handleTimelinePointClick(p)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <circle cx={p.x} cy={p.y} r="13" fill="transparent" pointerEvents="all" />
+                    <circle
+                      cx={p.x}
+                      cy={p.y}
+                      r={isHovered ? "7" : "5"}
+                      fill="var(--gold-primary)"
+                      stroke={isHovered ? "#ffffff" : "#121212"}
+                      strokeWidth="2"
+                    />
+                    
+                    {/* Point Labels bubbles matching the white Looker bubbles */}
+                    <g transform={`translate(${p.x}, ${p.y - 18})`}>
+                      <rect x="-30" y="-8" width="60" height="15" rx="3" fill="#ffffff" />
+                      <text x="0" y="3" fill="#000000" fontSize="9" fontWeight="950" textAnchor="middle">
+                        {p.amount >= 1000 ? `$${(p.amount/1000).toFixed(2)} mil` : `$${Math.round(p.amount)}`}
+                      </text>
+                    </g>
+                    
+                    {/* X Axis Labels */}
+                    <text x={p.x} y="156" fill="#8c8c8c" fontSize="9" fontWeight="800" textAnchor="middle">
+                      {p.date}
                     </text>
                   </g>
-                  
-                  {/* X Axis Labels */}
-                  <text x={p.x} y="156" fill="#8c8c8c" fontSize="9" fontWeight="800" textAnchor="middle">
-                    {p.date}
-                  </text>
-                </g>
-              )})}
-              
-              {/* Gradients */}
-              <defs>
-                <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--gold-primary)" />
-                  <stop offset="100%" stopColor="transparent" />
-                </linearGradient>
-              </defs>
-            </svg>
+                )})}
+                
+                {/* Gradients */}
+                <defs>
+                  <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--gold-primary)" />
+                    <stop offset="100%" stopColor="transparent" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            )}
             {hoveredTimelinePoint && (
               <div style={{
                 position: 'absolute',
@@ -1373,28 +1359,42 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '170px', justifyContent: 'center' }}>
-            {barberServices.slice(0, 3).map((b, idx) => {
-              const pct = (b.count / maxBarberCount) * 80;
-              return (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                    <div style={{
-                      width: `${pct}%`,
-                      height: '24px',
-                      background: 'var(--gold-gradient)',
-                      borderRadius: '3px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'flex-end',
-                      paddingRight: '12px',
-                      boxShadow: '0 4px 10px rgba(255, 255, 255,0.15)'
-                    }}>
-                      <span style={{ fontSize: '11px', fontWeight: '950', color: '#000000' }}>{b.count}</span>
+            {barberServices.length === 0 ? (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'rgba(255,255,255,0.4)',
+                fontSize: '13px',
+                fontWeight: '600',
+                height: '100%'
+              }}>
+                No hay datos para mostrar
+              </div>
+            ) : (
+              barberServices.slice(0, 3).map((b, idx) => {
+                const pct = (b.count / maxBarberCount) * 80;
+                return (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                      <div style={{
+                        width: `${pct}%`,
+                        height: '24px',
+                        background: 'var(--gold-gradient)',
+                        borderRadius: '3px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        paddingRight: '12px',
+                        boxShadow: '0 4px 10px rgba(255, 255, 255,0.15)'
+                      }}>
+                        <span style={{ fontSize: '11px', fontWeight: '950', color: '#000000' }}>{b.count}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
