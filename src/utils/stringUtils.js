@@ -87,8 +87,12 @@ export const normalizeForSearch = (str) => {
 export const formatName = (fullName) => {
   if (!fullName) return "";
   
-  // Dividir por espacios y procesar cada palabra
+  // Guardar espacios al final del string para que el usuario pueda escribir espacios en tiempo real
+  const trailingSpaces = fullName.match(/\s+$/);
+  const suffix = trailingSpaces ? trailingSpaces[0] : '';
+  
   const words = fullName.trim().toLowerCase().split(/\s+/);
+  if (words.length === 1 && words[0] === "") return suffix;
   
   const formattedWords = words.map(word => {
     // Si la palabra está en nuestro diccionario, usamos la versión con tilde
@@ -104,7 +108,7 @@ export const formatName = (fullName) => {
     return word;
   });
   
-  return formattedWords.join(' ');
+  return formattedWords.join(' ') + suffix;
 };
 
 export default {
