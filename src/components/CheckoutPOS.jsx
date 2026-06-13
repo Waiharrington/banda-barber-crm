@@ -2463,40 +2463,80 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       {/* Barber Select Modal */}
       <AnimatedModal isOpen={showBarberModal}>
         {(overlayClass, cardClass) => (
-          <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-            <div className={`${cardClass} glass-card`} style={{ width: '100%', maxWidth: '400px', borderRadius: '32px', padding: '32px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h2 style={{ fontWeight: '900', fontSize: '20px' }}>Seleccionar Barbero / Asistente</h2>
-                <button onClick={() => { setShowBarberModal(false); setIsChangingBarber(false); }} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
-              </div>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '13px' }}>
-                {isChangingBarber ? (
-                  "Selecciona el nuevo barbero o asistente para esta cita."
-                ) : (
-                  <>Selecciona el barbero o asistente al que se le asignará la comisión por el servicio <strong>{selectedServiceForBarber?.name}</strong>.</>
-                )}
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', maxHeight: '400px', overflowY: 'auto', paddingRight: '8px' }}>
-                {allStaff.filter(s => {
-                  const roleName = (s.role?.split('|')[0] || '').toLowerCase();
-                  return !roleName.includes('admin') && 
-                         !roleName.includes('recepcionista') && 
-                         !roleName.includes('caja');
-                }).map(barber => (
-                  <button 
-                    key={barber.id} 
-                    onClick={() => isChangingBarber ? handleChangeBarber(barber.id) : handleConfirmServiceBarber(barber.id)} 
-                    style={{ padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }} 
-                    className="hover-item"
-                  >
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--gold-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black' }}>
-                      <Scissors size={20} />
+          <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+            <div className={`${cardClass}`} style={{ width: '100%', maxWidth: '440px', borderRadius: '32px', border: '1px solid rgba(255, 255, 255, 0.25)', background: 'linear-gradient(160deg, rgba(30,30,32,0.98) 0%, rgba(20,20,22,0.99) 100%)', boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset', overflow: 'hidden' }}>
+              {/* Gradient Accent Bar */}
+              <div style={{ height: '5px', background: 'linear-gradient(90deg, #ffffff 0%, #cbb79a 50%, #ffffff 100%)', width: '100%' }}></div>
+              
+              <div style={{ padding: '30px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05))', border: '1px solid rgba(255, 255, 255, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Scissors size={20} color="var(--gold-primary)" />
                     </div>
                     <div>
-                      <div style={{ fontWeight: '800', color: 'white', fontSize: '15px' }}>{barber.name}</div>
+                      <h2 style={{ fontWeight: '900', fontSize: '20px', color: 'white', margin: 0 }}>Asignar Profesional</h2>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Seleccionar Barbero o Asistente</span>
                     </div>
-                  </button>
-                ))}
+                  </div>
+                  <button onClick={() => { setShowBarberModal(false); setIsChangingBarber(false); }} style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#ff453a'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}>&times;</button>
+                </div>
+
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '13px', lineHeight: '1.4' }}>
+                  {isChangingBarber ? (
+                    "Selecciona el nuevo barbero o asistente para esta cita."
+                  ) : (
+                    <>Asigna la comisión por el servicio <strong>{selectedServiceForBarber?.name}</strong> al profesional correspondiente.</>
+                  )}
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '320px', overflowY: 'auto', paddingRight: '8px' }} className="panda-scrollbar">
+                  {allStaff.filter(s => {
+                    const roleName = (s.role?.split('|')[0] || '').toLowerCase();
+                    return !roleName.includes('admin') && 
+                           !roleName.includes('recepcionista') && 
+                           !roleName.includes('caja');
+                  }).map(barber => (
+                    <button 
+                      key={barber.id} 
+                      onClick={() => isChangingBarber ? handleChangeBarber(barber.id) : handleConfirmServiceBarber(barber.id)} 
+                      style={{ 
+                        padding: '14px 16px', 
+                        borderRadius: '18px', 
+                        border: '1px solid rgba(255,255,255,0.08)', 
+                        background: 'rgba(255,255,255,0.03)', 
+                        textAlign: 'left', 
+                        cursor: 'pointer', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '14px',
+                        transition: 'all 0.22s ease'
+                      }} 
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                        e.currentTarget.style.borderColor = 'var(--gold-primary)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }}
+                    >
+                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: 'var(--gold-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', flexShrink: 0 }}>
+                        {barber.image_url ? (
+                          <img src={barber.image_url} alt={barber.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <span style={{ fontWeight: '900', fontSize: '15px' }}>{barber.name.charAt(0).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: '800', color: 'white', fontSize: '15px' }}>{barber.name}</div>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{barber.role?.split('|')[0]}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
