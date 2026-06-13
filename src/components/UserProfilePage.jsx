@@ -171,20 +171,20 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
       {/* Premium UI Styles injection */}
       <style>{`
         .premium-profile-card {
-          border: 1px solid rgba(212, 175, 55, 0.2);
-          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(212, 175, 55, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 255, 255, 0.03);
           transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
         .premium-profile-card:hover {
-          border-color: rgba(212, 175, 55, 0.4);
-          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(212, 175, 55, 0.08);
+          border-color: rgba(255, 255, 255, 0.4);
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 255, 255, 0.08);
         }
         .glow-avatar-border {
           position: relative;
           background: linear-gradient(135deg, var(--gold-primary) 0%, #a67c1e 100%);
           padding: 4px;
           border-radius: 50%;
-          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.3);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 255, 255, 0.3);
           transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .glow-avatar-border:hover {
@@ -204,8 +204,8 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
           transition: all 0.2s ease;
         }
         .permission-badge-tag:hover {
-          background-color: rgba(212, 175, 55, 0.08);
-          border-color: rgba(212, 175, 55, 0.3);
+          background-color: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.3);
           color: var(--gold-primary);
           transform: translateY(-2px);
         }
@@ -219,8 +219,8 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
         }
         .stat-glow-card:hover {
           transform: translateY(-5px);
-          border-color: rgba(212, 175, 55, 0.25);
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), 0 0 25px rgba(212, 175, 55, 0.05);
+          border-color: rgba(255, 255, 255, 0.25);
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), 0 0 25px rgba(255, 255, 255, 0.05);
         }
         .stat-indicator-bar {
           width: 50px;
@@ -241,7 +241,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
         }
         .rank-row:hover {
           background-color: rgba(255, 255, 255, 0.03);
-          border-color: rgba(212, 175, 55, 0.15);
+          border-color: rgba(255, 255, 255, 0.15);
           transform: translateX(4px);
         }
         .custom-form-input {
@@ -258,7 +258,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
         }
         .custom-form-input:focus {
           border-color: var(--gold-primary);
-          box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+          box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
           background-color: rgba(0, 0, 0, 0.5);
         }
         .inventory-tool-row {
@@ -322,7 +322,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
           <div style={{
             position: 'absolute',
             inset: 0,
-            background: 'radial-gradient(circle at 80% 30%, rgba(212, 175, 55, 0.2) 0%, transparent 60%)',
+            background: 'radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 60%)',
             pointerEvents: 'none'
           }} />
         </div>
@@ -393,7 +393,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
-                    boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)'
+                    boxShadow: '0 4px 15px rgba(255, 255, 255, 0.3)'
                   }}>
                     <Shield size={12} /> {roleName}
                   </span>
@@ -449,17 +449,17 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }} className="anim-1">
             
             {/* Services Commission Card */}
-            <div className="glass-card stat-glow-card anim-2" style={{ background: 'linear-gradient(135deg, rgba(28,28,30,0.6) 0%, rgba(212,175,55,0.02) 100%)' }}>
+            <div className="glass-card stat-glow-card anim-2" style={{ background: 'linear-gradient(135deg, rgba(28,28,30,0.6) 0%, rgba(255, 255, 255,0.02) 100%)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <span style={{ fontSize: '11px', fontWeight: '850', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Comisión Servicios</span>
                   <h3 style={{ fontSize: '30px', fontWeight: '950', color: 'white', marginTop: '6px', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>${stats.totalServiceComm.toFixed(2)}</h3>
                 </div>
-                <div style={{ width: '44px', height: '44px', borderRadius: '14px', backgroundColor: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '14px', backgroundColor: 'rgba(255, 255, 255,0.1)', border: '1px solid rgba(255, 255, 255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Scissors size={20} color="var(--gold-primary)" />
                 </div>
               </div>
-              <div className="stat-indicator-bar" style={{ backgroundColor: 'var(--gold-primary)', boxShadow: '0 0 10px rgba(212,175,55,0.4)' }} />
+              <div className="stat-indicator-bar" style={{ backgroundColor: 'var(--gold-primary)', boxShadow: '0 0 10px rgba(255, 255, 255,0.4)' }} />
             </div>
 
             {/* Product Commission Card */}
@@ -532,7 +532,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                       <div key={idx} className="rank-row" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
                           <span style={{ fontWeight: '750', color: 'white' }}>{srv.service_name}</span>
-                          <span style={{ fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', padding: '3px 8px', borderRadius: '8px', fontSize: '10px' }}>{srv.count} veces</span>
+                          <span style={{ fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(255, 255, 255,0.08)', border: '1px solid rgba(255, 255, 255,0.15)', padding: '3px 8px', borderRadius: '8px', fontSize: '10px' }}>{srv.count} veces</span>
                         </div>
                         <div style={{ height: '5px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
                           <div style={{ 
@@ -560,8 +560,8 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                 <button
                   onClick={() => setShowAddTool(!showAddTool)}
                   style={{
-                    backgroundColor: showAddTool ? 'rgba(255,255,255,0.05)' : 'rgba(212, 175, 55, 0.1)',
-                    border: showAddTool ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(212, 175, 55, 0.25)',
+                    backgroundColor: showAddTool ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.1)',
+                    border: showAddTool ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255, 255, 255, 0.25)',
                     borderRadius: '10px',
                     color: showAddTool ? 'white' : 'var(--gold-primary)',
                     padding: '8px 14px',
@@ -580,7 +580,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
 
               {/* Add Tool Form */}
               {showAddTool && (
-                <div className="animate-scale-in" style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.2)' }}>
+                <div className="animate-scale-in" style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255,0.2)' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button 
@@ -652,7 +652,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                             width: '100%',
                             background: 'rgba(0, 0, 0, 0.3)',
                             border: dropdownOpen ? '1px solid var(--gold-primary)' : '1px solid rgba(255, 255, 255, 0.08)',
-                            boxShadow: dropdownOpen ? '0 0 10px rgba(212, 175, 55, 0.2)' : 'none',
+                            boxShadow: dropdownOpen ? '0 0 10px rgba(255, 255, 255, 0.2)' : 'none',
                             transition: 'all 0.2s ease'
                           }}
                         >
@@ -674,8 +674,8 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                             marginTop: '6px',
                             background: 'rgba(20, 20, 20, 0.95)',
                             backdropFilter: 'blur(12px)',
-                            border: '1px solid rgba(212, 175, 55, 0.3)',
-                            boxShadow: '0 15px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(212, 175, 55, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.3)',
+                            boxShadow: '0 15px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.08)',
                             borderRadius: '10px',
                             maxHeight: '180px',
                             overflowY: 'auto',
@@ -696,18 +696,18 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                                   style={{
                                     padding: '10px 14px',
                                     color: newTool.inventory_id === t.id ? 'var(--gold-primary)' : 'white',
-                                    backgroundColor: newTool.inventory_id === t.id ? 'rgba(212, 175, 55, 0.08)' : 'transparent',
+                                    backgroundColor: newTool.inventory_id === t.id ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
                                     cursor: 'pointer',
                                     fontSize: '13px',
                                     transition: 'all 0.15s ease',
                                     borderBottom: '1px solid rgba(255, 255, 255, 0.02)'
                                   }}
                                   onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.08)';
+                                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
                                     e.currentTarget.style.color = 'var(--gold-primary)';
                                   }}
                                   onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = newTool.inventory_id === t.id ? 'rgba(212, 175, 55, 0.08)' : 'transparent';
+                                    e.currentTarget.style.backgroundColor = newTool.inventory_id === t.id ? 'rgba(255, 255, 255, 0.08)' : 'transparent';
                                     e.currentTarget.style.color = newTool.inventory_id === t.id ? 'var(--gold-primary)' : 'white';
                                   }}
                                 >
@@ -729,7 +729,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                         fontSize: '12px', 
                         fontWeight: '900', 
                         marginTop: '4px',
-                        boxShadow: '0 5px 15px rgba(212, 175, 55, 0.25)' 
+                        boxShadow: '0 5px 15px rgba(255, 255, 255, 0.25)' 
                       }}
                     >
                       CONFIRMAR ASIGNACIÓN

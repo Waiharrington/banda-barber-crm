@@ -468,7 +468,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   padding: '8px 12px', 
                   borderRadius: '8px', 
                   border: 'none', 
-                  backgroundColor: viewMode === 'grid' ? 'rgba(212,175,55,0.1)' : 'transparent',
+                  backgroundColor: viewMode === 'grid' ? 'rgba(255, 255, 255,0.1)' : 'transparent',
                   color: viewMode === 'grid' ? 'var(--gold-primary)' : 'var(--text-muted)',
                   cursor: 'pointer',
                   display: 'flex',
@@ -486,7 +486,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   padding: '8px 12px', 
                   borderRadius: '8px', 
                   border: 'none', 
-                  backgroundColor: viewMode === 'table' ? 'rgba(212,175,55,0.1)' : 'transparent',
+                  backgroundColor: viewMode === 'table' ? 'rgba(255, 255, 255,0.1)' : 'transparent',
                   color: viewMode === 'table' ? 'var(--gold-primary)' : 'var(--text-muted)',
                   cursor: 'pointer',
                   display: 'flex',
@@ -501,15 +501,15 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
             </div>
           )}
 
-          <button className="btn-gold" onClick={() => setIsCategoriesModalOpen(true)} style={{ backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212,175,55,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
+          <button className="btn-gold" onClick={() => setIsCategoriesModalOpen(true)} style={{ backgroundColor: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(255, 255, 255,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
             <Settings size={18} style={{ marginRight: '8px' }} />
             Categorías
           </button>
-          <button className="btn-gold" onClick={() => setIsStrategiesModalOpen(true)} style={{ backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212,175,55,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
+          <button className="btn-gold" onClick={() => setIsStrategiesModalOpen(true)} style={{ backgroundColor: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(255, 255, 255,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
             <Crown size={18} style={{ marginRight: '8px' }} />
             Estrategias
           </button>
-          <button className="btn-gold" onClick={() => setIsBillableExtrasModalOpen(true)} style={{ backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212,175,55,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
+          <button className="btn-gold" onClick={() => setIsBillableExtrasModalOpen(true)} style={{ backgroundColor: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(255, 255, 255,0.2)', justifyContent: 'center', width: isMobile ? '100%' : 'auto', padding: isMobile ? '10px 8px' : undefined, fontSize: isMobile ? '12px' : undefined }}>
             <Rocket size={18} style={{ marginRight: '8px' }} />
             Extras
           </button>
@@ -549,7 +549,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
         </div>
       ) : services.length === 0 ? (
         <div className="glass-card" style={{ textAlign: 'center', padding: '80px', borderRadius: '32px' }}>
-          <Star size={64} color="rgba(212, 175, 55, 0.1)" style={{ marginBottom: '24px' }} />
+          <Star size={64} color="rgba(255, 255, 255, 0.1)" style={{ marginBottom: '24px' }} />
           <h3 style={{ fontSize: '20px', color: 'var(--text-primary)' }}>Tu catálogo está vacío</h3>
           <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Comienza agregando los servicios que definirán tu marca.</p>
         </div>
@@ -579,7 +579,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         {/* Top: Icon + Name & Actions */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
-                            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(212, 175, 55, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--gold-primary)' }}>
+                            <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--gold-primary)' }}>
                               {service.icon ? getIconComponent(service.icon, 20) : getCategoryIcon(service.category)}
                             </div>
                             <div style={{ minWidth: 0, flex: 1 }}>
@@ -611,7 +611,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
 
                         {/* Description */}
                         {service.description && (
-                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', margin: '0', lineHeight: '1.4', fontStyle: 'italic', borderLeft: '2px solid rgba(212, 175, 55, 0.3)', paddingLeft: '10px' }}>
+                          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.55)', margin: '0', lineHeight: '1.4', fontStyle: 'italic', borderLeft: '2px solid rgba(255, 255, 255, 0.3)', paddingLeft: '10px' }}>
                             {service.description}
                           </p>
                         )}
@@ -639,7 +639,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         }}>
                           <div>
                             {service.strategy_type ? (
-                              <div style={{ padding: '4px 12px', borderRadius: '20px', border: '1px solid rgba(212, 175, 55, 0.3)', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212, 175, 55, 0.05)' }}>
+                              <div style={{ padding: '4px 12px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.3)', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
                                 {service.strategy_type}
                               </div>
                             ) : <div />}
@@ -676,7 +676,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                       gap: '24px'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: '200px' }}>
-                        <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(212, 175, 55, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: 'rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           {service.icon ? getIconComponent(service.icon, 20) : getCategoryIcon(service.category)}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -705,7 +705,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         gap: '32px'
                       }}>
                         {service.strategy_type && (
-                          <div style={{ padding: '4px 12px', borderRadius: '20px', border: '1px solid rgba(212, 175, 55, 0.3)', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212, 175, 55, 0.05)' }}>
+                          <div style={{ padding: '4px 12px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.3)', fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
                             {service.strategy_type}
                           </div>
                         )}
@@ -737,7 +737,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
               })}
             </div>
           ) : (
-            <div className="animate-slide-up" style={{ background: 'rgba(28, 28, 30, 0.95)', padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
+            <div className="animate-slide-up" style={{ background: 'rgba(28, 28, 30, 0.95)', padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -757,7 +757,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         {service.description && <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{service.description}</div>}
                       </td>
                       <td style={{ padding: '16px 24px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.05)', padding: '4px 10px', borderRadius: '8px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--gold-primary)', backgroundColor: 'rgba(255, 255, 255,0.05)', padding: '4px 10px', borderRadius: '8px' }}>
                           {service.category}
                         </span>
                       </td>
@@ -806,7 +806,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
             <div className={`${cardClass} glass-card astro-scrollbar`} style={{
               width: '100%', maxWidth: '420px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
               display: 'flex', flexDirection: 'column', padding: isMobile ? '20px 16px' : '24px',
-              borderRadius: '28px', border: '1px solid rgba(212,175,55,0.2)',
+              borderRadius: '28px', border: '1px solid rgba(255, 255, 255,0.2)',
               boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -884,7 +884,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
       <AnimatedModal isOpen={isBillableExtrasModalOpen}>
         {(overlayClass, cardClass) => (
           <div className={overlayClass} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '12px' : '20px' }}>
-            <div className={`${cardClass} glass-card astro-scrollbar`} style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '20px 16px' : '32px', borderRadius: '32px', border: '1px solid rgba(212,175,55,0.2)' }}>
+            <div className={`${cardClass} glass-card astro-scrollbar`} style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '20px 16px' : '32px', borderRadius: '32px', border: '1px solid rgba(255, 255, 255,0.2)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '16px' }}>
                 <div>
                   <h3 style={{ fontSize: '20px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1001,7 +1001,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
               <div className={`${cardClass} glass-card astro-scrollbar`} style={{
                 width: '100%', maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
                 padding: isMobile ? '20px 16px' : '24px', borderRadius: '28px',
-                border: '1px solid rgba(212,175,55,0.2)',
+                border: '1px solid rgba(255, 255, 255,0.2)',
                 boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
                 position: 'relative'
               }}>
@@ -1013,13 +1013,13 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                 </button>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', paddingRight: '40px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-primary)' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gold-primary)' }}>
                     {selectedServiceDetail.icon ? getIconComponent(selectedServiceDetail.icon, 20) : getCategoryIcon(selectedServiceDetail.category)}
                   </div>
                   <div>
                     <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{selectedServiceDetail.category}</span>
                     {selectedServiceDetail.strategy_type && (
-                      <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: '900', backgroundColor: 'rgba(212,175,55,0.1)', padding: '2px 8px', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', color: 'var(--gold-primary)' }}>
+                      <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: '900', backgroundColor: 'rgba(255, 255, 255,0.1)', padding: '2px 8px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255,0.2)', color: 'var(--gold-primary)' }}>
                         {selectedServiceDetail.strategy_type}
                       </span>
                     )}
@@ -1053,7 +1053,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                     <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Checklist Incluido ({selectedServiceDetail.included_items.length})</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {selectedServiceDetail.included_items.map((item, idx) => (
-                        <span key={idx} style={{ fontSize: '11px', padding: '6px 12px', borderRadius: '8px', backgroundColor: 'rgba(212,175,55,0.05)', color: 'white', border: '1px solid rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span key={idx} style={{ fontSize: '11px', padding: '6px 12px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255,0.05)', color: 'white', border: '1px solid rgba(255, 255, 255,0.1)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <Check size={12} color="var(--gold-primary)" strokeWidth={3} /> {item}
                         </span>
                       ))}
@@ -1114,7 +1114,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
             <div className={`${cardClass} glass-card astro-scrollbar`} style={{
               width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
               padding: isMobile ? '20px 16px' : '28px', borderRadius: '28px',
-              border: '1px solid rgba(212,175,55,0.2)',
+              border: '1px solid rgba(255, 255, 255,0.2)',
               boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
               position: 'relative'
             }}>
@@ -1183,7 +1183,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                           height: '40px',
                           borderRadius: '8px',
                           border: isSelected ? '1px solid var(--gold-primary)' : '1px solid transparent',
-                          background: isSelected ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
+                          background: isSelected ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
                           color: isSelected ? 'var(--gold-primary)' : 'rgba(255,255,255,0.6)',
                           cursor: 'pointer',
                           display: 'flex',
@@ -1212,7 +1212,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button 
                         onClick={() => handleEditCategoryClick(catObj)} 
-                        style={{ background: 'rgba(212,175,55,0.1)', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        style={{ background: 'rgba(255, 255, 255,0.1)', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
                         <Pencil size={14} />
                       </button>
@@ -1253,7 +1253,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
             <div className={`${cardClass} glass-card astro-scrollbar`} style={{
               width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
               padding: isMobile ? '20px 16px' : '28px', borderRadius: '28px',
-              border: '1px solid rgba(212,175,55,0.2)',
+              border: '1px solid rgba(255, 255, 255,0.2)',
               boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
               position: 'relative'
             }}>
@@ -1348,7 +1348,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                 width: '100%', maxWidth: '900px',
                 maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
                 padding: isMobile ? '20px 16px' : '32px', borderRadius: '28px',
-                border: '1px solid rgba(212,175,55,0.2)',
+                border: '1px solid rgba(255, 255, 255,0.2)',
                 boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6)',
                 position: 'relative'
               }}>
@@ -1396,7 +1396,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                                 ? '2px solid var(--gold-primary)'
                                 : '1px solid rgba(255,255,255,0.08)',
                               background: newService.icon === ic.name
-                                ? 'rgba(212,175,55,0.15)'
+                                ? 'rgba(255, 255, 255,0.15)'
                                 : 'rgba(255,255,255,0.04)',
                               color: newService.icon === ic.name ? 'var(--gold-primary)' : 'var(--text-muted)',
                               display: 'flex',
@@ -1533,8 +1533,8 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                           <div style={{ 
                             padding: '12px 16px', 
                             borderRadius: '14px', 
-                            background: 'rgba(212, 175, 55, 0.05)', 
-                            border: '1px solid rgba(212, 175, 55, 0.15)',
+                            background: 'rgba(255, 255, 255, 0.05)', 
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center'
@@ -1571,8 +1571,8 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                       <button 
                         onClick={() => setIsExtrasModalOpen(true)}
                         style={{ 
-                          background: 'rgba(212,175,55,0.1)', 
-                          border: '1px solid rgba(212,175,55,0.2)', 
+                          background: 'rgba(255, 255, 255,0.1)', 
+                          border: '1px solid rgba(255, 255, 255,0.2)', 
                           borderRadius: '8px', 
                           padding: '4px 12px', 
                           fontSize: '10px',
@@ -1612,7 +1612,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                               gap: '10px',
                               cursor: 'pointer',
                               transition: 'all 0.2s',
-                              background: newService.included_items?.includes(item.name) ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.02)',
+                              background: newService.included_items?.includes(item.name) ? 'rgba(255, 255, 255,0.15)' : 'rgba(255,255,255,0.02)',
                               border: newService.included_items?.includes(item.name) ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
                               color: newService.included_items?.includes(item.name) ? 'white' : 'var(--text-muted)'
                             }}

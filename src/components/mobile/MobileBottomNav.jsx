@@ -227,7 +227,7 @@ const MobileBottomNav = ({ activeTab, setActiveTab }) => {
                     padding: '16px 8px',
                     color: activeTab === item.id ? 'var(--gold-primary)' : 'white',
                     borderRadius: '16px',
-                    backgroundColor: activeTab === item.id ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)',
+                    backgroundColor: activeTab === item.id ? 'rgba(255, 255, 255,0.1)' : 'rgba(255,255,255,0.02)',
                     transition: 'all 0.2s'
                   }}
                 >

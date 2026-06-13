@@ -330,7 +330,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
 
   const getStatusColor = (status) => {
     const colors = {
-      'Agendado': { text: 'var(--gold-primary)', bg: 'rgba(212,175,55,0.1)', border: 'rgba(212,175,55,0.25)', dot: 'var(--gold-primary)' },
+      'Agendado': { text: 'var(--gold-primary)', bg: 'rgba(255, 255, 255,0.1)', border: 'rgba(255, 255, 255,0.25)', dot: 'var(--gold-primary)' },
       'En Silla': { text: '#0a84ff', bg: 'rgba(10,132,255,0.1)', border: 'rgba(10,132,255,0.25)', dot: '#0a84ff' },
       'En Lavado': { text: '#64d2ff', bg: 'rgba(100,210,255,0.1)', border: 'rgba(100,210,255,0.25)', dot: '#64d2ff' },
       'Por Pagar': { text: '#bf5af2', bg: 'rgba(191,90,242,0.1)', border: 'rgba(191,90,242,0.25)', dot: '#bf5af2' },
@@ -489,7 +489,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
         .premium-filter-btn.active {
           background: var(--gold-primary);
           color: #121212;
-          box-shadow: 0 4px 15px rgba(212, 175, 55, 0.25);
+          box-shadow: 0 4px 15px rgba(255, 255, 255, 0.25);
         }
         .premium-search-box {
           background: rgba(18, 18, 18, 0.4);
@@ -505,8 +505,8 @@ const SchedulingModule = ({ isMobile, rates }) => {
           animation: schedulingCardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         .premium-search-box:focus-within {
-          border-color: rgba(212, 175, 55, 0.4);
-          box-shadow: 0 0 20px rgba(212, 175, 55, 0.15), inset 0 0 10px rgba(0,0,0,0.5);
+          border-color: rgba(255, 255, 255, 0.4);
+          box-shadow: 0 0 20px rgba(255, 255, 255, 0.15), inset 0 0 10px rgba(0,0,0,0.5);
         }
         .premium-search-input {
           flex: 1;
@@ -556,7 +556,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
         }
         .premium-row-card:hover {
           background-color: rgba(255, 255, 255, 0.02);
-          border-color: rgba(212, 175, 55, 0.12);
+          border-color: rgba(255, 255, 255, 0.12);
           transform: scale(1.002);
         }
         .avatar-gradient-circle {
@@ -564,8 +564,8 @@ const SchedulingModule = ({ isMobile, rates }) => {
           height: 36px;
           min-width: 36px;
           border-radius: 50%;
-          background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0.05) 100%);
-          border: 1.5px solid rgba(212, 175, 55, 0.4);
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.05) 100%);
+          border: 1.5px solid rgba(255, 255, 255, 0.4);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -573,7 +573,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
           color: var(--gold-primary);
           font-weight: 900;
           line-height: 1;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 8px rgba(212,175,55,0.15);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 8px rgba(255, 255, 255,0.15);
           flex-shrink: 0;
         }
         .status-glow-badge {
@@ -605,9 +605,9 @@ const SchedulingModule = ({ isMobile, rates }) => {
         }
         .action-icon-btn.edit:hover {
           color: var(--gold-primary);
-          border-color: rgba(212, 175, 55, 0.3);
-          background: rgba(212, 175, 55, 0.08);
-          box-shadow: 0 4px 10px rgba(212, 175, 55, 0.1);
+          border-color: rgba(255, 255, 255, 0.3);
+          background: rgba(255, 255, 255, 0.08);
+          box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
         }
         .action-icon-btn.delete:hover {
           color: #ff453a;
@@ -779,7 +779,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
           background: var(--gold-primary);
           color: #121212;
           font-weight: 800;
-          box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+          box-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
         }
 
         .weekly-ribbon {
@@ -820,11 +820,11 @@ const SchedulingModule = ({ isMobile, rates }) => {
           background: var(--gold-primary);
           color: #121212;
           font-weight: 800;
-          box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);
+          box-shadow: 0 4px 12px rgba(255, 255, 255, 0.25);
         }
         .ribbon-day-btn.today {
-          border: 1px solid rgba(212, 175, 55, 0.45) !important;
-          background: rgba(212, 175, 55, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.45) !important;
+          background: rgba(255, 255, 255, 0.08);
           color: var(--gold-primary);
         }
         .ribbon-day-btn.today.active {
@@ -853,10 +853,10 @@ const SchedulingModule = ({ isMobile, rates }) => {
 
       <header className="scheduling-header">
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: '950', letterSpacing: '-0.8px', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>Agenda <span className="text-gold">Astro</span></h1>
+          <h1 style={{ fontSize: '32px', fontWeight: '950', letterSpacing: '-0.8px', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>Agenda <span className="text-gold">Panda</span></h1>
           <p style={{ color: 'var(--text-secondary)' }}>Gestión inteligente de citas y disponibilidad.</p>
         </div>
-        <button className="btn-gold" style={{ boxShadow: '0 5px 15px rgba(212, 175, 55, 0.25)' }} onClick={() => {
+        <button className="btn-gold" style={{ boxShadow: '0 5px 15px rgba(255, 255, 255, 0.25)' }} onClick={() => {
             setEditingApp(null);
             setNewApp({ clientId: '', serviceId: '', staffId: user?.id || '', time: '10:00', extras: [], products: [] });
             setClientSearchTerm('');
@@ -906,7 +906,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
         <main className="animate-slide-up animate-stagger-2" style={{ minWidth: 0, maxWidth: '100%', boxSizing: 'border-box' }}>
           <div className="date-navigator-card">
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <div style={{ background: 'var(--gold-primary)', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(212, 175, 55, 0.3)' }}>
+              <div style={{ background: 'var(--gold-primary)', width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', boxShadow: '0 4px 10px rgba(255, 255, 255, 0.3)' }}>
                 <CalendarIcon size={16} />
               </div>
               <h2 style={{ fontSize: '18px', fontWeight: '900', textTransform: 'capitalize', color: 'white', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>{formatDateLabel(selectedDate)}</h2>
@@ -940,7 +940,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                 else if (filterType === 'fortnight') d.setDate(d.getDate() - 14);
                 else if (filterType === 'month') d.setMonth(d.getMonth() - 1);
                 setSelectedDate(d);
-              }} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', width: '38px', height: '38px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(212,175,55,0.3)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}><ChevronLeft size={18} /></button>
+              }} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', width: '38px', height: '38px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255,0.3)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}><ChevronLeft size={18} /></button>
               
               <button onClick={() => {
                 const d = new Date(selectedDate);
@@ -949,7 +949,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                 else if (filterType === 'fortnight') d.setDate(d.getDate() + 14);
                 else if (filterType === 'month') d.setMonth(d.getMonth() + 1);
                 setSelectedDate(d);
-              }} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', width: '38px', height: '38px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(212,175,55,0.3)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}><ChevronRight size={18} /></button>
+              }} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', width: '38px', height: '38px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255,0.3)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}><ChevronRight size={18} /></button>
             </div>
           </div>
 
@@ -1053,7 +1053,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
               </div>
             ) : filteredApps.length === 0 ? (
               <div style={{ padding: '80px', textAlign: 'center' }}>
-                <Search size={44} color="rgba(212,175,55,0.1)" style={{ marginBottom: '16px' }} />
+                <Search size={44} color="rgba(255, 255, 255,0.1)" style={{ marginBottom: '16px' }} />
                 <div style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: '700' }}>No se encontraron citas registradas</div>
               </div>
             ) : (
@@ -1063,7 +1063,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                   {/* Metrics Summary Banner - scrolls with content */}
                   <div className="scheduling-metrics-banner" style={{ marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.03)' }}>
-                      <div style={{ background: 'rgba(212, 175, 55, 0.1)', color: 'var(--gold-primary)', borderRadius: '10px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <div style={{ background: 'rgba(255, 255, 255, 0.1)', color: 'var(--gold-primary)', borderRadius: '10px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <CalendarIcon size={18} />
                       </div>
                       <div>
@@ -1316,8 +1316,8 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                   marginTop: '8px',
                                   padding: '10px',
                                   borderRadius: '12px',
-                                  border: '1px solid rgba(212,175,55,0.2)',
-                                  background: 'rgba(212,175,55,0.05)',
+                                  border: '1px solid rgba(255, 255, 255,0.2)',
+                                  background: 'rgba(255, 255, 255,0.05)',
                                   color: 'var(--gold-primary)',
                                   fontSize: '12px',
                                   fontWeight: '800',
@@ -1330,8 +1330,8 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                   transition: 'all 0.2s ease',
                                   fontFamily: 'Outfit, var(--font-sans), system-ui'
                                 }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.12)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.05)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.2)'; }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255,0.12)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255,0.4)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255,0.05)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255,0.2)'; }}
                               >
                                 {expandedGroups[group.key] ? (
                                   <><ChevronUp size={14} /> VER MENOS</>
@@ -1390,13 +1390,13 @@ const SchedulingModule = ({ isMobile, rates }) => {
             <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(8,8,10,0.92)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', backdropFilter: 'blur(8px)' }}>
               <div className={`glass-card ${cardClass}`} style={{ maxWidth: '480px', width: '100%', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.08)', maxHeight: '92vh', overflowY: 'auto', padding: '0px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
                 {/* Gradient Accent Bar */}
-                <div style={{ height: '5px', background: 'linear-gradient(90deg, #d4af37 0%, #f39c12 50%, #d4af37 100%)', width: '100%', borderTopLeftRadius: '23px', borderTopRightRadius: '23px' }}></div>
+                <div style={{ height: '5px', background: 'linear-gradient(90deg, #ffffff 0%, #f39c12 50%, #ffffff 100%)', width: '100%', borderTopLeftRadius: '23px', borderTopRightRadius: '23px' }}></div>
                 
                 <div style={{ padding: '30px' }}>
                   {/* Header */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                      <div style={{ width: '42px', height: '42px', borderRadius: '14px', background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: '42px', height: '42px', borderRadius: '14px', background: 'rgba(255, 255, 255,0.08)', border: '1px solid rgba(255, 255, 255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <CalendarIcon color="var(--gold-primary)" size={20} />
                       </div>
                       <div>
@@ -1423,7 +1423,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                     <div style={{ position: 'relative' }}>
                       <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>CLIENTE</label>
                       {selectedClient ? (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)', padding: '12px 16px', borderRadius: '14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255,0.06)', border: '1px solid rgba(255, 255, 255,0.15)', padding: '12px 16px', borderRadius: '14px' }}>
                           <div>
                             <div style={{ fontWeight: '800', color: 'white', fontSize: '15px' }}>{selectedClient.name}</div>
                             <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.85)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -1472,7 +1472,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                 boxSizing: 'border-box',
                                 transition: 'all 0.3s'
                               }}
-                              onFocus={e => e.target.style.borderColor = 'rgba(212,175,55,0.4)'}
+                              onFocus={e => e.target.style.borderColor = 'rgba(255, 255, 255,0.4)'}
                               onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
                             />
                           </div>
@@ -1484,7 +1484,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                         <div className="animate-scale-in" style={{
                           position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
                           background: 'rgba(18,18,22,0.98)',
-                          border: '1px solid rgba(212,175,55,0.2)', borderRadius: '14px',
+                          border: '1px solid rgba(255, 255, 255,0.2)', borderRadius: '14px',
                           overflow: 'hidden', zIndex: 200, backdropFilter: 'blur(20px)',
                           boxShadow: '0 16px 48px rgba(0,0,0,0.6)'
                         }}>
@@ -1493,7 +1493,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                               key={c.id}
                               onClick={() => handleSelectClient(c)}
                               style={{ padding: '12px 18px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: '0.2s' }}
-                              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(212,175,55,0.08)'}
+                              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255,0.08)'}
                               onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                             >
                               <div>
@@ -1555,7 +1555,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                 borderRadius: '12px',
                                 border: '1px solid',
                                 borderColor: isSelected ? 'var(--gold-primary)' : 'rgba(255,255,255,0.08)',
-                                background: isSelected ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.02)',
+                                background: isSelected ? 'rgba(255, 255, 255,0.08)' : 'rgba(255,255,255,0.02)',
                                 color: isSelected ? 'var(--gold-primary)' : 'rgba(255,255,255,0.8)',
                                 fontSize: '12px',
                                 fontWeight: '700',
@@ -1641,7 +1641,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                     </div>
 
                     {/* Live Total Cost Breakdown */}
-                    <div style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%)', border: '1px solid rgba(212,175,55,0.15)', borderRadius: '16px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                    <div style={{ background: 'linear-gradient(135deg, rgba(255, 255, 255,0.06) 0%, rgba(255, 255, 255,0.02) 100%)', border: '1px solid rgba(255, 255, 255,0.15)', borderRadius: '16px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
                       <div>
                         <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', letterSpacing: '0.5px' }}>TOTAL ESTIMADO</div>
                         <div style={{ fontSize: '24px', fontWeight: '950', color: 'var(--gold-primary)', fontFamily: 'Outfit, sans-serif', marginTop: '2px' }}>${totalEstimated.toFixed(2)}</div>
@@ -1703,9 +1703,9 @@ const SchedulingModule = ({ isMobile, rates }) => {
                       width: '52px', 
                       height: '52px', 
                       borderRadius: '50%', 
-                      background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0.05) 100%)', 
-                      border: '1.5px solid rgba(212, 175, 55, 0.4)',
-                      boxShadow: '0 4px 15px rgba(212, 175, 55, 0.15)',
+                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.05) 100%)', 
+                      border: '1.5px solid rgba(255, 255, 255, 0.4)',
+                      boxShadow: '0 4px 15px rgba(255, 255, 255, 0.15)',
                       display: 'flex', 
                       alignItems: 'center', 
                       justifyContent: 'center', 
@@ -1777,7 +1777,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.04)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                        <div style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', borderRadius: '10px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ background: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', borderRadius: '10px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <Scissors size={15} />
                         </div>
                         <div style={{ minWidth: 0 }}>
@@ -1877,13 +1877,13 @@ const SchedulingModule = ({ isMobile, rates }) => {
                 </div>
 
                 {/* Total Block */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.02) 100%)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 8px 32px rgba(212,175,55,0.06)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, rgba(255, 255, 255,0.12) 0%, rgba(255, 255, 255,0.02) 100%)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255, 255, 255,0.25)', boxShadow: '0 8px 32px rgba(255, 255, 255,0.06)' }}>
                   <div>
                     <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', display: 'block', marginBottom: '2px', letterSpacing: '0.5px' }}>Total de la Cita</span>
                     <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Ref: ${activeDetail.total_price} USD</span>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '22px', fontWeight: '950', color: 'var(--gold-primary)', textShadow: '0 0 15px rgba(212,175,55,0.35)', fontFamily: 'Outfit, sans-serif' }}>
+                    <span style={{ fontSize: '22px', fontWeight: '950', color: 'var(--gold-primary)', textShadow: '0 0 15px rgba(255, 255, 255,0.35)', fontFamily: 'Outfit, sans-serif' }}>
                       {rates?.usd > 0 ? `${Math.round(activeDetail.total_price * rates.usd).toLocaleString('es-VE')} Bs.` : `${activeDetail.total_price} USD`}
                     </span>
                   </div>
@@ -1940,11 +1940,11 @@ const MiniCalendar = ({ selectedDate, onDateSelect, allAppointments }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderRadius: '12px', 
-                border: isToday && !isSelected ? '1px solid rgba(212,175,55,0.45)' : 'none', 
+                border: isToday && !isSelected ? '1px solid rgba(255, 255, 255,0.45)' : 'none', 
                 cursor: 'pointer', 
                 fontSize: '12px', 
                 fontWeight: isSelected ? '900' : (isToday ? '800' : '600'),
-                background: isSelected ? 'var(--gold-primary)' : (isToday ? 'rgba(212,175,55,0.08)' : 'none'), 
+                background: isSelected ? 'var(--gold-primary)' : (isToday ? 'rgba(255, 255, 255,0.08)' : 'none'), 
                 color: isSelected ? '#121212' : (isToday ? 'var(--gold-primary)' : (isWeekend ? 'rgba(255, 255, 255, 0.4)' : 'white')), 
                 transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)', 
                 position: 'relative'

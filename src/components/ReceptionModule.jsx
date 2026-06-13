@@ -356,7 +356,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
       <div className="r-orb r-orb-1" />
       <div className="r-orb r-orb-2" />
       <header style={{ marginBottom: '40px', textAlign: isMobile ? 'center' : 'left' }}>
-        <h1 style={{ fontSize: '32px', fontWeight: '900' }}>Recepción <span className="text-gold">Astro</span></h1>
+        <h1 style={{ fontSize: '32px', fontWeight: '900' }}>Recepción <span className="text-gold">Panda</span></h1>
         <p style={{ color: 'var(--text-secondary)' }}>Módulo de atención y agendamiento rápido.</p>
       </header>
 
@@ -372,14 +372,14 @@ const ReceptionModule = ({ isMobile, rates }) => {
               </div>
               <button 
                 onClick={handleCreateClient}
-                style={{ background: 'rgba(212,175,55,0.1)', border: 'none', color: 'var(--gold-primary)', padding: '6px 12px', borderRadius: '10px', fontSize: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                style={{ background: 'rgba(255, 255, 255,0.1)', border: 'none', color: 'var(--gold-primary)', padding: '6px 12px', borderRadius: '10px', fontSize: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
                 <UserPlus size={14} /> Nuevo
               </button>
             </div>
 
             {selectedClient ? (
-              <div className="animate-scale-in" style={{ padding: '20px', backgroundColor: 'rgba(212,175,55,0.05)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.2)' }}>
+              <div className="animate-scale-in" style={{ padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.05)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.2)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontWeight: '800', fontSize: '18px' }}>{selectedClient.name}</div>
@@ -390,8 +390,8 @@ const ReceptionModule = ({ isMobile, rates }) => {
                       marginTop: '6px',
                       padding: '3px 8px', 
                       borderRadius: '6px', 
-                      backgroundColor: 'rgba(212, 175, 55, 0.1)', 
-                      border: '1px solid rgba(212, 175, 55, 0.25)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
                       fontSize: '11px', 
                       fontWeight: '800', 
                       color: 'var(--gold-primary)',
@@ -460,7 +460,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
                         key={c.id} 
                         onClick={() => handleSelectClient(c)}
                         style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(212,175,55,0.1)'}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255,0.1)'}
                         onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       >
                         <span style={{ fontWeight: '700', fontSize: '14px', color: 'white' }}>{c.name}</span>
@@ -609,7 +609,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
                         padding: '16px 8px',
                         borderRadius: '20px',
                         border: formData.staffId === s.id ? '2px solid var(--gold-primary)' : isBusy ? '1px solid rgba(255,69,58,0.3)' : '1px solid var(--border-color)',
-                        backgroundColor: formData.staffId === s.id ? 'rgba(212,175,55,0.1)' : isBusy ? 'rgba(255,69,58,0.05)' : 'rgba(255,255,255,0.02)',
+                        backgroundColor: formData.staffId === s.id ? 'rgba(255, 255, 255,0.1)' : isBusy ? 'rgba(255,69,58,0.05)' : 'rgba(255,255,255,0.02)',
                         color: formData.staffId === s.id ? 'var(--gold-primary)' : 'white',
                         cursor: 'pointer',
                         display: 'flex',
@@ -700,8 +700,8 @@ const ReceptionModule = ({ isMobile, rates }) => {
                           justifyContent: 'center',
                           padding: '6px 12px',
                           borderRadius: '12px',
-                          background: 'rgba(212, 175, 55, 0.08)',
-                          border: '1px solid rgba(212, 175, 55, 0.25)',
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          border: '1px solid rgba(255, 255, 255, 0.25)',
                           minWidth: '92px'
                         }}>
                           <span style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', whiteSpace: 'nowrap' }}>
@@ -783,7 +783,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
 
         {/* Action Panel */}
         <section className="animate-slide-up animate-stagger-3" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div className="glass-card" style={{ borderRadius: '24px', background: 'linear-gradient(135deg, rgba(28,28,30,0.9), rgba(212,175,55,0.05))', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '40px 30px' }}>
+          <div className="glass-card" style={{ borderRadius: '24px', background: 'linear-gradient(135deg, rgba(28,28,30,0.9), rgba(255, 255, 255,0.05))', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '40px 30px' }}>
             {!selectedClient ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }} className="animate-fade-in">
                 <div className="premium-badge">
@@ -801,7 +801,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
               </div>
             ) : selectedServices.length === 0 && selectedProducts.length === 0 && selectedExtras.length === 0 ? (
               <>
-                <Scissors size={48} color="rgba(212,175,55,0.2)" style={{ marginBottom: '20px' }} />
+                <Scissors size={48} color="rgba(255, 255, 255,0.2)" style={{ marginBottom: '20px' }} />
                 <h3 style={{ color: 'var(--text-secondary)' }}>Añade productos o servicios</h3>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>Selecciona lo que el cliente desea adquirir.</p>
               </>
@@ -982,7 +982,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
 
       <style>{`
         .hover-item:hover {
-          background-color: rgba(212,175,55,0.1) !important;
+          background-color: rgba(255, 255, 255,0.1) !important;
           transform: translateX(5px);
         }
 
@@ -1037,13 +1037,13 @@ const ReceptionModule = ({ isMobile, rates }) => {
         
         .action-add-btn.btn-service {
           color: var(--gold-primary) !important;
-          border-color: rgba(212, 175, 55, 0.25) !important;
+          border-color: rgba(255, 255, 255, 0.25) !important;
         }
         .action-add-btn.btn-service:hover {
-          background: rgba(212, 175, 55, 0.06) !important;
-          border-color: rgba(212, 175, 55, 0.6) !important;
+          background: rgba(255, 255, 255, 0.06) !important;
+          border-color: rgba(255, 255, 255, 0.6) !important;
           border-style: solid !important;
-          box-shadow: 0 8px 30px rgba(212, 175, 55, 0.15), 0 0 12px rgba(212, 175, 55, 0.05);
+          box-shadow: 0 8px 30px rgba(255, 255, 255, 0.15), 0 0 12px rgba(255, 255, 255, 0.05);
           transform: translateY(-3px) scale(1.02);
         }
         
@@ -1117,8 +1117,8 @@ const ReceptionModule = ({ isMobile, rates }) => {
           width: 100%;
           height: 100%;
           border-radius: 50%;
-          border: 1px solid rgba(212, 175, 55, 0.15);
-          background: radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
         }
         .radar-glow {
           position: absolute;
@@ -1127,7 +1127,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
           border-radius: 50%;
           border: 2.5px solid var(--gold-primary);
           animation: radar-sweep 2.5s infinite linear;
-          box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
+          box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
         }
         @keyframes radar-sweep {
           0% { transform: scale(0.5); opacity: 1; }
@@ -1139,8 +1139,8 @@ const ReceptionModule = ({ isMobile, rates }) => {
           gap: 6px;
           padding: 6px 14px;
           border-radius: 99px;
-          background: rgba(212, 175, 55, 0.1);
-          border: 1px solid rgba(212, 175, 55, 0.2);
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
           color: var(--gold-primary);
           font-size: 11px;
           font-weight: 800;
@@ -1156,13 +1156,13 @@ const ReceptionModule = ({ isMobile, rates }) => {
         .selection-modal-item:hover {
           transform: translateY(-2px) scale(1.008);
           background: rgba(255, 255, 255, 0.04) !important;
-          border-color: rgba(212, 175, 55, 0.3) !important;
+          border-color: rgba(255, 255, 255, 0.3) !important;
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
         .selection-modal-item.is-selected:hover {
-          background: rgba(212, 175, 55, 0.1) !important;
+          background: rgba(255, 255, 255, 0.1) !important;
           border-color: var(--gold-primary) !important;
-          box-shadow: 0 6px 20px rgba(212, 175, 55, 0.15);
+          box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
         }
         .btn-premium-modal-ready {
           background: var(--gold-primary) !important;
@@ -1172,11 +1172,11 @@ const ReceptionModule = ({ isMobile, rates }) => {
           border: none !important;
           cursor: pointer;
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-          box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+          box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
         }
         .btn-premium-modal-ready:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+          box-shadow: 0 8px 25px rgba(255, 255, 255, 0.4);
           filter: brightness(1.1);
         }
 
@@ -1187,16 +1187,16 @@ const ReceptionModule = ({ isMobile, rates }) => {
         .upcoming-appointment-card:hover {
           transform: translateY(-2px);
           background: rgba(255, 255, 255, 0.04) !important;
-          border-color: rgba(212, 175, 55, 0.25) !important;
+          border-color: rgba(255, 255, 255, 0.25) !important;
           box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
         }
         .btn-premium-start {
           transition: all 0.25s ease !important;
-          box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+          box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
         }
         .btn-premium-start:hover {
           transform: scale(1.04);
-          box-shadow: 0 6px 18px rgba(212, 175, 55, 0.4);
+          box-shadow: 0 6px 18px rgba(255, 255, 255, 0.4);
           filter: brightness(1.1);
         }
 
@@ -1247,7 +1247,7 @@ const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, on
         display: 'flex', 
         flexDirection: 'column', 
         borderRadius: '32px', 
-        border: '1px solid rgba(212,175,55,0.2)', 
+        border: '1px solid rgba(255, 255, 255,0.2)', 
         padding: '32px',
         transform: isOpen ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(15px)',
         transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease',
@@ -1276,14 +1276,14 @@ const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, on
                     padding: '16px 20px',
                     borderRadius: '20px',
                     border: isSelected ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
-                    background: isSelected ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
+                    background: isSelected ? 'rgba(255, 255, 255,0.06)' : 'rgba(255,255,255,0.02)',
                     textAlign: 'left',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '16px',
                     width: '100%',
-                    boxShadow: isSelected ? '0 0 15px rgba(212,175,55,0.08)' : 'none'
+                    boxShadow: isSelected ? '0 0 15px rgba(255, 255, 255,0.08)' : 'none'
                   }}
                 >
                   <div style={{ 
@@ -1330,10 +1330,10 @@ const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, on
                             fontSize: '9.5px', 
                             fontWeight: '700',
                             color: isSelected ? 'var(--gold-primary)' : 'rgba(255,255,255,0.5)',
-                            backgroundColor: isSelected ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.04)',
+                            backgroundColor: isSelected ? 'rgba(255, 255, 255,0.1)' : 'rgba(255,255,255,0.04)',
                             padding: '4px 10px',
                             borderRadius: '8px',
-                            border: isSelected ? '1px solid rgba(212,175,55,0.25)' : '1px solid rgba(255,255,255,0.05)',
+                            border: isSelected ? '1px solid rgba(255, 255, 255,0.25)' : '1px solid rgba(255,255,255,0.05)',
                             whiteSpace: 'nowrap',
                             letterSpacing: '0.3px'
                           }}>

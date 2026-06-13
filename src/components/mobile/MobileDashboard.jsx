@@ -95,7 +95,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
       template.includes('ï¿½') ||
       /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/.test(template);
     if (isCorrupted) {
-      template = `¡Hola {name}! ${String.fromCodePoint(0x1F389)} Te deseamos un muy feliz cumpleaños de parte de todo el equipo de Astro Barbershop. ${String.fromCodePoint(0x1F488)} ¡Que tengas un día excelente!`;
+      template = `¡Hola {name}! ${String.fromCodePoint(0x1F389)} Te deseamos un muy feliz cumpleaños de parte de todo el equipo de Panda Barbershop. ${String.fromCodePoint(0x1F488)} ¡Que tengas un día excelente!`;
       localStorage.setItem('astro_default_bday_message', template);
     }
     const whatsappMsg = template.replace('{name}', person.name);
@@ -298,7 +298,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
             height: '42px',
             borderRadius: '50%',
             border: '1.5px solid var(--gold-primary)',
-            background: 'rgba(212,175,55,0.15)',
+            background: 'rgba(255, 255, 255,0.15)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -319,14 +319,14 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
           position: 'relative', 
           overflow: 'visible',
           background: 'linear-gradient(135deg, rgba(20, 20, 20, 0.9) 0%, rgba(42, 34, 15, 0.65) 100%)',
-          border: '1px solid rgba(212, 175, 55, 0.35)',
-          boxShadow: '0 16px 45px rgba(0, 0, 0, 0.75), inset 0 0 35px rgba(212, 175, 55, 0.08)',
+          border: '1px solid rgba(255, 255, 255, 0.35)',
+          boxShadow: '0 16px 45px rgba(0, 0, 0, 0.75), inset 0 0 35px rgba(255, 255, 255, 0.08)',
           transition: 'all 0.3s ease'
         }}>
           <div style={{ position: 'relative', zIndex: 2, maxWidth: '60%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               <div style={{ width: '12px', height: '2px', backgroundColor: 'var(--gold-primary)' }} />
-              <span style={{ fontSize: '10px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '1px', textTransform: 'uppercase' }}>PENSAMIENTO ASTRO</span>
+              <span style={{ fontSize: '10px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '1px', textTransform: 'uppercase' }}>PENSAMIENTO PANDA</span>
               <button 
                 onClick={() => setQuoteIndex((prev) => (prev + 1) % QUOTES.length)}
                 style={{ 
@@ -334,7 +334,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
                   display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
                   transition: 'transform 0.2s ease, background-color 0.2s ease'
                 }}
-                title="Descubrir otro Pensamiento Astro"
+                title="Descubrir otro Pensamiento Panda"
               >
                 <Rocket size={12} color="var(--gold-primary)" className="animate-pulse" />
               </button>
@@ -379,7 +379,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
             transform: 'translate(-50%, -50%)',
             width: '200px',
             height: '200px',
-            background: 'radial-gradient(circle, rgba(212, 175, 55, 0.14) 0%, rgba(212, 175, 55, 0.05) 35%, rgba(212, 175, 55, 0.01) 65%, transparent 100%)',
+            background: 'radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.05) 35%, rgba(255, 255, 255, 0.01) 65%, transparent 100%)',
             zIndex: 2,
             pointerEvents: 'none'
           }} />
@@ -404,7 +404,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
               maxHeight: '130%', // Pop up to prevent any top cut-offs
               objectFit: 'contain',
               zIndex: 3,
-              filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.85)) drop-shadow(0 0 20px rgba(212, 175, 55, 0.35))',
+              filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.85)) drop-shadow(0 0 20px rgba(255, 255, 255, 0.35))',
               animation: 'float 8s infinite ease-in-out'
             }} 
           />
@@ -455,7 +455,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
                 <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>
                   ${formatCurrency(m.current || 0)} <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>/ ${formatCurrency(m.goal)}</span>
                 </div>
-                <div style={{ fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                <div style={{ fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(255, 255, 255,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
                   {Math.min(Math.round(((m.current || 0) / m.goal) * 100), 100)}%
                 </div>
               </div>
@@ -552,8 +552,8 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
                         justifyContent: 'space-between', 
                         alignItems: 'center', 
                         padding: '10px 12px', 
-                        backgroundColor: 'rgba(212,175,55,0.08)', 
-                        border: '1px solid rgba(212,175,55,0.2)', 
+                        backgroundColor: 'rgba(255, 255, 255,0.08)', 
+                        border: '1px solid rgba(255, 255, 255,0.2)', 
                         borderRadius: '12px',
                         gap: '8px 10px'
                       }}
@@ -565,7 +565,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
                         >
                           {c.name}
                         </span>
-                        <span style={{ alignSelf: 'flex-start', fontSize: '8px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)', padding: '1px 4px', borderRadius: '3px' }}>
+                        <span style={{ alignSelf: 'flex-start', fontSize: '8px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(255, 255, 255,0.1)', padding: '1px 4px', borderRadius: '3px' }}>
                           CLIENTE
                         </span>
                       </div>
@@ -625,7 +625,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
       <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div style={{ fontWeight: '900', fontSize: '15px', color: '#ffffff', letterSpacing: '-0.3px', fontStyle: 'italic' }}>Tendencia de Ventas</div>
-          <div style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '900', backgroundColor: 'rgba(212, 175, 55, 0.1)', padding: '4px 10px', borderRadius: '8px' }}>DIARIA</div>
+          <div style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '900', backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '4px 10px', borderRadius: '8px' }}>DIARIA</div>
         </div>
         
         {/* Glow Line Chart in pure SVG */}
@@ -689,7 +689,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
         }}>
           <div className="glass-card animate-scale-in" style={{ width: '100%', maxWidth: '360px', padding: '30px', borderRadius: '28px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255, 255, 255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Target color="var(--gold-primary)" size={18} />
               </div>
               <h3 style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>Metas <span className="text-gold">Astro</span></h3>
@@ -752,10 +752,10 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
             width: '100%',
             maxWidth: '380px',
             background: 'linear-gradient(135deg, rgba(20, 20, 20, 0.95) 0%, rgba(10, 10, 10, 0.98) 100%)',
-            border: '1px solid rgba(212, 175, 55, 0.25)',
+            border: '1px solid rgba(255, 255, 255, 0.25)',
             borderRadius: '24px',
             padding: '20px',
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.05)',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 255, 255, 0.05)',
             position: 'relative'
           }}>
             {/* Header */}
@@ -930,7 +930,7 @@ const PodiumWidget = ({ title, icon, data, labelKey, scoreKey, scoreLabel, isCli
   return (
     <div className="glass-card" style={{ padding: '20px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '24px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '32px' }}>
-        <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {icon}
         </div>
         <h3 style={{ fontSize: '14px', fontWeight: '900', color: 'white' }}>{title.split(' ')[0]} <span className="text-gold">{title.split(' ')[1]}</span></h3>
@@ -1015,10 +1015,10 @@ const PodiumWidget = ({ title, icon, data, labelKey, scoreKey, scoreLabel, isCli
                 <div style={{ 
                   width: '100%', 
                   height: isFirst ? '40px' : isSecond ? '25px' : '15px', 
-                  background: 'linear-gradient(to top, rgba(212, 175, 55, 0.25), rgba(212, 175, 55, 0.08))',
+                  background: 'linear-gradient(to top, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.08))',
                   borderRadius: '6px 6px 0 0',
                   marginTop: '8px',
-                  border: '1px solid rgba(212, 175, 55, 0.25)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
                   borderBottom: 'none'
                 }} />
               </div>

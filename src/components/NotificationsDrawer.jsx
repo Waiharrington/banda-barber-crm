@@ -46,14 +46,14 @@ const NotificationsDrawer = ({ isOpen, onClose }) => {
     if (res === 'granted') {
       notificationService.sendNotification(
         '¡Permiso Activado! 🎉',
-        'Las notificaciones push del CRM de Astro Barber ya están activadas en este dispositivo.'
+        'Las notificaciones push del CRM de Panda Barber ya están activadas en este dispositivo.'
       );
     }
   };
 
   const handleSendTestNotification = () => {
     notificationService.sendNotification(
-      'Astro Barber CRM 🚀',
+      'Panda Barber CRM 🚀',
       '¡Funciona genial! Esta notificación llegará a tu teléfono o computadora de forma instantánea.'
     );
   };
@@ -89,7 +89,7 @@ const NotificationsDrawer = ({ isOpen, onClose }) => {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        borderLeft: '1px solid rgba(212,175,55,0.3)',
+        borderLeft: '1px solid rgba(255, 255, 255,0.3)',
         borderRadius: '0',
         background: 'rgba(18, 18, 18, 0.98)',
         boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
@@ -133,8 +133,8 @@ const NotificationsDrawer = ({ isOpen, onClose }) => {
             margin: '16px 24px 0 24px',
             padding: '16px',
             borderRadius: '16px',
-            background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(0,0,0,0.3))',
-            border: '1.5px solid rgba(212,175,55,0.4)',
+            background: 'linear-gradient(135deg, rgba(255, 255, 255,0.15), rgba(0,0,0,0.3))',
+            border: '1.5px solid rgba(255, 255, 255,0.4)',
             display: 'flex',
             flexDirection: 'column',
             gap: '12px'
@@ -212,7 +212,7 @@ const NotificationsDrawer = ({ isOpen, onClose }) => {
                 padding: '12px',
                 borderRadius: '12px',
                 background: 'rgba(255,255,255,0.03)',
-                border: '1px dashed rgba(212,175,55,0.3)',
+                border: '1px dashed rgba(255, 255, 255,0.3)',
                 color: 'var(--gold-primary)',
                 fontSize: '12px',
                 fontWeight: '800',
@@ -247,8 +247,8 @@ const NotificationsDrawer = ({ isOpen, onClose }) => {
                 style={{
                   padding: '16px',
                   borderRadius: '16px',
-                  background: n.read ? 'rgba(255,255,255,0.02)' : 'rgba(212,175,55,0.04)',
-                  border: n.read ? '1px solid rgba(255,255,255,0.05)' : '1.5px solid rgba(212,175,55,0.25)',
+                  background: n.read ? 'rgba(255,255,255,0.02)' : 'rgba(255, 255, 255,0.04)',
+                  border: n.read ? '1px solid rgba(255,255,255,0.05)' : '1.5px solid rgba(255, 255, 255,0.25)',
                   position: 'relative',
                   transition: 'all 0.2s'
                 }}

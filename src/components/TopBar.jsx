@@ -3,7 +3,8 @@ import {
   User, 
   Plus, 
   RefreshCw,
-  Bell
+  Bell,
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { notificationService } from '../services/notificationService';
@@ -19,7 +20,8 @@ const TopBar = ({
 }) => {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
-  const [activeBarber, setActiveBarber] = useState(null);
+  const [currentDateStr, setCurrentDateStr] = useState('');
+  const [currentDayStr, setCurrentDayStr] = useState('');
 
   useEffect(() => {
     const updateUnread = () => {
@@ -28,25 +30,41 @@ const TopBar = ({
       setUnreadCount(count);
     };
 
-    const handleBarberChange = (e) => {
-      setActiveBarber(e.detail);
-    };
-
     updateUnread();
     window.addEventListener('astro_new_notification', updateUnread);
-    window.addEventListener('astro_active_barber_changed', handleBarberChange);
+    
+    // Set current date in Spanish
+    const today = new Date();
+    const optionsDate = { year: 'numeric', month: 'long', day: 'numeric' };
+    const optionsDay = { weekday: 'long' };
+    
+    const rawDay = today.toLocaleDateString('es-ES', optionsDay);
+    const capitalizedDay = rawDay.charAt(0).toUpperCase() + rawDay.slice(1);
+    
+    setCurrentDateStr(`Hoy es ${today.toLocaleDateString('es-ES', optionsDate)}`);
+    setCurrentDayStr(capitalizedDay);
+
     return () => {
       window.removeEventListener('astro_new_notification', updateUnread);
-      window.removeEventListener('astro_active_barber_changed', handleBarberChange);
     };
   }, []);
-  
-  const getGreeting = () => {
-    const options = { timeZone: 'America/Caracas', hour: 'numeric', hour12: false };
-    const hour = parseInt(new Date().toLocaleString('en-US', options), 10);
-    if (hour >= 5 && hour < 12) return '¡Buenos días,';
-    if (hour >= 12 && hour < 19) return '¡Buenas tardes,';
-    return '¡Buenas noches,';
+
+  const getTabTitle = () => {
+    switch (activeTab) {
+      case 'my-profile': return 'Mi Perfil';
+      case 'scheduling': return 'Calendario';
+      case 'reception': return 'Citas / Recepción';
+      case 'checkout': return 'Caja / Punto de Venta';
+      case 'barber': return 'Panel de Barberos';
+      case 'clients': return 'Clientes';
+      case 'personnel': return 'Panda Team / Personal';
+      case 'services': return 'Servicios';
+      case 'inventory': return 'Inventario';
+      case 'finance': return 'Finanzas';
+      case 'reports': return 'Reportes';
+      case 'history': return 'Historial de Transacciones';
+      default: return '';
+    }
   };
 
   return (
@@ -54,100 +72,94 @@ const TopBar = ({
       display: 'flex', 
       justifyContent: 'space-between', 
       alignItems: 'center', 
-      marginBottom: '20px',
+      marginBottom: '14px',
       flexWrap: 'wrap',
       gap: '12px'
-    }}>
+    }} className="animate-fade-in">
+      
+      {/* Left side: Greeting for dashboard, or Tab Title for others */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div style={{ position: 'relative' }}>
-          <div style={{ 
-            width: '44px', 
-            height: '44px', 
-            borderRadius: '12px', 
-            backgroundColor: 'var(--gold-primary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: 'var(--gold-glow)'
-          }}>
-            {user?.image_url ? (
-              <img src={user.image_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} />
-            ) : (
-              <User color="black" size={22} />
-            )}
-          </div>
-          <div style={{ 
-            position: 'absolute', 
-            bottom: '-1px', 
-            right: '-1px', 
-            width: '12px', 
-            height: '12px', 
-            borderRadius: '50%', 
-            backgroundColor: isStoreOpen ? '#4caf50' : '#ff4d4d',
-            border: '2px solid var(--bg-primary)'
-          }} />
-        </div>
-        <div>
-          {activeTab === 'my-profile' ? (
-            <h1 style={{ fontSize: '22px', fontWeight: '950', letterSpacing: '-0.5px' }}>
-              Mi <span className="text-gold">Perfil</span>
+        {activeTab === 'dashboard' ? (
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <h1 style={{ fontSize: '20px', fontWeight: '800', color: 'white', letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+              Buenos días, Panda Barber <span style={{ fontSize: '16px' }}>🐼</span>
             </h1>
-          ) : (
-            <h1 style={{ fontSize: '22px', fontWeight: '950', letterSpacing: '-0.5px' }}>
-              ¡Hola, <span className="text-gold">
-                {user?.name?.split(' ')[0] || 'Administrador'}!
+            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: '500', marginTop: '2px' }}>
+              Aquí tienes el resumen de tu barbería.
+            </span>
+          </div>
+        ) : (
+          <div>
+            <h1 style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px', color: 'white' }}>
+              {getTabTitle()}
+            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+              <span style={{ fontSize: '10px', fontWeight: '800', color: '#4caf50', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                ● TIENDA ABIERTA
               </span>
-            </h1>
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-            <span style={{ fontSize: '11px', fontWeight: '800', color: isStoreOpen ? '#4caf50' : '#ff4d4d', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              ● TIENDA ABIERTA
-            </span>
-            <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>|</span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
-              {activeTab === 'my-profile' ? 'INFORMACIÓN PERSONAL' : 'PANEL CONTROL'}
-            </span>
+              <span style={{ color: 'rgba(255,255,255,0.1)', fontSize: '11px' }}>|</span>
+              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: '700', textTransform: 'uppercase' }}>
+                {activeTab}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
+      {/* Right side controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Date block on the right for dashboard */}
+        {activeTab === 'dashboard' && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', marginRight: '6px' }}>
+            <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)', fontWeight: '600', whiteSpace: 'nowrap' }}>
+              {currentDateStr}
+            </span>
+            <span style={{ fontSize: '11px', color: 'white', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+              {currentDayStr} <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>▾</span>
+            </span>
+          </div>
+        )}
+        
         {/* Rate Toggle Card */}
-        <div className="glass-card" style={{ padding: '8px', display: 'flex', alignItems: 'center', gap: '4px', borderRadius: '14px', border: '1px solid rgba(212,175,55,0.1)' }}>
+        <div className="glass-card" style={{ 
+          padding: '4px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '4px', 
+          borderRadius: '12px', 
+          border: '1px solid rgba(255,255,255,0.06)',
+          backgroundColor: 'rgba(255, 255, 255, 0.02)'
+        }}>
           {/* BCV Button */}
           <button
             onClick={() => onToggleRateType('bcv')}
             style={{
-              padding: '6px 14px',
-              borderRadius: '14px',
+              padding: '6px 12px',
+              borderRadius: '10px',
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '2px',
+              gap: '1px',
               transition: 'all 0.3s ease',
-              background: activeRateType === 'bcv' 
-                ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.05))' 
-                : 'transparent',
-              border: activeRateType === 'bcv' 
-                ? '1.5px solid var(--gold-primary)' 
-                : '1.5px solid transparent',
-              boxShadow: activeRateType === 'bcv' ? '0 0 15px rgba(212,175,55,0.15)' : 'none'
+              background: activeRateType === 'bcv' ? 'rgba(34, 197, 94, 0.08)' : 'transparent',
+              border: activeRateType === 'bcv' ? '1.5px solid #22c55e' : '1.5px solid transparent',
+              boxShadow: 'none'
             }}
           >
             <span style={{ 
-              fontSize: '9px', 
-              fontWeight: '900', 
-              color: activeRateType === 'bcv' ? 'var(--gold-primary)' : 'var(--text-muted)',
+              fontSize: '8px', 
+              fontWeight: '800', 
+              color: activeRateType === 'bcv' ? '#22c55e' : 'rgba(255,255,255,0.5)',
               letterSpacing: '0.5px'
             }}>
               BCV
             </span>
             <span style={{ 
-              fontSize: '13px', 
-              fontWeight: '950', 
-              color: activeRateType === 'bcv' ? 'var(--gold-primary)' : 'white'
+              fontSize: '12px', 
+              fontWeight: '800', 
+              color: activeRateType === 'bcv' ? '#22c55e' : 'white'
             }}>
               {rates.bcv > 0 ? rates.bcv.toFixed(2) : '—'}
             </span>
@@ -157,36 +169,32 @@ const TopBar = ({
           <button
             onClick={() => onToggleRateType('usdt')}
             style={{
-              padding: '6px 14px',
-              borderRadius: '14px',
+              padding: '6px 12px',
+              borderRadius: '10px',
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '2px',
+              gap: '1px',
               transition: 'all 0.3s ease',
-              background: activeRateType === 'usdt' 
-                ? 'linear-gradient(135deg, rgba(38,166,91,0.2), rgba(38,166,91,0.05))' 
-                : 'transparent',
-              border: activeRateType === 'usdt' 
-                ? '1.5px solid #26a65b' 
-                : '1.5px solid transparent',
-              boxShadow: activeRateType === 'usdt' ? '0 0 15px rgba(38,166,91,0.15)' : 'none'
+              background: activeRateType === 'usdt' ? 'rgba(34, 197, 94, 0.08)' : 'transparent',
+              border: activeRateType === 'usdt' ? '1.5px solid #22c55e' : '1.5px solid transparent',
+              boxShadow: 'none'
             }}
           >
             <span style={{ 
-              fontSize: '9px', 
-              fontWeight: '900', 
-              color: activeRateType === 'usdt' ? '#26a65b' : 'var(--text-muted)',
+              fontSize: '8px', 
+              fontWeight: '800', 
+              color: activeRateType === 'usdt' ? '#22c55e' : 'rgba(255,255,255,0.5)',
               letterSpacing: '0.5px'
             }}>
               USDT
             </span>
             <span style={{ 
-              fontSize: '13px', 
-              fontWeight: '950', 
-              color: activeRateType === 'usdt' ? '#26a65b' : 'white'
+              fontSize: '12px', 
+              fontWeight: '800', 
+              color: activeRateType === 'usdt' ? '#22c55e' : 'white'
             }}>
               {rates.usdt > 0 ? rates.usdt.toFixed(2) : '—'}
             </span>
@@ -194,20 +202,20 @@ const TopBar = ({
 
           {/* Gap indicator */}
           <div style={{ 
-            padding: '4px 10px',
+            padding: '4px 8px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             gap: '1px'
           }}>
-            <span style={{ fontSize: '8px', fontWeight: '800', color: 'var(--text-muted)' }}>GAP</span>
+            <span style={{ fontSize: '7px', fontWeight: '800', color: 'rgba(255,255,255,0.5)' }}>GAP</span>
             <span style={{ 
-              fontSize: '11px', 
-              fontWeight: '900', 
-              color: rates.gap > 10 ? '#ff4d4d' : '#4caf50',
-              backgroundColor: rates.gap > 10 ? 'rgba(255,77,77,0.1)' : 'rgba(76,175,80,0.1)',
+              fontSize: '10px', 
+              fontWeight: '950', 
+              color: rates.gap > 10 ? '#ef4444' : '#22c55e',
+              backgroundColor: rates.gap > 10 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
               padding: '2px 6px',
-              borderRadius: '4px'
+              borderRadius: '6px'
             }}>
               {rates.gap > 0 ? rates.gap.toFixed(1) : '0'}%
             </span>
@@ -218,62 +226,97 @@ const TopBar = ({
         <button
           onClick={onOpenNotifications}
           style={{
-            width: '52px',
-            height: '52px',
-            borderRadius: '16px',
-            background: 'rgba(255, 255, 255, 0.03)',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: 'transparent',
             border: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
             position: 'relative',
-            color: unreadCount > 0 ? 'var(--gold-primary)' : 'white',
+            color: 'white',
             transition: 'all 0.2s',
-            boxShadow: unreadCount > 0 ? '0 0 15px rgba(212,175,55,0.1)' : 'none'
           }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
         >
-          <Bell size={20} />
+          <Bell size={18} />
           {unreadCount > 0 && (
             <div style={{
               position: 'absolute',
-              top: '10px',
-              right: '10px',
-              backgroundColor: '#ff4d4d',
-              color: 'white',
-              fontSize: '9px',
+              top: '2px',
+              right: '2px',
+              backgroundColor: 'white',
+              color: 'black',
+              fontSize: '8px',
               fontWeight: '900',
               borderRadius: '50%',
-              minWidth: '16px',
-              height: '16px',
+              width: '14px',
+              height: '14px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 2px',
-              border: '2px solid var(--bg-primary)',
-              animation: 'pulse 2s infinite'
+              justifyContent: 'center'
             }}>
               {unreadCount}
             </div>
           )}
         </button>
-        
-        <button 
-          className="btn-gold" 
-          onClick={onOpenSale}
-          style={{ 
-            height: '52px', 
-            padding: '0 24px', 
-            borderRadius: '16px', 
-            fontWeight: '900',
+
+        {/* Calendar Button (mockup style) */}
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('astro_navigate', { detail: 'scheduling' }))}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: 'transparent',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            fontSize: '13px'
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: 'white',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <Calendar size={18} />
+        </button>
+
+        {/* "+ Nueva cita" rounded button (mockup style) */}
+        <button
+          onClick={onOpenSale}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '10px 20px',
+            borderRadius: '100px',
+            background: 'var(--gold-gradient)',
+            border: 'none',
+            color: '#000000',
+            fontWeight: '750',
+            fontSize: '13px',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: '0 4px 12px rgba(255, 255, 255, 0.08)',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.boxShadow = '0 6px 18px rgba(255, 255, 255, 0.15)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 255, 255, 0.08)';
           }}
         >
-          <Plus size={20} /> Nueva Operación Astro
+          <Plus size={16} strokeWidth={2.5} />
+          Nueva cita
         </button>
+
       </div>
     </div>
   );

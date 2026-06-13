@@ -1,11 +1,11 @@
-// Service Worker para la PWA de Astro Barber CRM
+// Service Worker para la PWA de Panda Barber Studio
 self.addEventListener('push', function(event) {
-  let data = { title: 'Astro Barber CRM', body: 'Nueva notificación recibida.' };
+  let data = { title: 'Panda Barber Studio', body: 'Nueva notificación recibida.' };
   if (event.data) {
     try {
       data = event.data.json();
     } catch (e) {
-      data = { title: 'Astro Barber CRM', body: event.data.text() };
+      data = { title: 'Panda Barber Studio', body: event.data.text() };
     }
   }
 

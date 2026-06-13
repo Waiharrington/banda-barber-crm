@@ -207,7 +207,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
               }
             }} 
             style={{ 
-              backgroundColor: 'rgba(212, 175, 55, 0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(212, 175, 55, 0.2)',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)', color: 'var(--gold-primary)', border: '1px solid rgba(255, 255, 255, 0.2)',
               flex: isMobile ? '1 1 45%' : 'none', justifyContent: 'center', fontSize: isMobile ? '13px' : '14px', padding: isMobile ? '12px 8px' : '12px 16px', whiteSpace: 'nowrap'
             }}
           >
@@ -480,7 +480,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
           <p style={{ color: 'var(--text-muted)', fontSize: '18px' }}>No hay productos que coincidan.</p>
         </div>
       ) : viewMode === 'list' ? (
-        <div className="animate-slide-up" style={{ background: 'rgba(28, 28, 30, 0.95)', padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
+        <div className="animate-slide-up" style={{ background: 'rgba(28, 28, 30, 0.95)', padding: '0', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
             <div style={{ width: '100%', overflowX: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'auto' }}>
                 <thead>
@@ -537,7 +537,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                           </button>
                           <button 
                             onClick={() => setEditingItem(item)}
-                            className="action-btn" style={{ width: isMobile ? '28px' : '32px', height: isMobile ? '28px' : '32px', padding: 0, backgroundColor: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)' }}
+                            className="action-btn" style={{ width: isMobile ? '28px' : '32px', height: isMobile ? '28px' : '32px', padding: 0, backgroundColor: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)' }}
                           >
                             <Edit3 size={14} />
                           </button>
@@ -563,9 +563,9 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
               <div key={item.id} className="glass-card inventory-card animate-scale-in" style={{ 
                 position: 'relative',
                 borderRadius: '24px',
-                border: isLowStock ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid rgba(212, 175, 55, 0.1)',
-                boxShadow: isLowStock ? '0 10px 30px rgba(212, 175, 55, 0.1)' : '0 10px 30px rgba(0,0,0,0.2)',
-                background: isLowStock ? 'linear-gradient(135deg, rgba(28,28,30,0.9), rgba(212, 175, 55, 0.05))' : 'var(--bg-secondary)'
+                border: isLowStock ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: isLowStock ? '0 10px 30px rgba(255, 255, 255, 0.1)' : '0 10px 30px rgba(0,0,0,0.2)',
+                background: isLowStock ? 'linear-gradient(135deg, rgba(28,28,30,0.9), rgba(255, 255, 255, 0.05))' : 'var(--bg-secondary)'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -612,7 +612,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                     width: '64px', 
                     height: '64px', 
                     borderRadius: '16px', 
-                    background: item.image_url ? 'rgba(255,255,255,0.02)' : 'linear-gradient(135deg, rgba(212,175,55,0.08), rgba(0,0,0,0.4))', 
+                    background: item.image_url ? 'rgba(255,255,255,0.02)' : 'linear-gradient(135deg, rgba(255, 255, 255,0.08), rgba(0,0,0,0.4))', 
                     overflow: 'hidden',
                     border: '1px solid rgba(255,255,255,0.1)',
                     boxShadow: 'inset 0 0 10px rgba(0,0,0,0.5)',
@@ -634,10 +634,10 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                           fontSize: '10px', 
                           fontWeight: '800', 
                           padding: '4px 8px', 
-                          backgroundColor: 'rgba(212,175,55,0.1)', 
+                          backgroundColor: 'rgba(255, 255, 255,0.1)', 
                           color: 'var(--gold-primary)', 
                           borderRadius: '8px',
-                          border: '1px solid rgba(212,175,55,0.2)'
+                          border: '1px solid rgba(255, 255, 255,0.2)'
                         }}>
                           ASIGNADA A {staff.find(s => s.id === item.staff_id)?.name.split(' ')[0].toUpperCase() || 'DESCONOCIDO'}
                         </div>
@@ -711,7 +711,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                     <span style={{ 
                       fontSize: '18px', fontWeight: '950', minWidth: '40px', textAlign: 'center', 
                       color: isLowStock ? 'var(--gold-primary)' : 'white',
-                      textShadow: isLowStock ? '0 0 10px rgba(212,175,55,0.5)' : 'none'
+                      textShadow: isLowStock ? '0 0 10px rgba(255, 255, 255,0.5)' : 'none'
                     }}>
                       {item.stock}
                     </span>
@@ -766,7 +766,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
       <AnimatedModal isOpen={showHistoryModal}>
         {(overlayClass, cardClass) => (
           <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: isMobile ? '12px' : '20px' }}>
-            <div className={`glass-card ${cardClass}`} style={{ maxWidth: '800px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(212,175,55,0.3)', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden' }}>
+            <div className={`glass-card ${cardClass}`} style={{ maxWidth: '800px', width: '100%', borderRadius: '32px', border: '1.5px solid rgba(255, 255, 255,0.3)', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', padding: isMobile ? '24px 20px 0 20px' : '24px 32px 0 32px', gap: '16px' }}>
                 <div>
                   <h2 style={{ 

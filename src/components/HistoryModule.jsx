@@ -138,7 +138,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
             boxShadow: '0 4px 24px rgba(0,0,0,0.15)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: isMobile ? '14px' : '20px' }}>
-              <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', display: 'flex' }}>
+              <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', display: 'flex' }}>
                 <User size={16} />
               </div>
               <span style={{ fontSize: '12px', fontWeight: '900', color: 'white', letterSpacing: '1px', textTransform: 'uppercase' }}>
@@ -176,7 +176,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
             boxShadow: '0 4px 24px rgba(0,0,0,0.15)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: isMobile ? '14px' : '20px' }}>
-              <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', display: 'flex' }}>
+              <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', display: 'flex' }}>
                 <Scissors size={16} />
               </div>
               <span style={{ fontSize: '12px', fontWeight: '900', color: 'white', letterSpacing: '1px', textTransform: 'uppercase' }}>
@@ -227,7 +227,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                       border: '1px solid rgba(255,255,255,0.04)' 
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '8px', fontWeight: '900', color: 'var(--gold-primary)', background: 'rgba(212,175,55,0.1)', borderRadius: '4px', padding: '2px 4px' }}>EXTRA</span>
+                        <span style={{ fontSize: '8px', fontWeight: '900', color: 'var(--gold-primary)', background: 'rgba(255, 255, 255,0.1)', borderRadius: '4px', padding: '2px 4px' }}>EXTRA</span>
                         <span style={{ color: 'white', fontWeight: '700' }}>{ex.service_extras?.name}</span>
                       </div>
                       <span style={{ fontWeight: '800', color: 'var(--gold-primary)', whiteSpace: 'nowrap' }}>
@@ -294,12 +294,12 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
             padding: isMobile ? '16px' : '24px',
             borderRadius: '24px',
             background: 'linear-gradient(135deg, rgba(20,20,22,0.85) 0%, rgba(10,10,12,0.95) 100%)',
-            border: '1px solid rgba(212,175,55,0.15)',
+            border: '1px solid rgba(255, 255, 255,0.15)',
             boxShadow: '0 8px 32px 0 rgba(0,0,0,0.4)'
           }}>
             {/* Ticket Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '16px' }}>
-              <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', display: 'flex' }}>
+              <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', display: 'flex' }}>
                 <TrendingUp size={16} />
               </div>
               <div>
@@ -437,7 +437,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                     const rate = Number(item.exchange_rate || rates?.bcv || rates?.usd || 550);
 
                     return (
-                      <div style={{ marginTop: '8px', padding: '14px', borderRadius: '16px', background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.18)', boxShadow: 'inset 0 0 12px rgba(212,175,55,0.05)' }}>
+                      <div style={{ marginTop: '8px', padding: '14px', borderRadius: '16px', background: 'rgba(255, 255, 255,0.08)', border: '1px solid rgba(255, 255, 255,0.18)', boxShadow: 'inset 0 0 12px rgba(255, 255, 255,0.05)' }}>
                         <div style={{ 
                           display: 'flex', 
                           flexDirection: isMobile ? 'column' : 'row', 
@@ -481,7 +481,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(212,175,55,0.05)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.1)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255,0.05)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255,0.1)' }}>
                     <span style={{ fontSize: '13px', color: 'var(--gold-primary)', fontWeight: '900' }}>Tu Propina</span>
                     <div style={{ textAlign: 'right' }}>
                       <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)', whiteSpace: 'nowrap' }}>
@@ -507,7 +507,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
               borderLeft: '4px solid var(--gold-primary)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', display: 'flex' }}>
+                <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', display: 'flex' }}>
                   <Camera size={16} />
                 </div>
                 <span style={{ fontSize: '12px', fontWeight: '900', color: 'white', letterSpacing: '1px', textTransform: 'uppercase' }}>
@@ -633,9 +633,9 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                 style={{
                   padding: '16px',
                   borderRadius: '20px',
-                  background: isSelected ? 'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(28,28,30,0.98) 100%)' : 'rgba(28, 28, 30, 0.98)',
-                  border: isSelected ? '1px solid rgba(212,175,55,0.25)' : '1px solid rgba(255,255,255,0.05)',
-                  boxShadow: isSelected ? '0 8px 32px 0 rgba(212,175,55,0.05)' : '0 4px 16px 0 rgba(0,0,0,0.25)'
+                  background: isSelected ? 'linear-gradient(135deg, rgba(255, 255, 255,0.06) 0%, rgba(28,28,30,0.98) 100%)' : 'rgba(28, 28, 30, 0.98)',
+                  border: isSelected ? '1px solid rgba(255, 255, 255,0.25)' : '1px solid rgba(255,255,255,0.05)',
+                  boxShadow: isSelected ? '0 8px 32px 0 rgba(255, 255, 255,0.05)' : '0 4px 16px 0 rgba(0,0,0,0.25)'
                 }}
               >
                 {/* Clickable Header Area */}
@@ -727,7 +727,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
                         style={{ 
                           borderBottom: '1px solid rgba(255,255,255,0.03)', 
                           cursor: 'pointer',
-                          backgroundColor: isSelected ? 'rgba(212,175,55,0.05)' : 'transparent'
+                          backgroundColor: isSelected ? 'rgba(255, 255, 255,0.05)' : 'transparent'
                         }}
                       >
                         <td style={{ padding: '18px 24px', fontSize: '14px', fontWeight: '500', color: 'var(--text-secondary)' }}>
@@ -862,7 +862,7 @@ const ReceiptLine = ({ line, rate, formatCurrency }) => (
   <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '12px', alignItems: 'center', padding: '9px 0', borderBottom: '1px dashed rgba(255,255,255,0.07)' }}>
     <div style={{ minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-        <span style={{ fontSize: '9px', fontWeight: '900', color: line.isTip ? 'var(--gold-primary)' : 'var(--text-muted)', textTransform: 'uppercase', background: line.isTip ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.04)', borderRadius: '6px', padding: '3px 6px', flexShrink: 0 }}>
+        <span style={{ fontSize: '9px', fontWeight: '900', color: line.isTip ? 'var(--gold-primary)' : 'var(--text-muted)', textTransform: 'uppercase', background: line.isTip ? 'rgba(255, 255, 255,0.1)' : 'rgba(255,255,255,0.04)', borderRadius: '6px', padding: '3px 6px', flexShrink: 0 }}>
           {line.type}
         </span>
         <span style={{ fontSize: '12px', fontWeight: '800', color: 'white', whiteSpace: 'normal', wordBreak: 'break-word' }}>

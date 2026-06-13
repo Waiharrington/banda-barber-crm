@@ -185,9 +185,9 @@ const AstroDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
             padding: '16px',
             backgroundColor: 'rgba(22, 22, 22, 0.95)',
             backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(212, 175, 55, 0.2)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
             borderRadius: '16px',
-            boxShadow: '0 10px 40px rgba(0,0,0,0.8), 0 0 15px rgba(212, 175, 55, 0.15)'
+            boxShadow: '0 10px 40px rgba(0,0,0,0.8), 0 0 15px rgba(255, 255, 255, 0.15)'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

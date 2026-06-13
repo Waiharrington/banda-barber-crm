@@ -75,7 +75,7 @@ const AstroTimePicker = ({ value, onChange, label = "HORA" }) => {
           cursor: 'pointer',
           transition: 'all 0.2s ease',
           gap: '12px',
-          boxShadow: isOpen ? '0 0 15px rgba(212,175,55,0.1)' : 'none'
+          boxShadow: isOpen ? '0 0 15px rgba(255, 255, 255,0.1)' : 'none'
         }}
       >
         <Clock size={16} color={isOpen ? 'var(--gold-primary)' : 'var(--text-muted)'} />
@@ -91,7 +91,7 @@ const AstroTimePicker = ({ value, onChange, label = "HORA" }) => {
           right: 0,
           backgroundColor: 'rgba(28, 28, 30, 0.95)',
           backdropFilter: 'blur(20px)',
-          border: '1.5px solid rgba(212, 175, 55, 0.3)',
+          border: '1.5px solid rgba(255, 255, 255, 0.3)',
           borderRadius: '24px',
           padding: '20px',
           zIndex: 1000,
@@ -121,14 +121,14 @@ const AstroTimePicker = ({ value, onChange, label = "HORA" }) => {
           <div 
             onClick={toggleAmPm}
             style={{
-              backgroundColor: 'rgba(212, 175, 55, 0.1)',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
               padding: '10px 14px',
               borderRadius: '12px',
               color: 'var(--gold-primary)',
               fontWeight: '900',
               fontSize: '14px',
               cursor: 'pointer',
-              border: '1px solid rgba(212,175,55,0.2)',
+              border: '1px solid rgba(255, 255, 255,0.2)',
               marginLeft: '10px'
             }}
           >

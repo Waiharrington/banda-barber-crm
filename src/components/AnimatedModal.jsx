@@ -45,8 +45,8 @@ const AnimatedModal = ({ isOpen, children }) => {
 
   if (!mounted) return null;
 
-  const overlayClass = phase === 'enter' ? 'modal-overlay-enter' : 'modal-overlay-exit';
-  const cardClass    = phase === 'enter' ? 'modal-card-enter'    : 'modal-card-exit';
+  const overlayClass = (phase === 'enter' ? 'modal-overlay-enter' : 'modal-overlay-exit') + ' global-modal-overlay';
+  const cardClass    = (phase === 'enter' ? 'modal-card-enter'    : 'modal-card-exit') + ' global-modal-card';
 
   return createPortal(
     <ModalShield active={isOpen}>

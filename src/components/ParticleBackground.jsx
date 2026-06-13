@@ -51,7 +51,7 @@ const ParticleBackground = () => {
         color: isSparkle 
           ? '#ffffff' // pure white sparkle
           : Math.random() > 0.4 
-            ? '#d4af37' // classic gold
+            ? '#ffffff' // classic gold
             : '#f9d976', // lighter gold
         isSparkle,
         twinkleSpeed: Math.random() * 0.02 + 0.005,
@@ -68,7 +68,7 @@ const ParticleBackground = () => {
 
     // Ambient glow orbs in the background
     const orbs = [
-      { x: canvas.width * 0.2, y: canvas.height * 0.3, radius: 250, color: 'rgba(212, 175, 55, 0.03)', speedX: 0.05, speedY: 0.03, angle: 0 },
+      { x: canvas.width * 0.2, y: canvas.height * 0.3, radius: 250, color: 'rgba(255, 255, 255, 0.03)', speedX: 0.05, speedY: 0.03, angle: 0 },
       { x: canvas.width * 0.8, y: canvas.height * 0.7, radius: 300, color: 'rgba(138, 109, 28, 0.02)', speedX: -0.04, speedY: 0.05, angle: Math.PI }
     ];
 
@@ -76,7 +76,7 @@ const ParticleBackground = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // 1. Draw subtle Grid system directly on canvas for optimized rendering
-      ctx.strokeStyle = 'rgba(212, 175, 55, 0.012)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.012)';
       ctx.lineWidth = 1;
       const gridSize = 60;
       

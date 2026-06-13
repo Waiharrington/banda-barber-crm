@@ -125,7 +125,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         // Draw header branding
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(16);
-        pdf.setTextColor(212, 175, 55);
+        pdf.setTextColor(255, 255, 255);
         pdf.text("ASTRO BARBERSHOP", 15, 18);
 
         pdf.setFont("helvetica", "normal");
@@ -134,14 +134,14 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         pdf.text("REPORTE OPERATIVO DE ANALÍTICA Y RENDIMIENTO", 15, 23);
 
         // Header horizontal separator line
-        pdf.setDrawColor(212, 175, 55);
+        pdf.setDrawColor(255, 255, 255);
         pdf.setLineWidth(0.5);
         pdf.line(15, 28, 195, 28);
 
         // Footer
         pdf.setFontSize(7);
         pdf.setTextColor(112, 112, 117);
-        pdf.text(`Astro Barbershop  \u2022  Reporte generado el ${dateLabel} a las ${timeLabel}`, 15, 290);
+        pdf.text(`Panda Barbershop  \u2022  Reporte generado el ${dateLabel} a las ${timeLabel}`, 15, 290);
         pdf.text(`Página ${pageNum} de ${totalPagesCount}`, 195, 290, { align: 'right' });
       };
 
@@ -210,10 +210,10 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
       // Split layout for Desglose Operativo
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(11);
-      pdf.setTextColor(212, 175, 55);
+      pdf.setTextColor(255, 255, 255);
       pdf.text("DESGLOSE OPERATIVO", 15, 110);
       
-      pdf.setDrawColor(212, 175, 55);
+      pdf.setDrawColor(255, 255, 255);
       pdf.setLineWidth(0.2);
       pdf.line(15, 112, 195, 112);
 
@@ -230,7 +230,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         pdf.text(String(b.name || ''), 15, barberY);
         
         pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(212, 175, 55);
+        pdf.setTextColor(255, 255, 255);
         pdf.text(`${b.count} serv.`, 95, barberY, { align: 'right' });
 
         // Draw custom progress bar
@@ -238,7 +238,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         pdf.rect(15, barberY + 2, 80, 1.5, 'F');
         
         const pct = b.count / maxBarberCount;
-        pdf.setFillColor(212, 175, 55);
+        pdf.setFillColor(255, 255, 255);
         pdf.rect(15, barberY + 2, Math.max(2, 80 * pct), 1.5, 'F');
 
         barberY += 12;
@@ -259,7 +259,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         pdf.text(String(dayLabel || ''), 110, dayY);
 
         pdf.setFont("helvetica", "bold");
-        pdf.setTextColor(212, 175, 55);
+        pdf.setTextColor(255, 255, 255);
         pdf.text(`${d.count}`, 195, dayY, { align: 'right' });
 
         // Draw progress bar
@@ -267,7 +267,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         pdf.rect(110, dayY + 2, 85, 1.5, 'F');
 
         const pct = d.count / maxDayCount;
-        pdf.setFillColor(212, 175, 55);
+        pdf.setFillColor(255, 255, 255);
         pdf.rect(110, dayY + 2, Math.max(1, 85 * pct), 1.5, 'F');
 
         dayY += 9;
@@ -276,7 +276,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
       // Assistant Washing Section
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(10);
-      pdf.setTextColor(212, 175, 55);
+      pdf.setTextColor(255, 255, 255);
       pdf.text("RENDIMIENTO DE ASISTENTES DE LAVADO", 15, 205);
       pdf.line(15, 207, 195, 207);
 
@@ -314,7 +314,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
 
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(11);
-      pdf.setTextColor(212, 175, 55);
+      pdf.setTextColor(255, 255, 255);
       pdf.text("HISTORIAL DE TRANSACCIONES DEL PERÍODO", 15, 34);
       pdf.line(15, 36, 195, 36);
 
@@ -322,7 +322,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
       pdf.setFillColor(18, 18, 21);
       pdf.rect(15, 40, 180, 7, 'F');
       pdf.setFontSize(8);
-      pdf.setTextColor(212, 175, 55);
+      pdf.setTextColor(255, 255, 255);
       pdf.text("FECHA", 18, 45);
       pdf.text("DESCRIPCIÓN / SERVICIO", 50, 45);
       pdf.text("PERSONAL INVOLUCRADO", 125, 45);
@@ -1002,7 +1002,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
             onClick={handleCaptureFullPage}
             disabled={generatingPdf}
             style={{ 
-              backgroundColor: generatingPdf ? 'rgba(212,175,55,0.15)' : 'var(--bg-tertiary)', 
+              backgroundColor: generatingPdf ? 'rgba(255, 255, 255,0.15)' : 'var(--bg-tertiary)', 
               border: `1px solid ${generatingPdf ? 'var(--gold-primary)' : 'var(--border-color)'}`, 
               color: generatingPdf ? 'var(--gold-primary)' : 'white', 
               padding: '10px 16px', 
@@ -1025,7 +1025,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           backgroundColor: 'rgba(18, 18, 21, 0.95)',
           padding: '24px',
           borderRadius: '24px',
-          border: '1px solid rgba(212, 175, 55, 0.3)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
           marginBottom: '32px',
           color: 'white'
         }}>
@@ -1064,7 +1064,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
         gap: '16px',
-        border: '1px solid rgba(212,175,55,0.15)',
+        border: '1px solid rgba(255, 255, 255,0.15)',
         background: 'rgba(255, 255, 255, 0.01)'
       }}>
         {/* Date Range Selector */}
@@ -1159,7 +1159,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
                   fontWeight: '800',
                   whiteSpace: 'nowrap',
                   cursor: 'pointer',
-                  backgroundColor: 'rgba(212,175,55,0.15)',
+                  backgroundColor: 'rgba(255, 255, 255,0.15)',
                   border: '1px solid var(--gold-primary)',
                   color: 'var(--gold-primary)',
                   display: 'flex',
@@ -1174,7 +1174,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
                   e.currentTarget.style.color = 'black';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(212,175,55,0.15)';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255,0.15)';
                   e.currentTarget.style.color = 'var(--gold-primary)';
                 }}
               >
@@ -1377,9 +1377,6 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
               const pct = (b.count / maxBarberCount) * 80;
               return (
                 <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
-                  <div style={{ width: '70px', fontSize: '12px', fontWeight: '800', color: '#ffffff', textAlign: 'left' }}>
-                    {b.name}
-                  </div>
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
                     <div style={{
                       width: `${pct}%`,
@@ -1390,7 +1387,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
                       alignItems: 'center',
                       justifyContent: 'flex-end',
                       paddingRight: '12px',
-                      boxShadow: '0 4px 10px rgba(212,175,55,0.15)'
+                      boxShadow: '0 4px 10px rgba(255, 255, 255,0.15)'
                     }}>
                       <span style={{ fontSize: '11px', fontWeight: '950', color: '#000000' }}>{b.count}</span>
                     </div>
@@ -1426,7 +1423,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
                     height: `${Math.max(h, 4)}px`, 
                     background: 'var(--gold-gradient)', 
                     borderRadius: '2px 2px 0 0',
-                    boxShadow: '0 4px 10px rgba(212,175,55,0.15)'
+                    boxShadow: '0 4px 10px rgba(255, 255, 255,0.15)'
                   }}></div>
                   <span style={{ fontSize: '9px', fontWeight: '800', color: '#8c8c8c', textTransform: 'lowercase', marginTop: '2px' }}>
                     {d.name}
@@ -1459,7 +1456,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           <div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#d4af37', color: '#000000', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', fontStyle: 'italic' }}>
+                <tr style={{ background: '#ffffff', color: '#000000', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', fontStyle: 'italic' }}>
                   <th style={{ padding: '12px 16px', textAlign: 'left', borderRadius: '4px 0 0 4px' }}>SERVICIO</th>
                   <th style={{ padding: '12px 16px', textAlign: 'right' }}>Ref $</th>
                   <th style={{ padding: '12px 16px', textAlign: 'right', borderRadius: '0 4px 4px 0' }}>%</th>

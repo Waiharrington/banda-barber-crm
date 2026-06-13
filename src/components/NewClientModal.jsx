@@ -78,7 +78,7 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
               maxWidth: '450px', 
               width: '100%', 
               borderRadius: '32px', 
-              border: '1.5px solid rgba(212,175,55,0.3)',
+              border: '1.5px solid rgba(255, 255, 255,0.3)',
               padding: '32px',
               position: 'relative'
             }}>

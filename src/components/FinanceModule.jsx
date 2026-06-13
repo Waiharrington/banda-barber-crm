@@ -527,7 +527,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
     const desc = t.description || "";
     
     let clientName = meta.clientName || desc.split(' - Cliente: ')[1]?.split(' - ')[0] || "S/N";
-    let serviceName = meta.serviceName || desc.split(' - Servi: ')[1] || (t.category === 'Ventas Astro' || t.category === 'Ventas Pro' ? "Servicio" : t.description);
+    let serviceName = meta.serviceName || desc.split(' - Servi: ')[1] || (t.category === 'Ventas Panda' || t.category === 'Ventas Pro' ? "Servicio" : t.description);
     let barbero = meta.staffInvolved?.find(s => s.role?.includes('Barbero'))?.name || 
                   meta.staffInvolved?.[0]?.name || 
                   "N/A";
@@ -963,7 +963,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
         <div className="glass-card" style={{ 
           textAlign: 'center', 
           padding: isMobile ? '24px' : '32px',
-          border: '1px solid rgba(212, 175, 55, 0.2)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
           borderRadius: '24px',
           background: 'linear-gradient(145deg, rgba(28, 28, 30, 0.95) 0%, rgba(35, 35, 38, 0.98) 100%)',
           boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
@@ -1030,15 +1030,15 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
         marginBottom: '40px', 
         padding: '32px', 
         borderRadius: '28px',
-        background: 'linear-gradient(135deg, rgba(28,28,30,0.8), rgba(212,175,55,0.05))',
-        border: '1px solid rgba(212,175,55,0.1)'
+        background: 'linear-gradient(135deg, rgba(28,28,30,0.8), rgba(255, 255, 255,0.05))',
+        border: '1px solid rgba(255, 255, 255,0.1)'
       }}>
         <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '24px', flexDirection: isMobile ? 'column' : 'row' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Wallet size={20} color="black" />
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Cierre de Caja <span className="text-gold">Astro</span></h3>
+            <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Cierre de Caja <span className="text-gold">Panda</span></h3>
           </div>
           <div style={{ width: isMobile ? '100%' : '260px' }}>
             <AstroSelect
@@ -1115,7 +1115,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
               REF: ${formatCurrency(cashCloseCommissionDebtUsd, '')}
             </div>
           </div>
-          <div style={{ padding: '20px', backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: '20px', border: '1px solid var(--gold-primary)' }}>
+          <div style={{ padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.1)', borderRadius: '20px', border: '1px solid var(--gold-primary)' }}>
             <div style={{ fontSize: '10px', fontWeight: '900', color: 'black', backgroundColor: 'var(--gold-primary)', display: 'inline-block', padding: '2px 6px', borderRadius: '4px', marginBottom: '4px' }}>NETO REAL</div>
             <div style={{ fontSize: '24px', fontWeight: '950', color: 'white' }}>
               {formatCurrency(cashCloseNetRealUsd * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
@@ -1471,7 +1471,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                         onClick={() => setSelectedTxId(isExpanded ? null : t.id)}
                         className="table-row-hover" 
                         style={{ 
-                          backgroundColor: isExpanded ? 'rgba(212,175,55,0.05)' : 'rgba(255,255,255,0.02)',
+                          backgroundColor: isExpanded ? 'rgba(255, 255, 255,0.05)' : 'rgba(255,255,255,0.02)',
                           fontSize: '13px', 
                           cursor: 'pointer',
                           transition: 'all 0.2s',
@@ -1525,8 +1525,8 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                               margin: '0 16px', 
                               padding: '24px', 
                               borderRadius: '0 0 20px 20px',
-                              background: 'linear-gradient(180deg, rgba(212,175,55,0.05), transparent)',
-                              border: '1px solid rgba(212,175,55,0.1)',
+                              background: 'linear-gradient(180deg, rgba(255, 255, 255,0.05), transparent)',
+                              border: '1px solid rgba(255, 255, 255,0.1)',
                               borderTop: 'none'
                             }}>
                               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1.2fr', gap: '32px' }}>
@@ -1605,7 +1605,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                                 {/* Liquidación */}
                                 <div>
                                   <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', textTransform: 'uppercase' }}>Liquidación y Ganancias</div>
-                                  <div className="glass-card" style={{ padding: '20px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(212,175,55,0.1)', marginBottom: '24px' }}>
+                                  <div className="glass-card" style={{ padding: '20px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255, 255, 255,0.1)', marginBottom: '24px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                                       <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Venta Bruta (Serv + Ext + Prod)</span>
                                       <div style={{ textAlign: 'right' }}>
@@ -1664,9 +1664,9 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                                     </div>
 
                                     {/* GANANCIA ASTRO */}
-                                    <div style={{ marginTop: '16px', padding: '16px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                                    <div style={{ marginTop: '16px', padding: '16px', borderRadius: '12px', background: 'rgba(255, 255, 255,0.1)', border: '1px solid rgba(255, 255, 255,0.2)' }}>
                                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                        <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>Ganancia Astro</span>
+                                        <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>Ganancia Panda</span>
                                         <div style={{ textAlign: 'right' }}>
                                           <span style={{ fontSize: '16px', fontWeight: '950', color: '#32d74b' }}>
                                             {formatCurrency(((t.amount - (t.metadata?.tips_total || 0)) - (t.metadata?.staffInvolved?.reduce((acc, s) => acc + (s.commissionEarned || 0), 0) || 0)) * (t.exchange_rate || rates?.usd || 550), '')} BS
@@ -1676,7 +1676,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                                           </div>
                                         </div>
                                       </div>
-                                      <div style={{ fontSize: '12px', color: 'white', display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px dashed rgba(212,175,55,0.2)', paddingTop: '12px', marginTop: '12px' }}>
+                                      <div style={{ fontSize: '12px', color: 'white', display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px dashed rgba(255, 255, 255,0.2)', paddingTop: '12px', marginTop: '12px' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                           <span>Venta Bruta:</span>
                                           <span>{formatCurrency((t.amount - (t.metadata?.tips_total || 0)) * (t.exchange_rate || rates?.usd || 550), '')} BS</span>
@@ -1747,8 +1747,8 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     padding: '14px 16px', 
                     fontSize: '13px', 
                     borderRadius: '12px',
-                    background: 'rgba(212,175,55,0.1)',
-                    border: '1px solid rgba(212,175,55,0.3)',
+                    background: 'rgba(255, 255, 255,0.1)',
+                    border: '1px solid rgba(255, 255, 255,0.3)',
                     color: 'var(--gold-primary)',
                     fontWeight: '800',
                     display: 'flex',
@@ -1786,10 +1786,10 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
               </div>
             </div>
 
-            {/* ASTRO GENERAL RESULTS (Resultados Astro) */}
+            {/* ASTRO GENERAL RESULTS (Resultados Panda) */}
             <div className="glass-card animate-fade-in" style={{ 
-              background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.02) 100%)', 
-              border: '1px solid rgba(212,175,55,0.3)',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255,0.15) 0%, rgba(255, 255, 255,0.02) 100%)', 
+              border: '1px solid rgba(255, 255, 255,0.3)',
               borderRadius: '24px',
               padding: isMobile ? '20px' : '24px',
               marginBottom: '32px',
@@ -1803,7 +1803,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold-primary)' }}></div>
                   <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-primary)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-                    Resultados Astro ({
+                    Resultados Panda ({
                       payrollFilterDate === 'this_week' ? 'Semanal' :
                       payrollFilterDate === 'last_week' ? 'Semana Pasada' : 'Personalizado'
                     })
@@ -1843,7 +1843,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                         width: '40px', 
                         height: '40px', 
                         borderRadius: '12px', 
-                        background: st.isAssistant ? 'rgba(0,191,255,0.1)' : 'rgba(212,175,55,0.1)', 
+                        background: st.isAssistant ? 'rgba(0,191,255,0.1)' : 'rgba(255, 255, 255,0.1)', 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center', 
@@ -1986,7 +1986,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                         });
                       }}
                       disabled={st.balanceBs <= 0}
-                      style={{ flex: 1, minWidth: '70px', padding: '10px', borderRadius: '10px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', border: '1px solid var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: st.balanceBs > 0 ? 'pointer' : 'not-allowed', opacity: st.balanceBs > 0 ? 1 : 0.5 }}
+                      style={{ flex: 1, minWidth: '70px', padding: '10px', borderRadius: '10px', background: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', border: '1px solid var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: st.balanceBs > 0 ? 'pointer' : 'not-allowed', opacity: st.balanceBs > 0 ? 1 : 0.5 }}
                     >
                       <WalletCards size={16} /> <span style={{fontSize: '11px', fontWeight: '800'}}>Abonar</span>
                     </button>
@@ -2210,7 +2210,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     type="button" 
                     onClick={() => setIsCostsLocked(!isCostsLocked)}
                     style={{ 
-                      background: isCostsLocked ? 'rgba(212,175,55,0.1)' : 'var(--gold-primary)', 
+                      background: isCostsLocked ? 'rgba(255, 255, 255,0.1)' : 'var(--gold-primary)', 
                       color: isCostsLocked ? 'var(--gold-primary)' : 'black', 
                       border: 'none', 
                       width: '40px', 
@@ -2221,7 +2221,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       justifyContent: 'center', 
                       cursor: 'pointer', 
                       transition: 'all 0.3s ease',
-                      boxShadow: !isCostsLocked ? '0 0 15px rgba(212,175,55,0.3)' : 'none'
+                      boxShadow: !isCostsLocked ? '0 0 15px rgba(255, 255, 255,0.3)' : 'none'
                     }}
                     title={isCostsLocked ? "Desbloquear para editar" : "Bloquear edición"}
                   >
@@ -2322,7 +2322,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                         extraCosts: [...(fixedCosts.extraCosts || []), { label: '', value: 0 }] 
                       });
                     }}
-                    style={{ gridColumn: 'span 2', background: 'rgba(212,175,55,0.1)', border: '1px dashed var(--gold-primary)', color: 'var(--gold-primary)', padding: '12px', borderRadius: '12px', cursor: isCostsLocked ? 'not-allowed' : 'pointer', fontWeight: '800', fontSize: '12px', marginTop: '8px', opacity: isCostsLocked ? 0.5 : 1, transition: 'all 0.3s' }}
+                    style={{ gridColumn: 'span 2', background: 'rgba(255, 255, 255,0.1)', border: '1px dashed var(--gold-primary)', color: 'var(--gold-primary)', padding: '12px', borderRadius: '12px', cursor: isCostsLocked ? 'not-allowed' : 'pointer', fontWeight: '800', fontSize: '12px', marginTop: '8px', opacity: isCostsLocked ? 0.5 : 1, transition: 'all 0.3s' }}
                   >
                     + AGREGAR COSTO ADICIONAL
                   </button>
@@ -2518,7 +2518,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
                   <div>
                     <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Comprobante de Pago (Foto / Capture)</label>
-                    <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: payrollModal.file ? '12px' : '24px 16px', background: payrollModal.file ? 'rgba(50,215,75,0.05)' : 'rgba(212,175,55,0.05)', border: payrollModal.file ? '1px dashed rgba(50,215,75,0.3)' : '1px dashed rgba(212,175,55,0.3)', borderRadius: '16px', cursor: 'pointer', transition: 'all 0.3s' }}>
+                    <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: payrollModal.file ? '12px' : '24px 16px', background: payrollModal.file ? 'rgba(50,215,75,0.05)' : 'rgba(255, 255, 255,0.05)', border: payrollModal.file ? '1px dashed rgba(50,215,75,0.3)' : '1px dashed rgba(255, 255, 255,0.3)', borderRadius: '16px', cursor: 'pointer', transition: 'all 0.3s' }}>
                       <input type="file" accept="image/*" onChange={handleFileUpload} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10 }} />
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                         <span style={{ fontSize: payrollModal.file ? '16px' : '24px' }}>{payrollModal.file ? '✅' : '📸'}</span>
@@ -2667,7 +2667,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       const serviceFromDesc = descParts.find(s => s.toLowerCase().includes('servi:'))?.split(': ')[1];
 
                       const clientName = t.metadata?.clientName || clientFromDesc || 'S/N';
-                      const serviceName = t.metadata?.serviceName || serviceFromDesc || (t.category === 'Ventas Astro' ? 'Servicio' : t.description);
+                      const serviceName = t.metadata?.serviceName || serviceFromDesc || (t.category === 'Ventas Panda' ? 'Servicio' : t.description);
                       
                       const stInvolved = t.metadata?.staffInvolved?.find(s => String(s.staffId) === String(payrollDetail.staff.id));
                       const commBs = stInvolved?.commissionBs || 0;
@@ -2763,7 +2763,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                           </div>
 
                           {(t.metadata?.extras?.length > 0 || t.metadata?.products_sold?.length > 0) && (
-                            <div style={{ padding: '16px', background: 'rgba(212, 175, 55, 0.05)', borderRadius: '16px', marginBottom: '16px', border: '1px dashed rgba(212, 175, 55, 0.2)' }}>
+                            <div style={{ padding: '16px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '16px', marginBottom: '16px', border: '1px dashed rgba(255, 255, 255, 0.2)' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                                 <span style={{ color: 'var(--gold-primary)' }}>🛍️</span>
                                 <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>Detalle de Venta</div>

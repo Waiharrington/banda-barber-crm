@@ -46,8 +46,8 @@ const AstroDialog = ({
             width: '100%',
             padding: '32px',
             borderRadius: '28px',
-            border: '1.5px solid rgba(212, 175, 55, 0.3)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 20px rgba(212,175,55,0.1)',
+            border: '1.5px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 20px rgba(255, 255, 255,0.1)',
             textAlign: 'center',
             position: 'relative'
           }}>

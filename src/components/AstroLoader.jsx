@@ -6,7 +6,7 @@ const loadingTexts = [
   "Preparando la espuma perfecta...",
   "Calculando el desvanecido ideal...",
   "Encendiendo las luces de la estación...",
-  "Cargando la Astro Experience..."
+  "Cargando la Panda Experience..."
 ];
 
 const LOADER_MIN_DURATION_MS = 1200;
@@ -121,7 +121,7 @@ const AstroLoader = ({ visible }) => {
   const createParticles = (x, y, count = 2) => {
     if (!canvasRef.current) return;
     const colors = [
-      'rgba(212, 175, 55, 0.95)', // Gold
+      'rgba(255, 255, 255, 0.95)', // Gold
       'rgba(249, 217, 118, 0.9)',  // Soft Gold
       'rgba(255, 255, 255, 0.85)', // Magic White Sparkle
       'rgba(186, 140, 28, 0.7)'    // Dark Gold
@@ -286,7 +286,7 @@ const AstroLoader = ({ visible }) => {
             <defs>
               <linearGradient id="neonGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#f9d976" />
-                <stop offset="50%" stopColor="#d4af37" />
+                <stop offset="50%" stopColor="#ffffff" />
                 <stop offset="100%" stopColor="#b5891b" />
               </linearGradient>
             </defs>
@@ -297,14 +297,14 @@ const AstroLoader = ({ visible }) => {
             {/* Blades cross & pivots */}
             <line x1="32" y1="60" x2="68" y2="20" className="neon-stroke-draw" style={{ animationDelay: '0.2s' }} />
             <line x1="68" y1="60" x2="32" y2="20" className="neon-stroke-draw" style={{ animationDelay: '0.3s' }} />
-            <circle cx="50" cy="40" r="2" fill="#d4af37" />
+            <circle cx="50" cy="40" r="2" fill="#ffffff" />
           </svg>
         </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '280px', gap: '12px', zIndex: 2 }}>
         <div className="loader-title-neon" style={{ fontSize: '18px', letterSpacing: '4px', textAlign: 'center', fontWeight: '950', color: 'white', textTransform: 'uppercase' }}>
-          ASTRO EXPERIENCE
+          PANDA EXPERIENCE
         </div>
         
         {/* Dynamic Text */}
@@ -335,10 +335,10 @@ const AstroLoader = ({ visible }) => {
           {/* Golden Progress Fill */}
           <div style={{
             height: '100%',
-            background: 'linear-gradient(90deg, #d4af37, #f9d976, #d4af37)',
+            background: 'linear-gradient(90deg, #ffffff, #f9d976, #ffffff)',
             width: `${progress}%`,
             transition: 'width 0.1s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: '0 0 10px rgba(212, 175, 55, 0.8)'
+            boxShadow: '0 0 10px rgba(255, 255, 255, 0.8)'
           }} />
         </div>
         
@@ -356,7 +356,7 @@ const AstroLoader = ({ visible }) => {
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        background: 'radial-gradient(circle, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 40%, transparent 75%)',
+        background: 'radial-gradient(circle, rgba(255, 255, 255,0.08) 0%, rgba(255, 255, 255,0.02) 40%, transparent 75%)',
         zIndex: -1,
         filter: 'blur(100px)',
         pointerEvents: 'none'
@@ -378,17 +378,17 @@ const AstroLoader = ({ visible }) => {
 
         @keyframes neonPulse {
           0%, 100% {
-            filter: drop-shadow(0 0 1px rgba(212, 175, 55, 0.5)) drop-shadow(0 0 4px rgba(212, 175, 55, 0.3));
+            filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.5)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
             opacity: 0.9;
           }
           50% {
-            filter: drop-shadow(0 0 3px rgba(212, 175, 55, 0.9)) drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
+            filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
             opacity: 1;
           }
         }
 
         .neon-scissors-glow {
-          filter: drop-shadow(0 0 8px rgba(212,175,55,0.4));
+          filter: drop-shadow(0 0 8px rgba(255, 255, 255,0.4));
           animation: rotateGlow 12s linear infinite;
         }
 
@@ -398,7 +398,7 @@ const AstroLoader = ({ visible }) => {
         }
 
         .loader-title-neon {
-          text-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 0 20px rgba(212, 175, 55, 0.2);
+          text-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.2);
         }
       `}</style>
     </div>

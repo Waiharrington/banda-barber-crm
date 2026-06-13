@@ -23,7 +23,11 @@ import {
   Cake,
   MessageCircle,
   Sparkles,
-  X
+  X,
+  Calendar,
+  CheckCircle2,
+  DollarSign,
+  Bell
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -42,6 +46,8 @@ import { useNotifs } from '../context/NotificationContext';
 import { notificationService } from '../services/notificationService';
 import { useScrollLock } from '../hooks/useScrollLock';
 import { ModalShield } from '../context/ModalContext';
+import AnimatedModal from './AnimatedModal';
+import { useAuth } from '../context/AuthContext';
 
 ChartJS.register(
   CategoryScale,
@@ -60,10 +66,10 @@ const QUOTES = [
   { text: "La disciplina es el puente entre metas y logros.", creator: "Jim Rohn" },
   { text: "El estilo es una forma de decir quién eres sin hablar.", creator: "Rachel Zoe" },
   { text: "Invierte en tu imagen, es tu carta de presentación.", creator: "Negocios" },
-  { text: "Un corte de pelo puede cambiar una vida.", creator: "Arte Astro" },
+  { text: "Un corte de pelo puede cambiar una vida.", creator: "Arte Panda" },
   { text: "La calidad atrae, el detalle retiene.", creator: "Estrategia" },
   { text: "No busques clientes, busca fans.", creator: "Crecimiento" },
-  { text: "La barbería es el arte de esculpir confianza.", creator: "Mística Astro" },
+  { text: "La barbería es el arte de esculpir confianza.", creator: "Mística Panda" },
   { text: "El éxito es la suma de pequeños esfuerzos diarios.", creator: "Robert Collier" },
   { text: "Domina tu oficio, luego rompe las reglas.", creator: "Maestros" },
   { text: "Cada cliente es una oportunidad de crear una obra maestra.", creator: "Visión" },
@@ -72,8 +78,6 @@ const QUOTES = [
   { text: "Tu única competencia es la persona en el espejo.", creator: "Superación" },
   { text: "El negocio de la belleza es el negocio de la felicidad.", creator: "Emprendimiento" }
 ];
-
-import { useAuth } from '../context/AuthContext';
 
 const DashboardModule = ({ 
   isMobile, 
@@ -85,1374 +89,1634 @@ const DashboardModule = ({
   dbData, 
   handleSeedData, 
   rates, 
+  activeRateType,
+  onToggleRateType,
   onNavigate,
-  onRefresh
+  onRefresh,
+  onOpenNotifications
 }) => {
   const { user } = useAuth();
   const [quoteIndex, setQuoteIndex] = useState(0);
   const { showToast } = useNotifs();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const updateUnread = () => {
+      const history = notificationService.getHistory();
+      const count = history.filter(n => !n.read).length;
+      setUnreadCount(count);
+    };
+
+    updateUnread();
+    window.addEventListener('astro_new_notification', updateUnread);
+    return () => {
+      window.removeEventListener('astro_new_notification', updateUnread);
+    };
+  }, []);
   
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
   const [isEditingGoals, setIsEditingGoals] = useState(false);
-  const [goals, setGoals] = useState({
-    daily: parseFloat(localStorage.getItem('astro_daily_goal') || '500'),
-    weekly: parseFloat(localStorage.getItem('astro_weekly_goal') || '3000'),
-    monthly: parseFloat(localStorage.getItem('astro_monthly_goal') || '12000')
+  const [currentMonthAmount, setCurrentMonthAmount] = useState(() => {
+    return parseFloat(localStorage.getItem('panda_current_month_amount') || '28.4');
   });
-  const [isStoreOpen] = useState(true); 
+  const [monthlyGoal, setMonthlyGoal] = useState(() => {
+    return parseFloat(localStorage.getItem('panda_monthly_goal') || '35');
+  });
+  const [selectedChair, setSelectedChair] = useState(null);
 
-  const isBarber = user?.role === 'Barbero' || user?.role?.includes('Barbero|');
-  const isAssistant = user?.role?.includes('Asistente de Lavado');
-
-  // Filter stats for barber or assistant
-  const myStats = ((isBarber || isAssistant) && dbData?.staff) 
-    ? (dbData.staff.find(s => s.id === user.id)?.stats || { income: 0, appointments: 0 }) 
-    : (stats || { income: 0, weeklyIncome: 0, monthlyIncome: 0, appointments: 0 });
-
-  // Assistant specific: Calculate earnings per barber (Weekly)
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const sevenDaysAgoISO = sevenDaysAgo.toISOString();
-
-  const washingByBarber = (isAssistant && dbData?.appointments) ? (dbData.appointments || [])
-    .filter(a => a.created_at >= sevenDaysAgoISO && a.appointment_staff?.some(as => as.staff_id === user.id))
-    .reduce((acc, a) => {
-      const barberName = a.staff?.name || 'Otro';
-      const myRecord = a.appointment_staff?.find(as => as.staff_id === user.id);
-      const amount = Number(myRecord?.commission_earned || 0);
-      
-      const existing = acc.find(item => item.name === barberName);
-      if (existing) {
-        existing.total += amount;
-        existing.count += 1;
-      } else {
-        acc.push({ name: barberName, total: amount, count: 1 });
+  const [chairs, setChairs] = useState(() => {
+    const saved = localStorage.getItem('panda_chairs_state');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
       }
-      return acc;
-    }, [])
-    .sort((a, b) => b.total - a.total) : [];
+    }
+    return [
+      { 
+        id: '01', 
+        type: 'Luis Gómez', 
+        name: 'Juan Pérez', 
+        service: 'Corte + Barba', 
+        time: '09:30', 
+        duration: '30 min', 
+        status: 'En servicio', 
+        glowClass: 'chair-halo-en-servicio',
+        statusColor: '#ef4444',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100'
+      },
+      { 
+        id: '02', 
+        type: 'Mateo Fernández', 
+        status: 'Limpieza', 
+        glowClass: 'chair-halo-limpieza',
+        statusColor: '#eab308',
+        info: 'Disponible en 10 min'
+      },
+      { 
+        id: '03', 
+        type: 'Alejandro Ruiz', 
+        name: 'Carlos Ramírez', 
+        service: 'Degradado', 
+        time: '10:15', 
+        duration: '25 min', 
+        status: 'Reservada', 
+        glowClass: 'chair-halo-reservada',
+        statusColor: '#f97316',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100'
+      },
+      { 
+        id: '04', 
+        type: 'Daniel Medina', 
+        status: 'Disponible', 
+        glowClass: 'chair-halo-disponible',
+        statusColor: '#22c55e',
+        info: 'Próximo: 11:00 AM'
+      },
+    ];
+  });
+
+  const monthlyProgress = Math.round((currentMonthAmount / (monthlyGoal || 1)) * 100);
+
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    setQuoteIndex(Math.floor(Math.random() * QUOTES.length));
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  const handleSaveGoals = (newGoals) => {
-    localStorage.setItem('astro_daily_goal', newGoals.daily);
-    localStorage.setItem('astro_weekly_goal', newGoals.weekly);
-    localStorage.setItem('astro_monthly_goal', newGoals.monthly);
-    setGoals(newGoals);
-    setIsEditingGoals(false);
-    showToast('Metas actualizadas correctamente.');
+  const formattedTime = currentTime.toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  }).toUpperCase();
+
+  const formattedDate = currentTime.toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  const monthNames = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+  
+  const currentMonthName = `${monthNames[currentTime.getMonth()]} ${currentTime.getFullYear()}`;
+  const currentDateVal = currentTime.getDate();
+
+  const firstDayIndex = (new Date(currentTime.getFullYear(), currentTime.getMonth(), 1).getDay() + 6) % 7;
+  const totalDays = new Date(currentTime.getFullYear(), currentTime.getMonth() + 1, 0).getDate();
+  const prevMonthTotalDays = new Date(currentTime.getFullYear(), currentTime.getMonth(), 0).getDate();
+
+  const daysGrid = [];
+  for (let i = firstDayIndex - 1; i >= 0; i--) {
+    daysGrid.push({ day: prevMonthTotalDays - i, isCurrentMonth: false });
+  }
+  for (let i = 1; i <= totalDays; i++) {
+    daysGrid.push({ day: i, isCurrentMonth: true });
+  }
+  const gridLength = daysGrid.length > 35 ? 42 : 35;
+  const suffixDays = gridLength - daysGrid.length;
+  for (let i = 1; i <= suffixDays; i++) {
+    daysGrid.push({ day: i, isCurrentMonth: false });
+  }
+
+  // Week revenues line chart — premium champagne glow style
+  const weeklyChartData = {
+    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+    datasets: [
+      {
+        data: chartData?.income || [400, 520, 480, 600, 720, 950, 920],
+        borderColor: '#CBB79A',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#CBB79A',
+        pointBorderColor: '#07070a',
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 7,
+        pointHoverBackgroundColor: '#e0cfba',
+        tension: 0.45,
+        fill: true,
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return null;
+          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, 'rgba(203, 183, 154, 0.18)');
+          gradient.addColorStop(0.6, 'rgba(203, 183, 154, 0.04)');
+          gradient.addColorStop(1, 'rgba(203, 183, 154, 0.0)');
+          return gradient;
+        },
+      }
+    ]
   };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#101014',
+        titleColor: '#f8f8f8',
+        bodyColor: '#CBB79A',
+        borderColor: 'rgba(203,183,154,0.15)',
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 10,
+        displayColors: false
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 9, weight: '600', family: 'Outfit' } }
+      },
+      y: {
+        grid: { color: 'rgba(255,255,255,0.025)', drawBorder: false },
+        ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 8, weight: '500', family: 'Outfit' } }
+      }
+    }
+  };
+
+  // Sillas representadas en el estado local editable.
 
   return (
     <div style={{ 
-      paddingBottom: (isMobile || isTablet) ? '100px' : '0px', 
+      paddingBottom: '0px', 
       display: 'flex', 
       flexDirection: 'column',
       position: 'relative',
-      overflow: (isMobile || isTablet) ? 'visible' : 'hidden',
-      height: (isMobile || isTablet) ? 'auto' : 'calc(100vh - 145px)',
-      minHeight: 0
+      overflow: 'visible',
+      height: (isMobile || isTablet) ? 'auto' : '100%',
+      minHeight: 0,
+      backgroundColor: 'transparent',
     }}>
-      {/* Ambient glowing background orbs */}
+      {/* Ambient glowing background orbs — deep & cinematic */}
       <div className="l-dashboard-orb l-orb-1" />
       <div className="l-dashboard-orb l-orb-2" />
+      <div className="l-dashboard-orb l-orb-3" />
 
-      <div style={{ display: 'grid', gridTemplateColumns: (isMobile || isTablet) ? '1fr' : '2fr 1fr', gap: '16px', flex: 1, minHeight: 0 }}>
-        
-        {/* Left Column: Vision & Stats */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', justifyContent: 'flex-start' }}>
-          
-          {/* Main Hero & Birthday Row */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: (isMobile || (isTablet && !isCollapsed) || isBarber || isAssistant) ? '1fr' : '1.55fr 1fr', 
-            gap: '16px', 
-            alignItems: 'stretch',
-            flex: (isMobile || (isTablet && !isCollapsed)) ? 'auto' : '1.3',
-            minHeight: (isMobile || (isTablet && !isCollapsed)) ? 'auto' : '190px'
-          }}>
-            
-            {/* Wrapper to allow 3D floating chair overflow and prevent clipping */}
-            <div style={{ position: 'relative', overflow: 'visible', height: '100%' }}>
-              {/* Main Hero Card (Premium View) */}
-              <div className="hero-card-container animate-slide-up animate-stagger-1" style={{ 
-                minHeight: '200px', 
-                padding: '20px 28px', 
-                position: 'relative', 
-                overflow: 'visible',
-                zIndex: 5,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                height: '100%'
+      {/* Premium Dashboard Header (Mockup Style) */}
+      {!isMobile && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '8px 14px 10px 14px',
+          backgroundColor: 'transparent',
+          zIndex: 2,
+          flexShrink: 0
+        }}>
+          {/* Welcome Greeting */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <h1 style={{ 
+              fontSize: '22px', 
+              fontWeight: '800', 
+              color: 'white', 
+              letterSpacing: '-0.5px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              margin: 0 
+            }}>
+              ¡Buenos días, Panda Barber! 
+              <span className="wave-hand-span" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <svg 
+                  width="22" 
+                  height="22" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="var(--champagne)" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                  style={{
+                    marginLeft: '8px',
+                    transformOrigin: '70% 70%',
+                    animation: 'wave-animation 2.5s infinite'
+                  }}
+                >
+                  <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v5" />
+                  <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8" />
+                  <path d="M10 10.5V5.5a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8" />
+                  <path d="M6 11.5V9a1.5 1.5 0 0 0-1.5-1.5v0A1.5 1.5 0 0 0 3 9v7.5A6.5 6.5 0 0 0 9.5 23h3.75A5.75 5.75 0 0 0 19 17.25V11" />
+                </svg>
+              </span>
+            </h1>
+            <span style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.45)', fontWeight: '500', marginTop: '4px' }}>
+              Hoy es {formattedDate}. Hora actual: {formattedTime}.
+            </span>
+          </div>
+
+          {/* Search, Notifications, + Nueva cita */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {/* Search Input Bar */}
+            <div style={{
+              position: 'relative',
+              width: '260px'
+            }}>
+              <input 
+                type="text" 
+                placeholder="Buscar..." 
+                style={{
+                  width: '100%',
+                  padding: '9px 12px 9px 36px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  color: 'white',
+                  fontSize: '13px',
+                  outline: 'none',
+                  transition: 'all 0.2s ease'
+                }}
+                onFocus={(e) => {
+                  e.target.style.backgroundColor = 'rgba(255,255,255,0.07)';
+                  e.target.style.borderColor = 'rgba(203, 183, 154, 0.3)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.backgroundColor = 'rgba(255,255,255,0.04)';
+                  e.target.style.borderColor = 'rgba(255,255,255,0.06)';
+                }}
+              />
+              <svg 
+                style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}
+                width="14" 
+                height="14" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="white" 
+                strokeWidth="2.5" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </div>
+                      {/* Rate Toggle Card */}
+            {rates && (
+              <div className="glass-card" style={{ 
+                padding: '4px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '4px', 
+                borderRadius: '12px', 
+                border: '1px solid rgba(255,255,255,0.06)',
+                backgroundColor: 'rgba(255, 255, 255, 0.02)'
               }}>
-                {/* Inner container to clip the soft background glow and prevent bleeding to neighbor cards */}
-                <div className="hero-card-bg">
-                  <div style={{
-                    position: 'absolute',
-                    top: '45%',
-                    right: '-40px',
-                    transform: 'translateY(-50%)',
-                    width: '320px',
-                    height: '320px',
-                    background: 'radial-gradient(circle, rgba(212, 175, 55, 0.16) 0%, rgba(212, 175, 55, 0.05) 35%, rgba(212, 175, 55, 0.01) 65%, transparent 100%)',
-                    pointerEvents: 'none'
-                  }} />
-                </div>
-
-                <div style={{ position: 'relative', zIndex: 2, maxWidth: isMobile ? '65%' : '55%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                    <div style={{ width: '24px', height: '2px', backgroundColor: 'var(--gold-primary)' }} />
-                    <span style={{ fontSize: '11px', fontWeight: '950', color: 'var(--gold-primary)', letterSpacing: '2px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Pensamiento Astro</span>
-                    <button 
-                      onClick={() => setQuoteIndex((prev) => (prev + 1) % QUOTES.length)}
-                      style={{ 
-                        background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', 
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
-                        transition: 'transform 0.2s ease, background-color 0.2s ease'
-                      }}
-                      title="Descubrir otro Pensamiento Astro"
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.2) rotate(15deg)';
-                        e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                    >
-                      <Rocket size={14} color="var(--gold-primary)" className="animate-pulse" />
-                    </button>
-                  </div>
-                  <h2 style={{ 
-                    fontSize: isMobile ? '18px' : (isTablet ? '20px' : (isCollapsed ? '25px' : '19px')), 
-                    fontWeight: '700', 
-                    lineHeight: '1.35', 
-                    marginBottom: '14px', 
-                    letterSpacing: '-0.3px', 
-                    position: 'relative', 
-                    zIndex: 20, 
-                    textWrap: 'pretty',
-                    fontFamily: "'Georgia', serif",
-                    fontStyle: 'italic',
-                    color: 'white',
-                    textShadow: '0 2px 12px rgba(0,0,0,0.6)'
+                {/* BCV Button */}
+                <button
+                  onClick={() => onToggleRateType('bcv')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '1px',
+                    transition: 'all 0.3s ease',
+                    background: activeRateType === 'bcv' ? 'rgba(34, 197, 94, 0.08)' : 'transparent',
+                    border: activeRateType === 'bcv' ? '1.5px solid #22c55e' : '1.5px solid transparent',
+                    boxShadow: 'none'
+                  }}
+                >
+                  <span style={{ 
+                    fontSize: '8px', 
+                    fontWeight: '800', 
+                    color: activeRateType === 'bcv' ? '#22c55e' : 'rgba(255,255,255,0.5)',
+                    letterSpacing: '0.5px'
                   }}>
-                    “{QUOTES[quoteIndex].text}”
-                  </h2>
-                  <p style={{ color: 'var(--gold-primary)', fontSize: '13px', fontWeight: '800', position: 'relative', zIndex: 20, opacity: 0.9, letterSpacing: '0.5px' }}>
-                    — {QUOTES[quoteIndex].creator}
-                  </p>
+                    BCV
+                  </span>
+                  <span style={{ 
+                    fontSize: '12px', 
+                    fontWeight: '800', 
+                    color: activeRateType === 'bcv' ? '#22c55e' : 'white'
+                  }}>
+                    {rates.bcv > 0 ? rates.bcv.toFixed(2) : '—'}
+                  </span>
+                </button>
+
+                {/* USDT Button */}
+                <button
+                  onClick={() => onToggleRateType('usdt')}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '1px',
+                    transition: 'all 0.3s ease',
+                    background: activeRateType === 'usdt' ? 'rgba(34, 197, 94, 0.08)' : 'transparent',
+                    border: activeRateType === 'usdt' ? '1.5px solid #22c55e' : '1.5px solid transparent',
+                    boxShadow: 'none'
+                  }}
+                >
+                  <span style={{ 
+                    fontSize: '8px', 
+                    fontWeight: '800', 
+                    color: activeRateType === 'usdt' ? '#22c55e' : 'rgba(255,255,255,0.5)',
+                    letterSpacing: '0.5px'
+                  }}>
+                    USDT
+                  </span>
+                  <span style={{ 
+                    fontSize: '12px', 
+                    fontWeight: '800', 
+                    color: activeRateType === 'usdt' ? '#22c55e' : 'white'
+                  }}>
+                    {rates.usdt > 0 ? rates.usdt.toFixed(2) : '—'}
+                  </span>
+                </button>
+
+                {/* Gap indicator */}
+                <div style={{ 
+                  padding: '4px 8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '1px'
+                }}>
+                  <span style={{ fontSize: '7px', fontWeight: '800', color: 'rgba(255,255,255,0.5)' }}>GAP</span>
+                  <span style={{ 
+                    fontSize: '10px', 
+                    fontWeight: '950', 
+                    color: rates.gap > 10 ? '#ef4444' : '#22c55e',
+                    backgroundColor: rates.gap > 10 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                    padding: '2px 6px',
+                    borderRadius: '6px'
+                  }}>
+                    {rates.gap > 0 ? rates.gap.toFixed(1) : '0'}%
+                  </span>
                 </div>
               </div>
+            )}
 
-              {/* Visual Elements (Astro Premium Responsive - Compacted) - Placed OUTSIDE card container to bypass transform/backdrop clipping */}
-              <div className="chair-entrance" style={{ 
-                position: 'absolute', 
-                right: '-10px', 
-                top: '-70px',
-                bottom: '-10px', 
-                width: isMobile ? '45%' : '40%', 
+            {/* Notification Bell */}
+            <button 
+              onClick={onOpenNotifications}
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '50%',
+                width: '38px',
+                height: '38px',
                 display: 'flex',
-                alignItems: 'flex-end',
+                alignItems: 'center',
                 justifyContent: 'center',
-                zIndex: 12,
-                pointerEvents: 'none'
-              }}>
-                <div className="chair-shadow" style={{ 
-                  position: 'absolute', 
-                  bottom: '8px', 
-                  left: '42%', 
-                  transform: 'translateX(-50%)', 
-                  width: '130px', 
-                  height: '24px', 
-                  background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.65) 0%, transparent 70%)',
-                  zIndex: 1,
-                  animation: 'shadow-scale 8s infinite ease-in-out'
+                color: 'white',
+                cursor: 'pointer',
+                position: 'relative',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.07)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'}
+            >
+              <Bell size={17} />
+              {unreadCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-2px',
+                  right: '-2px',
+                  width: '7px',
+                  height: '7px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--champagne)',
+                  boxShadow: '0 0 8px var(--champagne)'
                 }} />
-                <img 
-                  src="/barber-chair.png" 
-                  alt="Astro Chair" 
-                  className="chair-float"
-                  style={{ 
-                    width: '100%', 
-                    maxWidth: isMobile ? '180px' : '240px',
-                    height: 'auto',
-                    objectFit: 'contain',
-                    zIndex: 3,
-                    filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.85)) drop-shadow(0 0 20px rgba(212, 175, 55, 0.35))',
-                    animation: 'float 8s infinite ease-in-out'
+              )}
+            </button>
+
+            {/* + Nueva cita gold button */}
+            <button 
+              onClick={onOpenSale}
+              className="premium-btn-gold"
+              style={{
+                height: '38px',
+                padding: '0 18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '13.5px',
+                borderRadius: '10px'
+              }}
+            >
+              <Plus size={16} strokeWidth={3} />
+              Nueva cita
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: (isMobile || isTablet) ? '1fr' : '3.1fr 1.3fr', 
+        gap: '16px', 
+        flex: 1, 
+        minHeight: 0,
+        height: '100%',
+        padding: '0 8px',
+        overflow: 'hidden'
+      }}>
+        
+        {/* Left Column: Metrics & Main Dashboard Content */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '14px', 
+          height: '100%', 
+          minHeight: 0,
+          overflow: 'hidden'
+        }}>
+          
+          {/* Top KPI Cards Row */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', 
+            gap: '10px',
+            flexShrink: 0
+          }}>
+            {/* KPI Card 1: Citas Hoy */}
+            <div className="glass-card" style={{ padding: '8px 10px', borderRadius: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '76px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.7 }}>
+                <span style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.5px' }}>CITAS HOY</span>
+                <Calendar size={13} color="rgba(255,255,255,0.6)" />
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: '1px 0' }}>
+                {dbData?.todayAppointments?.length || 12}
+              </div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
+                <span style={{ fontSize: '7px' }}>▲</span> 20% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs ayer</span>
+              </div>
+            </div>
+
+            {/* KPI Card 2: Facturado Hoy */}
+            <div className="glass-card" style={{ padding: '8px 10px', borderRadius: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '76px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.7 }}>
+                <span style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.5px' }}>FACTURADO HOY</span>
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', fontWeight: '800' }}>$</span>
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: '1px 0' }}>
+                ${formatCurrency(stats?.income || 245000)}
+              </div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
+                <span style={{ fontSize: '7px' }}>▲</span> 18% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs ayer</span>
+              </div>
+            </div>
+
+            {/* KPI Card 3: Clientes Nuevos */}
+            <div className="glass-card" style={{ padding: '8px 10px', borderRadius: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '76px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.7 }}>
+                <span style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.5px' }}>CLIENTES NUEVOS</span>
+                <Users size={13} color="rgba(255,255,255,0.6)" />
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: '1px 0' }}>
+                4
+              </div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
+                <span style={{ fontSize: '7px' }}>▲</span> 33% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs ayer</span>
+              </div>
+            </div>
+
+            {/* KPI Card 4: Ocupación */}
+            <div className="glass-card" style={{ padding: '8px 10px', borderRadius: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '76px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.7 }}>
+                <span style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.5px' }}>OCUPACIÓN</span>
+                <Clock size={13} color="rgba(255,255,255,0.6)" />
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: '1px 0' }}>
+                86%
+              </div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
+                <span style={{ fontSize: '7px' }}>▲</span> 8% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs ayer</span>
+              </div>
+            </div>
+          </div>
+
+          {/* "Estado de las sillas" Real-time panel */}
+          <div className="glass-card" style={{ 
+            padding: '10px 14px', 
+            borderRadius: '16px', 
+            border: '1px solid rgba(255, 255, 255, 0.05)', 
+            backgroundColor: '#161617',
+            display: 'flex',
+            flexDirection: 'column',
+            flex: '1.2 1 0%',
+            minHeight: 0,
+            overflow: 'hidden'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ fontSize: '13px', fontWeight: '800', color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Estado de sillas</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--champagne)' }} />
+                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', fontWeight: '600' }}>En tiempo real</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.75)', cursor: 'pointer' }}>&lt;</button>
+                <button style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.75)', cursor: 'pointer' }}>&gt;</button>
+              </div>
+            </div>
+
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', 
+              gap: '14px',
+                  flex: 1,
+              minHeight: 0,
+              alignItems: 'stretch'
+            }}>
+              {chairs.map((chair) => {
+                 const isOccupied = chair.status === 'En servicio' || chair.status === 'Reservada';
+                 const isCleaning = chair.status === 'Limpieza';
+                 const isAvailable = chair.status === 'Disponible';
+
+                return (
+                  <div 
+                    key={chair.id} 
+                    onClick={() => setSelectedChair(chair)}
+                    style={{
+                      backgroundColor: 'rgba(0,0,0,0.15)',
+                      border: '1px solid rgba(255,255,255,0.04)',
+                      borderRadius: '16px',
+                      padding: '12px 14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: 0,
+                      height: '100%',
+                      transition: 'all 0.3s ease',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      cursor: 'pointer'
+                    }}>
+                    {/* Ring glow backdrop */}
+                    <div className={`chair-halo ${chair.glowClass}`} />
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 2, height: '26px', flexShrink: 0 }}>
+                      <span style={{ fontSize: '15px', fontWeight: '900', color: 'rgba(255,255,255,0.2)' }}>{chair.id}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', textAlign: 'right' }}>
+                        <span style={{ fontSize: '10px', fontWeight: '900', color: 'white', letterSpacing: '0.3px', lineHeight: '1' }}>{chair.type}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: chair.statusColor }} />
+                          <span style={{ fontSize: '8px', fontWeight: '800', color: chair.statusColor }}>{chair.status}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, minHeight: 0, position: 'relative', zIndex: 2, margin: '4px 0' }}>
+                      <img 
+                        src="/barber-chair.png" 
+                        alt="Silla" 
+                        style={{ 
+                          maxHeight: '100%', 
+                          maxWidth: '100%',
+                          transform: 'scale(1.25)',
+                          objectFit: 'contain',
+                          filter: isAvailable ? 'brightness(0.3) grayscale(0.5)' : isCleaning ? 'brightness(0.5) drop-shadow(0 8px 16px rgba(0,0,0,0.65))' : 'drop-shadow(0 8px 16px rgba(0,0,0,0.65))',
+                          zIndex: 2
+                        }} 
+                      />
+                    </div>
+
+                    <div style={{ zIndex: 2, marginTop: 'auto', height: '36px', display: 'flex', flexDirection: 'column', justifyContent: 'center', flexShrink: 0 }}>
+                      {/* Sub-widget based on status */}
+                      {isOccupied && (
+                        <div style={{ 
+                          backgroundColor: 'rgba(0,0,0,0.45)', 
+                          borderRadius: '8px', 
+                          padding: '4px 6px',
+                          border: '1px solid rgba(255,255,255,0.03)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          height: '100%',
+                          boxSizing: 'border-box'
+                        }}>
+                          <div style={{
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '8px',
+                            fontWeight: '800',
+                            color: 'var(--champagne)',
+                            flexShrink: 0
+                          }}>
+                            {chair.name ? chair.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : ''}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '10px', fontWeight: '800', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{chair.name}</div>
+                            <div style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{chair.service}</div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '9px', fontWeight: '800', color: 'white' }}>{chair.time}</div>
+                            <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.75)', fontWeight: '600' }}>{chair.duration}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {isCleaning && (
+                        <div style={{ 
+                          backgroundColor: 'rgba(0,0,0,0.45)', 
+                          borderRadius: '8px', 
+                          padding: '4px 6px',
+                          border: '1px solid rgba(255,255,255,0.03)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          height: '100%',
+                          boxSizing: 'border-box'
+                        }}>
+                          <div style={{ width: '10px', height: '10px', borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.2)', borderTopColor: 'white', animation: 'spin 1s linear infinite' }} />
+                          <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.6)', fontWeight: '600' }}>{chair.info}</span>
+                        </div>
+                      )}
+
+                      {isAvailable && (
+                        <div style={{ 
+                          backgroundColor: 'rgba(0,0,0,0.45)', 
+                          borderRadius: '8px', 
+                          padding: '4px 6px',
+                          border: '1px solid rgba(255,255,255,0.03)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '6px',
+                          height: '100%',
+                          boxSizing: 'border-box'
+                        }}>
+                          <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.5)', fontWeight: '600' }}>{chair.info}</span>
+                          <button 
+                            onClick={onOpenSale}
+                            style={{
+                              width: '16px',
+                              height: '16px',
+                              borderRadius: '4px',
+                              backgroundColor: 'rgba(255,255,255,0.06)',
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              color: 'white',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              fontSize: '11px',
+                              fontWeight: '800'
+                            }}
+                          >
+                            +
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Bottom Row: Ingresos Chart, Top Services, Client Origin */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: isMobile ? '1fr' : '1.1fr 1.15fr 1fr', 
+            gap: '12px',
+            flex: '1 1 0%',
+            minHeight: 0
+          }}>
+            {/* 1. Ingresos Card */}
+            <div className="glass-card" style={{ padding: '12px 14px', borderRadius: '16px', backgroundColor: '#161617', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px', flexShrink: 0 }}>
+                <span style={{ fontSize: '10px', fontWeight: '800', color: 'white', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Ingresos</span>
+                <span style={{ fontSize: '8.5px', fontWeight: '700', color: 'rgba(255,255,255,0.75)', cursor: 'pointer' }}>Esta semana ▾</span>
+              </div>
+              <div style={{ flexShrink: 0, marginBottom: '6px' }}>
+                <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>
+                  $6.580.000
+                </div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700', marginTop: '2px' }}>
+                  <span style={{ fontSize: '7px' }}>▲</span> 18% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs semana anterior</span>
+                </div>
+              </div>
+              <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+                <Line 
+                  data={{
+                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                    datasets: [
+                      {
+                        data: [450, 520, 480, 600, 720, 950, 920],
+                        borderColor: '#c5a880',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#c5a880',
+                        pointBorderColor: '#161617',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: (context) => {
+                          const chart = context.chart;
+                          const { ctx, chartArea } = chart;
+                          if (!chartArea) return null;
+                          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                          gradient.addColorStop(0, 'rgba(197, 168, 128, 0.2)');
+                          gradient.addColorStop(1, 'rgba(197, 168, 128, 0.0)');
+                          return gradient;
+                        },
+                      }
+                    ]
                   }} 
+                  options={chartOptions} 
                 />
               </div>
             </div>
 
-            {/* Birthday Section Card */}
-            {!isBarber && !isAssistant && (
-              <BirthdaySection clients={dbData?.clients || []} dbData={dbData} onNavigate={onNavigate} onRefresh={onRefresh} isEditingGoals={isEditingGoals} />
-            )}
+            {/* 2. Servicios más vendidos */}
+            <div className="glass-card" style={{ padding: '12px 14px', borderRadius: '16px', backgroundColor: '#161617', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', minHeight: 0 }}>
+              <div style={{ flexShrink: 0, marginBottom: '6px' }}>
+                <h4 style={{ fontSize: '10px', fontWeight: '800', color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Servicios más vendidos</h4>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1, margin: '2px 0' }} className="astro-scrollbar">
+                {[
+                  { name: 'Degradado + Barba', val: 236 },
+                  { name: 'Corte Clásico', val: 189 },
+                  { name: 'Corte + Barba', val: 142 },
+                  { name: 'Afeitado Premium', val: 98 },
+                  { name: 'Diseño', val: 67 }
+                ].map((s, idx) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', paddingBottom: '2px', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                    <span style={{ color: 'white', fontWeight: '600' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.35)', marginRight: '6px', fontWeight: '800' }}>{idx + 1}</span> {s.name}
+                    </span>
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: '700' }}>{s.val}</span>
+                  </div>
+                ))}
+              </div>
 
+              <button 
+                onClick={() => onNavigate && onNavigate('services')}
+                style={{
+                  width: '100%',
+                  marginTop: '6px',
+                  backgroundColor: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '8px',
+                  padding: '7px 0',
+                  color: 'white',
+                  fontSize: '10.5px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'background 0.2s',
+                  flexShrink: 0
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'}
+              >
+                Ver todos los servicios
+              </button>
+            </div>
+
+            {/* 3. Clientes por origen */}
+            <div className="glass-card" style={{ padding: '12px 14px', borderRadius: '16px', backgroundColor: '#161617', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+              <div style={{ flexShrink: 0, marginBottom: '6px' }}>
+                <h4 style={{ fontSize: '10px', fontWeight: '800', color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Clientes por origen</h4>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minHeight: 0 }}>
+                {/* SVG Donut */}
+                <div style={{ position: 'relative', width: '65px', height: '65px', flexShrink: 0 }}>
+                  <svg width="65" height="65" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="4" />
+                    {/* Instagram (52%) */}
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--champagne)" strokeWidth="4" strokeDasharray="52 48" strokeDashoffset="25" />
+                    {/* Referidos (28%) */}
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="4" strokeDasharray="28 72" strokeDashoffset="-27" />
+                    {/* Presencial (20%) */}
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="4" strokeDasharray="20 80" strokeDashoffset="-55" />
+                  </svg>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
+                  {[
+                    { label: 'Instagram', val: '52%', color: 'var(--champagne)' },
+                    { label: 'Referidos', val: '28%', color: 'rgba(255,255,255,0.6)' },
+                    { label: 'Presencial', val: '20%', color: 'rgba(255,255,255,0.2)' }
+                  ].map((origin, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '9.5px', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: origin.color }} />
+                        <span style={{ color: 'rgba(255,255,255,0.65)', fontWeight: '500' }}>{origin.label}</span>
+                      </div>
+                      <span style={{ color: 'white', fontWeight: '800' }}>{origin.val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Total Summary Footer */}
+              <div style={{ 
+                marginTop: '4px', 
+                borderTop: '1px solid rgba(255,255,255,0.03)', 
+                paddingTop: '6px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                flexShrink: 0
+              }}>
+                <div>
+                  <div style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '600' }}>Clientes totales</div>
+                  <div style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>248</div>
+                </div>
+                <div style={{ fontSize: '8.5px', color: '#c5a880', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  <span>▲ 15%</span> <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs semana ant.</span>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
 
-          {/* Business Stats Grid (Compact) */}
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', flex: isMobile ? 'auto' : '1', minHeight: isMobile ? 'auto' : '90px' }}>
-            <StatCard title="Tu Producción" value={`$${formatCurrency(myStats.income)}`} icon={<TrendingUp size={16} color="var(--gold-primary)" />} color="var(--gold-primary)" trend="+12%" positive={true} staggerIndex={3} />
-            {!isAssistant && <StatCard title="Tus Servicios" value={myStats.appointments} icon={<ScissorsIcon size={16} color="var(--gold-primary)" />} color="#4caf50" trend="Activo" positive={true} staggerIndex={4} />}
-            {!isBarber && !isAssistant && <StatCard title="En Inventario" value={(dbData?.services?.length || 0) + (dbData?.clients?.length || 0)} icon={<ShoppingBag size={16} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} staggerIndex={5} />}
-            {isAssistant && <StatCard title="Lavados Realizados" value={myStats.appointments} icon={<Rocket size={16} color="var(--gold-primary)" />} color="#2196f3" trend="Ok" positive={true} staggerIndex={4} />}
-          </div>
+        {/* Right Column: Appointments & Schedule Widget */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '12px', 
+          height: '100%',
+          minHeight: 0,
+          overflow: 'hidden'
+        }}>
+          {/* Card 1: Próximas citas */}
+          <div className="glass-card" style={{ 
+            padding: '12px 14px', 
+            borderRadius: '16px', 
+            backgroundColor: '#161617', 
+            border: '1px solid rgba(255,255,255,0.05)', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            flex: '1.2 1 0%', 
+            minHeight: 0,
+            overflow: 'hidden'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexShrink: 0 }}>
+              <h3 style={{ fontSize: '11.5px', fontWeight: '800', color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Próximas citas</h3>
+              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.75)', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => onNavigate && onNavigate('scheduling')}>Ver calendario</span>
+            </div>
 
-          {/* Goals Grid - Only for Admins (Compact Grid) */}
-          {(user?.role === 'Admin' || user?.role?.includes('Admin|')) && (
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', flex: isMobile ? 'auto' : '1', minHeight: isMobile ? 'auto' : '90px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1 }} className="astro-scrollbar">
               {[
-                { id: 'daily', title: 'Misión Diaria', current: stats?.income || 0, goal: goals.daily, icon: <Target size={16} />, label: 'HOY' },
-                { id: 'weekly', title: 'Meta Semanal', current: stats?.weeklyIncome || 0, goal: goals.weekly, icon: <TrendingUp size={16} />, label: 'SEMANA ACTUAL' },
-                { id: 'monthly', title: 'Objetivo Mensual', current: stats?.monthlyIncome || 0, goal: goals.monthly, icon: <Trophy size={16} />, label: 'MES EN CURSO' }
-              ].map((m, i) => (
-                <div key={m.id} className={`glass-card animate-slide-up animate-stagger-${6 + i}`} style={{ padding: '12px 18px', borderRadius: '20px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '95px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ color: 'var(--gold-primary)', display: 'flex', alignItems: 'center' }}>{m.icon}</div>
-                      <span style={{ fontWeight: '900', fontSize: '11px', letterSpacing: '0.5px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{m.title}</span>
-                    </div>
-                    {i === 0 && (
-                      <button 
-                        onClick={() => setIsEditingGoals(true)}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
-                      >
-                        <Edit3 size={12} />
-                      </button>
-                    )}
+                { time: '10:00 AM', name: 'Miguel Torres', service: 'Corte Clásico', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60', status: 'active' },
+                { time: '10:45 AM', name: 'Andrés Gómez', service: 'Fade + Barba', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60', status: 'active' },
+                { time: '11:30 AM', name: 'Luis Martínez', service: 'Degradado', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=60', status: 'active' },
+                { time: '12:15 PM', name: 'David Rojas', service: 'Afeitado Premium', avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=60', status: 'inactive' },
+                { time: '01:00 PM', name: 'Sebastián López', service: 'Corte + Barba', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=60', status: 'inactive' }
+              ].map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.02)', flexShrink: 0 }}>
+                  <span style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.6)', width: '60px' }}>{item.time}</span>
+                  <div style={{
+                    width: '22px',
+                    height: '22px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '9px',
+                    fontWeight: '800',
+                    color: 'var(--champagne)',
+                    flexShrink: 0
+                  }}>
+                    {item.name ? item.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : ''}
                   </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
-                    <div style={{ fontSize: '18px', fontWeight: '950', color: 'white' }}>
-                      ${formatCurrency(m.current || 0)} <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>/ ${formatCurrency(m.goal)}</span>
-                    </div>
-                    <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.08)', padding: '2px 6px', borderRadius: '4px' }}>
-                      {Math.min(Math.round(((m.current || 0) / m.goal) * 100), 100)}%
-                    </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '11.5px', fontWeight: '700', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+                    <div style={{ fontSize: '9.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.service}</div>
                   </div>
-
-                  <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div 
-                      className="l-progress-fill"
-                      style={{ 
-                        width: `${Math.min(((m.current || 0) / m.goal) * 100, 100)}%`, 
-                        height: '100%', 
-                        background: 'var(--gold-gradient)', 
-                        boxShadow: 'var(--gold-glow)',
-                        transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)' 
-                      }} 
-                    />
-                  </div>
+                  <div style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: item.status === 'active' ? 'var(--champagne)' : 'rgba(255,255,255,0.2)' }} />
                 </div>
               ))}
             </div>
-          )}
-          
+          </div>
+
+          {/* Card 2: Acciones Rápidas */}
+          <div className="glass-card" style={{ 
+            padding: '10px 12px', 
+            borderRadius: '16px', 
+            backgroundColor: '#161617', 
+            border: '1px solid rgba(255,255,255,0.05)', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            flexShrink: 0
+          }}>
+            <h3 style={{ fontSize: '10.5px', fontWeight: '800', color: 'white', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Acciones rápidas</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+              {[
+                { label: 'Nueva Cita', action: onOpenSale, icon: Plus },
+                { label: 'Nuevo Cliente', action: () => onNavigate && onNavigate('clients'), icon: User },
+                { label: 'Venta Rápida', action: onOpenSale, icon: ShoppingBag },
+                { label: 'Agregar Producto', action: () => onNavigate && onNavigate('inventory'), icon: ScissorsIcon }
+              ].map((act, idx) => {
+                const ActIcon = act.icon;
+                return (
+                  <button 
+                    key={idx}
+                    onClick={act.action}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '8px 4px',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.04)',
+                      color: 'rgba(255,255,255,0.8)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)';
+                      e.currentTarget.style.borderColor = 'rgba(203, 183, 154, 0.2)';
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)';
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)';
+                      e.currentTarget.style.color = 'rgba(255,255,255,0.8)';
+                    }}
+                  >
+                    <ActIcon size={13} color="rgba(255,255,255,0.6)" />
+                    <span style={{ fontSize: '9px', fontWeight: '700' }}>{act.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Card 3: Calendario */}
+          <div className="glass-card" style={{ 
+            padding: '10px 12px', 
+            borderRadius: '16px', 
+            backgroundColor: '#161617', 
+            border: '1px solid rgba(255,255,255,0.05)', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            flexShrink: 0
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: '800', color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Calendario</span>
+              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.75)', fontWeight: '700' }}>{currentMonthName}</span>
+            </div>
+
+            {/* Dynamic calendar grid based on current real-time */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', fontSize: '9.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '700' }}>
+              <div>LUN</div><div>MAR</div><div>MIÉ</div><div>JUE</div><div>VIE</div><div>SÁB</div><div>DOM</div>
+              {daysGrid.map((item, dIdx) => {
+                const isSelected = item.day === currentDateVal && item.isCurrentMonth;
+                const isOffMonth = !item.isCurrentMonth;
+                return (
+                  <div 
+                    key={dIdx} 
+                    style={{
+                      height: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '50%',
+                      fontWeight: '800',
+                      color: isSelected ? 'black' : isOffMonth ? 'rgba(255,255,255,0.15)' : 'white',
+                      backgroundColor: isSelected ? 'var(--champagne)' : 'transparent',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {item.day}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Card 4: Meta Mensual */}
+          <div 
+            onClick={() => setIsEditingGoals(true)}
+            className="glass-card" 
+            style={{ 
+              padding: '8px 12px', 
+              borderRadius: '16px', 
+              backgroundColor: '#161617', 
+              border: '1px solid rgba(255,255,255,0.05)', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              flexShrink: 0,
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '700', marginBottom: '4px' }}>
+              <span>META MENSUAL</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+              <span style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>
+                ${currentMonthAmount}M <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: '600' }}>/ ${monthlyGoal}M</span>
+              </span>
+              <span style={{ fontSize: '10.5px', fontWeight: '900', color: 'var(--champagne)' }}>
+                {monthlyProgress}%
+              </span>
+            </div>
+            <div style={{ height: '5px', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '2.5px', overflow: 'hidden' }}>
+              <div style={{ width: `${Math.min(100, monthlyProgress)}%`, height: '100%', background: 'linear-gradient(to right, #c5a880, #e5d4bc)', borderRadius: '2.5px' }} />
+            </div>
+          </div>
+
         </div>
 
-        {/* Right Column: Rankings */}
-        {!isBarber && !isAssistant && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <PodiumSection 
-                title="Top Barbers" 
-                icon={<Trophy size={20} color="var(--gold-primary)" />}
-                data={(dbData?.staff || [])
-                  .filter(s => {
-                    const role = (s.role || 'Barbero').toLowerCase();
-                    return role.includes('barber') && !role.includes('asistente') && !role.includes('admin');
-                  })
-                  .sort((a,b) => (b.stats?.monthlyIncome || 0) - (a.stats?.monthlyIncome || 0))
-                  .slice(0, 3)
-                }
-                labelKey="name"
-                scoreKey={(item) => `$${(item.stats?.monthlyIncome || 0).toFixed(0)}`}
-                scoreLabel="MES EN CURSO"
-                staggerIndex={6}
-              />
-            </div>
-
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <PodiumSection 
-                title="Top Clientes" 
-                icon={<Users size={20} color="var(--gold-primary)" />}
-                data={(dbData?.clients || []).sort((a,b) => (b.total_spent || 0) - (a.total_spent || 0)).slice(0, 3)}
-                labelKey="name"
-                scoreKey={(item) => `$${(item.total_spent || 0).toFixed(0)}`}
-                scoreLabel="TOTAL CONSUMIDO"
-                isClient
-                onNavigate={onNavigate}
-                staggerIndex={8}
-              />
-            </div>
-          </div>
-        )}
-
-        {isAssistant && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div className="glass-card" style={{ padding: '24px', borderRadius: '28px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <TrendingUp size={20} color="var(--gold-primary)" />
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: '900' }}>Producción Semanal por <span className="text-gold">Barbero</span></h3>
-              </div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {washingByBarber.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                    <Circle size={40} style={{ opacity: 0.1, marginBottom: '12px' }} />
-                    <p style={{ fontSize: '14px' }}>Aún no hay lavados registrados hoy.</p>
-                  </div>
-                ) : (
-                  washingByBarber.map((item, idx) => {
-                    const maxVal = washingByBarber[0].total || 1;
-                    const percentage = (item.total / maxVal) * 100;
-                    
-                    return (
-                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: '800', fontSize: '14px', color: 'white' }}>{item.name}</span>
-                          <span style={{ fontWeight: '900', fontSize: '14px', color: 'var(--gold-primary)' }}>${item.total.toFixed(2)}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ flex: 1, height: '8px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div 
-                              className="l-progress-fill"
-                              style={{ 
-                                width: `${percentage}%`, 
-                                height: '100%', 
-                                background: 'var(--gold-gradient)', 
-                                boxShadow: 'var(--gold-glow)',
-                                borderRadius: '4px',
-                                transition: 'width 1s ease-out'
-                              }} 
-                            />
-                          </div>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', width: '60px' }}>{item.count} lavados</span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            <div className="glass-card" style={{ padding: '24px', borderRadius: '28px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Clock size={20} color="var(--gold-primary)" />
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: '900' }}>Agenda del <span className="text-gold">Día</span></h3>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '300px' }} className="astro-scrollbar">
-                {(!dbData?.todayAppointments || dbData.todayAppointments.length === 0) ? (
-                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                    <p style={{ fontSize: '14px' }}>No hay citas agendadas para hoy.</p>
-                  </div>
-                ) : (
-                  dbData.todayAppointments.map((app, idx) => (
-                    <div key={idx} className="glass-card" style={{ 
-                      padding: '16px', 
-                      borderRadius: '16px', 
-                      backgroundColor: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.05)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontWeight: '800', fontSize: '14px', color: 'white' }}>{app.clients?.name || 'Cliente'}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '700' }}>{app.staff?.name?.split(' ')[0]}</span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>•</span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{app.services?.name}</span>
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>
-                          {app.scheduled_at ? new Date(app.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'S/H'}
-                        </div>
-                        <div style={{ 
-                          fontSize: '9px', 
-                          fontWeight: '900', 
-                          padding: '2px 6px', 
-                          borderRadius: '4px',
-                          marginTop: '4px',
-                          backgroundColor: app.status === 'En Silla' ? 'rgba(76,175,80,0.1)' : 'rgba(212,175,55,0.1)',
-                          color: app.status === 'En Silla' ? '#4caf50' : 'var(--gold-primary)',
-                          display: 'inline-block'
-                        }}>
-                          {app.status}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Goal Edit Modal */}
-      {isEditingGoals && (
-        <ModalShield active={isEditingGoals}>
-          <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(10,10,10,0.94)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 9999
-          }}>
-            <div className="glass-card animate-scale-in" style={{ 
-              width: '400px', 
-              padding: '40px', 
-              borderRadius: '20px',
-              border: '1px solid rgba(255,255,255,0.1)'
+      {/* Edit Chair Modal */}
+      <AnimatedModal isOpen={!!selectedChair}>
+        {(overlayClass, cardClass) => (
+          selectedChair && (
+            <div className={`${overlayClass} global-modal-overlay`} style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.85)',
+              backdropFilter: 'blur(10px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              padding: '16px'
             }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Target color="var(--gold-primary)" size={20} />
-            </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '900' }}>Metas <span className="text-gold">Astro</span></h3>
-          </div>
+              <div className={`${cardClass} glass-card global-modal-card modal-small`} style={{
+              width: '100%',
+              maxWidth: '420px',
+              backgroundColor: '#161617',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '16px',
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.8)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'white', margin: 0 }}>EDITAR SILLA {selectedChair.id}</h3>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setSelectedChair(null); }} 
+                  style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.75)', cursor: 'pointer' }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
-            <div className="form-group">
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>META DIARIA ($)</label>
-              <input 
-                type="number" 
-                className="form-input" 
-                value={goals.daily} 
-                onChange={e => setGoals({...goals, daily: e.target.value})}
-                style={{ width: '100%', fontSize: '16px', fontWeight: '800' }}
-              />
-            </div>
-            <div className="form-group">
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>META SEMANAL ($)</label>
-              <input 
-                type="number" 
-                className="form-input" 
-                value={goals.weekly} 
-                onChange={e => setGoals({...goals, weekly: e.target.value})}
-                style={{ width: '100%', fontSize: '16px', fontWeight: '800' }}
-              />
-            </div>
-            <div className="form-group">
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>META MENSUAL ($)</label>
-              <input 
-                type="number" 
-                className="form-input" 
-                value={goals.monthly} 
-                onChange={e => setGoals({...goals, monthly: e.target.value})}
-                style={{ width: '100%', fontSize: '16px', fontWeight: '800' }}
-              />
-            </div>
-          </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>BARBERO</label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
+                    <Crown size={15} color="var(--champagne)" />
+                  </div>
+                  <input 
+                    type="text" 
+                    value={selectedChair.type || ''} 
+                    onChange={(e) => setSelectedChair({ ...selectedChair, type: e.target.value })}
+                    placeholder="Ej. Luis Gómez"
+                    className="premium-modal-input"
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '12px',
+                      padding: '12px 12px 12px 36px',
+                      color: 'white',
+                      outline: 'none',
+                      fontSize: '13px',
+                      transition: 'all 0.25s ease',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
 
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button 
-              onClick={() => setIsEditingGoals(false)} 
-              style={{ 
-                flex: 1,
-                padding: '12px',
-                borderRadius: '12px',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: 'white',
-                fontWeight: '700',
-                fontSize: '13px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              Cancelar
-            </button>
-            <button className="btn-gold" onClick={() => handleSaveGoals(goals)} style={{ flex: 2 }}>Guardar Metas</button>
-          </div>
-            </div>
-          </div>
-        </ModalShield>
-      )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>ESTADO</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  {[
+                    { val: 'Disponible', label: 'Disponible', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', glow: 'rgba(34, 197, 94, 0.4)' },
+                    { val: 'En servicio', label: 'En servicio', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', glow: 'rgba(239, 68, 68, 0.4)' },
+                    { val: 'Limpieza', label: 'Limpieza', color: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', glow: 'rgba(234, 179, 8, 0.4)' },
+                    { val: 'Reservada', label: 'Reservada', color: '#f97316', bg: 'rgba(249, 115, 22, 0.15)', glow: 'rgba(249, 115, 22, 0.4)' }
+                  ].map(opt => {
+                    const isSelected = selectedChair.status === opt.val;
+                    return (
+                      <button
+                        key={opt.val}
+                        type="button"
+                        onClick={() => {
+                          let glow = 'chair-halo-disponible';
+                          let sCol = '#22c55e';
+                          if (opt.val === 'En servicio') {
+                            glow = 'chair-halo-en-servicio';
+                            sCol = '#ef4444';
+                          } else if (opt.val === 'Limpieza') {
+                            glow = 'chair-halo-limpieza';
+                            sCol = '#eab308';
+                          } else if (opt.val === 'Reservada') {
+                            glow = 'chair-halo-reservada';
+                            sCol = '#f97316';
+                          }
+                          setSelectedChair({
+                            ...selectedChair,
+                            status: opt.val,
+                            glowClass: glow,
+                            statusColor: sCol
+                          });
+                        }}
+                        style={{
+                          padding: '12px 10px',
+                          borderRadius: '12px',
+                          border: isSelected ? `2px solid ${opt.color}` : '1px solid rgba(255,255,255,0.08)',
+                          background: isSelected ? opt.bg : 'rgba(255,255,255,0.03)',
+                          color: isSelected ? 'white' : 'rgba(255,255,255,0.6)',
+                          fontWeight: '800',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          transition: 'all 0.2s ease',
+                          transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                          boxShadow: isSelected ? `0 0 15px ${opt.glow}` : 'none'
+                        }}
+                      >
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: opt.color, boxShadow: `0 0 6px ${opt.color}` }} />
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
+              {(selectedChair.status === 'En servicio' || selectedChair.status === 'Reservada') && (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>CLIENTE</label>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
+                        <User size={15} color="var(--champagne)" />
+                      </div>
+                      <input 
+                        type="text" 
+                        value={selectedChair.name || ''} 
+                        onChange={(e) => setSelectedChair({ ...selectedChair, name: e.target.value })}
+                        placeholder="Ej. Juan Pérez"
+                        className="premium-modal-input"
+                        style={{
+                          width: '100%',
+                          backgroundColor: 'rgba(255,255,255,0.02)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '12px',
+                          padding: '12px 12px 12px 36px',
+                          color: 'white',
+                          outline: 'none',
+                          fontSize: '13px',
+                          transition: 'all 0.25s ease',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>SERVICIO</label>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
+                        <ScissorsIcon size={15} color="var(--champagne)" />
+                      </div>
+                      <input 
+                        type="text" 
+                        value={selectedChair.service || ''} 
+                        onChange={(e) => setSelectedChair({ ...selectedChair, service: e.target.value })}
+                        placeholder="Ej. Corte + Barba"
+                        className="premium-modal-input"
+                        style={{
+                          width: '100%',
+                          backgroundColor: 'rgba(255,255,255,0.02)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '12px',
+                          padding: '12px 12px 12px 36px',
+                          color: 'white',
+                          outline: 'none',
+                          fontSize: '13px',
+                          transition: 'all 0.25s ease',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>HORA INICIO</label>
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
+                          <Clock size={15} color="var(--champagne)" />
+                        </div>
+                        <input 
+                          type="text" 
+                          value={selectedChair.time || ''} 
+                          onChange={(e) => setSelectedChair({ ...selectedChair, time: e.target.value })}
+                          placeholder="Ej. 09:30 AM"
+                          className="premium-modal-input"
+                          style={{
+                            width: '100%',
+                            backgroundColor: 'rgba(255,255,255,0.02)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '12px',
+                            padding: '12px 12px 12px 36px',
+                            color: 'white',
+                            outline: 'none',
+                            fontSize: '13px',
+                            transition: 'all 0.25s ease',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>DURACIÓN</label>
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
+                          <Clock size={15} color="var(--champagne)" />
+                        </div>
+                        <input 
+                          type="text" 
+                          value={selectedChair.duration || ''} 
+                          onChange={(e) => setSelectedChair({ ...selectedChair, duration: e.target.value })}
+                          placeholder="Ej. 30 min"
+                          className="premium-modal-input"
+                          style={{
+                            width: '100%',
+                            backgroundColor: 'rgba(255,255,255,0.02)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '12px',
+                            padding: '12px 12px 12px 36px',
+                            color: 'white',
+                            outline: 'none',
+                            fontSize: '13px',
+                            transition: 'all 0.25s ease',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {(selectedChair.status === 'Limpieza' || selectedChair.status === 'Disponible') && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>INFORMACIÓN DE ESTADO</label>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
+                      <Sparkles size={15} color="var(--champagne)" />
+                    </div>
+                    <input 
+                      type="text" 
+                      value={selectedChair.info || ''} 
+                      onChange={(e) => setSelectedChair({ ...selectedChair, info: e.target.value })}
+                      placeholder={selectedChair.status === 'Limpieza' ? 'Ej. Disponible en 10 min' : 'Ej. Próximo: 11:00 AM'}
+                      className="premium-modal-input"
+                      style={{
+                        width: '100%',
+                        backgroundColor: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '12px',
+                        padding: '12px 12px 12px 36px',
+                        color: 'white',
+                        outline: 'none',
+                        fontSize: '13px',
+                        transition: 'all 0.25s ease',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setSelectedChair(null); }}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'white',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const updatedChairs = chairs.map(c => {
+                      if (c.id === selectedChair.id) {
+                        return selectedChair;
+                      }
+                      return c;
+                    });
+                    setChairs(updatedChairs);
+                    localStorage.setItem('panda_chairs_state', JSON.stringify(updatedChairs));
+                    setSelectedChair(null);
+                    showToast('Silla actualizada correctamente.');
+                  }}
+                  className="premium-btn-gold"
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    fontWeight: '800',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Guardar
+                </button>
+              </div>
+              </div>
+            </div>
+          )
+        )}
+      </AnimatedModal>
+
+      {/* Edit Goals Modal */}
+      <AnimatedModal isOpen={isEditingGoals}>
+        {(overlayClass, cardClass) => (
+          isEditingGoals && (
+            <div className={`${overlayClass} global-modal-overlay`} style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.85)',
+              backdropFilter: 'blur(10px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              padding: '16px'
+            }}>
+              <div className={`${cardClass} glass-card global-modal-card modal-small`} style={{
+              width: '100%',
+              maxWidth: '360px',
+              backgroundColor: '#161617',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '16px',
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.8)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'white', margin: 0 }}>EDITAR META MENSUAL</h3>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setIsEditingGoals(false); }} 
+                  style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.75)', cursor: 'pointer' }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>FACTURACIÓN ACTUAL (MILLONES $)</label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
+                    <DollarSign size={15} color="var(--champagne)" />
+                  </div>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    value={currentMonthAmount} 
+                    onChange={(e) => setCurrentMonthAmount(parseFloat(e.target.value) || 0)}
+                    placeholder="Ej. 28.4"
+                    className="premium-modal-input"
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '12px',
+                      padding: '12px 12px 12px 36px',
+                      color: 'white',
+                      outline: 'none',
+                      fontSize: '13px',
+                      transition: 'all 0.25s ease',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>META DEL MES (MILLONES $)</label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
+                    <Target size={15} color="var(--champagne)" />
+                  </div>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    value={monthlyGoal} 
+                    onChange={(e) => setMonthlyGoal(parseFloat(e.target.value) || 1)}
+                    placeholder="Ej. 35.0"
+                    className="premium-modal-input"
+                    style={{
+                      width: '100%',
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '12px',
+                      padding: '12px 12px 12px 36px',
+                      color: 'white',
+                      outline: 'none',
+                      fontSize: '13px',
+                      transition: 'all 0.25s ease',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setIsEditingGoals(false); }}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'white',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    localStorage.setItem('panda_current_month_amount', currentMonthAmount.toString());
+                    localStorage.setItem('panda_monthly_goal', monthlyGoal.toString());
+                    setIsEditingGoals(false);
+                    showToast('Meta mensual actualizada correctamente.');
+                  }}
+                  className="premium-btn-gold"
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    borderRadius: '8px',
+                    fontWeight: '800',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Guardar
+                </button>
+              </div>
+              </div>
+            </div>
+          )
+        )}
+      </AnimatedModal>
       <style>{`
-        .hero-card-container {
-          position: relative;
-          transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .hero-card-container:hover {
-          transform: translateY(-5px) scale(1.006);
-        }
-        .hero-card-bg {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(135deg, rgba(20, 20, 20, 0.9) 0%, rgba(42, 34, 15, 0.65) 100%);
-          backdrop-filter: blur(18px);
-          -webkit-backdrop-filter: blur(18px);
-          border: 1px solid rgba(212, 175, 55, 0.35);
-          border-radius: 24px;
-          box-shadow: 0 16px 45px rgba(0, 0, 0, 0.75), inset 0 0 35px rgba(212, 175, 55, 0.08);
-          transition: border-color 0.45s ease, box-shadow 0.45s ease;
-          overflow: hidden;
-          z-index: 1;
-        }
-        .hero-card-container:hover .hero-card-bg {
-          border-color: rgba(212, 175, 55, 0.5) !important;
-          box-shadow: 0 24px 50px rgba(0, 0, 0, 0.8), 
-                      0 0 25px rgba(212, 175, 55, 0.08) !important;
-        }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-25px) rotate(5deg); }
-        }
-        @keyframes shadow-scale {
-          0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.7; }
-          50% { transform: translateX(-50%) scaleX(0.7) scaleY(0.8); opacity: 0.25; }
-        }
-        @keyframes slideUp {
-          from { transform: translateY(30px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        .refresh-btn:hover, .edit-rates-btn:hover {
-          opacity: 1 !important;
-          transform: rotate(15deg) scale(1.1);
-        }
-
-        /* ── AMBIENT BACKLIGHT GLOWING ORBS ── */
+        /* ── AMBIENT CINEMATIC ORBS ── */
         .l-dashboard-orb {
           position: absolute;
           border-radius: 50%;
-          filter: blur(140px);
-          opacity: 0.09;
+          filter: blur(130px);
           z-index: 0;
           pointer-events: none;
           animation: orb-float 22s infinite ease-in-out;
         }
         .l-orb-1 {
-          width: 500px;
-          height: 500px;
-          background: radial-gradient(circle, #d4af37 0%, transparent 70%);
-          top: -10%;
-          right: -10%;
-          animation-duration: 24s;
+          width: 600px;
+          height: 600px;
+          background: radial-gradient(circle, rgba(203,183,154,0.55) 0%, rgba(180,140,90,0.2) 40%, transparent 70%);
+          opacity: 0.07;
+          top: -15%;
+          right: -12%;
+          animation-duration: 28s;
         }
         .l-orb-2 {
-          width: 550px;
-          height: 550px;
-          background: radial-gradient(circle, #8a6d1c 0%, transparent 70%);
-          bottom: -20%;
-          left: -12%;
-          animation-duration: 32s;
-          animation-delay: -6s;
+          width: 700px;
+          height: 700px;
+          background: radial-gradient(circle, rgba(120,80,180,0.5) 0%, rgba(80,40,140,0.2) 40%, transparent 70%);
+          opacity: 0.05;
+          bottom: -25%;
+          left: -18%;
+          animation-duration: 36s;
+          animation-delay: -8s;
+        }
+        .l-orb-3 {
+          width: 400px;
+          height: 400px;
+          background: radial-gradient(circle, rgba(203,183,154,0.4) 0%, transparent 70%);
+          opacity: 0.04;
+          top: 40%;
+          left: 45%;
+          animation-duration: 20s;
+          animation-delay: -14s;
         }
         @keyframes orb-float {
           0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(40px, -60px) scale(1.15); }
-          66% { transform: translate(-30px, 50px) scale(0.9); }
+          33% { transform: translate(50px, -70px) scale(1.12); }
+          66% { transform: translate(-40px, 55px) scale(0.92); }
         }
 
-        /* ── GLASSMORPHISM PREMIUM HOVER EFFECT ON ALL CARDS ── */
+        @keyframes wave-animation {
+          0% { transform: rotate( 0.0deg) }
+          10% { transform: rotate(14.0deg) }
+          20% { transform: rotate(-8.0deg) }
+          30% { transform: rotate(14.0deg) }
+          40% { transform: rotate(-4.0deg) }
+          50% { transform: rotate(10.0deg) }
+          60% { transform: rotate( 0.0deg) }
+          100% { transform: rotate( 0.0deg) }
+        }
+
+        /* ── PREMIUM GLASS CARD HOVER ── */
         .glass-card {
-          position: relative;
-          background: rgba(18, 18, 21, 0.75) !important;
-          backdrop-filter: blur(18px);
-          -webkit-backdrop-filter: blur(18px);
-          border: 1px solid rgba(255, 255, 255, 0.04) !important;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-          transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), 
-                      border-color 0.45s ease, 
-                      box-shadow 0.45s ease !important;
-          z-index: 2;
+          transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                      border-color 0.35s ease, 
+                      box-shadow 0.35s ease !important;
         }
         .glass-card:hover {
-          transform: translateY(-5px) scale(1.006);
-          border-color: rgba(212, 175, 55, 0.28) !important;
-          box-shadow: 0 24px 50px rgba(0, 0, 0, 0.8), 
-                      0 0 25px rgba(212, 175, 55, 0.08) !important;
-        }
-
-        /* ── METRICS SHIMMER EFFECT ── */
-        .l-progress-fill {
-          position: relative;
-          overflow: hidden;
-        }
-        .l-progress-fill::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.35),
-            transparent
-          );
-          transform: translateX(-100%);
-          animation: progress-shimmer 2.2s infinite ease-in-out;
-        }
-        @keyframes progress-shimmer {
-          100% { transform: translateX(100%); }
+          transform: translateY(-3px) !important;
+          border-color: rgba(203, 183, 154, 0.15) !important;
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(203,183,154,0.04) !important;
         }
       `}</style>
     </div>
   );
 };
 
-const StatCard = ({ title, value, icon, color, trend, positive, goal, current, onEditGoal, staggerIndex }) => {
-  const percentage = goal ? Math.min(Math.round((current / goal) * 100), 100) : null;
-  const staggerClass = staggerIndex ? `animate-stagger-${staggerIndex}` : '';
-  return (
-    <div className={`glass-card animate-slide-up ${staggerClass}`} style={{ padding: '12px 18px', borderRadius: '20px', border: `1px solid ${color}1A`, position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '95px' }}>
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: `${color}1A`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {icon}
-          </div>
-          {trend && !goal && (
-            <span style={{ 
-              color: positive ? '#4caf50' : '#ff4d4d', 
-              fontSize: '11px', 
-              fontWeight: '700',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '2px'
-            }}>
-              {trend} {positive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-            </span>
-          )}
-          {percentage !== null && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)', padding: '2px 6px', borderRadius: '6px' }}>
-                Meta: {percentage}%
-              </span>
-              {onEditGoal && (
-                <button 
-                  onClick={onEditGoal}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
-                  title="Editar Metas"
-                >
-                  <Edit3 size={12} />
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>{title}</div>
-        <div style={{ fontSize: '20px', fontWeight: '950', marginTop: '2px', color: 'white' }}>{value}</div>
-      </div>
-
-      {percentage !== null && (
-        <div style={{ marginTop: '12px' }}>
-          <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-            <div style={{ 
-              width: `${percentage}%`, 
-              height: '100%', 
-              background: 'var(--gold-gradient)', 
-              boxShadow: 'var(--gold-glow)',
-              transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)' 
-            }} />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const BirthdaySection = ({ clients, dbData, onNavigate, onRefresh, isEditingGoals }) => {
-  const today = new Date();
-  const todayMonth = today.getMonth() + 1;
-  const todayDay = today.getDate();
-  const [isLaunching, setIsLaunching] = useState(false);
-  const [whatsappModalData, setWhatsappModalData] = useState(null);
-  const [activePerson, setActivePerson] = useState(null);
-  const [editedPhone, setEditedPhone] = useState('');
-  const [editedMessage, setEditedMessage] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-
-  useScrollLock(activePerson !== null || isEditingGoals);
-
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'Admin' || user?.role?.includes('Admin|');
-
-  useEffect(() => {
-    if (whatsappModalData) {
-      setActivePerson(whatsappModalData);
-    }
-  }, [whatsappModalData]);
-
-  // Map real database staff members to birthday objects
-  const dbStaffBirthdays = (dbData?.staff || []).map(s => {
-    return {
-      id: s.id,
-      name: s.name.trim(),
-      role: s.role?.split('|')[0] || 'Personal',
-      phone: s.phone || '',
-      birth_date: s.birth_date || null,
-      isStaff: true
-    };
-  });
-
-  // Combine clients with isStaff: false, and database staff with isStaff: true
-  const allPeople = [
-    ...(clients || []).map(c => ({ ...c, isStaff: false })),
-    ...dbStaffBirthdays
-  ];
-
-  // Birthdays Today
-  const todaysBirthdays = allPeople.filter(p => {
-    if (!p.birth_date) return false;
-    const parts = p.birth_date.split('-');
-    const m = parseInt(parts[1], 10);
-    const d = parseInt(parts[2], 10);
-    return m === todayMonth && d === todayDay;
-  });
-
-  // Upcoming Birthdays (next 15 days)
-  const upcomingBirthdays = allPeople
-    .filter(p => {
-      if (!p.birth_date) return false;
-      const parts = p.birth_date.split('-');
-      const m = parseInt(parts[1], 10);
-      const d = parseInt(parts[2], 10);
-      
-      const bday = new Date(today.getFullYear(), m - 1, d);
-      if (bday < today && !(m === todayMonth && d === todayDay)) {
-        bday.setFullYear(today.getFullYear() + 1);
-      }
-      
-      const diffTime = bday - today;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      p.daysToBday = diffDays;
-      p.bdayDateStr = `${d} de ${bday.toLocaleDateString([], { month: 'long' })}`;
-      
-      return diffDays > 0 && diffDays <= 15;
-    })
-    .sort((a, b) => a.daysToBday - b.daysToBday)
-    .slice(0, 4);
-
-  const handleCongratulate = async (person) => {
-    setIsLaunching(true);
-    setTimeout(() => {
-      setIsLaunching(false);
-    }, 3000);
-
-    try {
-      if (notificationService.getPermissionStatus() === 'default') {
-        await notificationService.requestPermission();
-      }
-    } catch (e) {
-      console.warn('Fallo al solicitar permisos de notificación:', e);
-    }
-
-    notificationService.sendNotification(
-      `🚀 ¡Despegue Estelar para ${person.name}!`,
-      `El Astro Team felicita hoy a ${person.name} (${person.role}) en su cumpleaños. 🎂💈`
-    );
-  };
-
-  const handleWhatsAppCongratulate = (person) => {
-    let template = localStorage.getItem('astro_default_bday_message');
-    const isCorrupted = !template || 
-      template.includes('\uFFFD') || 
-      template.includes('ï¿½') ||
-      /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|([^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]/.test(template);
-    if (isCorrupted) {
-      template = `¡Hola {name}! ${String.fromCodePoint(0x1F389)} Te deseamos un muy feliz cumpleaños de parte de todo el equipo de Astro Barbershop. ${String.fromCodePoint(0x1F488)} ¡Que tengas un día excelente!`;
-      localStorage.setItem('astro_default_bday_message', template);
-    }
-    const whatsappMsg = template.replace('{name}', person.name);
-    setEditedPhone(person.phone || '');
-    setEditedMessage(whatsappMsg);
-    setWhatsappModalData(person);
-  };
-
-  const handleSendWhatsApp = async (isDirect = true) => {
-    if (!whatsappModalData) return;
-
-    const isRealClient = !whatsappModalData.isStaff && 
-      !String(whatsappModalData.id).startsWith('staff-') && 
-      !String(whatsappModalData.id).startsWith('client-');
-
-    if (isRealClient && editedPhone !== (whatsappModalData.phone || '')) {
-      setIsSaving(true);
-      try {
-        await dataService.updateClient(whatsappModalData.id, { phone: editedPhone });
-        if (onRefresh) await onRefresh();
-      } catch (err) {
-        console.error("Error al actualizar teléfono de cliente:", err);
-      } finally {
-        setIsSaving(false);
-      }
-    }
-
-    let url;
-    if (isDirect && editedPhone) {
-      url = `https://wa.me/${editedPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(editedMessage)}`;
-    } else {
-      url = `https://wa.me/?text=${encodeURIComponent(editedMessage)}`;
-    }
-
-    window.open(url, '_blank');
-    setWhatsappModalData(null);
-  };
-
-  const hasBirthdaysToday = todaysBirthdays.length > 0;
-
-  return (
-    <div 
-      className="glass-card animate-slide-up animate-stagger-2" 
-      style={{ 
-        padding: '14px 16px', 
-        borderRadius: '24px', 
-        background: hasBirthdaysToday ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(10, 10, 10, 0.4) 100%)' : 'rgba(255,255,255,0.02)', 
-        border: hasBirthdaysToday ? '1px solid rgba(212, 175, 55, 0.25)' : '1px solid rgba(255,255,255,0.05)',
-        boxShadow: hasBirthdaysToday ? '0 8px 32px rgba(212, 175, 55, 0.05)' : 'none',
-        position: 'relative',
-        overflow: 'visible',
-        minHeight: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between'
-      }}
-    >
-      {/* Space Rocket Launch Elements */}
-      {isLaunching && (
-        <>
-          <div className="rocket-container">
-            <div className="rocket-body">
-              🚀
-              <div className="rocket-trail"></div>
-            </div>
-          </div>
-          {/* Multiple smoke particles rising */}
-          {[...Array(12)].map((_, i) => (
-            <div 
-              key={i} 
-              className="rocket-smoke" 
-              style={{ 
-                animationDelay: `${i * 0.08}s`,
-                left: `calc(50% + ${Math.sin(i) * 35}px)` 
-              }} 
-            />
-          ))}
-          {/* Magical golden sparkles shooting upwards */}
-          {[...Array(15)].map((_, i) => {
-            const randomX = Math.random() * 80 - 40;
-            const randomDelay = Math.random() * 1.5;
-            const randomSize = Math.random() * 16 + 12;
-            return (
-              <span
-                key={`sparkle-${i}`}
-                className="animate-fade-in"
-                style={{
-                  position: 'fixed',
-                  bottom: '-50px',
-                  left: `calc(50% + ${randomX}px)`,
-                  fontSize: `${randomSize}px`,
-                  zIndex: 10001,
-                  pointerEvents: 'none',
-                  animation: 'launchRocket 2s cubic-bezier(0.25, 1, 0.5, 1) forwards',
-                  animationDelay: `${randomDelay}s`,
-                  filter: 'drop-shadow(0 0 8px var(--gold-primary))'
-                }}
-              >
-                {i % 2 === 0 ? '✨' : '⭐'}
-              </span>
-            );
-          })}
-        </>
-      )}
-
-      {/* 1. HEADER */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: hasBirthdaysToday ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Cake size={16} color={hasBirthdaysToday ? 'black' : 'var(--text-muted)'} />
-          </div>
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: '900', color: 'white', letterSpacing: '-0.3px' }}>
-              {hasBirthdaysToday ? '¡Cumpleaños Hoy!' : 'Cumpleaños'}
-            </div>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600' }}>
-              {hasBirthdaysToday ? 'Festejo en el equipo' : 'Próximos 15 días'}
-            </div>
-          </div>
-        </div>
-        {hasBirthdaysToday && (
-          <span className="animate-pulse" style={{ backgroundColor: 'var(--gold-primary)', color: 'black', fontSize: '9px', fontWeight: '950', padding: '2px 8px', borderRadius: '20px' }}>
-            FIESTA 🎉
-          </span>
-        )}
-      </div>
-
-      {/* 2. BODY CONTENT */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', margin: '8px 0', width: '100%' }}>
-        {hasBirthdaysToday ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {todaysBirthdays.map(p => {
-              const whatsappMsg = `¡Hola ${p.name}! 🎉 Te deseamos un muy feliz cumpleaños de parte de todo el equipo de Astro Barbershop. 💈 Queremos regalarte un detalle en tu próximo servicio. ¡Reserva hoy!`;
-              const whatsappUrl = `https://wa.me/${p.phone ? p.phone.replace(/[^0-9]/g, '') : ''}?text=${encodeURIComponent(whatsappMsg)}`;
-
-              return (
-                <div 
-                  key={p.id} 
-                  style={{ 
-                    padding: '10px 12px', 
-                    backgroundColor: 'rgba(10, 10, 10, 0.4)', 
-                    border: '1px solid rgba(212, 175, 55, 0.15)', 
-                    borderRadius: '14px',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '8px 10px',
-                    width: '100%'
-                  }}
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '100px', flex: '1 1 0%' }}>
-                    <span style={{ fontWeight: '850', color: 'white', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
-                      {p.name}
-                    </span>
-                    <span style={{ alignSelf: 'flex-start', fontSize: '8px', fontWeight: '950', color: p.isStaff ? 'black' : 'white', backgroundColor: p.isStaff ? 'var(--gold-primary)' : 'rgba(255,255,255,0.1)', padding: '1px 4px', borderRadius: '3px', whiteSpace: 'nowrap' }}>
-                      {p.isStaff ? p.role || 'TEAM' : 'CLIENTE'}
-                    </span>
-                  </div>
-
-                  <div style={{ display: 'flex', flexShrink: 0, flexGrow: 1, justifyContent: 'flex-end' }}>
-                    {p.isStaff ? (
-                      <button 
-                        onClick={() => handleCongratulate(p)}
-                        style={{ 
-                          padding: '6px 10px', 
-                          borderRadius: '8px', 
-                          border: 'none', 
-                          backgroundColor: 'rgba(212, 175, 55, 0.15)', 
-                          color: 'var(--gold-primary)', 
-                          fontSize: '11px', 
-                          fontWeight: '800', 
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        <Sparkles size={11} /> Felicitar
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => handleWhatsAppCongratulate(p)}
-                        style={{ 
-                          padding: '6px 10px', 
-                          borderRadius: '8px', 
-                          border: 'none', 
-                          backgroundColor: '#25d366', 
-                          color: 'black', 
-                          fontSize: '11px', 
-                          fontWeight: '850', 
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        <MessageCircle size={11} fill="black" /> Felicitar
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '8px 12px', 
-              backgroundColor: 'rgba(255,255,255,0.01)', 
-              borderRadius: '12px', 
-              border: '1px dashed rgba(255,255,255,0.05)', 
-              color: 'var(--text-muted)', 
-              fontSize: '11px', 
-              fontWeight: '700' 
-            }}>
-              Sin cumpleaños el día de hoy
-            </div>
-            
-            <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', margin: '4px 0' }} />
-            
-            <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '800', letterSpacing: '0.5px', marginBottom: '2px' }}>
-              PRÓXIMOS 15 DÍAS
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {upcomingBirthdays.length === 0 ? (
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '600', padding: '6px 0', textAlign: 'center' }}>
-                  Sin cumpleaños en los próximos 15 días
-                </div>
-              ) : (
-                upcomingBirthdays.map(p => (
-                  <div 
-                    key={p.id} 
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', backgroundColor: 'rgba(255,255,255,0.01)', borderRadius: '8px', cursor: p.isStaff ? 'default' : 'pointer' }}
-                    onClick={() => !p.isStaff && onNavigate && onNavigate('clients', { clientId: p.id })}
-                  >
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-                      {p.name} 
-                      {p.isStaff ? (
-                        <span style={{ fontSize: '9px', fontWeight: '900', color: 'rgba(212,175,55,0.7)', marginLeft: '4px' }}>TEAM</span>
-                      ) : (
-                        <span style={{ fontSize: '9px', fontWeight: '900', color: 'rgba(255,255,255,0.4)', marginLeft: '4px' }}>CLIENTE</span>
-                      )}
-                    </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{p.bdayDateStr}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 3. FOOTER CONTENT (UPCOMING LIST) */}
-      {hasBirthdaysToday && upcomingBirthdays.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
-          <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', margin: '4px 0' }} />
-          <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '800', letterSpacing: '0.5px', marginBottom: '2px' }}>
-            PRÓXIMOS CUMPLEAÑOS
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {upcomingBirthdays.slice(0, 2).map(p => (
-              <div 
-                key={p.id} 
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', backgroundColor: 'rgba(255,255,255,0.01)', borderRadius: '6px', cursor: p.isStaff ? 'default' : 'pointer' }}
-                onClick={() => !p.isStaff && onNavigate && onNavigate('clients', { clientId: p.id })}
-              >
-                <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-                  {p.name} 
-                  {p.isStaff ? (
-                    <span style={{ fontSize: '8px', fontWeight: '900', color: 'rgba(212,175,55,0.7)', marginLeft: '4px' }}>TEAM</span>
-                  ) : (
-                    <span style={{ fontSize: '8px', fontWeight: '900', color: 'rgba(255,255,255,0.4)', marginLeft: '4px' }}>CLIENTE</span>
-                  )}
-                </span>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{p.bdayDateStr}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Custom styled modal overlay for WhatsApp congratulations */}
-      {activePerson && createPortal(
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: whatsappModalData ? 'blur(8px)' : 'blur(0px)',
-          zIndex: 99999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px',
-          opacity: whatsappModalData ? 1 : 0,
-          visibility: whatsappModalData ? 'visible' : 'hidden',
-          pointerEvents: whatsappModalData ? 'auto' : 'none',
-          transition: 'opacity 0.3s ease, backdrop-filter 0.3s ease, visibility 0.3s'
-        }}>
-          <div className="glass-card" style={{
-            width: '100%',
-            maxWidth: '440px',
-            background: 'linear-gradient(135deg, rgba(20, 20, 20, 0.95) 0%, rgba(10, 10, 10, 0.98) 100%)',
-            border: '1px solid rgba(212, 175, 55, 0.25)',
-            borderRadius: '24px',
-            padding: '24px',
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.05)',
-            position: 'relative',
-            transform: whatsappModalData ? 'scale(1) translateY(0)' : 'scale(0.9) translateY(20px)',
-            transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease',
-            opacity: whatsappModalData ? 1 : 0
-          }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <MessageCircle size={20} color="var(--gold-primary)" />
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '900', color: 'white' }}>
-                  Felicitar a {activePerson.name}
-                </h3>
-              </div>
-              <button 
-                onClick={() => setWhatsappModalData(null)}
-                style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '28px',
-                  height: '28px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  color: 'var(--text-muted)'
-                }}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Description */}
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 16px 0' }}>
-              Puedes personalizar el mensaje y el número. Si editas el teléfono de un cliente registrado, se guardará el nuevo número automáticamente en la base de datos.
-            </p>
-
-            {/* Phone Input */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-              <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Número de Teléfono
-              </label>
-              <input 
-                type="text" 
-                value={editedPhone} 
-                onChange={(e) => setEditedPhone(e.target.value)}
-                placeholder="Ej: +584121234567"
-                style={{
-                  padding: '10px 14px',
-                  backgroundColor: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: '12px',
-                  color: 'white',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  outline: 'none',
-                }}
-              />
-            </div>
-
-            {/* Message Input */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '24px' }}>
-              <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Mensaje de Felicitación
-              </label>
-              <textarea 
-                value={editedMessage} 
-                onChange={(e) => setEditedMessage(e.target.value)}
-                rows={6}
-                style={{
-                  padding: '10px 14px',
-                  backgroundColor: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: '12px',
-                  color: 'white',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  outline: 'none',
-                  resize: 'vertical',
-                  minHeight: '140px',
-                  lineHeight: '1.5'
-                }}
-              />
-            </div>
-
-            {/* Actions */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button 
-                onClick={() => handleSendWhatsApp(true)}
-                disabled={isSaving || !editedPhone}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: '12px',
-                  backgroundColor: editedPhone ? '#25d366' : 'rgba(255,255,255,0.05)',
-                  color: editedPhone ? 'black' : 'var(--text-muted)',
-                  fontWeight: '850',
-                  fontSize: '13px',
-                  border: 'none',
-                  cursor: (isSaving || !editedPhone) ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: editedPhone ? '0 4px 12px rgba(37, 211, 102, 0.25)' : 'none',
-                }}
-              >
-                <MessageCircle size={16} />
-                {isSaving ? 'Guardando Teléfono...' : 'Enviar al Número Registrado'}
-              </button>
-
-              <button 
-                onClick={() => handleSendWhatsApp(false)}
-                disabled={isSaving}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  color: 'white',
-                  fontWeight: '700',
-                  fontSize: '13px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  cursor: isSaving ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                }}
-              >
-                Elegir Contacto Manualmente
-              </button>
-
-              <button 
-                onClick={() => setWhatsappModalData(null)}
-                disabled={isSaving}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: '12px',
-                  backgroundColor: 'transparent',
-                  color: 'var(--text-muted)',
-                  fontWeight: '600',
-                  fontSize: '13px',
-                  border: 'none',
-                  cursor: isSaving ? 'not-allowed' : 'pointer',
-                  textAlign: 'center'
-                }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-    </div>
-  );
-};
-
-const PodiumSection = ({ title, icon, data, labelKey, scoreKey, scoreLabel, isClient, onNavigate, staggerIndex }) => {
-  // Sort into 2nd, 1st, 3rd for visual podium order
-  const podiumOrder = [data[1], data[0], data[2]].filter(Boolean);
-  const staggerClass = staggerIndex ? `animate-stagger-${staggerIndex}` : '';
-
-  return (
-    <div className={`glass-card animate-slide-up ${staggerClass}`} style={{ padding: '12px 18px', borderRadius: '24px', minHeight: '210px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-        <div style={{ width: '30px', height: '30px', borderRadius: '8px', backgroundColor: 'rgba(212,175,55,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {icon}
-        </div>
-        <h3 style={{ fontSize: '15px', fontWeight: '900' }}>{title.split(' ')[0]} <span className="text-gold">{title.split(' ')[1]}</span></h3>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '12px', minHeight: '130px', flex: 1 }}>
-        {podiumOrder.map((item, idx) => {
-          const originalIdx = data.indexOf(item);
-          const isFirst = originalIdx === 0;
-          const isSecond = originalIdx === 1;
-          const isThird = originalIdx === 2;
-
-          return (
-            <div key={item.id} style={{ 
-              flex: 1, 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center'
-            }}>
-              <div style={{ position: 'relative', marginBottom: '8px' }}>
-                <div style={{ 
-                  width: isFirst ? '56px' : '44px', 
-                  height: isFirst ? '56px' : '44px', 
-                  borderRadius: '16px', 
-                  backgroundColor: 'var(--bg-tertiary)',
-                  border: isFirst ? '3px solid var(--gold-primary)' : '2px solid rgba(255,255,255,0.1)',
-                  overflow: 'hidden',
-                  boxShadow: isFirst ? 'var(--gold-glow)' : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {item.image_url ? (
-                    <img src={item.image_url} alt={item[labelKey]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <User size={isFirst ? 24 : 18} color="var(--gold-primary)" opacity={0.5} />
-                  )}
-                </div>
-                {isFirst && <Crown size={16} color="var(--gold-primary)" fill="var(--gold-primary)" style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)' }} />}
-                <div style={{ 
-                  position: 'absolute', 
-                  bottom: '-8px', 
-                  left: '50%', 
-                  transform: 'translateX(-50%)',
-                  width: '20px', 
-                  height: '20px', 
-                  borderRadius: '50%', 
-                  backgroundColor: isFirst ? 'var(--gold-primary)' : isSecond ? '#C0C0C0' : '#CD7F32',
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  fontSize: '11px', 
-                  fontWeight: '900', 
-                  color: 'black'
-                }}>
-                  {originalIdx + 1}
-                </div>
-              </div>
-
-              <div 
-                style={{ textAlign: 'center', marginTop: '8px', cursor: isClient ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                onClick={() => isClient && onNavigate && onNavigate('clients', { clientId: item.id })}
-              >
-                <div style={{ 
-                  fontWeight: '900', 
-                  fontSize: isFirst ? '13px' : '11px', 
-                  whiteSpace: 'nowrap', 
-                  maxWidth: '70px', 
-                  margin: '0 auto 3px auto',
-                  textAlign: 'center',
-                  overflow: 'hidden', 
-                  textOverflow: 'ellipsis',
-                  color: isClient ? 'var(--gold-primary)' : 'white',
-                  textDecoration: isClient ? 'underline' : 'none',
-                  textUnderlineOffset: '3px'
-                }}>
-                  {item[labelKey].split(' ')[0]}
-                </div>
-                <div style={{ color: 'var(--gold-primary)', fontWeight: '950', fontSize: '13px', textAlign: 'center', marginBottom: '2px' }}>{scoreKey(item)}</div>
-                <div style={{ fontSize: '8px', fontWeight: '800', opacity: 0.4, letterSpacing: '0.5px', marginBottom: '4px', textAlign: 'center' }}>{scoreLabel}</div>
-              {/* Visual Podium Base */}
-              <div style={{ 
-                width: '46px', 
-                height: isFirst ? '40px' : isSecond ? '26px' : '14px', 
-                background: 'linear-gradient(to top, rgba(212, 175, 55, 0.3), rgba(212, 175, 55, 0.1))',
-                borderRadius: '6px 6px 0 0',
-                margin: '8px auto 0 auto',
-                border: '1px solid rgba(212, 175, 55, 0.3)',
-                borderBottom: 'none',
-                boxShadow: isFirst ? '0 -8px 15px rgba(212, 175, 55, 0.15)' : 'none'
-              }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
 export default DashboardModule;
-

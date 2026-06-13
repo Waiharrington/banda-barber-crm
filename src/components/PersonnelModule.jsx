@@ -41,7 +41,7 @@ import AnimatedModal from './AnimatedModal';
 
 const availableModules = [
   { id: 'dashboard', label: 'Dashboard' },
-  { id: 'scheduling', label: 'Agenda (Astro)' },
+  { id: 'scheduling', label: 'Agenda (Panda)' },
   { id: 'reception', label: 'Recepción (Padre)' },
   { id: 'checkout', label: 'Caja (Pro)' },
   { id: 'barber', label: 'Panel Barber (Hijo)' },
@@ -373,7 +373,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         marginBottom: '40px'
       }}>
         <div>
-          <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Astro <span className="text-gold">Team</span></h2>
+          <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Panda <span className="text-gold">Team</span></h2>
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Gestión de talento y desempeño.</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
@@ -539,7 +539,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         placeholder="Ej. 2.00" 
                         value={formData.washing_rate} 
                         onChange={e => setFormData({...formData, washing_rate: e.target.value})} 
-                        style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.3)' }} 
+                        style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(255, 255, 255,0.3)' }} 
                       />
                     </div>
                   </div>
@@ -569,7 +569,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         gap: '10px', 
                         padding: '12px', 
                         borderRadius: '12px', 
-                        backgroundColor: formData.permissions.includes(mod.id) ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.03)',
+                        backgroundColor: formData.permissions.includes(mod.id) ? 'rgba(255, 255, 255,0.1)' : 'rgba(255,255,255,0.03)',
                         border: `1px solid ${formData.permissions.includes(mod.id) ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)'}`,
                         cursor: 'pointer',
                         transition: 'all 0.2s'
@@ -619,12 +619,12 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
               </div>
 
               {/* Login Credentials */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', padding: '20px', backgroundColor: 'rgba(212,175,55,0.03)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.1)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.1)' }}>
                 <div className="form-group">
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>EMAIL DE ACCESO</label>
                   <div style={{ position: 'relative' }}>
                     <Mail size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                    <input className="form-input" type="email" placeholder="persona@astrobarber.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.2)' }} />
+                    <input className="form-input" type="email" placeholder="persona@pandabarber.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} />
                   </div>
                 </div>
                 <div className="form-group">
@@ -637,7 +637,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       placeholder="usuario.barbero" 
                       value={formData.username} 
                       onChange={e => setFormData({...formData, username: e.target.value})} 
-                      style={{ width: '100%', height: '50px', paddingLeft: '48px', paddingRight: '48px', border: '1px solid rgba(212,175,55,0.2)' }} 
+                      style={{ width: '100%', height: '50px', paddingLeft: '48px', paddingRight: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} 
                     />
                   </div>
                 </div>
@@ -658,7 +658,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         </div>
       ) : staff.length === 0 ? (
         <div className="glass-card" style={{ textAlign: 'center', padding: '80px', borderRadius: '32px' }}>
-          <User size={64} color="rgba(212, 175, 55, 0.1)" style={{ marginBottom: '24px' }} />
+          <User size={64} color="rgba(255, 255, 255, 0.1)" style={{ marginBottom: '24px' }} />
           <h3 style={{ fontSize: '20px', color: 'var(--text-primary)' }}>El equipo está esperando</h3>
           <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Comienza agregando a los miembros que harán brillar tu marca.</p>
         </div>
@@ -736,7 +736,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
                     {/* Actions */}
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                      <button className="action-btn" onClick={() => setProfileModalData(person)} title="Ver Perfil" style={{ color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)', width: '34px', height: '34px', borderRadius: '8px' }}>
+                      <button className="action-btn" onClick={() => setProfileModalData(person)} title="Ver Perfil" style={{ color: 'var(--gold-primary)', backgroundColor: 'rgba(255, 255, 255,0.1)', width: '34px', height: '34px', borderRadius: '8px' }}>
                         <User size={15} />
                       </button>
                       <button className="action-btn" onClick={() => handleEditClick(person)} title="Editar Miembro" style={{ width: '34px', height: '34px', borderRadius: '8px' }}>
@@ -819,11 +819,11 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       {person.role?.split('|')[0]?.includes(', ') && (
                         <span style={{ 
                           padding: '2px 6px', 
-                          backgroundColor: 'rgba(212,175,55,0.1)', 
+                          backgroundColor: 'rgba(255, 255, 255,0.1)', 
                           borderRadius: '4px', 
                           fontSize: '9px',
                           marginLeft: '4px',
-                          border: '1px solid rgba(212,175,55,0.2)',
+                          border: '1px solid rgba(255, 255, 255,0.2)',
                           flexShrink: 0
                         }}>
                           MULTI-ROL
@@ -895,7 +895,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
                   {/* Actions Column */}
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                    <button className="action-btn" onClick={() => setProfileModalData(person)} title="Ver Perfil" style={{ color: 'var(--gold-primary)', backgroundColor: 'rgba(212,175,55,0.1)' }}>
+                    <button className="action-btn" onClick={() => setProfileModalData(person)} title="Ver Perfil" style={{ color: 'var(--gold-primary)', backgroundColor: 'rgba(255, 255, 255,0.1)' }}>
                       <User size={18} />
                     </button>
                     <button className="action-btn" onClick={() => handleEditClick(person)} title="Editar Miembro">
@@ -919,7 +919,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                   position: 'relative', 
                   zIndex: 998,
                   overflow: 'visible',
-                  border: '1px solid rgba(212,175,55,0.3)',
+                  border: '1px solid rgba(255, 255, 255,0.3)',
                   boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -1067,7 +1067,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                                 placeholder="Ej. 2.00" 
                                 value={formData.washing_rate} 
                                 onChange={e => setFormData({...formData, washing_rate: e.target.value})} 
-                                style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.3)' }} 
+                                style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(255, 255, 255,0.3)' }} 
                               />
                             </div>
                           </div>
@@ -1097,7 +1097,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                                 gap: '10px', 
                                 padding: '12px', 
                                 borderRadius: '12px', 
-                                backgroundColor: formData.permissions.includes(mod.id) ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.03)',
+                                backgroundColor: formData.permissions.includes(mod.id) ? 'rgba(255, 255, 255,0.1)' : 'rgba(255,255,255,0.03)',
                                 border: `1px solid ${formData.permissions.includes(mod.id) ? 'var(--gold-primary)' : 'rgba(255,255,255,0.05)'}`,
                                 cursor: 'pointer',
                                 transition: 'all 0.2s'
@@ -1147,12 +1147,12 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       </div>
 
                       {/* Login Credentials */}
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', padding: '20px', backgroundColor: 'rgba(212,175,55,0.03)', borderRadius: '16px', border: '1px solid rgba(212,175,55,0.1)' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.1)' }}>
                         <div className="form-group">
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>EMAIL DE ACCESO</label>
                           <div style={{ position: 'relative' }}>
                             <Mail size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                            <input className="form-input" type="email" placeholder="persona@astrobarber.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(212,175,55,0.2)' }} />
+                            <input className="form-input" type="email" placeholder="persona@pandabarber.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} />
                           </div>
                         </div>
                         <div className="form-group">
@@ -1165,7 +1165,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                               placeholder="usuario.barbero" 
                               value={formData.username} 
                               onChange={e => setFormData({...formData, username: e.target.value})} 
-                              style={{ width: '100%', height: '50px', paddingLeft: '48px', paddingRight: '48px', border: '1px solid rgba(212,175,55,0.2)' }} 
+                              style={{ width: '100%', height: '50px', paddingLeft: '48px', paddingRight: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} 
                             />
                           </div>
                         </div>

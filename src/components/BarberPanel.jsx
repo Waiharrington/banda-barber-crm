@@ -637,7 +637,7 @@ const BarberPanel = ({ isMobile, rates }) => {
           <button 
             onClick={() => { loadMyWork(); showToast("Sincronizado"); }}
             disabled={loading}
-            style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)', color: 'var(--gold-primary)', width: '40px', height: '40px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ background: 'rgba(255, 255, 255,0.1)', border: '1px solid rgba(255, 255, 255,0.2)', color: 'var(--gold-primary)', width: '40px', height: '40px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             title="Sincronizar silla"
           >
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
@@ -860,10 +860,10 @@ const BarberPanel = ({ isMobile, rates }) => {
                 fontSize: '12px', 
                 fontWeight: '900', 
                 color: 'white', 
-                background: 'rgba(212,175,55,0.1)', 
+                background: 'rgba(255, 255, 255,0.1)', 
                 padding: '4px 12px', 
                 borderRadius: '20px',
-                border: '1px solid rgba(212,175,55,0.2)'
+                border: '1px solid rgba(255, 255, 255,0.2)'
               }}>{
                 myServices.filter(app => 
                   app.status === 'En Silla' && (
@@ -911,10 +911,10 @@ const BarberPanel = ({ isMobile, rates }) => {
                       fontSize: '11px', 
                       fontWeight: '900', 
                       color: 'var(--gold-primary)', 
-                      background: 'rgba(212,175,55,0.1)', 
+                      background: 'rgba(255, 255, 255,0.1)', 
                       padding: '6px 12px', 
                       borderRadius: '12px', 
-                      border: '1px solid rgba(212,175,55,0.2)',
+                      border: '1px solid rgba(255, 255, 255,0.2)',
                       whiteSpace: 'nowrap',
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -928,7 +928,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                           width: '16px', 
                           height: '16px', 
                           objectFit: 'contain',
-                          filter: 'drop-shadow(0 1px 2px rgba(212, 175, 55, 0.6))'
+                          filter: 'drop-shadow(0 1px 2px rgba(255, 255, 255, 0.6))'
                         }} 
                       />
                     </span>
@@ -943,14 +943,14 @@ const BarberPanel = ({ isMobile, rates }) => {
               <Scissors 
                 size={18} 
                 color="var(--gold-primary)" 
-                style={{ filter: 'drop-shadow(0 1px 3px rgba(212, 175, 55, 0.4))' }} 
+                style={{ filter: 'drop-shadow(0 1px 3px rgba(255, 255, 255, 0.4))' }} 
               />
               <span style={{ fontWeight: '800', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>Tu Silla Hoy</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {myServices.length === 0 ? (
-                <div className="glass-card" style={{ textAlign: 'center', padding: '60px', borderRadius: '24px', border: '2px dashed rgba(212,175,55,0.2)', background: 'rgba(212,175,55,0.02)' }}>
+                <div className="glass-card" style={{ textAlign: 'center', padding: '60px', borderRadius: '24px', border: '2px dashed rgba(255, 255, 255,0.2)', background: 'rgba(255, 255, 255,0.02)' }}>
                   <style>{`
                     @keyframes chair-float-small {
                       0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -969,19 +969,19 @@ const BarberPanel = ({ isMobile, rates }) => {
                       transform: 'translateX(-50%)', 
                       width: '60px', 
                       height: '8px', 
-                      background: 'radial-gradient(ellipse at center, rgba(212,175,55,0.4) 0%, transparent 70%)',
+                      background: 'radial-gradient(ellipse at center, rgba(255, 255, 255,0.4) 0%, transparent 70%)',
                       zIndex: 1,
                       animation: 'shadow-scale-small 6s infinite ease-in-out'
                     }} />
                     <img 
                       src="/barber-chair.png" 
-                      alt="Astro Chair" 
+                      alt="Panda Chair" 
                       style={{ 
                         width: '80px', 
                         height: 'auto',
                         objectFit: 'contain',
                         zIndex: 3,
-                        filter: 'drop-shadow(0 5px 15px rgba(0,0,0,0.5)) drop-shadow(0 0 10px rgba(212, 175, 55, 0.4))',
+                        filter: 'drop-shadow(0 5px 15px rgba(0,0,0,0.5)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.4))',
                         animation: 'chair-float-small 6s infinite ease-in-out'
                       }} 
                     />
@@ -996,8 +996,8 @@ const BarberPanel = ({ isMobile, rates }) => {
                     <div key={app.id} className="glass-card animate-slide-up" style={{ 
                       borderRadius: '28px', 
                       padding: '24px', 
-                      background: app.status === 'En Silla' ? 'linear-gradient(135deg, rgba(28,28,30,0.98), rgba(212,175,55,0.02))' : 'var(--bg-secondary)',
-                      border: app.status === 'En Silla' ? '1px solid rgba(212,175,55,0.15)' : '1px solid rgba(255,255,255,0.05)',
+                      background: app.status === 'En Silla' ? 'linear-gradient(135deg, rgba(28,28,30,0.98), rgba(255, 255, 255,0.02))' : 'var(--bg-secondary)',
+                      border: app.status === 'En Silla' ? '1px solid rgba(255, 255, 255,0.15)' : '1px solid rgba(255,255,255,0.05)',
                       boxShadow: '0 20px 45px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)'
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
@@ -1008,10 +1008,10 @@ const BarberPanel = ({ isMobile, rates }) => {
                             color: app.status === 'En Lavado' ? '#007aff' : 'var(--gold-primary)', 
                             textTransform: 'uppercase', 
                             letterSpacing: '1.5px',
-                            background: app.status === 'En Lavado' ? 'rgba(0,122,255,0.12)' : 'rgba(212,175,55,0.1)',
+                            background: app.status === 'En Lavado' ? 'rgba(0,122,255,0.12)' : 'rgba(255, 255, 255,0.1)',
                             padding: '4px 10px',
                             borderRadius: '8px',
-                            border: app.status === 'En Lavado' ? '1px solid rgba(0,122,255,0.2)' : '1px solid rgba(212,175,55,0.15)',
+                            border: app.status === 'En Lavado' ? '1px solid rgba(0,122,255,0.2)' : '1px solid rgba(255, 255, 255,0.15)',
                             whiteSpace: 'nowrap',
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -1026,7 +1026,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                                   width: '16px', 
                                   height: '16px', 
                                   objectFit: 'contain',
-                                  filter: 'drop-shadow(0 1px 2px rgba(212, 175, 55, 0.6))'
+                                  filter: 'drop-shadow(0 1px 2px rgba(255, 255, 255, 0.6))'
                                 }} 
                               />
                             )}
@@ -1040,10 +1040,10 @@ const BarberPanel = ({ isMobile, rates }) => {
                             fontSize: '13px', 
                             fontWeight: '800', 
                             marginTop: '6px',
-                            background: 'rgba(212,175,55,0.06)',
+                            background: 'rgba(255, 255, 255,0.06)',
                             padding: '4px 12px',
                             borderRadius: '10px',
-                            border: '1px solid rgba(212,175,55,0.12)'
+                            border: '1px solid rgba(255, 255, 255,0.12)'
                           }}>
                             {app.services?.name}
                           </div>
@@ -1091,7 +1091,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                             height: '120px', 
                             borderRadius: '20px', 
                             backgroundColor: 'rgba(0,0,0,0.4)', 
-                            border: '1.5px dashed rgba(212,175,55,0.25)', 
+                            border: '1.5px dashed rgba(255, 255, 255,0.25)', 
                             display: 'flex', 
                             flexDirection: 'column', 
                             alignItems: 'center', 
@@ -1107,7 +1107,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                           {app.clients?.work_gallery?.find(p => p.type === 'Antes' && p.service_id === app.id) ? (
                             <>
                               <img src={app.clients.work_gallery.find(p => p.type === 'Antes' && p.service_id === app.id).url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              <div style={{ position: 'absolute', top: '8px', left: '8px', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', padding: '4px 10px', borderRadius: '8px', fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', border: '1px solid rgba(212,175,55,0.3)', letterSpacing: '0.5px' }}>ANTES</div>
+                              <div style={{ position: 'absolute', top: '8px', left: '8px', background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', padding: '4px 10px', borderRadius: '8px', fontSize: '9px', fontWeight: '900', color: 'var(--gold-primary)', border: '1px solid rgba(255, 255, 255,0.3)', letterSpacing: '0.5px' }}>ANTES</div>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); handleDeletePhoto(app.id, 'Antes'); }}
                                 style={{ 
@@ -1133,7 +1133,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                             </>
                           ) : (
                             <>
-                              <div style={{ background: 'rgba(212,175,55,0.06)', padding: '10px', borderRadius: '50%', border: '1px solid rgba(212,175,55,0.15)' }}>
+                              <div style={{ background: 'rgba(255, 255, 255,0.06)', padding: '10px', borderRadius: '50%', border: '1px solid rgba(255, 255, 255,0.15)' }}>
                                 <Camera size={20} color="var(--gold-primary)" />
                               </div>
                               <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px' }}>FOTO ANTES</span>
@@ -1148,7 +1148,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                             height: '120px', 
                             borderRadius: '20px', 
                             backgroundColor: 'rgba(0,0,0,0.4)', 
-                            border: '1.5px dashed rgba(212,175,55,0.25)', 
+                            border: '1.5px dashed rgba(255, 255, 255,0.25)', 
                             display: 'flex', 
                             flexDirection: 'column', 
                             alignItems: 'center', 
@@ -1190,7 +1190,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                             </>
                           ) : (
                             <>
-                              <div style={{ background: 'rgba(212,175,55,0.06)', padding: '10px', borderRadius: '50%', border: '1px solid rgba(212,175,55,0.15)' }}>
+                              <div style={{ background: 'rgba(255, 255, 255,0.06)', padding: '10px', borderRadius: '50%', border: '1px solid rgba(255, 255, 255,0.15)' }}>
                                 <Camera size={20} color="var(--gold-primary)" />
                               </div>
                               <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px' }}>FOTO DESPUÉS</span>
@@ -1262,7 +1262,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                             padding: '14px', 
                             borderRadius: '16px', 
                             background: 'rgba(255,255,255,0.02)', 
-                            border: '1px solid rgba(212,175,55,0.15)', 
+                            border: '1px solid rgba(255, 255, 255,0.15)', 
                             color: 'white', 
                             fontSize: '12px', 
                             fontWeight: '800', 
@@ -1275,7 +1275,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                             transition: 'all 0.2s'
                           }}
                         >
-                          <Plus size={16} color="var(--gold-primary)" style={{ filter: 'drop-shadow(0 0 5px rgba(212,175,55,0.4))' }} /> Extra
+                          <Plus size={16} color="var(--gold-primary)" style={{ filter: 'drop-shadow(0 0 5px rgba(255, 255, 255,0.4))' }} /> Extra
                         </button>
                         <button 
                           onClick={() => { setActiveAppId(app.id); setAddMode('product'); setShowAddModal(true); }}
@@ -1284,7 +1284,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                             padding: '14px', 
                             borderRadius: '16px', 
                             background: 'rgba(255,255,255,0.02)', 
-                            border: '1px solid rgba(212,175,55,0.15)', 
+                            border: '1px solid rgba(255, 255, 255,0.15)', 
                             color: 'white', 
                             fontSize: '12px', 
                             fontWeight: '800', 
@@ -1297,7 +1297,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                             transition: 'all 0.2s'
                           }}
                         >
-                          <ShoppingBag size={15} color="var(--gold-primary)" style={{ filter: 'drop-shadow(0 0 5px rgba(212,175,55,0.4))' }} /> Producto
+                          <ShoppingBag size={15} color="var(--gold-primary)" style={{ filter: 'drop-shadow(0 0 5px rgba(255, 255, 255,0.4))' }} /> Producto
                         </button>
                       </div>
 
@@ -1421,7 +1421,7 @@ const BarberPanel = ({ isMobile, rates }) => {
               {isAssistant ? "Comisiones Hoy" : "Producción Hoy"}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '8px' }}>
-              <div style={{ fontSize: '26px', fontWeight: '900', color: isAssistant ? '#007aff' : 'var(--gold-primary)', textShadow: isAssistant ? '0 0 15px rgba(0,122,255,0.4)' : '0 0 15px rgba(212,175,55,0.4)' }}>${stats.production.toFixed(2)}</div>
+              <div style={{ fontSize: '26px', fontWeight: '900', color: isAssistant ? '#007aff' : 'var(--gold-primary)', textShadow: isAssistant ? '0 0 15px rgba(0,122,255,0.4)' : '0 0 15px rgba(255, 255, 255,0.4)' }}>${stats.production.toFixed(2)}</div>
               {rates?.usd > 0 && stats.production > 0 && (
                 <div style={{ fontSize: '12px', color: isAssistant ? '#007aff' : 'var(--gold-primary)', fontWeight: '800', marginTop: '4px' }}>
                   {Math.round(stats.production * rates.usd).toLocaleString()} BS
@@ -1487,10 +1487,10 @@ const BarberPanel = ({ isMobile, rates }) => {
               fontSize: '12px', 
               fontWeight: '900', 
               color: isAssistant ? '#007aff' : 'var(--gold-primary)', 
-              background: isAssistant ? 'rgba(0,122,255,0.1)' : 'rgba(212,175,55,0.1)', 
+              background: isAssistant ? 'rgba(0,122,255,0.1)' : 'rgba(255, 255, 255,0.1)', 
               padding: '4px 12px', 
               borderRadius: '20px',
-              border: isAssistant ? '1px solid rgba(0,122,255,0.2)' : '1px solid rgba(212,175,55,0.2)'
+              border: isAssistant ? '1px solid rgba(0,122,255,0.2)' : '1px solid rgba(255, 255, 255,0.2)'
             }}>{completedToday.length}</span>
           </div>
 
@@ -1569,11 +1569,11 @@ const BarberPanel = ({ isMobile, rates }) => {
                         )}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed rgba(212,175,55,0.25)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed rgba(255, 255, 255,0.25)' }}>
                       {startedTime && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                           <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '800' }}>⏱ {startedTime} → {completedTime}</span>
-                          <span style={{ marginLeft: 'auto', fontSize: '11px', fontWeight: '900', color: isAssistant ? '#007aff' : 'var(--gold-primary)', background: isAssistant ? 'rgba(0,122,255,0.1)' : 'rgba(212,175,55,0.1)', padding: '4px 10px', borderRadius: '12px', border: isAssistant ? '1px solid rgba(0,122,255,0.2)' : '1px solid rgba(212,175,55,0.2)' }}>
+                          <span style={{ marginLeft: 'auto', fontSize: '11px', fontWeight: '900', color: isAssistant ? '#007aff' : 'var(--gold-primary)', background: isAssistant ? 'rgba(0,122,255,0.1)' : 'rgba(255, 255, 255,0.1)', padding: '4px 10px', borderRadius: '12px', border: isAssistant ? '1px solid rgba(0,122,255,0.2)' : '1px solid rgba(255, 255, 255,0.2)' }}>
                             {durationMin > 0 ? `${durationMin} min` : 'Completado'}
                           </span>
                         </div>
@@ -1710,7 +1710,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                 {/* Service Info */}
                 <div style={{ marginBottom: '20px' }}>
                   <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '12px' }}>SERVICIO REALIZADO</div>
-                  <div style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)', borderRadius: '16px', padding: '16px' }}>
+                  <div style={{ background: 'rgba(255, 255, 255,0.06)', border: '1px solid rgba(255, 255, 255,0.12)', borderRadius: '16px', padding: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{app.services?.name}</div>
@@ -1798,7 +1798,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                       <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700', marginBottom: '4px' }}>FIN</div>
                       <div style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>{completedTime}</div>
                     </div>
-                    <div style={{ background: 'rgba(212,175,55,0.06)', padding: '12px', borderRadius: '12px', textAlign: 'center', border: '1px solid rgba(212,175,55,0.12)' }}>
+                    <div style={{ background: 'rgba(255, 255, 255,0.06)', padding: '12px', borderRadius: '12px', textAlign: 'center', border: '1px solid rgba(255, 255, 255,0.12)' }}>
                       <div style={{ fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '700', marginBottom: '4px' }}>DURACIÓN</div>
                       <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--gold-primary)' }}>{durationMin > 0 ? `${durationMin} min` : '—'}</div>
                     </div>

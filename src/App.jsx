@@ -26,7 +26,7 @@ import NotificationsDrawer from './components/NotificationsDrawer';
 import { notificationService } from './services/notificationService';
 import { useDialog } from './context/DialogContext';
 import { useScrollLock } from './hooks/useScrollLock';
-import { useModal } from './context/ModalContext';
+import { useModal, ModalShield } from './context/ModalContext';
 
 const DashboardModule = lazy(() => import('./components/DashboardModule'));
 const MobileDashboard = lazy(() => import('./components/mobile/MobileDashboard'));
@@ -188,8 +188,8 @@ function App() {
     datasets: [{
       label: 'Ventas ($)',
       data: [0, 0, 0, 0, 0, 0, 0],
-      borderColor: '#d4af37',
-      backgroundColor: 'rgba(212, 175, 55, 0.1)',
+      borderColor: '#ffffff',
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
       fill: true,
       tension: 0.4
     }]
@@ -200,7 +200,7 @@ function App() {
     { id: 'my-profile', label: 'Mi Perfil', icon: UserCircle },
     { id: 'reception', label: 'Recepción (Padre)', icon: UserCircle },
     { id: 'clients', label: 'Clientes', icon: Users },
-    { id: 'personnel', label: 'Astro Team', icon: Scissors },
+    { id: 'personnel', label: 'Panda Team', icon: Scissors },
     { id: 'services', label: 'Servicios', icon: Star },
     { id: 'inventory', label: 'Inventario', icon: Package, roles: ['Admin', 'Caja'] },
     { id: 'finance', label: 'Finanzas', icon: Wallet, roles: ['Admin', 'Caja'] },
@@ -221,7 +221,11 @@ function App() {
         setIsCollapsed(false);
       }
     };
+    const handleNavigation = (e) => {
+      handleTabChange(e.detail);
+    };
     window.addEventListener('resize', handleResize);
+    window.addEventListener('astro_navigate', handleNavigation);
     
     // One-time cleanup of corrupted default birthday templates in localStorage
     if (!localStorage.getItem('astro_bday_cleaned_v6')) {
@@ -249,7 +253,10 @@ function App() {
     };
 
     initApp();
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('astro_navigate', handleNavigation);
+    };
   }, [user]);
 
   const checkAutomaticWeeklyClose = async () => {
@@ -478,7 +485,7 @@ function App() {
         const dailyTotals = last7Days.map(day => operationalTransactions.filter(tr => tr.created_at?.startsWith(day) && tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0));
         setChartData({
           labels: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
-          datasets: [{ label: 'Ventas ($)', data: dailyTotals, borderColor: '#d4af37', backgroundColor: 'rgba(212, 175, 55, 0.1)', fill: true, tension: 0.4 }]
+          datasets: [{ label: 'Ventas ($)', data: dailyTotals, borderColor: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.1)', fill: true, tension: 0.4 }]
         });
       }
 
@@ -554,7 +561,7 @@ function App() {
     if (!await confirm('¿Quieres cargar datos de prueba para ver el CRM funcionando?')) return;
     try {
       await dataService.addStaff({ name: 'Marco Silva', role: 'Barbero Principal', commission_pct: 40 });
-      await dataService.addService({ name: 'Corte Astro Deluxe', price: 80, category: 'Barbería' });
+      await dataService.addService({ name: 'Corte Panda Deluxe', price: 80, category: 'Barbería' });
       await dataService.addClient({ name: 'Carlos Demo', phone: '555-0123', hair_type: 'Normal' });
       await alert('Datos de demo cargados!');
       fetchInitialData();
@@ -586,8 +593,11 @@ function App() {
             dbData={dbData} 
             handleSeedData={handleSeedData} 
             rates={effectiveRates}
+            activeRateType={activeRateType}
+            onToggleRateType={handleSetActiveRateType}
             onNavigate={handleTabChange}
             onRefresh={fetchInitialData}
+            onOpenNotifications={() => setIsNotificationsOpen(true)}
           />
         );
       case 'reception': return <div className="p-container"><ReceptionModule isMobile={isMobile} /></div>;
@@ -612,7 +622,7 @@ function App() {
             />
           </div>
         );
-      default: return <div className="p-container"><DashboardModule isMobile={isMobile} currency={currency} rates={effectiveRates} onNavigate={handleTabChange} /></div>;
+      default: return <div className="p-container"><DashboardModule isMobile={isMobile} currency={currency} rates={effectiveRates} activeRateType={activeRateType} onToggleRateType={handleSetActiveRateType} onNavigate={handleTabChange} /></div>;
     }
   };
 
@@ -674,23 +684,25 @@ function App() {
       />
       <main className="main-content no-scrollbar" style={{ 
         flex: 1, 
-        marginLeft: isMobile ? '0' : (isCollapsed ? '80px' : '260px'), 
+        marginLeft: isMobile ? '0' : (isModalOpen ? '0' : (isCollapsed ? '80px' : '260px')), 
         padding: 'var(--spacing-xl)', 
-        paddingBottom: '80px',
+        paddingBottom: activeTab === 'dashboard' ? '12px' : '80px',
         height: '100vh',
-        overflowY: 'auto',
+        overflowY: activeTab === 'dashboard' ? 'hidden' : 'auto',
         backgroundColor: 'transparent',
         transition: 'margin-left 0.3s ease'
       }}>
         <div key={activeTab} className={isAppLoading ? "opacity-0" : "animate-page-fade-in"} style={{ height: '100%' }}>
-          <TopBar 
-            activeTab={activeTab}
-            rates={effectiveRates} 
-            onOpenSale={() => setIsReceptionModalOpen(true)}
-            activeRateType={activeRateType}
-            onToggleRateType={handleSetActiveRateType}
-            onOpenNotifications={() => setIsNotificationsOpen(true)}
-          />
+          {activeTab !== 'dashboard' && (
+            <TopBar 
+              activeTab={activeTab}
+              rates={effectiveRates} 
+              onOpenSale={() => setIsReceptionModalOpen(true)}
+              activeRateType={activeRateType}
+              onToggleRateType={handleSetActiveRateType}
+              onOpenNotifications={() => setIsNotificationsOpen(true)}
+            />
+          )}
           <Suspense fallback={<ModuleFallback />}>
             {renderContent()}
           </Suspense>
@@ -698,49 +710,51 @@ function App() {
       </main>
 
       {/* Reception Modal (Floating Workspace) */}
-      <div style={{ 
-        position: 'fixed', 
-        inset: 0, 
-        zIndex: 3000, 
-        backgroundColor: 'rgba(0,0,0,0.9)', 
-        backdropFilter: isReceptionModalOpen ? 'blur(20px)' : 'blur(0px)', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        padding: isMobile ? '0' : '20px',
-        opacity: isReceptionModalOpen ? 1 : 0,
-        visibility: isReceptionModalOpen ? 'visible' : 'hidden',
-        pointerEvents: isReceptionModalOpen ? 'auto' : 'none',
-        transition: 'opacity 0.35s ease, backdrop-filter 0.35s ease, visibility 0.35s'
-      }}>
-        <div className="glass-card" style={{ 
-          width: '100%', 
-          maxWidth: '1400px', 
-          height: isMobile ? '100%' : '90vh', 
-          overflowY: isModalOpen ? 'hidden' : 'auto', 
-          borderRadius: isMobile ? '0' : '32px', 
-          border: '1px solid rgba(212,175,55,0.3)', 
-          position: 'relative', 
-          background: 'var(--bg-primary)',
-          transform: isReceptionModalOpen ? 'scale(1) translateY(0)' : 'scale(0.96) translateY(20px)',
-          transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease',
-          opacity: isReceptionModalOpen ? 1 : 0
+      <ModalShield active={isReceptionModalOpen}>
+        <div className="global-modal-overlay" style={{ 
+          position: 'fixed', 
+          inset: 0, 
+          zIndex: 3000, 
+          backgroundColor: 'rgba(0,0,0,0.9)', 
+          backdropFilter: isReceptionModalOpen ? 'blur(20px)' : 'blur(0px)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          padding: isMobile ? '0' : '20px',
+          opacity: isReceptionModalOpen ? 1 : 0,
+          visibility: isReceptionModalOpen ? 'visible' : 'hidden',
+          pointerEvents: isReceptionModalOpen ? 'auto' : 'none',
+          transition: 'opacity 0.35s ease, backdrop-filter 0.35s ease, visibility 0.35s'
         }}>
-          <button 
-            onClick={() => setIsReceptionModalOpen(false)}
-            style={{ position: 'absolute', right: '20px', top: '20px', zIndex: 3001, background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <X size={20} />
-          </button>
-          {isReceptionModalOpen && (
-            <div style={{ padding: isMobile ? '20px' : '40px' }}>
-              <Suspense fallback={<ModuleFallback />}>
-                <ReceptionModule isMobile={isMobile} rates={effectiveRates} />
-              </Suspense>
-            </div>
-          )}
+          <div className="glass-card global-modal-card" style={{ 
+            width: '100%', 
+            maxWidth: '1400px', 
+            height: isMobile ? '100%' : '90vh', 
+            overflowY: isModalOpen ? 'hidden' : 'auto', 
+            borderRadius: isMobile ? '0' : '32px', 
+            border: '1px solid rgba(255, 255, 255,0.3)', 
+            position: 'relative', 
+            background: 'var(--bg-primary)',
+            transform: isReceptionModalOpen ? 'scale(1) translateY(0)' : 'scale(0.96) translateY(20px)',
+            transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease',
+            opacity: isReceptionModalOpen ? 1 : 0
+          }}>
+            <button 
+              onClick={() => setIsReceptionModalOpen(false)}
+              style={{ position: 'absolute', right: '20px', top: '20px', zIndex: 3001, background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', width: '40px', height: '40px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <X size={20} />
+            </button>
+            {isReceptionModalOpen && (
+              <div style={{ padding: isMobile ? '20px' : '40px' }}>
+                <Suspense fallback={<ModuleFallback />}>
+                  <ReceptionModule isMobile={isMobile} rates={effectiveRates} />
+                </Suspense>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </ModalShield>
 
       {isSaleModalOpen && (
         <Suspense fallback={null}>

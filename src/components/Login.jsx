@@ -10,11 +10,18 @@ import bgDesktop from '../assets/barbershop_desktop.png';
 import bgMobile from '../assets/barbershop_mobile.png';
 
 const features = [
-  { icon: Calendar,   label: 'GESTIONA\nCITAS' },
-  { icon: Users,      label: 'ADMINISTRA\nCLIENTES' },
-  { icon: BarChart2,  label: 'ANALIZA TU\nNEGOCIO' },
-  { icon: DollarSign, label: 'HAZ CRECER\nTU BARBERÍA' },
+  { icon: Calendar, title: 'Citas', desc: 'Gestiona tus reservas\ncon facilidad' },
+  { icon: Users, title: 'Clientes', desc: 'Crea relaciones\nmás fuertes' },
+  { icon: DollarSign, title: 'Finanzas', desc: 'Controla tus ingresos\nen tiempo real' },
+  { icon: BarChart2, title: 'Reportes', desc: 'Monitorea tu rendimiento\ny crecimiento' }
 ];
+
+// Configuración dinámica de textos de marca para personalizar por cliente fácilmente
+const BRAND_CONFIG = {
+  headingFirstPart: 'EL CONTROL ABSOLUTO',
+  headingSecondPart: 'ESTUDIO',
+  description: 'Optimiza tu tiempo, simplifica tu administración y ofrece una experiencia inolvidable a cada cliente.'
+};
 
 export default function Login() {
   const { login, loading } = useAuth();
@@ -22,6 +29,22 @@ export default function Login() {
   const [password, setPassword]       = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError]             = useState('');
+  const [isExiting, setIsExiting]     = useState(false);
+  const [tilt, setTilt]               = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e) => {
+    const card = e.currentTarget;
+    const box = card.getBoundingClientRect();
+    const x = e.clientX - box.left - box.width / 2;
+    const y = e.clientY - box.top - box.height / 2;
+    const rotateX = -(y / (box.height / 2)) * 6; // Máximo 6 grados de rotación
+    const rotateY = (x / (box.width / 2)) * 6;
+    setTilt({ x: rotateX, y: rotateY });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+  };
   
   // ── ESTADOS DE CALIBRACIÓN DE FONDO INTERACTIVOS (CON PERSISTENCIA LOCALSTORAGE) ──
   
@@ -54,10 +77,10 @@ export default function Login() {
 
   // 3. Teléfono / Móvil (Inicializado con los valores calibrados por el usuario en el screenshot)
   const [mobBgZoomMode, setMobBgZoomMode] = useState(() => getLocalStr('mobBgZoomMode', 'manual')); 
-  const [mobBgZoom, setMobBgZoom]         = useState(() => getLocalNum('mobBgZoom', 101));
-  const [mobBgX, setMobBgX]               = useState(() => getLocalNum('mobBgX', 0));
-  const [mobBgY, setMobBgY]               = useState(() => getLocalNum('mobBgY', 100));
-  const [mobileSplit, setMobileSplit]     = useState(() => getLocalNum('mobileSplit', 34));
+  const [mobBgZoom, setMobBgZoom]         = useState(104);
+  const [mobBgX, setMobBgX]               = useState(0);
+  const [mobBgY, setMobBgY]               = useState(100);
+  const [mobileSplit, setMobileSplit]     = useState(34);
   const [rememberMe, setRememberMe]       = useState(false);
 
   // 4. Espaciados e Interlineados de Pantalla Móvil (Actualizado con screenshot)
@@ -133,6 +156,17 @@ export default function Login() {
     return 'desktop';
   };
 
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      const isPortrait = window.innerHeight > window.innerWidth;
+      setIsMobileDevice(window.innerWidth <= 768 || isPortrait);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const activeDevice = getActiveDevice();
 
   const handleCopyConfig = () => {
@@ -172,8 +206,12 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsExiting(true); // Activa la animación de salida
     const result = await login(email, password);
-    if (!result.success) setError(result.message);
+    if (!result.success) {
+      setIsExiting(false); // Revierte la animación de salida si falla
+      setError(result.message);
+    }
   };
 
   return (
@@ -182,7 +220,39 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* ── ROOT ── */
+        
+        .desktop-only-label {
+          display: block;
+        }
+        .mobile-only-label {
+          display: none;
+        }
+        .l-card-mobile-header {
+          display: none;
+        }
+        .mob-only-copyright {
+          display: none;
+        }
+
+        .l-main-section {
+          display: flex;
+          width: 100%;
+          justify-content: space-between;
+          align-items: center;
+          flex: 1;
+          gap: 40px;
+          margin-bottom: 20px;
+        }
+        @media (max-width: 768px), (orientation: portrait) {
+          .l-main-section {
+            flex-direction: column !important;
+            justify-content: center !important;
+            gap: 20px !important;
+            margin-bottom: 0 !important;
+            width: 100% !important;
+          }
+        }
+/* ── ROOT ── */
         .l-root {
           position: relative;
           width: 100vw;
@@ -202,7 +272,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           width: 100%;
           height: 100%;
           border-radius: 28px;
-          border: 1.5px solid rgba(212, 175, 55, 0.22);
+          border: 1.5px solid var(--border-color);
           overflow: hidden;
           display: flex;
           align-items: stretch;
@@ -265,13 +335,14 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           position: relative;
           z-index: 2;
           width: 100%;
-          max-width: 1380px; /* Limitar el ancho de visualización del contenido */
-          margin: 0 auto; /* Centrar todo el bloque en la pantalla */
+          max-width: 1380px;
+          margin: 0 auto;
           display: flex;
-          align-items: center;
-          justify-content: space-between; /* Pushes containers to their respective sides */
-          padding: 50px 80px;
-          gap: 40px; /* Distancia mínima para pantallas medianas */
+          flex-direction: column;
+          justify-content: space-between;
+          height: 100%;
+          padding: 30px 40px;
+          box-sizing: border-box;
         }
 
         /* ── LEFT SIDE ── */
@@ -282,7 +353,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           justify-content: center;
           align-items: flex-start; /* Alineado a la izquierda */
           height: 100%;
-          max-width: 520px;
+          max-width: 600px;
           gap: 36px;
           padding-left: 0; /* Let inner container handle the outer padding */
         }
@@ -292,11 +363,11 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           align-items: flex-start; /* Elementos alineados a la izquierda */
           justify-content: center;
           width: 100%;
-          max-width: 480px;
+          max-width: 580px;
         }
         .l-logo {
-          width: 170px; /* Logo más pequeño y elegante */
-          margin: 0 0 32px 0; /* Alinear logo a la izquierda */
+          width: 195px; /* Más imponente e identificable */
+          margin: 0 0 32px -28px; /* Alinear logo a la izquierda ajustado al tamaño */
           display: block;
           filter: drop-shadow(0 8px 16px rgba(0,0,0,0.95)) drop-shadow(0 2px 4px rgba(0,0,0,0.85));
         }
@@ -310,7 +381,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           text-align: left; /* Título alineado a la izquierda */
           width: 100%;
         }
-        .l-heading span { color: #d4af37; }
+        .l-heading span { color: inherit; }
         .l-desc {
           font-size: 13.5px;
           color: rgba(255, 255, 255, 0.85); /* Mucho más contraste y luminosidad */
@@ -344,7 +415,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           display: flex;
           align-items: center;
           justify-content: flex-start;
-          color: #d4af37;
+          color: var(--champagne);
           filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.85)); /* Añade sombra al icono dorado */
         }
         .l-feat-label {
@@ -362,28 +433,30 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
         .l-card {
           flex-shrink: 0;
           width: 410px;
-          background: #0f0f11; /* Gris oscuro sólido sin transparencia excesiva */
-          border: 1px solid rgba(212, 175, 55, 0.22); /* Borde dorado pulido y sutil */
-          border-radius: 24px; /* Esquinas exactas */
-          padding: 54px 36px; /* Relleno optimizado para ancho más estrecho */
-          box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7);
+          background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+          border: 1px solid var(--border-color);
+          border-radius: 24px;
+          padding: 48px 36px 40px 36px; /* Más espacio arriba y a los lados */
+          box-shadow: 0 50px 100px rgba(0, 0, 0, 0.95), inset 0 1px 0px rgba(255,255,255,0.10);
           display: flex;
           flex-direction: column;
+          gap: 16px;
         }
         .l-card-title {
           font-size: 21px;
           font-weight: 800;
           color: #fff;
           text-align: center;
+          margin-top: 6px; /* Baja el título un poco para alejarlo del borde superior */
           margin-bottom: 6px;
           letter-spacing: 0.5px;
         }
-        .l-card-title span { color: #d4af37; }
+        .l-card-title span { color: var(--champagne); text-shadow: 0 0 10px rgba(203, 183, 154, 0.35); }
         .l-card-sub {
           font-size: 13.5px;
           color: rgba(255,255,255,0.40);
           text-align: center;
-          margin-bottom: 44px; /* Más espacio para estirar el largo */
+          margin-bottom: 28px; /* Reducido de 44px para balancear el espacio central */
         }
 
         /* ── INPUTS ── */
@@ -398,7 +471,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           font-size: 9px;
           font-weight: 800;
           letter-spacing: 1px;
-          color: #9a7e2b; /* Dorado envejecido/apagado */
+          color: #8c8c8c; /* Dorado envejecido/apagado */
           text-transform: uppercase;
           pointer-events: none;
           z-index: 1;
@@ -408,7 +481,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           left: 18px;
           top: 50%;
           transform: translateY(-50%);
-          color: #9a7e2b; /* Dorado a juego con la etiqueta */
+          color: #8c8c8c; /* Dorado a juego con la etiqueta */
           display: flex;
           z-index: 1;
           opacity: 0.8;
@@ -439,8 +512,8 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
         }
 
         .l-input:focus {
-          border-color: rgba(212,175,55,0.8); /* Iluminar borde dorado */
-          box-shadow: 0 0 0 3px rgba(212,175,55,0.15);
+          border-color: rgba(255, 255, 255,0.8); /* Iluminar borde dorado */
+          box-shadow: 0 0 0 3px rgba(255, 255, 255,0.15);
         }
         .l-eye-btn {
           position: absolute;
@@ -449,7 +522,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           transform: translateY(-50%);
           background: none;
           border: none;
-          color: #d4af37; /* Dorado en la referencia */
+          color: #ffffff; /* Dorado en la referencia */
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -474,19 +547,19 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           font-weight: 500;
         }
         .l-remember input {
-          accent-color: #d4af37;
+          accent-color: #ffffff;
           width: 16px;
           height: 16px;
           cursor: pointer;
         }
         .l-forgot {
-          color: #d4af37;
+          color: #ffffff;
           text-decoration: none;
           font-weight: 600;
           transition: color 0.2s;
         }
         .l-forgot:hover {
-          color: #caa03d;
+          color: #b5b5b5;
           text-decoration: underline;
         }
 
@@ -506,7 +579,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
         .l-btn {
           width: 100%;
           height: 56px;
-          background: linear-gradient(to right, #ecc355 0%, #caa03d 100%); /* Degradado dorado suave */
+          background: var(--gold-gradient);
           border: none;
           border-radius: 12px; /* Redondeado exacto de 12px */
           color: #000; /* Texto negro */
@@ -519,11 +592,11 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           justify-content: center;
           gap: 10px;
           transition: transform 0.2s, box-shadow 0.2s;
-          box-shadow: 0 8px 20px rgba(212,175,55,0.15); /* Resplandor dorado suave */
+          box-shadow: 0 8px 20px rgba(255, 255, 255,0.15); /* Resplandor dorado suave */
         }
         .l-btn:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 10px 24px rgba(212,175,55,0.25);
+          box-shadow: 0 10px 24px rgba(255, 255, 255,0.25);
         }
         .l-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
@@ -537,7 +610,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           font-size: 12px;
           color: rgba(255,255,255,0.40);
         }
-        .l-secure span { color: #d4af37; font-weight: 600; }
+        .l-secure span { color: #ffffff; font-weight: 600; }
 
         /* ── SPIN ── */
         @keyframes l-spin { to { transform: rotate(360deg); } }
@@ -550,10 +623,10 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
         }
         .l-glow-orb {
           position: absolute;
-          width: 550px;
-          height: 550px;
-          background: radial-gradient(circle, rgba(212, 175, 55, 0.07) 0%, rgba(212, 175, 55, 0) 70%);
-          right: -120px;
+          width: 650px;
+          height: 650px;
+          background: radial-gradient(circle, rgba(203, 183, 154, 0.08) 0%, rgba(203, 183, 154, 0) 70%);
+          right: -150px;
           top: 50%;
           transform: translateY(-50%);
           pointer-events: none;
@@ -566,11 +639,11 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           100% { background-position: 200% 0; }
         }
         .l-shimmer-text {
-          background: linear-gradient(90deg, #d4af37 0%, #fff 50%, #d4af37 100%);
+          background: var(--gold-gradient);
           background-size: 200% auto;
-          color: transparent;
-          -webkit-background-clip: text;
-          background-clip: text;
+          color: transparent !important;
+          -webkit-background-clip: text !important;
+          background-clip: text !important;
           animation: l-shimmer 4s linear infinite;
         }
 
@@ -596,20 +669,52 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
         }
 
         @keyframes l-fade-in-right {
-          from { opacity: 0; transform: translateX(40px); }
-          to { opacity: 1; transform: translateX(0); }
+          from { opacity: 0; transform: translateY(20px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes l-slide-in-left {
-          from { opacity: 0; transform: translateX(-40px); }
+          from { opacity: 0; transform: translateX(-50px); }
           to { opacity: 1; transform: translateX(0); }
         }
+        @keyframes l-slide-in-up {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Animaciones de salida */
+        @keyframes l-slide-out-left {
+          from { opacity: 1; transform: translateX(0); }
+          to { opacity: 0; transform: translateX(-50px); }
+        }
+        @keyframes l-fade-out-right {
+          from { opacity: 1; transform: translateY(0) scale(1); }
+          to { opacity: 0; transform: translateY(20px) scale(0.98); }
+        }
+        @keyframes l-slide-out-down {
+          from { opacity: 1; transform: translateY(0); }
+          to { opacity: 0; transform: translateY(30px); }
+        }
+
         .l-animate-left {
           animation: l-slide-in-left 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .l-animate-right {
           animation: l-fade-in-right 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           position: relative;
           z-index: 2; /* Sit on top of the glow orb */
+          transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Clases de salida aplicadas dinámicamente */
+        .l-exit-left {
+          animation: l-slide-out-left 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+        }
+        .l-exit-right {
+          animation: l-fade-out-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+        }
+        .l-exit-down {
+          animation: l-slide-out-down 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
         }
 
         /* Hover interactions on features */
@@ -622,7 +727,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           filter: brightness(1.25);
         }
         .l-feat:hover .l-feat-icon {
-          filter: drop-shadow(0 2px 10px rgba(212, 175, 55, 0.6));
+          filter: drop-shadow(0 2px 10px rgba(203, 183, 154, 0.75));
         }
 
         /* Focus feedback on inputs */
@@ -634,7 +739,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           margin-bottom: 24px;
         }
         .l-field:focus-within .l-field-icon {
-          color: #d4af37;
+          color: #ffffff;
           transform: translateY(-50%) scale(1.15);
         }
 
@@ -650,15 +755,39 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           }
           .l-bg-desktop { opacity: 0; pointer-events: none; }
           .l-bg-mobile-container { 
-            opacity: 1; 
-            pointer-events: auto; 
-            height: var(--mobile-split, 45%); 
+            opacity: 1 !important; 
+            pointer-events: auto !important; 
+            height: var(--mobile-split, 52%) !important; 
+            -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(0, 0, 0, 0) 100%) !important;
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(0, 0, 0, 0) 100%) !important;
+          }
+          .l-bg-mobile-img {
+            object-position: center var(--mob-bg-y, 100%) !important;
+            transform: scale(var(--mob-bg-zoom-factor, 1)) !important;
+            transform-origin: var(--mob-bg-x, 50%) var(--mob-bg-y, 50%) !important;
+          }
+          @media (min-width: 480px) {
+            .l-bg-mobile-container {
+              height: 48% !important; /* Más alto en tablets/pantallas grandes para evitar recortar */
+            }
+            .l-bg-mobile-img {
+              object-position: 75% 25% !important; /* Centra la silla sin cortarle la cabecera */
+            }
+            .l-overlay {
+              background: linear-gradient(
+                to bottom,
+                rgba(0,0,0,0.15) 0%,
+                rgba(0,0,0,0.40) 33%,
+                #0a0a0c 48%,
+                #0a0a0c 100%
+              ) !important;
+            }
           }
           /* Si es tablet (entre 769px y 1024px), usar las variables del tablet */
           @media (min-width: 769px) {
             .l-bg-mobile-img {
-              transform: scale(var(--tab-bg-zoom-factor, 1));
-              transform-origin: var(--tab-bg-x, 50%) var(--tab-bg-y, 50%);
+              transform: scale(var(--tab-bg-zoom-factor, 1)) !important;
+              transform-origin: var(--tab-bg-x, 50%) var(--tab-bg-y, 50%) !important;
             }
           }
           .l-overlay {
@@ -675,48 +804,59 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            padding: 0 20px;
+            padding: 10px 16px !important;
             gap: 0;
-            overflow-y: auto;
+            overflow: hidden !important;
             height: 100vh;
+            box-sizing: border-box;
           }
 
           .l-left {
             display: none !important;
           }
           
+          
           .l-mob-header {
             display: flex !important;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-end; /* Alineado al fondo de la foto para despejar la parte superior */
-            height: var(--mobile-split-vh, 45vh);
-            width: 100%;
-            max-width: 440px;
-            z-index: 3;
-            box-sizing: border-box;
-            padding-bottom: var(--mob-header-padding, 12px); /* Espaciado fino antes del corte de la foto */
-            flex-shrink: 0;
+            text-align: center;
+            margin-bottom: 8px !important;
+            margin-top: 10px !important;
           }
+          .desktop-only-label {
+            display: none !important;
+          }
+          .mobile-only-label {
+            display: block !important;
+          }
+          .l-card-mobile-header {
+            display: none !important;
+          }
+          .mob-only-copyright {
+            display: block !important;
+          }
+
           .l-logo-mob {
-            width: var(--mob-logo-size, 130px);
-            margin-bottom: var(--mob-logo-gap, 16px);
-            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.95)) drop-shadow(0 2px 4px rgba(0,0,0,0.85));
+            width: 125px !important;
+            margin-bottom: 8px !important;
+            filter: drop-shadow(0 0 25px rgba(0,0,0,1)) drop-shadow(0 0 30px rgba(203, 183, 154, 0.35)) drop-shadow(0 2px 4px rgba(0,0,0,0.9));
           }
           .l-mob-title {
-            font-size: 24px;
+            font-size: 20px !important;
             font-weight: 900;
             color: #fff;
             text-align: center;
-            margin-bottom: var(--mob-title-gap, 8px);
+            margin-bottom: 4px !important;
             letter-spacing: 0.5px;
             text-transform: uppercase;
           }
           .l-mob-title span {
-            color: #d4af37;
+            color: var(--champagne);
+            text-shadow: 0 0 10px rgba(203, 183, 154, 0.35);
           }
           .l-mob-sub {
-            font-size: 13.5px;
+            font-size: 11.5px !important;
             color: rgba(255,255,255,0.60);
             text-align: center;
           }
@@ -728,48 +868,49 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-evenly; /* Distribuye el formulario, características y nota de seguridad en todo el largo */
+            justify-content: center !important;
             flex: 1;
-            min-height: calc(100vh - var(--mobile-split-vh, 45vh) - 20px); /* Fuerza a ocupar el espacio restante usando vh puro */
             width: 100%;
             box-sizing: border-box;
-            gap: var(--mob-bottom-gap, 36px); /* Garantiza un espacio generoso para que respire cada bloque */
-            padding-top: var(--mob-bottom-padding-top, 20px); /* Controla el espacio inicial tras el título de forma sutil */
-            padding-bottom: 20px;
+            gap: 10px !important;
+            padding-top: 0 !important;
+            padding-bottom: 10px !important;
+            min-height: 0 !important;
           }
 
           .l-card {
-            width: 100%;
-            max-width: 420px;
-            padding: var(--mob-card-padding, 32px) 24px;
-            background: #0f0f11 !important;
-            border: 1px solid rgba(212, 175, 55, 0.15) !important;
-            border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            box-sizing: border-box;
+            width: 100% !important;
+            max-width: 360px !important;
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 20px !important;
+            padding: 20px 20px !important;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0px rgba(255,255,255,0.05) !important;
+            box-sizing: border-box !important;
+            gap: 12px !important;
           }
 
           .l-mob-bottom .l-field {
-            margin-bottom: var(--mob-fields-gap, 24px);
+            margin-bottom: 12px !important;
           }
 
           .l-input {
-            font-size: 16px !important;
+            font-size: 14px !important;
           }
           .l-mob-bottom .l-row {
-            margin-bottom: var(--mob-fields-gap, 24px);
+            margin-bottom: 12px !important;
           }
 
           .l-mob-features {
             display: flex !important;
             gap: 0;
             width: 100%;
-            max-width: 440px;
-            padding: 22px 10px;
+            max-width: 360px !important;
+            padding: 12px 8px !important;
             background: rgba(15, 15, 17, 0.8);
-            border: 1px solid rgba(212, 175, 55, 0.12);
-            border-radius: 18px;
-            margin-top: var(--mob-card-features-gap, 36px) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 14px !important;
+            margin-top: 8px !important;
             margin-bottom: 0 !important;
             margin-left: 0;
             margin-right: 0;
@@ -779,7 +920,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             border-right: 1px solid rgba(255, 255, 255, 0.08);
             padding: 0 4px;
           }
@@ -802,17 +943,17 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            font-size: 12px;
+            font-size: 11px !important;
             color: rgba(255,255,255,0.50);
             width: 100%;
-            max-width: 440px;
-            margin-top: var(--mob-features-secure-gap, 36px) !important;
+            max-width: 360px !important;
+            margin-top: 8px !important;
             margin-bottom: 0 !important;
             margin-left: 0;
             margin-right: 0;
           }
           .l-mob-secure span {
-            color: #d4af37;
+            color: #ffffff;
             font-weight: 600;
           }
           .l-card .l-secure {
@@ -921,8 +1062,8 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           height: 38px;
           border-radius: 50%;
           background: rgba(21, 21, 24, 0.9);
-          border: 1px solid rgba(212, 175, 55, 0.4);
-          color: #d4af37;
+          border: 1px solid rgba(255, 255, 255, 0.4);
+          color: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -943,7 +1084,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           background: rgba(15, 15, 17, 0.95);
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
-          border: 1px solid rgba(212, 175, 55, 0.25);
+          border: 1px solid rgba(255, 255, 255, 0.25);
           border-radius: 16px;
           padding: 20px;
           z-index: 10000;
@@ -964,7 +1105,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
         .l-cal-header h3 {
           font-size: 13px;
           font-weight: 800;
-          color: #d4af37;
+          color: #ffffff;
           letter-spacing: 0.5px;
           text-transform: uppercase;
           display: flex;
@@ -985,8 +1126,8 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           gap: 6px;
           font-size: 11px;
           font-weight: 700;
-          background: rgba(212, 175, 55, 0.1);
-          color: #d4af37;
+          background: rgba(255, 255, 255, 0.1);
+          color: #ffffff;
           padding: 4px 8px;
           border-radius: 6px;
           align-self: flex-start;
@@ -1012,7 +1153,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           letter-spacing: 0.5px;
         }
         .l-cal-label-row span.val {
-          color: #d4af37;
+          color: #ffffff;
         }
         .l-cal-slider {
           width: 100%;
@@ -1021,7 +1162,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           background: rgba(255,255,255,0.1);
           outline: none;
           cursor: pointer;
-          accent-color: #d4af37;
+          accent-color: #ffffff;
         }
         .l-cal-toggle {
           display: flex;
@@ -1034,13 +1175,13 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           margin-top: 4px;
         }
         .l-cal-toggle input {
-          accent-color: #d4af37;
+          accent-color: #ffffff;
           cursor: pointer;
         }
         .l-cal-btn-copy {
           width: 100%;
           height: 38px;
-          background: linear-gradient(to right, #ecc355 0%, #caa03d 100%);
+          background: linear-gradient(to right, #eeeeee 0%, #b5b5b5 100%);
           border: none;
           border-radius: 8px;
           color: #000;
@@ -1099,121 +1240,450 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
 
         {/* ── CONTENT ── */}
         <div className="l-inner">
+          
+          <div className="l-main-section">
 
           {/* ── LEFT ── */}
-          <div className="l-left l-animate-left">
+          <div className={`l-left l-animate-left ${isExiting ? 'l-exit-left' : ''}`}>
             <div className="l-tagline">
-              <img src={logo} alt="Astro Barbershop" className="l-logo" />
+              <img src={logo} alt="Panda Barber Studio" className="l-logo" style={{
+                filter: 'drop-shadow(0 12px 24px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 30px rgba(203, 183, 154, 0.35))',
+                animation: 'l-fade-in-right 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+              }} />
               <h1 className="l-heading">
-                LLEVA TU BARBERÍA<br />
-                AL SIGUIENTE <span className="l-shimmer-text">NIVEL</span>
+                {BRAND_CONFIG.headingFirstPart}<br />
+                DE TU <span className="l-shimmer-text">{BRAND_CONFIG.headingSecondPart}</span>
               </h1>
               <p className="l-desc">
-                El CRM diseñado para barberos que quieren organizar, gestionar y hacer crecer su negocio.
+                {BRAND_CONFIG.description}
               </p>
             </div>
 
-            <div className="l-features">
-              {features.map(({ icon: Icon, label }) => (
-                <div key={label} className="l-feat">
-                  <div className="l-feat-icon">
-                    <Icon size={20} color="#d4af37" />
-                  </div>
-                  <span className="l-feat-label">{label}</span>
-                </div>
-              ))}
-            </div>
+
           </div>
 
           {/* ── MOBILE HEADER (Only shown on mobile) ── */}
           <div className="l-mob-header">
-            <img src={logo} alt="Astro Barbershop" className="l-logo-mob" />
-            <h2 className="l-mob-title">¡BIENVENIDO A <span>ASTRO</span>!</h2>
+            <img src={logo} alt="Panda Barber Studio" className="l-logo-mob" />
+            <h2 className="l-mob-title">¡BIENVENIDO A <span>PANDA!</span></h2>
             <p className="l-mob-sub">Ingresa tus credenciales para continuar</p>
           </div>
 
           {/* ── MOBILE BOTTOM WRAPPER ── */}
           <div className="l-mob-bottom">
             {/* ── RIGHT CARD ── */}
-            <div className="l-card l-animate-right">
-              <p className="l-card-title">¡BIENVENIDO A <span>ASTRO</span>!</p>
+            <div 
+              className={`l-card l-animate-right ${isExiting ? 'l-exit-right' : ''}`}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              style={{
+                transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+                transition: isExiting ? 'all 0.5s ease' : 'transform 0.1s ease, box-shadow 0.3s ease, border-color 0.3s ease'
+              }}
+            >
+              {/* Mobile Card Header */}
+              <div className="l-card-mobile-header">
+                <img src={logo} alt="Panda Barber Studio" style={{ width: '130px', marginBottom: '24px', objectFit: 'contain', display: 'block', marginLeft: 'auto', marginRight: 'auto', filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.95)) drop-shadow(0 0 25px rgba(203, 183, 154, 0.3))' }} />
+                <h2 style={{ fontSize: '24px', fontWeight: '600', color: '#fff', marginBottom: '6px' }}>¡Bienvenido de nuevo!</h2>
+                <p style={{ fontSize: '13.5px', color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>Inicia sesión para acceder al CRM de tu barbería</p>
+              </div>
+
+              <p className="l-card-title">¡BIENVENIDO A <span>PANDA!</span></p>
               <p className="l-card-sub">Ingresa tus credenciales para continuar</p>
 
-              <form onSubmit={handleSubmit}>
-                {/* Email */}
-                <div className="l-field">
-                  <span className="l-field-label">EMAIL</span>
-                  <span className="l-field-icon"><Mail size={17} /></span>
-                  <input
-                    type="email"
-                    placeholder="correo@astrobarber.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                    className="l-input"
-                  />
+              
+              <style>{`
+                /* Estilos de input y animaciones de focus Apple-like */
+                .panda-field-group {
+                  display: flex;
+                  flex-direction: column;
+                  gap: 6px;
+                  position: relative;
+                }
+                .panda-field-group label {
+                  font-size: 13px;
+                  color: #9a9a9f;
+                  font-weight: 550;
+                  text-align: left;
+                  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                  letter-spacing: 0.3px;
+                }
+                .panda-field-group:focus-within label {
+                  color: var(--champagne-light) !important;
+                  text-shadow: 0 0 12px rgba(203, 183, 154, 0.4);
+                }
+                .panda-input-wrapper {
+                  position: relative;
+                  width: 100%;
+                }
+                .panda-input-field {
+                  width: 100%;
+                  padding: 14px 44px 14px 16px;
+                  background: #111112;
+                  border: 1px solid var(--border-color);
+                  border-radius: 10px;
+                  color: #ffffff;
+                  font-size: 14.5px;
+                  outline: none;
+                  box-sizing: border-box;
+                  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .panda-input-field:hover {
+                  border-color: rgba(255, 255, 255, 0.12);
+                  background: #151516;
+                }
+                .panda-input-field:focus {
+                  border-color: var(--champagne) !important;
+                  background: #181819 !important;
+                  box-shadow: 0 0 0 3px rgba(203, 183, 154, 0.15), 0 10px 20px rgba(0,0,0,0.5) !important;
+                  transform: translateY(-1px);
+                }
+                .panda-input-field:-webkit-autofill,
+                .panda-input-field:-webkit-autofill:hover, 
+                .panda-input-field:-webkit-autofill:focus, 
+                .panda-input-field:-webkit-autofill:active {
+                  -webkit-box-shadow: 0 0 0 1000px #111112 inset !important;
+                  -webkit-text-fill-color: #ffffff !important;
+                  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+                  transition: background-color 5000s ease-in-out 0s;
+                }
+                .panda-input-wrapper svg {
+                  transition: all 0.3s ease;
+                }
+                .panda-input-wrapper:focus-within > svg {
+                  color: var(--champagne) !important;
+                  stroke: var(--champagne) !important;
+                  transform: translateY(-50%) scale(1.15) !important;
+                  filter: drop-shadow(0 0 6px rgba(203, 183, 154, 0.5)) !important;
+                }
+                .panda-input-wrapper:focus-within button svg {
+                  color: var(--champagne) !important;
+                  stroke: var(--champagne) !important;
+                  transform: scale(1.15) !important;
+                  filter: drop-shadow(0 0 6px rgba(203, 183, 154, 0.5)) !important;
+                }
+                .panda-eye-btn,
+                .panda-eye-btn:hover,
+                .panda-eye-btn:focus {
+                  transform: translateY(-50%) !important;
+                }
+                .panda-eye-btn:active {
+                  transform: translateY(-50%) scale(0.97) !important;
+                }
+                .panda-custom-checkbox {
+                  appearance: none !important;
+                  -webkit-appearance: none !important;
+                  width: 18px !important;
+                  height: 18px !important;
+                  border: 1px solid rgba(255,255,255,0.25) !important;
+                  border-radius: 4px !important;
+                  background: transparent !important;
+                  padding: 0 !important;
+                  margin: 0 !important;
+                  cursor: pointer;
+                  position: relative;
+                  transition: all 0.2s ease;
+                  flex-shrink: 0;
+                }
+                .panda-custom-checkbox:hover {
+                  border-color: rgba(255,255,255,0.45) !important;
+                  background: rgba(255,255,255,0.02) !important;
+                }
+                .panda-custom-checkbox:checked {
+                  background-color: #ffffff !important;
+                  border-color: #ffffff !important;
+                }
+                .panda-custom-checkbox:checked::after {
+                  content: '';
+                  position: absolute;
+                  left: 5px;
+                  top: 1px;
+                  width: 5px;
+                  height: 9px;
+                  border: solid #131313;
+                  border-width: 0 2px 2px 0;
+                  transform: rotate(45deg);
+                }
+                .panda-link-text {
+                  background: none;
+                  border: none;
+                  color: #8a8a8a;
+                  font-size: 13px;
+                  cursor: pointer;
+                  padding: 0;
+                  transition: color 0.2s ease;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                }
+                .panda-link-text:hover {
+                  color: #ffffff;
+                }
+                .panda-submit-btn {
+                  width: 100%;
+                  height: 48px;
+                  border-radius: 12px;
+                  border: none;
+                  cursor: pointer;
+                  font-size: 14px;
+                  font-weight: 700;
+                  letter-spacing: 1.2px;
+                  text-transform: none !important;
+                  color: #0c0c0d;
+                  background: var(--gold-gradient);
+                  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  position: relative;
+                  overflow: hidden;
+                  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .panda-submit-btn::after {
+                  content: '';
+                  position: absolute;
+                  top: -50%;
+                  left: -60%;
+                  width: 30%;
+                  height: 200%;
+                  background: rgba(255, 255, 255, 0.35);
+                  transform: rotate(30deg);
+                  animation: l-btn-glow 4.5s ease-in-out infinite;
+                }
+                @keyframes l-btn-glow {
+                  0% { left: -60%; }
+                  30% { left: 160%; }
+                  100% { left: 160%; }
+                }
+                 .panda-submit-btn:hover:not(:disabled) {
+                  transform: translateY(-2px);
+                  box-shadow: 0 10px 25px rgba(203, 183, 154, 0.3);
+                  filter: brightness(1.05);
+                }
+                .panda-submit-btn:hover:not(:disabled) .panda-btn-arrow {
+                  transform: translateX(4px);
+                }
+                .panda-btn-arrow {
+                  display: inline-block;
+                  transition: transform 0.2s ease;
+                  margin-left: 8px;
+                  font-weight: bold;
+                }
+                .panda-submit-btn:active:not(:disabled) {
+                  transform: translateY(0);
+                }
+              `}</style>
+
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div className="panda-field-group">
+                  <label className="desktop-only-label">Correo electrónico</label>
+                  <label className="mobile-only-label">Correo electrónico</label>
+                  <div className="panda-input-wrapper">
+                    <input
+                      type="email"
+                      placeholder="Ingresa tu correo"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                      autoComplete="email"
+                      className="panda-input-field"
+                    />
+                    <Mail size={16} style={{
+                      position: 'absolute',
+                      right: '16px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'rgba(255,255,255,0.25)',
+                      pointerEvents: 'none'
+                    }} />
+                  </div>
                 </div>
 
-                {/* Password */}
-                <div className="l-field">
-                  <span className="l-field-label">CONTRASEÑA</span>
-                  <span className="l-field-icon"><Lock size={17} /></span>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Ingresa tu contraseña"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                    className="l-input"
-                  />
-                  <button
-                    type="button"
-                    className="l-eye-btn"
-                    onClick={() => setShowPassword(v => !v)}
-                    tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                  </button>
+                <div className="panda-field-group">
+                  <label className="desktop-only-label">Contraseña</label>
+                  <label className="mobile-only-label">Contraseña</label>
+                  <div className="panda-input-wrapper">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Ingresa tu contraseña"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                      className="panda-input-field"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(v => !v)}
+                      className="panda-eye-btn"
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '6px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                      tabIndex={-1}
+                    >
+                      {showPassword
+                        ? <EyeOff size={16} color="rgba(255,255,255,0.25)" />
+                        : <Eye    size={16} color="rgba(255,255,255,0.25)" />
+                      }
+                    </button>
+                  </div>
                 </div>
 
 
+                {error && <div className="l-error" style={{ margin: '4px 0 0 0' }}>{error}</div>}
 
-                {error && <div className="l-error">{error}</div>}
-
-                <button type="submit" disabled={loading} className="l-btn l-btn-shimmer">
-                  {loading
-                    ? <Loader2 size={20} className="l-spin" />
-                    : <><Rocket size={18} /> INICIAR SESIÓN</>
-                  }
+                <button type="submit" disabled={loading} className="panda-submit-btn">
+                  {loading ? <Loader2 size={18} className="l-spin" /> : <>Iniciar sesión <span className="panda-btn-arrow">→</span></>}
                 </button>
-              </form>
 
-              <div className="l-secure">
-                <ShieldCheck size={14} color="#d4af37" />
-                Tu información está <span>segura</span> con nosotros
-              </div>
+                {isMobileDevice && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', fontSize: '11px', color: 'rgba(255, 255, 255, 0.35)', marginTop: '16px', width: '100%' }}>
+                    <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.08)' }}></div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+                      <ShieldCheck size={14} color="rgba(255, 255, 255, 0.35)" />
+                      <span>Acceso seguro a tu negocio</span>
+                    </div>
+                    <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.08)' }}></div>
+                  </div>
+                )}
+              </form>
             </div>
 
             {/* ── MOBILE: features below card ── */}
             <div className="l-mob-features">
-              {features.map(({ icon: Icon, label }) => (
-                <div key={label} className="l-feat" style={{ flex: 1 }}>
+              {features.map(({ icon: Icon, title, desc }) => (
+                <div key={title} className="l-feat" style={{ flex: 1 }}>
                   <div className="l-feat-icon">
-                    <Icon size={18} color="#d4af37" />
+                    <Icon size={18} />
                   </div>
-                  <span className="l-feat-label">{label}</span>
+                  <span className="l-feat-label">{title}</span>
                 </div>
               ))}
             </div>
 
-            {/* ── MOBILE: security note below features ── */}
-            <div className="l-mob-secure">
-              <ShieldCheck size={14} color="#d4af37" />
-              Tu información está <span>segura</span> con nosotros
-            </div>
+
+
           </div>
+          </div>
+
+          {/* ── BOTTOM FEATURES BAR (FOTO 1) ── */}
+          <style>{`
+            .panda-bottom-features-bar {
+              display: flex;
+              align-items: center;
+              width: 100%;
+              background: rgba(10, 10, 11, 0.40);
+              backdrop-filter: blur(25px);
+              -webkit-backdrop-filter: blur(25px);
+              border: 1px solid var(--border-color);
+              border-radius: 18px;
+              padding: 20px 40px;
+              box-sizing: border-box;
+              margin-top: 15px;
+              box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+              animation: l-slide-in-up 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+              transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            .panda-feat-item {
+              flex: 1;
+              display: flex;
+              align-items: center;
+              gap: 16px;
+              padding: 0 24px;
+              transition: transform 0.3s ease;
+              cursor: pointer;
+            }
+            .panda-feat-item:hover {
+              transform: translateY(-2px);
+            }
+            .panda-feat-icon-wrapper {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: var(--champagne);
+              background: rgba(203, 183, 154, 0.05);
+              border-radius: 10px;
+              width: 44px;
+              height: 44px;
+              border: 1px solid rgba(203, 183, 154, 0.2);
+              flex-shrink: 0;
+              transition: all 0.3s ease;
+            }
+            .panda-feat-item:hover .panda-feat-icon-wrapper {
+              background: rgba(203, 183, 154, 0.15);
+              border-color: var(--champagne);
+              color: var(--champagne-light);
+              box-shadow: 0 0 12px rgba(203, 183, 154, 0.3);
+            }
+            .panda-feat-text {
+              display: flex;
+              flex-direction: column;
+              gap: 3px;
+            }
+            .panda-feat-title {
+              font-size: 14.5px;
+              font-weight: 700;
+              color: #ffffff;
+              margin: 0;
+              text-align: left;
+            }
+            .panda-feat-desc {
+              font-size: 12.5px;
+              color: rgba(255, 255, 255, 0.45);
+              margin: 0;
+              text-align: left;
+              line-height: 1.3;
+              white-space: pre-line;
+            }
+            .panda-divider {
+              width: 1px;
+              height: 40px;
+              background: rgba(255, 255, 255, 0.08);
+            }
+            
+            @media (max-width: 768px), (orientation: portrait) {
+              .panda-bottom-features-bar {
+                display: none !important;
+              }
+            }
+
+          `}</style>
+
+          <div className={`panda-bottom-features-bar ${isExiting ? 'l-exit-down' : ''}`}>
+            {features.map(({ icon: Icon, title, desc }, idx) => {
+              let displayTitle = title;
+              let displayDesc = desc;
+
+              return (
+                <React.Fragment key={title || idx}>
+                  {idx > 0 && <div className="panda-divider" />}
+                  <div className="panda-feat-item">
+                    <div className="panda-feat-icon-wrapper">
+                      <Icon size={22} />
+                    </div>
+                    <div className="panda-feat-text">
+                      <h3 className="panda-feat-title">{displayTitle}</h3>
+                      <p className="panda-feat-desc">{displayDesc}</p>
+                    </div>
+                  </div>
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          <div style={{ textAlign: 'center', fontSize: '10.5px', color: 'rgba(255,255,255,0.35)', marginTop: '14px', marginBottom: '8px' }} className="mob-only-copyright">
+            © 2024 Panda Barber Studio. All rights reserved.
+          </div>
+
         </div>
 
       </div>

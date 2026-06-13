@@ -117,7 +117,7 @@ const AstroSelect = ({
               padding: '12px 16px',
               borderRadius: '10px',
               cursor: 'pointer',
-              backgroundColor: value === opt.value ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
+              backgroundColor: value === opt.value ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
               color: value === opt.value ? 'var(--gold-primary)' : 'white',
               transition: '0.2s',
               fontSize: '14px',
@@ -160,7 +160,7 @@ const AstroSelect = ({
             justifyContent: 'space-between',
             alignItems: 'center',
             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: isOpen ? '0 0 0 4px rgba(212, 175, 55, 0.1)' : 'none',
+            boxShadow: isOpen ? '0 0 0 4px rgba(255, 255, 255, 0.1)' : 'none',
             fontSize: '15px',
             userSelect: 'none'
           }}
@@ -184,7 +184,7 @@ const AstroSelect = ({
               display: block !important;
             }
             .astro-select-dropdown.astro-scrollbar::-webkit-scrollbar-thumb {
-              background: rgba(212, 175, 55, 0.2);
+              background: rgba(255, 255, 255, 0.2);
               border-radius: 10px;
             }
           `}</style>

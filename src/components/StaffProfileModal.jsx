@@ -167,13 +167,13 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
             position: 'relative',
             background: 'linear-gradient(145deg, rgba(22,22,28,0.98) 0%, rgba(14,14,18,0.99) 100%)',
             border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(212,175,55,0.08)'
+            boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255, 255, 255,0.08)'
           }}>
         
         {/* Header Section */}
         <div style={{ 
           padding: isMobileView ? '24px 16px 16px' : '32px 32px 24px', 
-          background: 'linear-gradient(90deg, rgba(212,175,55,0.06) 0%, transparent 60%)', 
+          background: 'linear-gradient(90deg, rgba(255, 255, 255,0.06) 0%, transparent 60%)', 
           borderBottom: '1px solid rgba(255,255,255,0.06)' 
         }}>
           <button 
@@ -330,19 +330,19 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                 </div>
                 <div 
                   style={{ 
-                    background: 'rgba(212,175,55,0.025)', 
+                    background: 'rgba(255, 255, 255,0.025)', 
                     padding: isMobileView ? '16px' : '24px', 
                     borderRadius: '20px', 
-                    border: '1px solid rgba(212,175,55,0.12)', 
+                    border: '1px solid rgba(255, 255, 255,0.12)', 
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: isMobileView ? '12px' : '20px',
                     transition: 'all 0.2s'
                   }}
-                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.04)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.25)'; }}
-                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.025)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.12)'; }}
+                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(255, 255, 255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255,0.25)'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(255, 255, 255,0.025)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255,0.12)'; }}
                 >
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <TrendingUp size={24} />
                   </div>
                   <div>
@@ -357,14 +357,14 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                 {/* Time & Volume */}
                 <div 
                   style={{ 
-                    background: 'rgba(212,175,55,0.025)', 
+                    background: 'rgba(255, 255, 255,0.025)', 
                     padding: '24px', 
                     borderRadius: '20px', 
-                    border: '1px solid rgba(212,175,55,0.12)',
+                    border: '1px solid rgba(255, 255, 255,0.12)',
                     transition: 'all 0.2s'
                   }}
-                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.04)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.25)'; }}
-                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.025)'; e.currentTarget.style.borderColor = 'rgba(212,175,55,0.12)'; }}
+                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(255, 255, 255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255,0.25)'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'rgba(255, 255, 255,0.025)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255,0.12)'; }}
                 >
                   <h4 style={{ color: 'var(--gold-primary)', fontSize: '14px', fontWeight: '900', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Clock size={16} /> Volumen y Tiempos
@@ -401,7 +401,7 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                       {stats.topServices.map((srv, idx) => (
                         <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ color: 'var(--text-secondary)', fontWeight: '600', fontSize: '14px' }}>{srv.name}</span>
-                          <span style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold-primary)', padding: '4px 12px', borderRadius: '50px', fontSize: '12px', fontWeight: '800' }}>{srv.count} veces</span>
+                          <span style={{ background: 'rgba(255, 255, 255,0.1)', color: 'var(--gold-primary)', padding: '4px 12px', borderRadius: '50px', fontSize: '12px', fontWeight: '800' }}>{srv.count} veces</span>
                         </div>
                       ))}
                     </div>
@@ -553,7 +553,7 @@ const StaffProfileModal = ({ isOpen, onClose, staffMember, inventory = [], onUpd
                       onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.025)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: isMobileView ? '12px' : '16px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: tool.ownership === 'Asignada' ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: tool.ownership === 'Asignada' ? 'rgba(255, 255, 255,0.1)' : 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <Wrench size={18} color={tool.ownership === 'Asignada' ? 'var(--gold-primary)' : 'white'} />
                         </div>
                         <div>

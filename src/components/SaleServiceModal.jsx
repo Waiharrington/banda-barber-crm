@@ -258,7 +258,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
                   onChange={(e) => setIdSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleIdSearch()}
                   autoFocus
-                  style={{ width: '100%', paddingLeft: '52px', height: '52px', fontSize: '16px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(212,175,55,0.2)' }}
+                  style={{ width: '100%', paddingLeft: '52px', height: '52px', fontSize: '16px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255, 255, 255,0.2)' }}
                 />
               </div>
 
@@ -282,7 +282,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
                 </div>
               )}
 
-              <button onClick={() => setShowNewClientModal(true)} style={{ width: '100%', height: '52px', borderRadius: '16px', border: '1.5px dashed rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.05)', color: 'var(--gold-primary)', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+              <button onClick={() => setShowNewClientModal(true)} style={{ width: '100%', height: '52px', borderRadius: '16px', border: '1.5px dashed rgba(255, 255, 255,0.3)', background: 'rgba(255, 255, 255,0.05)', color: 'var(--gold-primary)', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
                 <UserPlus size={18} /> Registrar Nuevo Cliente
               </button>
             </div>
@@ -291,7 +291,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
           {step === 2 && selectedClient && (
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
               {/* Selected Client Summary */}
-              <div style={{ padding: '16px 20px', background: 'rgba(212,175,55,0.05)', borderRadius: '20px', border: '1px solid rgba(212,175,55,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ padding: '16px 20px', background: 'rgba(255, 255, 255,0.05)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><User color="black" size={18} /></div>
                   <div>
@@ -340,7 +340,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
                       onClick={() => toggleExtra(e)}
                       style={{ 
                         padding: '8px 12px', borderRadius: '10px', fontSize: '11px', fontWeight: '700', 
-                        backgroundColor: selectedExtras.find(se => se.id === e.id) ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.03)',
+                        backgroundColor: selectedExtras.find(se => se.id === e.id) ? 'rgba(255, 255, 255,0.2)' : 'rgba(255,255,255,0.03)',
                         border: selectedExtras.find(se => se.id === e.id) ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
                         color: selectedExtras.find(se => se.id === e.id) ? 'var(--gold-primary)' : 'white',
                         cursor: 'pointer', transition: 'all 0.2s'
@@ -396,7 +396,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
                               style={{ 
                                 padding: '6px 12px', 
                                 borderRadius: '8px', 
-                                border: isOutOfStock ? '1px dashed rgba(255,255,255,0.1)' : '1px solid rgba(212,175,55,0.2)', 
+                                border: isOutOfStock ? '1px dashed rgba(255,255,255,0.1)' : '1px solid rgba(255, 255, 255,0.2)', 
                                 background: 'none', 
                                 color: isOutOfStock ? 'var(--text-muted)' : 'var(--gold-primary)', 
                                 fontSize: '11px', 
@@ -462,11 +462,11 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
 
           <style>{`
             .client-search-item:hover {
-              background-color: rgba(212,175,55,0.05) !important;
+              background-color: rgba(255, 255, 255,0.05) !important;
             }
             .astro-scrollbar::-webkit-scrollbar { width: 4px; }
             .astro-scrollbar::-webkit-scrollbar-track { background: transparent; }
-            .astro-scrollbar::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.2); borderRadius: 10px; }
+            .astro-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255,0.2); borderRadius: 10px; }
           `}</style>
         </div>
       </div>

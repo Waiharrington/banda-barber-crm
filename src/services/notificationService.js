@@ -1,4 +1,4 @@
-// Servicio de Gestión de Notificaciones para Astro Barber CRM
+// Servicio de Gestión de Notificaciones para Panda Barber CRM
 
 class NotificationService {
   constructor() {
@@ -131,7 +131,7 @@ class NotificationService {
     return [
       {
         id: 'default-1',
-        title: '¡Bienvenido al CRM Astro Barber!',
+        title: '¡Bienvenido al CRM Panda Barber!',
         body: 'El sistema de notificaciones push está listo. Actívalo para enterarte de citas y cierres semanales.',
         date: new Date().toISOString(),
         read: false

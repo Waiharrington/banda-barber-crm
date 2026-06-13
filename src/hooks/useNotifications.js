@@ -46,7 +46,7 @@ export const useNotifications = () => {
   }, []);
 
   const triggerConfetti = useCallback(() => {
-    const colors = ['#d4af37', '#f9d976', '#ffffff', '#c0c0c0'];
+    const colors = ['#ffffff', '#f9d976', '#ffffff', '#c0c0c0'];
     const count = 40;
     
     for (let i = 0; i < count; i++) {
