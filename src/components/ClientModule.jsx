@@ -253,7 +253,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                 </div>
                 <div className="form-group">
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Cumpleaños</label>
-                  <AstroDatePicker value={newClient.birth_date} onChange={(e) => setNewClient({...newClient, birth_date: e.target.value})} style={{ width: '100%' }} />
+                  <input type="date" className="form-input" value={newClient.birth_date} onChange={(e) => setNewClient({...newClient, birth_date: e.target.value})} style={{ width: '100%' }} />
                 </div>
                 <AstroSelect 
                   label="Tipo de Cabello"
@@ -902,7 +902,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
             {isEditing && (
               <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <input className="form-input" value={editData.id_card} onChange={e => setEditData({...editData, id_card: e.target.value})} placeholder="Cédula" style={{ width: '100%', fontSize: '12px', padding: '8px' }} />
-                <AstroDatePicker value={editData.birth_date} onChange={e => setEditData({...editData, birth_date: e.target.value})} style={{ width: '100%' }} />
+                <input type="date" className="form-input" value={editData.birth_date} onChange={e => setEditData({...editData, birth_date: e.target.value})} style={{ width: '100%' }} />
                 <AstroSelect 
                   label="Tipo de Cabello"
                   value={editData.hair_type}
@@ -1083,42 +1083,47 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
 
                 <AnimatedModal isOpen={!!selectingFor}>
                   {(overlayClass, cardClass) => (
-                    <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-                      <div className={`glass-card ${cardClass}`} style={{ maxWidth: '600px', width: '100%', padding: '24px' }}>
+                    <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+                      <div className={`glass-card ${cardClass}`} style={{ maxWidth: '600px', width: '100%', padding: '24px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', boxShadow: '0 30px 60px -12px rgba(0,0,0,0.15)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
                           <h4 style={{ 
                             fontWeight: '900',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px'
+                            gap: '8px',
+                            color: 'var(--text-primary)'
                           }}>
                             <ImageIcon size={20} color="var(--gold-primary)" />
                             <span>Elegir Foto {selectingFor}</span>
                           </h4>
-                          <button onClick={() => setSelectingFor(null)} style={{ background: 'none', border: 'none', color: 'white' }}><X size={20} /></button>
+                          <button onClick={() => setSelectingFor(null)} style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
-                          {gallery
-                            .filter(img => selectingFor === 'A' ? img.type === 'Antes' : img.type === 'Después')
-                            .map((img, i) => (
-                            <div 
-                              key={i} 
-                              onClick={() => {
-                                if (selectingFor === 'A') setPhotoA(img.url);
-                                if (selectingFor === 'B') setPhotoB(img.url);
-                                setSelectingFor(null);
-                              }}
-                              style={{ 
-                                aspectRatio: '1/1', 
-                                borderRadius: '8px', 
-                                overflow: 'hidden', 
-                                cursor: 'pointer',
-                                border: (selectingFor === 'A' ? photoA === img.url : photoB === img.url) ? '3px solid var(--gold-primary)' : 'none'
-                              }}
-                            >
-                              <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          {gallery.length === 0 ? (
+                            <div style={{ gridColumn: '1 / -1', padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                              No hay fotos en la galería de este cliente aún. Toma o sube algunas fotos primero.
                             </div>
-                          ))}
+                          ) : (
+                            gallery.map((img, i) => (
+                              <div 
+                                key={i} 
+                                onClick={() => {
+                                  if (selectingFor === 'A') setPhotoA(img.url);
+                                  if (selectingFor === 'B') setPhotoB(img.url);
+                                  setSelectingFor(null);
+                                }}
+                                style={{ 
+                                  aspectRatio: '1/1', 
+                                  borderRadius: '8px', 
+                                  overflow: 'hidden', 
+                                  cursor: 'pointer',
+                                  border: (selectingFor === 'A' ? photoA === img.url : photoB === img.url) ? '3px solid var(--gold-primary)' : 'none'
+                                }}
+                              >
+                                <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              </div>
+                            ))
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1185,7 +1190,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
                 <input className="form-input" value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} placeholder="Teléfono" style={{ width: '100%' }} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left', marginBottom: '8px' }}>
                   <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase' }}>Cumpleaños</label>
-                  <AstroDatePicker value={editData.birth_date} onChange={e => setEditData({...editData, birth_date: e.target.value})} style={{ width: '100%' }} />
+                  <input type="date" className="form-input" value={editData.birth_date} onChange={e => setEditData({...editData, birth_date: e.target.value})} style={{ width: '100%', padding: '0 16px', fontSize: '13px' }} />
                 </div>
                 <AstroSelect 
                   label="Tipo de Cabello"
@@ -1348,34 +1353,38 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
 
                 <AnimatedModal isOpen={!!selectingFor}>
                   {(overlayClass, cardClass) => (
-                    <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-                      <div className={`glass-card ${cardClass}`} style={{ maxWidth: '600px', width: '100%', padding: '24px' }}>
+                    <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+                      <div className={`glass-card ${cardClass}`} style={{ maxWidth: '600px', width: '100%', padding: '24px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', boxShadow: '0 30px 60px -12px rgba(0,0,0,0.15)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
-                          <h4 style={{ fontWeight: '900' }}>Elegir Foto {selectingFor}</h4>
-                          <button onClick={() => setSelectingFor(null)} style={{ background: 'none', border: 'none', color: 'white' }}><X size={20} /></button>
+                          <h4 style={{ fontWeight: '900', color: 'var(--text-primary)' }}>Elegir Foto {selectingFor}</h4>
+                          <button onClick={() => setSelectingFor(null)} style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
-                          {gallery
-                            .filter(img => selectingFor === 'A' ? img.type === 'Antes' : img.type === 'Después')
-                            .map((img, i) => (
-                            <div 
-                              key={i} 
-                              onClick={() => {
-                                if (selectingFor === 'A') setPhotoA(img.url);
-                                if (selectingFor === 'B') setPhotoB(img.url);
-                                setSelectingFor(null);
-                              }}
-                              style={{ 
-                                aspectRatio: '1/1', 
-                                borderRadius: '8px', 
-                                overflow: 'hidden', 
-                                cursor: 'pointer',
-                                border: (selectingFor === 'A' ? photoA === img.url : photoB === img.url) ? '3px solid var(--gold-primary)' : 'none'
-                              }}
-                            >
-                              <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          {gallery.length === 0 ? (
+                            <div style={{ gridColumn: '1 / -1', padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                              No hay fotos en la galería de este cliente aún. Toma o sube algunas fotos primero.
                             </div>
-                          ))}
+                          ) : (
+                            gallery.map((img, i) => (
+                              <div 
+                                key={i} 
+                                onClick={() => {
+                                  if (selectingFor === 'A') setPhotoA(img.url);
+                                  if (selectingFor === 'B') setPhotoB(img.url);
+                                  setSelectingFor(null);
+                                }}
+                                style={{ 
+                                  aspectRatio: '1/1', 
+                                  borderRadius: '8px', 
+                                  overflow: 'hidden', 
+                                  cursor: 'pointer',
+                                  border: (selectingFor === 'A' ? photoA === img.url : photoB === img.url) ? '3px solid var(--gold-primary)' : 'none'
+                                }}
+                              >
+                                <img src={img.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              </div>
+                            ))
+                          )}
                         </div>
                       </div>
                     </div>

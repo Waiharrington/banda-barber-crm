@@ -606,7 +606,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>CUMPLEAÑOS</label>
                   <div style={{ position: 'relative' }}>
                     <Cake size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                    <AstroDatePicker value={formData.birth_date} onChange={e => setFormData({...formData, birth_date: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                    <input type="date" className="form-input" value={formData.birth_date} onChange={e => setFormData({...formData, birth_date: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
                   </div>
                 </div>
                 <div className="form-group">
@@ -1134,7 +1134,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>CUMPLEAÑOS</label>
                           <div style={{ position: 'relative' }}>
                             <Cake size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                            <AstroDatePicker value={formData.birth_date} onChange={e => setFormData({...formData, birth_date: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                            <input type="date" className="form-input" value={formData.birth_date} onChange={e => setFormData({...formData, birth_date: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
                           </div>
                         </div>
                         <div className="form-group">

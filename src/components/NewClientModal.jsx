@@ -175,9 +175,12 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
                   <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
                     Fecha de Nacimiento
                   </label>
-                  <AstroDatePicker 
+                  <input 
+                    type="date"
+                    className="form-input"
                     value={formData.birth_date}
                     onChange={(e) => setFormData({...formData, birth_date: e.target.value})}
+                    style={{ width: '100%' }}
                   />
                 </div>
 
