@@ -544,18 +544,31 @@ const DashboardModule = ({
             {/* + Nueva cita gold button */}
             <button 
               onClick={onOpenSale}
-              className="premium-btn-gold"
               style={{
-                height: '38px',
-                padding: '0 18px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                fontSize: '13.5px',
-                borderRadius: '10px'
+                padding: '10px 20px',
+                borderRadius: '100px',
+                background: 'var(--gold-gradient)',
+                border: 'none',
+                color: '#000000',
+                fontWeight: '750',
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: '0 4px 12px rgba(255, 255, 255, 0.08)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 6px 18px rgba(255, 255, 255, 0.15)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 255, 255, 0.08)';
               }}
             >
-              <Plus size={16} strokeWidth={3} />
+              <Plus size={16} strokeWidth={2.5} />
               Nueva cita
             </button>
           </div>
