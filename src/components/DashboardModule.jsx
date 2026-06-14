@@ -197,6 +197,7 @@ const DashboardModule = ({
   const formattedTime = currentTime.toLocaleTimeString('es-ES', {
     hour: '2-digit',
     minute: '2-digit',
+    second: '2-digit',
     hour12: true
   }).toUpperCase();
 
@@ -368,7 +369,7 @@ const DashboardModule = ({
             }}>
               <input 
                 type="text" 
-                placeholder="Buscar..." 
+                placeholder="Buscar citas, clientes, barberos..." 
                 style={{
                   width: '100%',
                   padding: '9px 12px 9px 36px',
@@ -653,8 +654,13 @@ const DashboardModule = ({
                 <span style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.5px' }}>OCUPACIÓN</span>
                 <Clock size={13} color="rgba(255,255,255,0.6)" />
               </div>
-              <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: '1px 0' }}>
-                86%
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '1px 0' }}>
+                <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>
+                  86%
+                </div>
+                <div style={{ width: '45px', height: '4px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: '86%', height: '100%', background: 'linear-gradient(to right, var(--champagne), #fff)', borderRadius: '2px' }} />
+                </div>
               </div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
                 <span style={{ fontSize: '7px' }}>▲</span> 8% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs ayer</span>
@@ -1073,58 +1079,105 @@ const DashboardModule = ({
             </div>
           </div>
 
-          {/* Card 2: Acciones Rápidas */}
-          <div className="glass-card" style={{ 
-            padding: '10px 12px', 
-            borderRadius: '16px', 
-            backgroundColor: '#161617', 
-            border: '1px solid rgba(255,255,255,0.05)', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            flexShrink: 0
-          }}>
-            <h3 style={{ fontSize: '10.5px', fontWeight: '800', color: 'white', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Acciones rápidas</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-              {[
-                { label: 'Nueva Cita', action: onOpenSale, icon: Plus },
-                { label: 'Nuevo Cliente', action: () => onNavigate && onNavigate('clients'), icon: User },
-                { label: 'Venta Rápida', action: onOpenSale, icon: ShoppingBag },
-                { label: 'Agregar Producto', action: () => onNavigate && onNavigate('inventory'), icon: ScissorsIcon }
-              ].map((act, idx) => {
-                const ActIcon = act.icon;
-                return (
-                  <button 
-                    key={idx}
-                    onClick={act.action}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '8px 4px',
-                      borderRadius: '8px',
-                      backgroundColor: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.04)',
-                      color: 'rgba(255,255,255,0.8)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)';
-                      e.currentTarget.style.borderColor = 'rgba(203, 183, 154, 0.2)';
-                      e.currentTarget.style.color = 'white';
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)';
-                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)';
-                      e.currentTarget.style.color = 'rgba(255,255,255,0.8)';
-                    }}
-                  >
-                    <ActIcon size={13} color="rgba(255,255,255,0.6)" />
-                    <span style={{ fontSize: '9px', fontWeight: '700' }}>{act.label}</span>
-                  </button>
-                );
-              })}
+          {/* Row: Acciones Rápidas & Panda Estrella side-by-side */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1.05fr', gap: '10px', flexShrink: 0 }}>
+            {/* Card 2: Acciones Rápidas */}
+            <div className="glass-card" style={{ 
+              padding: '10px 10px', 
+              borderRadius: '16px', 
+              backgroundColor: '#161617', 
+              border: '1px solid rgba(255,255,255,0.05)', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              justifyContent: 'space-between'
+            }}>
+              <h3 style={{ fontSize: '9.5px', fontWeight: '800', color: 'white', margin: '0 0 6px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Acciones rápidas</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+                {[
+                  { label: 'Cita', action: onOpenSale, icon: Plus },
+                  { label: 'Cliente', action: () => onNavigate && onNavigate('clients'), icon: User },
+                  { label: 'Cobro', action: onOpenSale, icon: ShoppingBag },
+                  { label: 'Producto', action: () => onNavigate && onNavigate('inventory'), icon: ScissorsIcon }
+                ].map((act, idx) => {
+                  const ActIcon = act.icon;
+                  return (
+                    <button 
+                      key={idx}
+                      onClick={act.action}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '3px',
+                        padding: '6px 2px',
+                        borderRadius: '8px',
+                        backgroundColor: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.04)',
+                        color: 'rgba(255,255,255,0.8)',
+                        cursor: 'pointer',
+                        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.backgroundColor = 'rgba(197, 168, 128, 0.08)';
+                        e.currentTarget.style.borderColor = 'rgba(197, 168, 128, 0.3)';
+                        e.currentTarget.style.color = 'var(--champagne)';
+                        e.currentTarget.style.transform = 'translateY(-1.5px)';
+                        e.currentTarget.style.boxShadow = '0 4px 10px rgba(197, 168, 128, 0.1)';
+                        const icon = e.currentTarget.querySelector('svg');
+                        if (icon) icon.style.color = 'var(--champagne)';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)';
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)';
+                        e.currentTarget.style.color = 'rgba(255,255,255,0.8)';
+                        e.currentTarget.style.transform = 'none';
+                        e.currentTarget.style.boxShadow = 'none';
+                        const icon = e.currentTarget.querySelector('svg');
+                        if (icon) icon.style.color = 'rgba(255,255,255,0.6)';
+                      }}
+                    >
+                      <ActIcon size={12} color="rgba(255,255,255,0.6)" style={{ transition: 'color 0.25s' }} />
+                      <span style={{ fontSize: '8.5px', fontWeight: '700' }}>{act.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Card 2b: Panda Estrella */}
+            <div className="glass-card" style={{ 
+              padding: '10px 10px', 
+              borderRadius: '16px', 
+              backgroundColor: '#161617', 
+              border: '1px solid rgba(255,255,255,0.05)', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', fontWeight: '800', color: 'var(--champagne)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                <Crown size={11} color="var(--champagne)" />
+                <span>Panda Estrella</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '4px 0' }}>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <img 
+                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60" 
+                    alt="Barbero Estrella" 
+                    style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1.5px solid var(--champagne)', objectFit: 'cover' }} 
+                  />
+                  <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', backgroundColor: 'var(--champagne)', borderRadius: '50%', width: '11px', height: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '7px', fontWeight: '950', color: 'black' }}>
+                    ★
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <span style={{ fontSize: '10px', fontWeight: '900', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Mateo F.</span>
+                  <span style={{ fontSize: '7.5px', color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>Senior Barber</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '8px', color: 'rgba(255,255,255,0.5)', borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: '3px', marginTop: '1px' }}>
+                <span>CORTES</span>
+                <span style={{ color: 'white', fontWeight: '900', fontSize: '10px' }}>42</span>
+              </div>
             </div>
           </div>
 
