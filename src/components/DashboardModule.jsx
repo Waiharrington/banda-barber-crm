@@ -1142,9 +1142,9 @@ const DashboardModule = ({
             </div>
           </div>
 
-          {/* Card 3: Top 3 Barberos del Mes */}
+          {/* Card 3: Top 3 Barberos del Mes (Astro Barber Style) */}
           <div className="glass-card" style={{ 
-            padding: '12px 14px', 
+            padding: '14px 16px', 
             borderRadius: '16px', 
             backgroundColor: '#161617', 
             border: '1px solid rgba(255,255,255,0.05)', 
@@ -1152,48 +1152,49 @@ const DashboardModule = ({
             flexDirection: 'column', 
             flexShrink: 0
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h3 style={{ fontSize: '10.5px', fontWeight: '800', color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Trophy size={13} color="var(--champagne)" style={{ filter: 'drop-shadow(0 0 4px rgba(197, 168, 128, 0.3))' }} />
-                Top Barberos del Mes
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h3 style={{ fontSize: '11px', fontWeight: '900', color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.75px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Trophy size={14} color="var(--champagne)" />
+                TOP BARBEROS DEL MES
               </h3>
-              <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', fontWeight: '700', letterSpacing: '0.5px' }}>RANKING</span>
+              <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', fontWeight: '800', letterSpacing: '0.75px' }}>RANKING</span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {[
-                { rank: 1, name: 'Mateo Fernández', role: 'Master Barber', count: 142, max: 150, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60', color: 'var(--champagne)' },
-                { rank: 2, name: 'Luis Gómez', role: 'Senior Barber', count: 128, max: 150, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60', color: '#a1a1aa' },
-                { rank: 3, name: 'Alejandro Ruiz', role: 'Barber', count: 115, max: 150, avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=60', color: '#b45309' }
+                { rank: 1, name: 'Mateo Fernández', count: 142, max: 150, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60', color: '#c5a880', bg: 'rgba(197, 168, 128, 0.08)', border: 'rgba(197, 168, 128, 0.25)', barColor: '#ffffff' },
+                { rank: 2, name: 'Luis Gómez', count: 128, max: 150, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60', color: '#a1a1aa', bg: 'rgba(161, 161, 170, 0.06)', border: 'rgba(161, 161, 170, 0.18)', barColor: '#71717a' },
+                { rank: 3, name: 'Alejandro Ruiz', count: 115, max: 150, avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=60', color: '#b45309', bg: 'rgba(180, 83, 9, 0.05)', border: 'rgba(180, 83, 9, 0.15)', barColor: '#3f3f46' }
               ].map((barber, index) => {
                 const percentage = Math.round((barber.count / barber.max) * 100);
                 return (
-                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 0', borderBottom: index < 2 ? '1px solid rgba(255,255,255,0.02)' : 'none' }}>
-                    {/* Rank Number Circle */}
+                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {/* Rank Ring */}
                     <div style={{ 
-                      width: '20px', 
-                      height: '20px', 
+                      width: '24px', 
+                      height: '24px', 
                       borderRadius: '50%', 
-                      backgroundColor: index === 0 ? 'rgba(197, 168, 128, 0.15)' : 'rgba(255,255,255,0.03)', 
+                      backgroundColor: barber.bg, 
                       display: 'flex', 
                       alignItems: 'center', 
                       justifyContent: 'center',
-                      fontSize: '9.5px',
+                      fontSize: '10px',
                       fontWeight: '950',
                       color: barber.color,
-                      border: `1px solid ${index === 0 ? 'rgba(197, 168, 128, 0.3)' : 'rgba(255,255,255,0.05)'}`
+                      border: `1.5px solid ${barber.border}`,
+                      flexShrink: 0
                     }}>
                       {barber.rank}
                     </div>
 
-                    {/* Avatar */}
-                    <div style={{ position: 'relative' }}>
+                    {/* Avatar with floating crown for 1st place */}
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
                       <img 
                         src={barber.avatar} 
                         alt={barber.name} 
                         style={{ 
-                          width: '32px', 
-                          height: '32px', 
+                          width: '38px', 
+                          height: '38px', 
                           borderRadius: '50%', 
                           border: `1.5px solid ${index === 0 ? 'var(--champagne)' : 'rgba(255,255,255,0.1)'}`,
                           objectFit: 'cover'
@@ -1201,29 +1202,29 @@ const DashboardModule = ({
                       />
                       {index === 0 && (
                         <div style={{ position: 'absolute', top: '-6px', right: '-4px', transform: 'rotate(15deg)' }}>
-                          <Crown size={10} color="var(--champagne)" fill="var(--champagne)" />
+                          <Crown size={12} color="var(--champagne)" fill="var(--champagne)" />
                         </div>
                       )}
                     </div>
 
-                    {/* Name & Progress */}
-                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {/* Text and full-width progress bar under the text */}
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '5px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                        <span style={{ fontSize: '11px', fontWeight: '800', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <span style={{ fontSize: '13.5px', fontWeight: '900', color: 'white', letterSpacing: '-0.2px' }}>
                           {barber.name}
                         </span>
-                        <span style={{ fontSize: '10px', fontWeight: '900', color: index === 0 ? 'var(--champagne)' : 'white' }}>
-                          {barber.count} <span style={{ fontSize: '7.5px', color: 'rgba(255,255,255,0.4)', fontWeight: '600' }}>servs</span>
+                        <span style={{ fontSize: '11px', fontWeight: '900', color: 'white' }}>
+                          {barber.count} <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.35)', fontWeight: '600' }}>servs</span>
                         </span>
                       </div>
                       
-                      {/* Progress bar */}
-                      <div style={{ height: '3px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '1.5px', overflow: 'hidden', width: '100%' }}>
+                      {/* Wide progress line */}
+                      <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '2px', overflow: 'hidden', width: '100%' }}>
                         <div style={{ 
                           width: `${percentage}%`, 
                           height: '100%', 
-                          background: index === 0 ? 'linear-gradient(to right, var(--champagne), #fff)' : 'rgba(255,255,255,0.3)', 
-                          borderRadius: '1.5px' 
+                          backgroundColor: barber.barColor, 
+                          borderRadius: '2px' 
                         }} />
                       </div>
                     </div>
