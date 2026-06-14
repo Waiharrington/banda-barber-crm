@@ -2,7 +2,7 @@ import React from 'react';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import MobileBottomNav from './MobileBottomNav';
-import logo from '../../assets/logo.png';
+import logo from '../../assets/sidebar_logo.png';
 
 const MobileLayout = ({ children, activeTab, setActiveTab, onOpenSale }) => {
   const { logout } = useAuth();
@@ -28,7 +28,7 @@ const MobileLayout = ({ children, activeTab, setActiveTab, onOpenSale }) => {
         zIndex: 100,
       }}>
         <div style={{ width: '40px' }} /> {/* Spacer */}
-        <img src={logo} alt="Panda Barber" style={{ height: '30px', width: 'auto' }} />
+        <img src={logo} alt="Panda Barber Studio" style={{ height: '34px', width: 'auto', filter: 'brightness(1.05)' }} />
         <button 
           onClick={logout}
           style={{ background: 'none', border: 'none', color: '#ff453a', padding: '10px' }}

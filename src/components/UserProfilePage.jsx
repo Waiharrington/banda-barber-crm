@@ -351,9 +351,13 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
               position: 'relative',
               overflow: 'hidden'
             }}>
-              <div style={{ fontSize: '46px', fontWeight: '950', color: 'white', fontFamily: 'Outfit, var(--font-sans), system-ui', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
-                {staffMember.name ? staffMember.name.charAt(0) : 'A'}
-              </div>
+              {staffMember?.image_url ? (
+                <img src={staffMember.image_url} alt={staffMember.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ fontSize: '46px', fontWeight: '950', color: 'white', fontFamily: 'Outfit, var(--font-sans), system-ui', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
+                  {staffMember?.name ? staffMember.name.charAt(0) : 'A'}
+                </div>
+              )}
             </div>
             {/* Status dot in the corner of the avatar */}
             <div style={{ 

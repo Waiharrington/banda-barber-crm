@@ -9,7 +9,8 @@ const toSessionUser = (staffProfile, authUser) => ({
   name: staffProfile.name,
   email: staffProfile.email || authUser.email,
   role: staffProfile.role,
-  username: staffProfile.username || ''
+  username: staffProfile.username || '',
+  image_url: staffProfile.image_url || ''
 });
 
 export const AuthProvider = ({ children }) => {

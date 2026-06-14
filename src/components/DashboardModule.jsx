@@ -27,7 +27,10 @@ import {
   Calendar,
   CheckCircle2,
   DollarSign,
-  Bell
+  Bell,
+  Store,
+  ChevronDown,
+  UserX
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -115,7 +118,7 @@ const DashboardModule = ({
   }, []);
   
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('de-DE', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -124,12 +127,12 @@ const DashboardModule = ({
   const getShortName = (fullName) => fullName ? fullName.split(' ')[0] : '';
   const staffList = dbData?.staff || [];
   const sortedStaff = [...staffList]
-    .filter(s => s.role !== 'Admin')
+    .filter(s => !s.role || !s.role.toLowerCase().startsWith('admin'))
     .sort((a, b) => (b.stats?.monthlyIncome || 0) - (a.stats?.monthlyIncome || 0));
 
-  const firstPlace = sortedStaff[0] || { name: 'Mateo Fernández', stats: { monthlyIncome: 2840 }, image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60' };
-  const secondPlace = sortedStaff[1] || { name: 'Luis Gómez', stats: { monthlyIncome: 2120 }, image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60' };
-  const thirdPlace = sortedStaff[2] || { name: 'Alejandro Ruiz', stats: { monthlyIncome: 1850 }, image_url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=60' };
+  const firstPlace = sortedStaff[0] || { name: 'Marco', stats: { monthlyIncome: 2850 }, image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60' };
+  const secondPlace = sortedStaff[1] || { name: 'Luis', stats: { monthlyIncome: 2120 }, image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60' };
+  const thirdPlace = sortedStaff[2] || { name: 'Alejandro', stats: { monthlyIncome: 1850 }, image_url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=60' };
 
   const [isEditingGoals, setIsEditingGoals] = useState(false);
   const [currentMonthAmount, setCurrentMonthAmount] = useState(() => {
@@ -207,20 +210,18 @@ const DashboardModule = ({
   const formattedTime = currentTime.toLocaleTimeString('es-ES', {
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
     hour12: true
-  }).toUpperCase();
+  }).toLowerCase();
 
-  const formattedDate = currentTime.toLocaleDateString('es-ES', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
+  const weekdayName = currentTime.toLocaleDateString('es-ES', { weekday: 'long' });
+  const capitalizedWeekday = weekdayName.charAt(0).toUpperCase() + weekdayName.slice(1);
 
   const monthNames = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
+
+  const formattedDate = capitalizedWeekday + ', ' + currentTime.getDate() + ' de ' + monthNames[currentTime.getMonth()].toLowerCase() + ' de ' + currentTime.getFullYear();
   
   const currentMonthName = `${monthNames[currentTime.getMonth()]} ${currentTime.getFullYear()}`;
   const currentDateVal = currentTime.getDate();
@@ -310,7 +311,6 @@ const DashboardModule = ({
       position: 'relative',
       overflowX: 'hidden',
       height: (isMobile || isTablet) ? 'auto' : '100%',
-      flex: (isMobile || isTablet) ? 'none' : 1,
       minHeight: 0,
       backgroundColor: 'transparent',
     }}>
@@ -342,7 +342,7 @@ const DashboardModule = ({
               gap: '6px', 
               margin: 0 
             }}>
-              ¡Buenos días, Panda Barber! 
+              ¡Buenos días, Panda Barber!
               <span className="wave-hand-span" style={{ display: 'inline-flex', alignItems: 'center' }}>
                 <svg 
                   width="22" 
@@ -367,11 +367,11 @@ const DashboardModule = ({
               </span>
             </h1>
             <span style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.45)', fontWeight: '600', marginTop: '4px' }}>
-              Hora actual: {formattedTime}
+              Hora actual: {formattedTime} &bull; {formattedDate}
             </span>
           </div>
 
-          {/* Search, Notifications, + Nueva cita */}
+          {/* Search, Dropdown & + Nueva cita */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {/* Search Input Bar */}
             <div style={{
@@ -416,7 +416,8 @@ const DashboardModule = ({
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
             </div>
-                      {/* Rate Toggle Card */}
+
+            {/* Rate Toggle Card */}
             {rates && (
               <div className="glass-card" style={{ 
                 padding: '4px', 
@@ -505,7 +506,7 @@ const DashboardModule = ({
                   alignItems: 'center',
                   gap: '1px'
                 }}>
-                  <span style={{ fontSize: '7px', fontWeight: '800', color: 'rgba(255,255,255,0.5)' }}>GAP</span>
+                  <span style={{ fontSize: '7px', fontWeight: '800', color: 'rgba(255,255,255,0.5)' }}>BRECHA</span>
                   <span style={{ 
                     fontSize: '10px', 
                     fontWeight: '950', 
@@ -519,41 +520,6 @@ const DashboardModule = ({
                 </div>
               </div>
             )}
-
-            {/* Notification Bell */}
-            <button 
-              onClick={onOpenNotifications}
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '50%',
-                width: '38px',
-                height: '38px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.07)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'}
-            >
-              <Bell size={17} />
-              {unreadCount > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-2px',
-                  right: '-2px',
-                  width: '7px',
-                  height: '7px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--champagne)',
-                  boxShadow: '0 0 8px var(--champagne)'
-                }} />
-              )}
-            </button>
 
             {/* + Nueva cita gold button */}
             <button 
@@ -595,7 +561,7 @@ const DashboardModule = ({
         gap: '16px', 
         flex: 1, 
         minHeight: 0,
-        height: (isMobile || isTablet) ? 'auto' : 'calc(100% - 60px)', 
+        height: (isMobile || isTablet) ? 'auto' : 'calc(100vh - 110px)',
         padding: '0 8px',
         overflow: 'hidden'
       }}>
@@ -605,7 +571,7 @@ const DashboardModule = ({
           display: 'flex', 
           flexDirection: 'column', 
           gap: '14px', 
-          height: '100%', 
+          flex: 1, 
           minHeight: 0,
           overflow: 'hidden'
         }}>
@@ -613,7 +579,7 @@ const DashboardModule = ({
           {/* Top KPI Cards Row */}
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', 
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)', 
             gap: '10px',
             flexShrink: 0
           }}>
@@ -677,6 +643,20 @@ const DashboardModule = ({
                 <span style={{ fontSize: '7px' }}>▲</span> 8% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs ayer</span>
               </div>
             </div>
+
+            {/* KPI Card 5: No-Shows */}
+            <div className="glass-card" style={{ padding: '8px 10px', borderRadius: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '76px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.7 }}>
+                <span style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.5px' }}>INASISTENCIAS</span>
+                <UserX size={13} color="rgba(255,255,255,0.6)" />
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: '1px 0' }}>
+                1
+              </div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
+                <span style={{ fontSize: '7px' }}>▲</span> 2% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs ayer</span>
+              </div>
+            </div>
           </div>
 
           {/* "Estado de las sillas" Real-time panel */}
@@ -724,7 +704,7 @@ const DashboardModule = ({
                     onClick={() => setSelectedChair(chair)}
                     style={{
                       backgroundColor: 'rgba(0,0,0,0.15)',
-                      border: '1px solid rgba(255,255,255,0.04)',
+                      border: `1.5px solid ${chair.statusColor || 'rgba(255,255,255,0.04)'}`,
                       borderRadius: '16px',
                       padding: '12px 14px',
                       display: 'flex',
@@ -820,8 +800,8 @@ const DashboardModule = ({
                           height: '100%',
                           boxSizing: 'border-box'
                         }}>
-                          <div style={{ width: '10px', height: '10px', borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.2)', borderTopColor: 'white', animation: 'spin 1s linear infinite' }} />
-                          <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.6)', fontWeight: '600' }}>{chair.info}</span>
+                          <Clock size={11} color="var(--champagne)" />
+                          <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.6)', fontWeight: '600' }}>Disponible en 10 min</span>
                         </div>
                       )}
 
@@ -1033,7 +1013,7 @@ const DashboardModule = ({
           display: 'flex', 
           flexDirection: 'column', 
           gap: '12px', 
-          height: '100%',
+          flex: 1,
           minHeight: 0,
           overflow: 'hidden'
         }}>
@@ -1058,9 +1038,7 @@ const DashboardModule = ({
               {[
                 { time: '10:00 AM', name: 'Miguel Torres', service: 'Corte Clásico', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60', status: 'active' },
                 { time: '10:45 AM', name: 'Andrés Gómez', service: 'Fade + Barba', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60', status: 'active' },
-                { time: '11:30 AM', name: 'Luis Martínez', service: 'Degradado', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=60', status: 'active' },
-                { time: '12:15 PM', name: 'David Rojas', service: 'Afeitado Premium', avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=60', status: 'inactive' },
-                { time: '01:00 PM', name: 'Sebastián López', service: 'Corte + Barba', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=60', status: 'inactive' }
+                { time: '11:30 AM', name: 'Luis Martínez', service: 'Arreglo de Barba', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=60', status: 'active' }
               ].map((item, idx) => (
                 <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.02)', flexShrink: 0 }}>
                   <span style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.6)', width: '60px' }}>{item.time}</span>
@@ -1164,23 +1142,8 @@ const DashboardModule = ({
             flexShrink: 0
           }}>
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ 
-                  width: '26px', 
-                  height: '26px', 
-                  borderRadius: '8px', 
-                  backgroundColor: 'rgba(197, 168, 128, 0.1)', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center' 
-                }}>
-                  <Trophy size={14} color="var(--champagne)" />
-                </div>
-                <h3 style={{ fontSize: '12px', fontWeight: '900', margin: 0, color: 'white', letterSpacing: '-0.3px' }}>
-                  Top <span style={{ color: 'var(--champagne)' }}>Barbers</span>
-                </h3>
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexShrink: 0 }}>
+              <h3 style={{ fontSize: '10px', fontWeight: '800', color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Top barberos</h3>
             </div>
 
             {/* Podium Grid */}
@@ -1428,7 +1391,10 @@ const DashboardModule = ({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '700', marginBottom: '4px' }}>
               <span>META MENSUAL</span>
-              <Edit3 size={10.5} color="var(--champagne)" style={{ opacity: 0.7 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--champagne)' }}>
+                <span style={{ fontSize: '9px', fontWeight: '700' }}>Editar meta</span>
+                <Edit3 size={10} />
+              </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
               <span style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>
@@ -1438,8 +1404,11 @@ const DashboardModule = ({
                 {monthlyProgress}%
               </span>
             </div>
-            <div style={{ height: '5px', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '2.5px', overflow: 'hidden' }}>
+            <div style={{ height: '5px', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '2.5px', overflow: 'hidden', marginBottom: '6px' }}>
               <div style={{ width: `${Math.min(100, monthlyProgress)}%`, height: '100%', background: 'linear-gradient(to right, #c5a880, #e5d4bc)', borderRadius: '2.5px' }} />
+            </div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
+              <span style={{ fontSize: '7px' }}>▲</span> 15% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs mes anterior</span>
             </div>
           </div>
 

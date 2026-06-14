@@ -320,8 +320,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
             <LogOut size={isCollapsed ? 15 : 13} /> {!isCollapsed && "Cerrar Sesión"}
           </button>
         </div>
-      )}
-    </div>
+      )}    </div>
   );
 };
 

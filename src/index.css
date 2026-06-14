@@ -1298,5 +1298,8 @@ input[type="submit"]:active {
   background-color: rgba(255, 255, 255, 0.04) !important;
 }
 
-
-
+/* Make sure all module containers occupy 100% height to avoid empty spaces */
+.p-container {
+  height: 100%;
+  width: 100%;
+}

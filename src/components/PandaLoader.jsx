@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Scissors } from 'lucide-react';
 
 const loadingTexts = [
   "Afilando navajas estelares...",
@@ -260,7 +261,6 @@ const PandaLoader = ({ visible }) => {
           zIndex: 1 
         }} 
       />
-
       {/* Interactive SVG Scissors container with 3D tilt */}
       <div 
         style={{
