@@ -121,6 +121,16 @@ const DashboardModule = ({
     }).format(amount);
   };
 
+  const getShortName = (fullName) => fullName ? fullName.split(' ')[0] : '';
+  const staffList = dbData?.staff || [];
+  const sortedStaff = [...staffList]
+    .filter(s => s.role !== 'Admin')
+    .sort((a, b) => (b.stats?.monthlyIncome || 0) - (a.stats?.monthlyIncome || 0));
+
+  const firstPlace = sortedStaff[0] || { name: 'Mateo Fernández', stats: { monthlyIncome: 2840 }, image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60' };
+  const secondPlace = sortedStaff[1] || { name: 'Luis Gómez', stats: { monthlyIncome: 2120 }, image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60' };
+  const thirdPlace = sortedStaff[2] || { name: 'Alejandro Ruiz', stats: { monthlyIncome: 1850 }, image_url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=60' };
+
   const [isEditingGoals, setIsEditingGoals] = useState(false);
   const [currentMonthAmount, setCurrentMonthAmount] = useState(() => {
     const val = parseFloat(localStorage.getItem('panda_current_month_amount') || '28400');
@@ -1197,11 +1207,17 @@ const DashboardModule = ({
                     justifyContent: 'center',
                     backgroundColor: 'rgba(255,255,255,0.02)'
                   }}>
-                    <img 
-                      src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60" 
-                      alt="Luis Gómez" 
-                      style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} 
-                    />
+                    {secondPlace.image_url ? (
+                      <img 
+                        src={secondPlace.image_url} 
+                        alt={secondPlace.name} 
+                        style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} 
+                      />
+                    ) : (
+                      <span style={{ fontSize: '13px', fontWeight: '900', color: '#a1a1aa' }}>
+                        {getShortName(secondPlace.name).substring(0, 1).toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   {/* Rank Badge */}
                   <div style={{
@@ -1226,8 +1242,12 @@ const DashboardModule = ({
                 </div>
                 
                 {/* Info */}
-                <span style={{ fontSize: '11px', fontWeight: '800', color: 'white', marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>Luis</span>
-                <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--champagne)', marginTop: '2px' }}>$2,120</span>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'white', marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
+                  {getShortName(secondPlace.name)}
+                </span>
+                <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--champagne)', marginTop: '2px' }}>
+                  ${formatCurrency(secondPlace.stats?.monthlyIncome || 0)}
+                </span>
                 <span style={{ fontSize: '6.5px', color: 'rgba(255,255,255,0.4)', fontWeight: '700', letterSpacing: '0.2px', marginTop: '1px' }}>MES EN CURSO</span>
 
                 {/* Podium Block */}
@@ -1262,11 +1282,17 @@ const DashboardModule = ({
                     justifyContent: 'center',
                     backgroundColor: 'rgba(197, 168, 128, 0.05)'
                   }}>
-                    <img 
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60" 
-                      alt="Mateo Fernández" 
-                      style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }} 
-                    />
+                    {firstPlace.image_url ? (
+                      <img 
+                        src={firstPlace.image_url} 
+                        alt={firstPlace.name} 
+                        style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }} 
+                      />
+                    ) : (
+                      <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--champagne)' }}>
+                        {getShortName(firstPlace.name).substring(0, 1).toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   {/* Rank Badge */}
                   <div style={{
@@ -1291,8 +1317,12 @@ const DashboardModule = ({
                 </div>
                 
                 {/* Info */}
-                <span style={{ fontSize: '12.5px', fontWeight: '900', color: 'white', marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>Mateo</span>
-                <span style={{ fontSize: '11.5px', fontWeight: '900', color: 'var(--champagne)', marginTop: '2px' }}>$2,840</span>
+                <span style={{ fontSize: '12.5px', fontWeight: '900', color: 'white', marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
+                  {getShortName(firstPlace.name)}
+                </span>
+                <span style={{ fontSize: '11.5px', fontWeight: '900', color: 'var(--champagne)', marginTop: '2px' }}>
+                  ${formatCurrency(firstPlace.stats?.monthlyIncome || 0)}
+                </span>
                 <span style={{ fontSize: '6.5px', color: 'rgba(255,255,255,0.4)', fontWeight: '700', letterSpacing: '0.2px', marginTop: '1px' }}>MES EN CURSO</span>
 
                 {/* Podium Block */}
@@ -1322,11 +1352,17 @@ const DashboardModule = ({
                     justifyContent: 'center',
                     backgroundColor: 'rgba(255,255,255,0.02)'
                   }}>
-                    <img 
-                      src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=60" 
-                      alt="Alejandro Ruiz" 
-                      style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} 
-                    />
+                    {thirdPlace.image_url ? (
+                      <img 
+                        src={thirdPlace.image_url} 
+                        alt={thirdPlace.name} 
+                        style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} 
+                      />
+                    ) : (
+                      <span style={{ fontSize: '13px', fontWeight: '900', color: '#b45309' }}>
+                        {getShortName(thirdPlace.name).substring(0, 1).toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   {/* Rank Badge */}
                   <div style={{
@@ -1351,8 +1387,12 @@ const DashboardModule = ({
                 </div>
                 
                 {/* Info */}
-                <span style={{ fontSize: '11px', fontWeight: '800', color: 'white', marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>Alejandro</span>
-                <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--champagne)', marginTop: '2px' }}>$1,850</span>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'white', marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
+                  {getShortName(thirdPlace.name)}
+                </span>
+                <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--champagne)', marginTop: '2px' }}>
+                  ${formatCurrency(thirdPlace.stats?.monthlyIncome || 0)}
+                </span>
                 <span style={{ fontSize: '6.5px', color: 'rgba(255,255,255,0.4)', fontWeight: '700', letterSpacing: '0.2px', marginTop: '1px' }}>MES EN CURSO</span>
 
                 {/* Podium Block */}
