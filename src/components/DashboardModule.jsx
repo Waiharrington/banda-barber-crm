@@ -355,8 +355,8 @@ const DashboardModule = ({
                 </svg>
               </span>
             </h1>
-            <span style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.45)', fontWeight: '500', marginTop: '4px' }}>
-              Hoy es {formattedDate}. Hora actual: {formattedTime}.
+            <span style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.45)', fontWeight: '600', marginTop: '4px' }}>
+              Hora actual: {formattedTime}
             </span>
           </div>
 
@@ -1178,49 +1178,6 @@ const DashboardModule = ({
                 <span>CORTES</span>
                 <span style={{ color: 'white', fontWeight: '900', fontSize: '10px' }}>42</span>
               </div>
-            </div>
-          </div>
-
-          {/* Card 3: Calendario */}
-          <div className="glass-card" style={{ 
-            padding: '10px 12px', 
-            borderRadius: '16px', 
-            backgroundColor: '#161617', 
-            border: '1px solid rgba(255,255,255,0.05)', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            flexShrink: 0
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '10.5px', fontWeight: '800', color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Calendario</span>
-              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.75)', fontWeight: '700' }}>{currentMonthName}</span>
-            </div>
-
-            {/* Dynamic calendar grid based on current real-time */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', fontSize: '9.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '700' }}>
-              <div>LUN</div><div>MAR</div><div>MIÉ</div><div>JUE</div><div>VIE</div><div>SÁB</div><div>DOM</div>
-              {daysGrid.map((item, dIdx) => {
-                const isSelected = item.day === currentDateVal && item.isCurrentMonth;
-                const isOffMonth = !item.isCurrentMonth;
-                return (
-                  <div 
-                    key={dIdx} 
-                    style={{
-                      height: '20px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '50%',
-                      fontWeight: '800',
-                      color: isSelected ? 'black' : isOffMonth ? 'rgba(255,255,255,0.15)' : 'white',
-                      backgroundColor: isSelected ? 'var(--champagne)' : 'transparent',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {item.day}
-                  </div>
-                );
-              })}
             </div>
           </div>
 
