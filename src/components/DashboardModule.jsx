@@ -123,10 +123,12 @@ const DashboardModule = ({
 
   const [isEditingGoals, setIsEditingGoals] = useState(false);
   const [currentMonthAmount, setCurrentMonthAmount] = useState(() => {
-    return parseFloat(localStorage.getItem('panda_current_month_amount') || '28.4');
+    const val = parseFloat(localStorage.getItem('panda_current_month_amount') || '28400');
+    return val < 1000 ? val * 1000 : val;
   });
   const [monthlyGoal, setMonthlyGoal] = useState(() => {
-    return parseFloat(localStorage.getItem('panda_monthly_goal') || '35');
+    const val = parseFloat(localStorage.getItem('panda_monthly_goal') || '35000');
+    return val < 1000 ? val * 1000 : val;
   });
   const [selectedChair, setSelectedChair] = useState(null);
 
@@ -1189,7 +1191,7 @@ const DashboardModule = ({
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
               <span style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>
-                ${currentMonthAmount}M <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: '600' }}>/ ${monthlyGoal}M</span>
+                ${formatCurrency(currentMonthAmount)} <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: '600' }}>/ ${formatCurrency(monthlyGoal)}</span>
               </span>
               <span style={{ fontSize: '10.5px', fontWeight: '900', color: 'var(--champagne)' }}>
                 {monthlyProgress}%
@@ -1562,17 +1564,17 @@ const DashboardModule = ({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>FACTURACIÓN ACTUAL (MILLONES $)</label>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>FACTURACIÓN ACTUAL ($)</label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
                     <DollarSign size={15} color="var(--champagne)" />
                   </div>
                   <input 
                     type="number" 
-                    step="0.1"
+                    step="1"
                     value={currentMonthAmount} 
                     onChange={(e) => setCurrentMonthAmount(parseFloat(e.target.value) || 0)}
-                    placeholder="Ej. 28.4"
+                    placeholder="Ej. 28400"
                     className="premium-modal-input"
                     style={{
                       width: '100%',
@@ -1591,17 +1593,17 @@ const DashboardModule = ({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>META DEL MES (MILLONES $)</label>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>META DEL MES ($)</label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
                     <Target size={15} color="var(--champagne)" />
                   </div>
                   <input 
                     type="number" 
-                    step="0.1"
+                    step="1"
                     value={monthlyGoal} 
                     onChange={(e) => setMonthlyGoal(parseFloat(e.target.value) || 1)}
-                    placeholder="Ej. 35.0"
+                    placeholder="Ej. 35000"
                     className="premium-modal-input"
                     style={{
                       width: '100%',
