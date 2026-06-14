@@ -1188,6 +1188,7 @@ const DashboardModule = ({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '700', marginBottom: '4px' }}>
               <span>META MENSUAL</span>
+              <Edit3 size={10.5} color="var(--champagne)" style={{ opacity: 0.7 }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
               <span style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>
