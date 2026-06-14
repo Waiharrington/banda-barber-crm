@@ -989,24 +989,49 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
               <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <ImageIcon size={18} color="var(--gold-primary)" /> Galería de Trabajos
               </h4>
-              <button 
-                onClick={() => setShowCollage(!showCollage)}
-                style={{ 
-                  background: showCollage ? 'var(--gold-primary)' : 'rgba(255, 255, 255,0.1)', 
-                  border: '1px solid var(--gold-primary)', 
-                  color: showCollage ? 'black' : 'var(--gold-primary)',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  cursor: 'pointer',
-                  fontWeight: '800'
-                }}
-              >
-                <ColumnsIcon size={14} /> {showCollage ? 'Ver Galería' : 'Crear Comparativa'}
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {showCollage && (photoA || photoB) && (
+                  <button 
+                    onClick={() => { setPhotoA(null); setPhotoB(null); }}
+                    style={{ 
+                      background: 'rgba(255, 69, 58, 0.15)', 
+                      border: '1px solid #ff453a', 
+                      color: '#ff453a',
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      fontWeight: '800',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255, 69, 58, 0.25)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255, 69, 58, 0.15)'}
+                  >
+                    <Trash2 size={14} /> Descartar
+                  </button>
+                )}
+                <button 
+                  onClick={() => setShowCollage(!showCollage)}
+                  style={{ 
+                    background: showCollage ? 'var(--gold-primary)' : 'rgba(255, 255, 255,0.1)', 
+                    border: '1px solid var(--gold-primary)', 
+                    color: showCollage ? 'black' : 'var(--gold-primary)',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '800'
+                  }}
+                >
+                  <ColumnsIcon size={14} /> {showCollage ? 'Ver Galería' : 'Crear Comparativa'}
+                </button>
+              </div>
             </div>
 
             {showCollage ? (
@@ -1259,24 +1284,49 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
               <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <ImageIcon size={18} color="var(--gold-primary)" /> Galería de Trabajos
               </h4>
-              <button 
-                onClick={() => setShowCollage(!showCollage)}
-                style={{ 
-                  background: showCollage ? 'var(--gold-primary)' : 'rgba(255, 255, 255,0.1)', 
-                  border: '1px solid var(--gold-primary)', 
-                  color: showCollage ? 'black' : 'var(--gold-primary)',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  cursor: 'pointer',
-                  fontWeight: '800'
-                }}
-              >
-                <ColumnsIcon size={14} /> {showCollage ? 'Ver Galería' : 'Crear Comparativa'}
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {showCollage && (photoA || photoB) && (
+                  <button 
+                    onClick={() => { setPhotoA(null); setPhotoB(null); }}
+                    style={{ 
+                      background: 'rgba(255, 69, 58, 0.15)', 
+                      border: '1px solid #ff453a', 
+                      color: '#ff453a',
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      fontWeight: '800',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255, 69, 58, 0.25)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255, 69, 58, 0.15)'}
+                  >
+                    <Trash2 size={14} /> Descartar
+                  </button>
+                )}
+                <button 
+                  onClick={() => setShowCollage(!showCollage)}
+                  style={{ 
+                    background: showCollage ? 'var(--gold-primary)' : 'rgba(255, 255, 255,0.1)', 
+                    border: '1px solid var(--gold-primary)', 
+                    color: showCollage ? 'black' : 'var(--gold-primary)',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    fontWeight: '800'
+                  }}
+                >
+                  <ColumnsIcon size={14} /> {showCollage ? 'Ver Galería' : 'Crear Comparativa'}
+                </button>
+              </div>
             </div>
 
             {showCollage ? (
