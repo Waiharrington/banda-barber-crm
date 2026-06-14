@@ -310,6 +310,7 @@ const DashboardModule = ({
       position: 'relative',
       overflowX: 'hidden',
       height: (isMobile || isTablet) ? 'auto' : '100%',
+      flex: (isMobile || isTablet) ? 'none' : 1,
       minHeight: 0,
       backgroundColor: 'transparent',
     }}>
@@ -594,7 +595,7 @@ const DashboardModule = ({
         gap: '16px', 
         flex: 1, 
         minHeight: 0,
-        height: '100%',
+        height: (isMobile || isTablet) ? 'auto' : 'calc(100% - 60px)', 
         padding: '0 8px',
         overflow: 'hidden'
       }}>

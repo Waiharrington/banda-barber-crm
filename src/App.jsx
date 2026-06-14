@@ -683,6 +683,8 @@ function App() {
         onToggleRateType={handleSetActiveRateType}
       />
       <main className="main-content no-scrollbar" style={{ 
+        display: 'flex',
+        flexDirection: 'column',
         flex: 1, 
         marginLeft: isMobile ? '0' : (isModalOpen ? '0' : (isCollapsed ? '80px' : '260px')), 
         padding: 'var(--spacing-xl)', 
@@ -693,7 +695,13 @@ function App() {
         backgroundColor: 'transparent',
         transition: 'margin-left 0.3s ease'
       }}>
-        <div key={activeTab} className={isAppLoading ? "opacity-0" : "animate-page-fade-in"} style={{ height: '100%' }}>
+        <div key={activeTab} className={isAppLoading ? "opacity-0" : "animate-page-fade-in"} style={{ 
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          minHeight: 0
+        }}>
           {activeTab !== 'dashboard' && (
             <TopBar 
               activeTab={activeTab}
