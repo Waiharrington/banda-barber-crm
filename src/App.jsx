@@ -574,7 +574,7 @@ function App() {
       case 'dashboard':
         return isMobile ? (
           <MobileDashboard 
-            onOpenSale={() => setIsSaleModalOpen(true)} 
+            onOpenSale={() => setIsReceptionModalOpen(true)} 
             stats={stats} 
             chartData={chartData} 
             dbData={dbData} 
@@ -587,7 +587,7 @@ function App() {
             isMobile={isMobile}
             isTablet={isTablet}
             isCollapsed={isCollapsed}
-            onOpenSale={() => setIsSaleModalOpen(true)} 
+            onOpenSale={() => setIsReceptionModalOpen(true)} 
             stats={stats} 
             chartData={chartData} 
             dbData={dbData} 
