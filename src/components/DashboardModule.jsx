@@ -295,7 +295,7 @@ const DashboardModule = ({
       display: 'flex', 
       flexDirection: 'column',
       position: 'relative',
-      overflow: 'visible',
+      overflowX: 'hidden',
       height: (isMobile || isTablet) ? 'auto' : '100%',
       minHeight: 0,
       backgroundColor: 'transparent',

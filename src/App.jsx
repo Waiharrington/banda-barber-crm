@@ -689,6 +689,7 @@ function App() {
         paddingBottom: activeTab === 'dashboard' ? '12px' : '80px',
         height: '100vh',
         overflowY: activeTab === 'dashboard' ? 'hidden' : 'auto',
+        overflowX: 'hidden',
         backgroundColor: 'transparent',
         transition: 'margin-left 0.3s ease'
       }}>
