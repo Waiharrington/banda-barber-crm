@@ -379,10 +379,10 @@ const ReceptionModule = ({ isMobile, rates }) => {
             </div>
 
             {selectedClient ? (
-              <div className="animate-scale-in" style={{ padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.05)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.2)' }}>
+              <div className="animate-scale-in" style={{ padding: '20px', backgroundColor: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#ffffff' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontWeight: '800', fontSize: '18px' }}>{selectedClient.name}</div>
+                    <div style={{ fontWeight: '800', fontSize: '18px', color: '#ffffff' }}>{selectedClient.name}</div>
                     <div style={{ 
                       display: 'inline-flex', 
                       alignItems: 'center', 
@@ -390,17 +390,17 @@ const ReceptionModule = ({ isMobile, rates }) => {
                       marginTop: '6px',
                       padding: '3px 8px', 
                       borderRadius: '6px', 
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)', 
-                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)', 
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
                       fontSize: '11px', 
                       fontWeight: '800', 
                       color: 'var(--gold-primary)',
                       letterSpacing: '0.5px'
                     }}>
-                      <span style={{ opacity: 0.6, fontSize: '9px', fontWeight: '900' }}>CÉDULA:</span> V-{selectedClient.id_card}
+                      <span style={{ opacity: 0.6, fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)' }}>CÉDULA:</span> V-{selectedClient.id_card}
                     </div>
                   </div>
-                  <button onClick={() => setSelectedClient(null)} style={{ background: 'none', border: 'none', color: '#ff453a', fontWeight: '800', cursor: 'pointer' }}>Cambiar</button>
+                  <button onClick={() => setSelectedClient(null)} style={{ background: 'none', border: 'none', color: '#ff453a', fontWeight: '800', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#ff6b64'} onMouseLeave={e => e.currentTarget.style.color = '#ff453a'}>Cambiar</button>
                 </div>
               </div>
             ) : (
