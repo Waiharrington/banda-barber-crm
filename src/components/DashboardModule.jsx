@@ -1142,7 +1142,7 @@ const DashboardModule = ({
             </div>
           </div>
 
-          {/* Card 3: Top 3 Barberos del Mes (Astro Barber Style) */}
+          {/* Card 3: Top 3 Barberos del Mes (Podium Style) */}
           <div className="glass-card" style={{ 
             padding: '14px 16px', 
             borderRadius: '16px', 
@@ -1152,85 +1152,221 @@ const DashboardModule = ({
             flexDirection: 'column', 
             flexShrink: 0
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h3 style={{ fontSize: '11px', fontWeight: '900', color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.75px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Trophy size={14} color="var(--champagne)" />
-                TOP BARBEROS DEL MES
-              </h3>
-              <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.4)', fontWeight: '800', letterSpacing: '0.75px' }}>RANKING</span>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ 
+                  width: '26px', 
+                  height: '26px', 
+                  borderRadius: '8px', 
+                  backgroundColor: 'rgba(197, 168, 128, 0.1)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}>
+                  <Trophy size={14} color="var(--champagne)" />
+                </div>
+                <h3 style={{ fontSize: '12px', fontWeight: '900', margin: 0, color: 'white', letterSpacing: '-0.3px' }}>
+                  Top <span style={{ color: 'var(--champagne)' }}>Barbers</span>
+                </h3>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {[
-                { rank: 1, name: 'Mateo Fernández', count: 142, max: 150, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60', color: '#c5a880', bg: 'rgba(197, 168, 128, 0.08)', border: 'rgba(197, 168, 128, 0.25)', barColor: '#ffffff' },
-                { rank: 2, name: 'Luis Gómez', count: 128, max: 150, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60', color: '#a1a1aa', bg: 'rgba(161, 161, 170, 0.06)', border: 'rgba(161, 161, 170, 0.18)', barColor: '#71717a' },
-                { rank: 3, name: 'Alejandro Ruiz', count: 115, max: 150, avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=60', color: '#b45309', bg: 'rgba(180, 83, 9, 0.05)', border: 'rgba(180, 83, 9, 0.15)', barColor: '#3f3f46' }
-              ].map((barber, index) => {
-                const percentage = Math.round((barber.count / barber.max) * 100);
-                return (
-                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {/* Rank Ring */}
-                    <div style={{ 
-                      width: '24px', 
-                      height: '24px', 
-                      borderRadius: '50%', 
-                      backgroundColor: barber.bg, 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      fontSize: '10px',
-                      fontWeight: '950',
-                      color: barber.color,
-                      border: `1.5px solid ${barber.border}`,
-                      flexShrink: 0
-                    }}>
-                      {barber.rank}
-                    </div>
-
-                    {/* Avatar with floating crown for 1st place */}
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
-                      <img 
-                        src={barber.avatar} 
-                        alt={barber.name} 
-                        style={{ 
-                          width: '38px', 
-                          height: '38px', 
-                          borderRadius: '50%', 
-                          border: `1.5px solid ${index === 0 ? 'var(--champagne)' : 'rgba(255,255,255,0.1)'}`,
-                          objectFit: 'cover'
-                        }} 
-                      />
-                      {index === 0 && (
-                        <div style={{ position: 'absolute', top: '-6px', right: '-4px', transform: 'rotate(15deg)' }}>
-                          <Crown size={12} color="var(--champagne)" fill="var(--champagne)" />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Text and full-width progress bar under the text */}
-                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                        <span style={{ fontSize: '13.5px', fontWeight: '900', color: 'white', letterSpacing: '-0.2px' }}>
-                          {barber.name}
-                        </span>
-                        <span style={{ fontSize: '11px', fontWeight: '900', color: 'white' }}>
-                          {barber.count} <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.35)', fontWeight: '600' }}>servs</span>
-                        </span>
-                      </div>
-                      
-                      {/* Wide progress line */}
-                      <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '2px', overflow: 'hidden', width: '100%' }}>
-                        <div style={{ 
-                          width: `${percentage}%`, 
-                          height: '100%', 
-                          backgroundColor: barber.barColor, 
-                          borderRadius: '2px' 
-                        }} />
-                      </div>
-                    </div>
+            {/* Podium Grid */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-around', 
+              alignItems: 'flex-end', 
+              padding: '15px 0 5px 0', 
+              minHeight: '175px', 
+              position: 'relative' 
+            }}>
+              
+              {/* 2nd Place (Left) */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '30%' }}>
+                {/* Avatar Frame with Border */}
+                <div style={{ position: 'relative', marginBottom: '8px' }}>
+                  <div style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '12px',
+                    border: '2px solid #a1a1aa',
+                    padding: '2px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(255,255,255,0.02)'
+                  }}>
+                    <img 
+                      src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60" 
+                      alt="Luis Gómez" 
+                      style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} 
+                    />
                   </div>
-                );
-              })}
+                  {/* Rank Badge */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-6px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '15px',
+                    height: '15px',
+                    borderRadius: '50%',
+                    backgroundColor: '#a1a1aa',
+                    color: 'black',
+                    fontSize: '8.5px',
+                    fontWeight: '950',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                  }}>
+                    2
+                  </div>
+                </div>
+                
+                {/* Info */}
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'white', marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>Luis</span>
+                <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--champagne)', marginTop: '2px' }}>$2,120</span>
+                <span style={{ fontSize: '6.5px', color: 'rgba(255,255,255,0.4)', fontWeight: '700', letterSpacing: '0.2px', marginTop: '1px' }}>MES EN CURSO</span>
+
+                {/* Podium Block */}
+                <div style={{
+                  width: '34px',
+                  height: '22px',
+                  background: 'linear-gradient(to bottom, rgba(161, 161, 170, 0.2), rgba(161, 161, 170, 0.03))',
+                  border: '1.5px solid rgba(161, 161, 170, 0.25)',
+                  borderBottom: 'none',
+                  borderRadius: '6px 6px 0 0',
+                  marginTop: '8px'
+                }} />
+              </div>
+
+              {/* 1st Place (Center - Elevated) */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '34%', transform: 'translateY(-14px)' }}>
+                {/* Avatar Frame with Border & Glow */}
+                <div style={{ position: 'relative', marginBottom: '8px' }}>
+                  {/* Floating Crown */}
+                  <div style={{ position: 'absolute', top: '-11px', left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}>
+                    <Crown size={12} color="var(--champagne)" fill="var(--champagne)" />
+                  </div>
+                  <div style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '14px',
+                    border: '2px solid var(--champagne)',
+                    boxShadow: '0 0 10px rgba(197, 168, 128, 0.45)',
+                    padding: '2px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(197, 168, 128, 0.05)'
+                  }}>
+                    <img 
+                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60" 
+                      alt="Mateo Fernández" 
+                      style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }} 
+                    />
+                  </div>
+                  {/* Rank Badge */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-6px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--champagne)',
+                    color: 'black',
+                    fontSize: '9px',
+                    fontWeight: '950',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                  }}>
+                    1
+                  </div>
+                </div>
+                
+                {/* Info */}
+                <span style={{ fontSize: '12.5px', fontWeight: '900', color: 'white', marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>Mateo</span>
+                <span style={{ fontSize: '11.5px', fontWeight: '900', color: 'var(--champagne)', marginTop: '2px' }}>$2,840</span>
+                <span style={{ fontSize: '6.5px', color: 'rgba(255,255,255,0.4)', fontWeight: '700', letterSpacing: '0.2px', marginTop: '1px' }}>MES EN CURSO</span>
+
+                {/* Podium Block */}
+                <div style={{
+                  width: '38px',
+                  height: '35px',
+                  background: 'linear-gradient(to bottom, rgba(197, 168, 128, 0.22), rgba(197, 168, 128, 0.03))',
+                  border: '1.5px solid rgba(197, 168, 128, 0.3)',
+                  borderBottom: 'none',
+                  borderRadius: '6px 6px 0 0',
+                  marginTop: '8px'
+                }} />
+              </div>
+
+              {/* 3rd Place (Right) */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '30%' }}>
+                {/* Avatar Frame with Border */}
+                <div style={{ position: 'relative', marginBottom: '8px' }}>
+                  <div style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '12px',
+                    border: '2px solid #b45309',
+                    padding: '2px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(255,255,255,0.02)'
+                  }}>
+                    <img 
+                      src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=60" 
+                      alt="Alejandro Ruiz" 
+                      style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} 
+                    />
+                  </div>
+                  {/* Rank Badge */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-6px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '15px',
+                    height: '15px',
+                    borderRadius: '50%',
+                    backgroundColor: '#b45309',
+                    color: 'white',
+                    fontSize: '8.5px',
+                    fontWeight: '950',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                  }}>
+                    3
+                  </div>
+                </div>
+                
+                {/* Info */}
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'white', marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>Alejandro</span>
+                <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--champagne)', marginTop: '2px' }}>$1,850</span>
+                <span style={{ fontSize: '6.5px', color: 'rgba(255,255,255,0.4)', fontWeight: '700', letterSpacing: '0.2px', marginTop: '1px' }}>MES EN CURSO</span>
+
+                {/* Podium Block */}
+                <div style={{
+                  width: '34px',
+                  height: '14px',
+                  background: 'linear-gradient(to bottom, rgba(180, 83, 9, 0.2), rgba(180, 83, 9, 0.03))',
+                  border: '1.5px solid rgba(180, 83, 9, 0.25)',
+                  borderBottom: 'none',
+                  borderRadius: '6px 6px 0 0',
+                  marginTop: '8px'
+                }} />
+              </div>
+
             </div>
           </div>
 
