@@ -52,8 +52,8 @@ const TopBar = ({
   const getTabTitle = () => {
     switch (activeTab) {
       case 'my-profile': return 'Mi Perfil';
-      case 'scheduling': return 'Calendario';
-      case 'reception': return 'Citas / Recepción';
+      case 'scheduling': return 'Agenda';
+      case 'reception': return 'Recepción';
       case 'checkout': return 'Caja / Punto de Venta';
       case 'barber': return 'Panel de Barberos';
       case 'clients': return 'Clientes';

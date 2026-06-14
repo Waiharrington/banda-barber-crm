@@ -27,8 +27,8 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
 
   const allMenuItems = [
     { id: 'dashboard', label: 'Inicio', icon: BarChart3, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
-    { id: 'scheduling', label: 'Calendario', icon: Calendar, roles: ['Admin', 'Barbero', 'Recepcionista'] },
-    { id: 'reception', label: 'Citas', icon: ClipboardList, roles: ['Admin', 'Recepcionista'] },
+    { id: 'scheduling', label: 'Agenda', icon: Calendar, roles: ['Admin', 'Barbero', 'Recepcionista'] },
+    { id: 'reception', label: 'Recepción', icon: ClipboardList, roles: ['Admin', 'Recepcionista'] },
     { id: 'checkout', label: 'Caja', icon: CreditCard, roles: ['Admin', 'Caja'] },
     { id: 'barber', label: 'Panel Barberos', icon: Scissors, roles: ['Admin', 'Barbero'] },
     { id: 'clients', label: 'Clientes', icon: Users, roles: ['Admin', 'Recepcionista', 'Barbero', 'Caja'] },
