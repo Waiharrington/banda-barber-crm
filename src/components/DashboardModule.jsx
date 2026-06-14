@@ -1144,7 +1144,7 @@ const DashboardModule = ({
               </div>
             </div>
 
-            {/* Card 2b: Panda Estrella */}
+            {/* Card 2b: Top 3 Barberos */}
             <div className="glass-card" style={{ 
               padding: '10px 10px', 
               borderRadius: '16px', 
@@ -1154,29 +1154,34 @@ const DashboardModule = ({
               flexDirection: 'column', 
               justifyContent: 'space-between'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', fontWeight: '800', color: 'var(--champagne)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                <Crown size={11} color="var(--champagne)" />
-                <span>Panda Estrella</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9.5px', fontWeight: '800', color: 'var(--champagne)', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '3px' }}>
+                <Trophy size={11} color="var(--champagne)" />
+                <span>TOP BARBEROS</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '4px 0' }}>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <img 
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60" 
-                    alt="Barbero Estrella" 
-                    style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1.5px solid var(--champagne)', objectFit: 'cover' }} 
-                  />
-                  <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', backgroundColor: 'var(--champagne)', borderRadius: '50%', width: '11px', height: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '7px', fontWeight: '950', color: 'black' }}>
-                    ★
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                {[
+                  { rank: 1, name: 'Mateo F.', count: 142, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60' },
+                  { rank: 2, name: 'Luis G.', count: 128, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60' },
+                  { rank: 3, name: 'Alejandro R.', count: 115, avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=60' }
+                ].map((barber, index) => (
+                  <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '3px 0', borderBottom: index < 2 ? '1px solid rgba(255,255,255,0.02)' : 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0 }}>
+                      <span style={{ 
+                        fontSize: '9px', 
+                        fontWeight: '950', 
+                        color: barber.rank === 1 ? 'var(--gold-primary)' : barber.rank === 2 ? '#a1a1aa' : '#b45309',
+                        width: '8px'
+                      }}>{barber.rank}</span>
+                      <img 
+                        src={barber.avatar} 
+                        alt={barber.name} 
+                        style={{ width: '18px', height: '18px', borderRadius: '50%', border: barber.rank === 1 ? '1px solid var(--champagne)' : '1px solid rgba(255,255,255,0.1)', objectFit: 'cover' }} 
+                      />
+                      <span style={{ fontSize: '9.5px', fontWeight: '750', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{barber.name}</span>
+                    </div>
+                    <span style={{ fontSize: '9px', fontWeight: '800', color: barber.rank === 1 ? 'var(--champagne)' : 'rgba(255,255,255,0.6)' }}>{barber.count} c.</span>
                   </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                  <span style={{ fontSize: '10px', fontWeight: '900', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Mateo F.</span>
-                  <span style={{ fontSize: '7.5px', color: 'rgba(255,255,255,0.45)', fontWeight: '600' }}>Senior Barber</span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '8px', color: 'rgba(255,255,255,0.5)', borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: '3px', marginTop: '1px' }}>
-                <span>CORTES</span>
-                <span style={{ color: 'white', fontWeight: '900', fontSize: '10px' }}>42</span>
+                ))}
               </div>
             </div>
           </div>
