@@ -60,7 +60,7 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
     <AnimatedModal isOpen={isOpen}>
       {(overlayClass, cardClass) => (
         <ModalShield active={true}>
-          <div className={overlayClass} style={{ 
+          <div className={overlayClass.replace('global-modal-overlay', '')} style={{ 
             position: 'fixed', 
             top: 0, 
             left: 0, 
@@ -74,7 +74,7 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
             alignItems: 'center', 
             padding: '20px' 
           }}>
-            <div className={`glass-card ${cardClass}`} style={{ 
+            <div className={`glass-card ${cardClass.replace('global-modal-card', '')}`} style={{ 
               maxWidth: '450px', 
               width: '100%', 
               borderRadius: '32px', 

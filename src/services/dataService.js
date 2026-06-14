@@ -716,7 +716,7 @@ export const dataService = {
   },
 
   async addChecklistItem(name, base_cost = 0) {
-    const { data, error } = await supabase
+    const { data, error } = await authClient
       .from('service_checklist_items')
       .insert([{ name, base_cost }])
       .select()
@@ -726,7 +726,7 @@ export const dataService = {
   },
 
   async deleteChecklistItem(id) {
-    const { error } = await supabase
+    const { error } = await authClient
       .from('service_checklist_items')
       .delete()
       .eq('id', id);
@@ -734,7 +734,7 @@ export const dataService = {
   },
 
   async updateChecklistItem(id, updates) {
-    const { data, error } = await supabase
+    const { data, error } = await authClient
       .from('service_checklist_items')
       .update(updates)
       .eq('id', id)
