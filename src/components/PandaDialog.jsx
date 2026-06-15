@@ -27,7 +27,7 @@ const PandaDialog = ({
   return (
     <AnimatedModal isOpen={isOpen}>
       {(overlayClass, cardClass) => (
-        <div className={overlayClass} style={{
+        <div className={overlayClass.replace('global-modal-overlay', '')} style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -35,13 +35,13 @@ const PandaDialog = ({
           bottom: 0,
           backgroundColor: 'rgba(0, 0, 0, 0.85)',
           backdropFilter: 'blur(10px)',
-          zIndex: 9999999,
+          zIndex: 99999999,
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           padding: '20px'
         }}>
-          <div className={`glass-card ${cardClass}`} style={{
+          <div className={`glass-card ${cardClass.replace('global-modal-card', '')}`} style={{
             maxWidth: '450px',
             width: '100%',
             padding: '32px',

@@ -245,6 +245,20 @@ export const dataService = {
     }
   },
 
+  async updateAuthUserPassword(authUserId, password) {
+    const isServiceKeyPresent = !!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    if (isServiceKeyPresent && authClient?.auth?.admin) {
+      const { data, error } = await authClient.auth.admin.updateUserById(
+        authUserId,
+        { password }
+      );
+      if (error) throw error;
+      return data.user;
+    } else {
+      throw new Error("Se requiere la clave de servicio de Supabase para restablecer contraseñas.");
+    }
+  },
+
   async addStaff(member) {
     _cacheInvalidate('staff');
     const { data, error } = await supabase
@@ -707,7 +721,7 @@ export const dataService = {
 
   // Service Checklist Items
   async getChecklistItems() {
-    const { data, error } = await supabase
+    const { data, error } = await authClient
       .from('service_checklist_items')
       .select('*')
       .order('name');

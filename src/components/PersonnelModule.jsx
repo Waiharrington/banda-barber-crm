@@ -84,7 +84,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     username: '',
     permissions: rolePresets['Barbero'],
     washing_rate: 0,
-    birth_date: ''
+    birth_date: '',
+    password: ''
   });
 
   // Camera State
@@ -181,7 +182,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       username: person.username || '',
       permissions: perms,
       washing_rate: person.washing_rate || 0,
-      birth_date: person.birth_date || ''
+      birth_date: person.birth_date || '',
+      password: ''
     });
     setEditingId(person.id);
     setIsEditing(true);
@@ -206,7 +208,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         permissions: rolePresets['Barbero'],
         washing_rate: 0,
         roles: ['Barbero'],
-        birth_date: ''
+        birth_date: '',
+        password: ''
       });
       setIsCreatingNewRole(false);
       setNewRoleName('');
@@ -281,13 +284,21 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     showToast(`Rol "${name}" eliminado.`);
   };
 
-  const handleSubmit = async () => {
+   const handleSubmit = async () => {
     if (!formData.name) {
       showToast('Por favor ingresa un nombre.', 'error');
       return;
     }
     if (!formData.email) {
       showToast('Por favor ingresa el email de acceso.', 'error');
+      return;
+    }
+    if (!isEditing && !formData.password) {
+      showToast('Por favor ingresa la contraseña para el nuevo miembro.', 'error');
+      return;
+    }
+    if (formData.password && formData.password.length < 6) {
+      showToast('La contraseña debe tener al menos 6 caracteres.', 'error');
       return;
     }
     try {
@@ -320,12 +331,23 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       };
 
       if (isEditing) {
+        const personObj = staff.find(s => s.id === editingId);
+        if (personObj && personObj.auth_user_id && formData.password) {
+          await dataService.updateAuthUserPassword(personObj.auth_user_id, formData.password);
+        } else if (personObj && !personObj.auth_user_id && formData.email && formData.password) {
+          const authUser = await dataService.createAuthUser(formData.email, formData.password);
+          submissionData.auth_user_id = authUser.id;
+        }
         await dataService.updateStaff(editingId, submissionData);
         if (editingId === user?.id) {
           await refreshUser();
         }
         showToast('Perfil actualizado correctamente.');
       } else {
+        if (formData.email && formData.password) {
+          const authUser = await dataService.createAuthUser(formData.email, formData.password);
+          submissionData.auth_user_id = authUser.id;
+        }
         await dataService.addStaff(submissionData);
         showToast(`¡${formData.name} se ha unido al equipo!`);
       }
@@ -619,7 +641,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
               </div>
 
               {/* Login Credentials */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.1)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.1)' }}>
                 <div className="form-group">
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>EMAIL DE ACCESO</label>
                   <div style={{ position: 'relative' }}>
@@ -638,6 +660,20 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       value={formData.username} 
                       onChange={e => setFormData({...formData, username: e.target.value})} 
                       style={{ width: '100%', height: '50px', paddingLeft: '48px', paddingRight: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} 
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>CONTRASEÑA</label>
+                  <div style={{ position: 'relative' }}>
+                    <Lock size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                    <input 
+                      className="form-input" 
+                      type="password" 
+                      placeholder="Mínimo 6 caracteres" 
+                      value={formData.password} 
+                      onChange={e => setFormData({...formData, password: e.target.value})} 
+                      style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} 
                     />
                   </div>
                 </div>
@@ -1147,7 +1183,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       </div>
 
                       {/* Login Credentials */}
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.1)' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.1)' }}>
                         <div className="form-group">
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>EMAIL DE ACCESO</label>
                           <div style={{ position: 'relative' }}>
@@ -1166,6 +1202,20 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                               value={formData.username} 
                               onChange={e => setFormData({...formData, username: e.target.value})} 
                               style={{ width: '100%', height: '50px', paddingLeft: '48px', paddingRight: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} 
+                            />
+                          </div>
+                        </div>
+                        <div className="form-group">
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>NUEVA CONTRASEÑA</label>
+                          <div style={{ position: 'relative' }}>
+                            <Lock size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                            <input 
+                              className="form-input" 
+                              type="password" 
+                              placeholder="Vacío para no cambiar" 
+                              value={formData.password} 
+                              onChange={e => setFormData({...formData, password: e.target.value})} 
+                              style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} 
                             />
                           </div>
                         </div>

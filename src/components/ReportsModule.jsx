@@ -1375,7 +1375,10 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
               barberServices.slice(0, 3).map((b, idx) => {
                 const pct = (b.count / maxBarberCount) * 80;
                 return (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '100px', fontSize: '12px', fontWeight: '800', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {b.name}
+                    </div>
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
                       <div style={{
                         width: `${pct}%`,

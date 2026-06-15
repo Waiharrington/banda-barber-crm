@@ -127,6 +127,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
       const items = await dataService.getChecklistItems();
       setBaseItems(items || []);
     } catch (e) {
+      console.error('Error fetching base items:', e);
       showToast('Error al cargar ítems incluidos.', 'error');
     }
   };
@@ -239,10 +240,10 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
       await dataService.addChecklistItem(newItemName, Number(newItemCost));
       setNewItemName('');
       setNewItemCost('0.50');
-      setShowAddItemInput(false);
       await fetchBaseItems();
       showToast('Nuevo extra agregado al maestro.');
     } catch (e) {
+      console.error('Error adding master checklist item:', e);
       showToast('Error al agregar extra.', 'error');
     }
   };
@@ -797,13 +798,13 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
       {/* Extras Manager Modal */}
       <AnimatedModal isOpen={isExtrasModalOpen}>
         {(overlayClass, cardClass) => (
-          <div className={overlayClass} style={{
+          <div className={overlayClass.replace('global-modal-overlay', '')} style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
             backgroundColor: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(15px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 99999, padding: isMobile ? '12px' : '20px'
           }}>
-            <div className={`${cardClass} glass-card panda-scrollbar`} style={{
+            <div className={`${cardClass.replace('global-modal-card', '')} glass-card panda-scrollbar`} style={{
               width: '100%', maxWidth: '420px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
               display: 'flex', flexDirection: 'column', padding: isMobile ? '20px 16px' : '24px',
               borderRadius: '28px', border: '1px solid rgba(255,255,255,0.2)',
@@ -883,8 +884,8 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
       {/* Billable Extras Management Modal */}
       <AnimatedModal isOpen={isBillableExtrasModalOpen}>
         {(overlayClass, cardClass) => (
-          <div className={overlayClass} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '12px' : '20px' }}>
-            <div className={`${cardClass} glass-card panda-scrollbar`} style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '20px 16px' : '32px', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.2)' }}>
+          <div className={overlayClass.replace('global-modal-overlay', '')} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '12px' : '20px' }}>
+            <div className={`${cardClass.replace('global-modal-card', '')} glass-card panda-scrollbar`} style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '20px 16px' : '32px', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.2)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '16px' }}>
                 <div>
                   <h3 style={{ fontSize: '20px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -992,13 +993,13 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
       <AnimatedModal isOpen={!!selectedServiceDetail}>
         {(overlayClass, cardClass) => (
           selectedServiceDetail && (
-            <div className={overlayClass} style={{
+            <div className={overlayClass.replace('global-modal-overlay', '')} style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
               backgroundColor: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               zIndex: 99999, padding: isMobile ? '12px' : '20px'
             }}>
-              <div className={`${cardClass} glass-card panda-scrollbar`} style={{
+              <div className={`${cardClass.replace('global-modal-card', '')} glass-card panda-scrollbar`} style={{
                 width: '100%', maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
                 padding: isMobile ? '20px 16px' : '24px', borderRadius: '28px',
                 border: '1px solid rgba(255,255,255,0.2)',
@@ -1105,13 +1106,13 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
       {/* Modal de Categorías */}
       <AnimatedModal isOpen={isCategoriesModalOpen}>
         {(overlayClass, cardClass) => (
-          <div className={overlayClass} style={{
+          <div className={overlayClass.replace('global-modal-overlay', '')} style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
             backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 99999, padding: isMobile ? '12px' : '20px'
           }}>
-            <div className={`${cardClass} glass-card panda-scrollbar`} style={{
+            <div className={`${cardClass.replace('global-modal-card', '')} glass-card panda-scrollbar`} style={{
               width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
               padding: isMobile ? '20px 16px' : '28px', borderRadius: '28px',
               border: '1px solid rgba(255,255,255,0.2)',
@@ -1244,13 +1245,13 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
       {/* Modal de Estrategias */}
       <AnimatedModal isOpen={isStrategiesModalOpen}>
         {(overlayClass, cardClass) => (
-          <div className={overlayClass} style={{
+          <div className={overlayClass.replace('global-modal-overlay', '')} style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
             backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 99999, padding: isMobile ? '12px' : '20px'
           }}>
-            <div className={`${cardClass} glass-card panda-scrollbar`} style={{
+            <div className={`${cardClass.replace('global-modal-card', '')} glass-card panda-scrollbar`} style={{
               width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', overflowX: 'hidden',
               padding: isMobile ? '20px 16px' : '28px', borderRadius: '28px',
               border: '1px solid rgba(255,255,255,0.2)',
