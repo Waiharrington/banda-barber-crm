@@ -1,12 +1,12 @@
 {
-  "short_name": "Panda CRM",
-  "name": "Panda Barber Studio",
+  "short_name": "CRM Panda",
+  "name": "CRM Panda",
   "icons": [
     {
       "src": "/pwa-icon.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "start_url": "/",
