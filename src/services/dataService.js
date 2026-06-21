@@ -6,7 +6,7 @@ import { notificationService } from './notificationService';
 // Static data (inventory, clients, staff, services, extras) caches 45s.
 // Operational data (appointments) caches 15s since it changes more often.
 const _cache = {};
-const STAFF_PUBLIC_SELECT = 'id, auth_user_id, email, name, role, commission_pct, active, created_at, image_url, phone, address, username, tools, washing_rate, birth_date';
+const STAFF_PUBLIC_SELECT = 'id, auth_user_id, email, name, role, commission_pct, active, created_at, image_url, phone, address, username, tools, washing_rate, birth_date, skipped_count';
 
 function _cacheGet(key) {
   const entry = _cache[key];
@@ -259,6 +259,14 @@ export const dataService = {
     }
   },
 
+  async deleteAuthUser(authUserId) {
+    const isServiceKeyPresent = !!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    if (isServiceKeyPresent && authClient?.auth?.admin) {
+      const { error } = await authClient.auth.admin.deleteUser(authUserId);
+      if (error) throw error;
+    }
+  },
+
   async addStaff(member) {
     _cacheInvalidate('staff');
     const { data, error } = await supabase
@@ -368,16 +376,24 @@ export const dataService = {
 
   async deleteStaff(id) {
     _cacheInvalidate('staff');
-    // 1. Fetch current staff to preserve their role info
+    // 1. Fetch current staff to preserve their role info and get auth_user_id
     const { data: member } = await supabase
       .from('staff')
-      .select('role')
+      .select('role, auth_user_id')
       .eq('id', id)
       .single();
 
     if (!member) return;
 
-    // 2. Archive instead of delete
+    // 2. Delete auth user if exists
+    if (member.auth_user_id) {
+      const isServiceKeyPresent = !!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+      if (isServiceKeyPresent && authClient?.auth?.admin) {
+        await authClient.auth.admin.deleteUser(member.auth_user_id);
+      }
+    }
+
+    // 3. Archive staff record
     const { error } = await supabase
       .from('staff')
       .update({ role: `ARCHIVED|${member.role}` })
@@ -903,7 +919,7 @@ export const dataService = {
     _cacheInvalidate('inventory');
     const { data, error } = await supabase
       .from('inventory')
-      .update({ stock: newStock, updated_at: new Date() })
+      .update({ stock: newStock, last_updated: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
@@ -1017,6 +1033,15 @@ export const dataService = {
       .select()
       .single();
     if (error) throw error;
+
+    // Handle queue status transitions (push to end of queue when starting/finishing a service)
+    if (data && data.staff_id) {
+      if (newStatus === 'En Silla') {
+        await this.updateQueueStatus(data.staff_id, 'BUSY').catch(e => console.error("Error setting queue busy:", e));
+      } else if (newStatus === 'Completado' || newStatus === 'Por Pagar') {
+        await this.updateQueueStatus(data.staff_id, 'AVAILABLE').catch(e => console.error("Error setting queue available:", e));
+      }
+    }
 
     // Notificar al barbero en tiempo real si el cliente pasa a la silla
     if (newStatus === 'En Silla') {
@@ -1226,7 +1251,7 @@ export const dataService = {
       type: 'income',
       category: 'Ventas Panda',
       exchange_rate: Number(paymentRecord.fixedRate),
-      currency: 'USD',
+      currency: 'EUR',
       metadata: {
         appointment_id: paymentRecord.appointmentId || null,
         client_id: paymentRecord.clientId || null,
@@ -1245,300 +1270,33 @@ export const dataService = {
       }
     });
 
-    // 5. Sincronizar con Google Sheets
-    await this.syncTransactionToSheets(paymentRecord);
+    
 
     return true;
   },
 
-  async syncTransactionToSheets(paymentRecord) {
-    // URL de la Web App de Google Apps Script configurada
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyPChI_N5RSqDEGPdzPDsA87Z55tgIf9wcRjNgbYjD2JW408F9mOiLku4LqnGL9gFJA/exec";
-
-    if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return; // Si no está configurada, ignorar
-
-    try {
-      const cashUsdVal = Number(paymentRecord.cashUsd) || 0;
-      const transferBsVal = Number(paymentRecord.transferBs) || 0;
-      const totalUsdVal = Number(paymentRecord.totalUsd) || 0;
-      const fixedRateVal = Number(paymentRecord.fixedRate) || 0;
-
-      // Detección inteligente del método de pago desglosado para dólares y bolívares
-      let metodoPagoUsd = 'No aplica';
-      let metodoPagoBs = 'No aplica';
-
-      if (paymentRecord.isMixed || (cashUsdVal > 0 && transferBsVal > 0)) {
-        metodoPagoUsd = `${paymentRecord.methodUsd || 'Efectivo'} ($)`;
-        metodoPagoBs = `${paymentRecord.methodBs || 'Pago Móvil'} (Bs)`;
-      } else if (cashUsdVal > 0 || (paymentRecord.methodUsd && paymentRecord.methodUsd !== 'N/A' && (!paymentRecord.methodBs || paymentRecord.methodBs === 'N/A'))) {
-        metodoPagoUsd = `${paymentRecord.methodUsd || 'Efectivo'} ($)`;
-        metodoPagoBs = 'No aplica';
-      } else {
-        metodoPagoUsd = 'No aplica';
-        metodoPagoBs = `${paymentRecord.methodBs || 'Pago Móvil'} (Bs)`;
-      }
-
-      const loggedTips = new Set();
-      let rowLogged = false;
-
-      // 1. If we have distinct appointments, log each one as a separate row!
-      if (paymentRecord.appointments && paymentRecord.appointments.length > 0) {
-        for (const app of paymentRecord.appointments) {
-          rowLogged = true;
-          let appMontoUsdText = '';
-          let appMontoBsText = '';
-          const appTotalUsdVal = Number(app.totalPrice) || 0;
-
-          if (paymentRecord.isMixed || (cashUsdVal > 0 && transferBsVal > 0)) {
-            // Proportional split for mixed payment
-            const proportion = totalUsdVal > 0 ? (appTotalUsdVal / totalUsdVal) : 0;
-            const appCashUsd = cashUsdVal * proportion;
-            const appTransferBs = transferBsVal * proportion;
-            appMontoUsdText = `${appCashUsd.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
-            appMontoBsText = `${appTransferBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
-          } else if (cashUsdVal > 0 || (paymentRecord.methodUsd && paymentRecord.methodUsd !== 'N/A' && (!paymentRecord.methodBs || paymentRecord.methodBs === 'N/A'))) {
-            appMontoUsdText = `${appTotalUsdVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
-            appMontoBsText = `${(appTotalUsdVal * fixedRateVal).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
-          } else {
-            appMontoUsdText = `${appTotalUsdVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
-            appMontoBsText = `${(appTotalUsdVal * fixedRateVal).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
-          }
-
-          const staffTips = paymentRecord.staffInvolved?.find(si => si.staffId === app.staff_id || si.name === app.barberName);
-          let appTipUsd = 0;
-          if (staffTips && !loggedTips.has(staffTips.staffId || staffTips.name)) {
-            appTipUsd = Number(staffTips.tip) || 0;
-            loggedTips.add(staffTips.staffId || staffTips.name);
-          }
-          const appTipBs = appTipUsd * fixedRateVal;
-
-          const payload = {
-            fecha: new Date().toLocaleString('es-VE'),
-            cliente: app.clientName || 'Cliente',
-            cedula: app.clientCedula || 'S/C',
-            barbero: app.barberName || 'Barbero',
-            servicio: app.serviceName || 'Servicio',
-            extra: app.extras || '',
-            tipoRegistro: 'Servicio',
-            metodoPagoUsd: metodoPagoUsd,
-            metodoPagoBs: metodoPagoBs,
-            lavado: app.didWash ? 1 : 0,
-            montoBs: appMontoBsText,
-            montoUsd: appMontoUsdText,
-            tasa: `${fixedRateVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs./$`,
-            propina: appTipBs,
-            vale: 0
-          };
-
-          await fetch(WEBHOOK_URL, {
-            method: 'POST',
-            mode: 'cors',
-            headers: {
-              'Content-Type': 'text/plain'
-            },
-            body: JSON.stringify(payload)
-          });
-        }
-      }
-
-      // 2. Check if there are also products sold in the transaction and log each one as a separate row
-      if (paymentRecord.products && paymentRecord.products.length > 0) {
-        rowLogged = true;
-        for (const p of paymentRecord.products) {
-          const prodTotalUsd = Number(p.price || 0) * (p.quantity || 1);
-          let prodMontoUsdText = '';
-          let prodMontoBsText = '';
-
-          if (paymentRecord.isMixed || (cashUsdVal > 0 && transferBsVal > 0)) {
-            const proportion = totalUsdVal > 0 ? (prodTotalUsd / totalUsdVal) : 0;
-            const prodCashUsd = cashUsdVal * proportion;
-            const prodTransferBs = transferBsVal * proportion;
-            prodMontoUsdText = `${prodCashUsd.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
-            prodMontoBsText = `${prodTransferBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
-          } else {
-            prodMontoUsdText = `${prodTotalUsd.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
-            prodMontoBsText = `${(prodTotalUsd * fixedRateVal).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
-          }
-
-          const payload = {
-            fecha: new Date().toLocaleString('es-VE'),
-            cliente: paymentRecord.clientName || 'Cliente General',
-            cedula: paymentRecord.clientCedula || 'S/C',
-            barbero: p.sellerName || 'Venta Directa',
-            servicio: p.name || 'Producto',
-            extra: '',
-            tipoRegistro: 'Producto',
-            metodoPagoUsd: metodoPagoUsd,
-            metodoPagoBs: metodoPagoBs,
-            lavado: 0,
-            montoBs: prodMontoBsText,
-            montoUsd: prodMontoUsdText,
-            tasa: `${fixedRateVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs./$`,
-            propina: 0,
-            vale: 0
-          };
-
-          await fetch(WEBHOOK_URL, {
-            method: 'POST',
-            mode: 'cors',
-            headers: {
-              'Content-Type': 'text/plain'
-            },
-            body: JSON.stringify(payload)
-          });
-        }
-      }
-
-      // 3. Fallback for single/direct transactions if nothing else was logged
-      if (!rowLogged) {
-        let barberoObj = paymentRecord.staffInvolved?.find(s => {
-          const roleLower = s.role?.toLowerCase() || '';
-          return roleLower.includes('barber') || roleLower.includes('estilista') || roleLower.includes('socio');
-        });
-
-        if (!barberoObj && paymentRecord.staffInvolved && paymentRecord.staffInvolved.length > 0) {
-          barberoObj = paymentRecord.staffInvolved[0];
-        }
-
-        const barbero = barberoObj ? barberoObj.name.trim() : 'Venta Directa';
-
-        let finalMontoUsdText = '';
-        let finalMontoBsText = '';
-
-        if (paymentRecord.isMixed || (cashUsdVal > 0 && transferBsVal > 0)) {
-          finalMontoUsdText = `${cashUsdVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
-          finalMontoBsText = `${transferBsVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
-        } else if (cashUsdVal > 0 || (paymentRecord.methodUsd && paymentRecord.methodUsd !== 'N/A' && (!paymentRecord.methodBs || paymentRecord.methodBs === 'N/A'))) {
-          finalMontoUsdText = `${totalUsdVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
-          finalMontoBsText = `${(totalUsdVal * fixedRateVal).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
-        } else {
-          finalMontoUsdText = `${totalUsdVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}$`;
-          finalMontoBsText = `${(totalUsdVal * fixedRateVal).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs.`;
-        }
-
-        const payload = {
-          fecha: new Date().toLocaleString('es-VE'),
-          cliente: paymentRecord.clientName || 'Cliente General',
-          cedula: paymentRecord.clientCedula || 'S/C',
-          barbero: barbero,
-          servicio: paymentRecord.serviceName || 'Productos',
-          extra: paymentRecord.extras?.map(e => e.service_extras?.name || e.name || e).filter(Boolean).join(', ') || '',
-          tipoRegistro: paymentRecord.serviceName ? 'Servicio' : 'Producto',
-          metodoPagoUsd: metodoPagoUsd,
-          metodoPagoBs: metodoPagoBs,
-          lavado: paymentRecord.didWash ? 1 : 0,
-          montoBs: finalMontoBsText,
-          montoUsd: finalMontoUsdText,
-          tasa: `${fixedRateVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs./$`
-        };
-
-        await fetch(WEBHOOK_URL, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'text/plain'
-          },
-          body: JSON.stringify(payload)
-        });
-      }
-      // Sincronizar propina de asistente (lavador) si existe
-      const assistantStaff = paymentRecord.staffInvolved?.find(s => s.role?.toLowerCase().includes('asistente') || s.role?.toLowerCase().includes('lavado') || s.role?.toLowerCase().includes('operaciones'));
-      const assistantTipUsd = assistantStaff ? (Number(assistantStaff.tip) || 0) : 0;
-
-      if (assistantTipUsd > 0) {
-        const assistantTipBs = assistantTipUsd * fixedRateVal;
-        const assistantPayload = {
-          fecha: new Date().toLocaleString('es-VE'),
-          cliente: paymentRecord.clientName || 'Cliente General',
-          cedula: paymentRecord.clientCedula || 'S/C',
-          barbero: assistantStaff.name || 'Alexandra',
-          servicio: 'Propina Asistente',
-          tipoRegistro: 'Propina',
-          metodoPagoUsd: metodoPagoUsd,
-          metodoPagoBs: metodoPagoBs,
-          lavado: 0,
-          montoBs: "0,00Bs.",
-          montoUsd: "0,00$",
-          tasa: `${fixedRateVal.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}Bs./$`,
-          propina: assistantTipBs,
-          vale: 0
-        };
-
-        await fetch(WEBHOOK_URL, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'text/plain'
-          },
-          body: JSON.stringify(assistantPayload)
-        });
-      }
-
-      console.log('Sincronizado con Google Sheets exitosamente');
-    } catch (e) {
-      console.error('Error al sincronizar con Google Sheets:', e);
-    }
-  },
-
-  async syncValeToSheets(valePayload) {
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyPChI_N5RSqDEGPdzPDsA87Z55tgIf9wcRjNgbYjD2JW408F9mOiLku4LqnGL9gFJA/exec";
-    if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return;
-    try {
-      await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'text/plain'
-        },
-        body: JSON.stringify({
-          ...valePayload,
-          tipoRegistro: 'Vale',
-          propina: 0
-        })
-      });
-    } catch (e) {
-      console.error("Error syncing vale to sheets:", e);
-    }
-  },
-
-  async triggerWeeklyClosing() {
-    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyPChI_N5RSqDEGPdzPDsA87Z55tgIf9wcRjNgbYjD2JW408F9mOiLku4LqnGL9gFJA/exec";
-    if (WEBHOOK_URL === "URL_DE_LA_WEB_APP_AQUI") return false;
-
-    try {
-      await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'text/plain'
-        },
-        body: JSON.stringify({ action: 'cierreSemanal' })
-      });
-      return true;
-    } catch (e) {
-      console.error('Error al ejecutar el cierre semanal:', e);
-      throw e;
-    }
-  },
-
-  // BCV + USDT Exchange Rates (Auto from DolarApi — same source as Al Cambio)
+  // EURO BCV + Dolar BCV Exchange Rates (Auto from DolarApi)
   async getExchangeRates() {
     try {
-      const allRes = await fetch('https://ve.dolarapi.com/v1/dolares');
-      if (!allRes.ok) throw new Error('Rates not available');
-      const allData = await allRes.json();
+      const [usdRes, eurRes] = await Promise.all([
+        fetch('https://ve.dolarapi.com/v1/dolares'),
+        fetch('https://ve.dolarapi.com/v1/euros')
+      ]);
+      if (!usdRes.ok || !eurRes.ok) throw new Error('Rates not available');
+      const usdData = await usdRes.json();
+      const eurData = await eurRes.json();
 
-      const bcvRate = allData.find(r => r.fuente === 'oficial');
-      const paraleloRate = allData.find(r => r.fuente === 'paralelo');
+      const bcvRate = usdData.find(r => r.fuente === 'oficial');
+      const euroRate = eurData.find(r => r.fuente === 'oficial');
 
       return {
         bcv: bcvRate?.promedio || 0,
-        usdt: paraleloRate?.promedio || 0,
+        euro: euroRate?.promedio || 0,
         updated_at: bcvRate?.fechaActualizacion || new Date().toISOString()
       };
     } catch (error) {
       console.error('Error fetching exchange rates:', error);
-      return { bcv: 36.5, usdt: 43.2, updated_at: null, error: true };
+      return { bcv: 36.5, euro: 42.0, updated_at: null, error: true };
     }
   },
 
@@ -1553,34 +1311,332 @@ export const dataService = {
 
       if (error || !data || data.length === 0) {
         // Create default if not exists
-        const defaultRates = { name: 'SYSTEM_CONFIG_RATES', price: 58.00, cost: 58.50 };
+        const defaultRates = { name: 'SYSTEM_CONFIG_RATES', price: 58.00, cost: 70.00 };
         const { data: newData, error: insertError } = await supabase.from('service_extras').insert([defaultRates]).select();
         if (insertError) throw insertError;
-        return { shop: newData[0].price, usdt: newData[0].cost };
+        return { shop: newData[0].price, euro: newData[0].cost };
       }
 
-      return { shop: data[0].price, usdt: data[0].cost };
+      return { shop: data[0].price, euro: data[0].cost };
     } catch (err) {
       console.error('Error getting global rates:', err);
-      return { shop: 58.00, usdt: 58.50 };
+      return { shop: 58.00, euro: 70.00 };
     }
   },
 
   async updateGlobalRates(rates) {
     const { data, error } = await supabase
       .from('service_extras')
-      .update({ price: rates.shop, cost: rates.usdt })
+      .update({ price: rates.shop, cost: rates.euro })
       .eq('name', 'SYSTEM_CONFIG_RATES')
       .select();
 
     if (error) throw error;
     if (!data || data.length === 0) {
       // If for some reason it was deleted, recreate it
-      const defaultRates = { name: 'SYSTEM_CONFIG_RATES', price: rates.shop, cost: rates.usdt };
+      const defaultRates = { name: 'SYSTEM_CONFIG_RATES', price: rates.shop, cost: rates.euro };
       await supabase.from('service_extras').insert([defaultRates]);
-      return { shop: rates.shop, usdt: rates.usdt };
+      return { shop: rates.shop, euro: rates.euro };
     }
-    return { shop: data[0].price, usdt: data[0].cost };
+    return { shop: data[0].price, euro: data[0].cost };
+  },
+
+  // FIFO Turn Queue Management
+  async getTurnQueue() {
+    const { data, error } = await supabase
+      .from('turn_queue')
+      .select('*, staff(*)')
+      .order('position');
+    if (error) throw error;
+    return _asArray(data);
+  },
+
+  async checkInBarber(staffId) {
+    const { data: existing, error: err } = await supabase
+      .from('turn_queue')
+      .select('*')
+      .eq('staff_id', staffId)
+      .maybeSingle();
+    if (err) throw err;
+    if (existing) {
+      if (existing.status !== 'AVAILABLE') {
+        const { data, error } = await supabase
+          .from('turn_queue')
+          .update({ status: 'AVAILABLE' })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+      return existing;
+    }
+
+    const { data: maxPosData, error: maxErr } = await supabase
+      .from('turn_queue')
+      .select('position')
+      .order('position', { ascending: false })
+      .limit(1);
+    if (maxErr) throw maxErr;
+    const nextPos = (maxPosData && maxPosData.length > 0) ? (maxPosData[0].position + 1) : 1;
+
+    const { data, error } = await supabase
+      .from('turn_queue')
+      .insert([{ staff_id: staffId, position: nextPos, status: 'AVAILABLE' }])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async skipTurn(staffId) {
+    const { data: queue, error: getErr } = await supabase
+      .from('turn_queue')
+      .select('*')
+      .order('position');
+    if (getErr) throw getErr;
+
+    const skippedIndex = queue.findIndex(q => q.staff_id === staffId);
+    if (skippedIndex === -1) return;
+
+    const skippedItem = queue[skippedIndex];
+    const maxPos = queue.length;
+
+    // Increment skipped count in staff table
+    try {
+      const { data: currentStaff } = await supabase
+        .from('staff')
+        .select('skipped_count')
+        .eq('id', staffId)
+        .maybeSingle();
+      const currentCount = currentStaff?.skipped_count || 0;
+      await supabase
+        .from('staff')
+        .update({ skipped_count: currentCount + 1 })
+        .eq('id', staffId);
+      _cacheInvalidate('staff');
+    } catch (e) {
+      console.error("Error incrementing skipped count:", e);
+    }
+
+    const updates = [];
+    let currentPos = 1;
+    for (let i = 0; i < queue.length; i++) {
+      if (i === skippedIndex) continue;
+      updates.push({ id: queue[i].id, staff_id: queue[i].staff_id, position: currentPos, status: queue[i].status });
+      currentPos++;
+    }
+    updates.push({ id: skippedItem.id, staff_id: skippedItem.staff_id, position: maxPos, status: 'ABSENT' });
+
+    for (let i = 0; i < updates.length; i++) {
+      await supabase.from('turn_queue').update({ position: -updates[i].position }).eq('id', updates[i].id);
+    }
+    for (let i = 0; i < updates.length; i++) {
+      await supabase.from('turn_queue').update({ position: updates[i].position, status: updates[i].status }).eq('id', updates[i].id);
+    }
+  },
+
+  async updateQueueStatus(staffId, status) {
+    const { data: queue, error: getErr } = await supabase
+      .from('turn_queue')
+      .select('*')
+      .order('position');
+    if (getErr) throw getErr;
+
+    const targetIndex = queue.findIndex(q => q.staff_id === staffId);
+    if (targetIndex === -1) {
+      // If not in queue, just try to update status directly
+      const { data, error } = await supabase
+        .from('turn_queue')
+        .update({ status })
+        .eq('staff_id', staffId)
+        .select();
+      if (error) throw error;
+      return data;
+    }
+
+    const targetItem = queue[targetIndex];
+    const maxPos = queue.length;
+
+    const updates = [];
+    let currentPos = 1;
+    for (let i = 0; i < queue.length; i++) {
+      if (i === targetIndex) continue;
+      updates.push({ id: queue[i].id, staff_id: queue[i].staff_id, position: currentPos, status: queue[i].status });
+      currentPos++;
+    }
+
+    // Append target item at the end of the queue with new status
+    updates.push({ id: targetItem.id, staff_id: targetItem.staff_id, position: maxPos, status: status });
+
+    // Update in database using negative positions first to avoid unique key constraint
+    for (let i = 0; i < updates.length; i++) {
+      await supabase.from('turn_queue').update({ position: -updates[i].position }).eq('id', updates[i].id);
+    }
+    for (let i = 0; i < updates.length; i++) {
+      await supabase.from('turn_queue').update({ position: updates[i].position, status: updates[i].status }).eq('id', updates[i].id);
+    }
+    
+    return updates;
+  },
+
+  async checkOutBarber(staffId) {
+    const { error: deleteErr } = await supabase
+      .from('turn_queue')
+      .delete()
+      .eq('staff_id', staffId);
+    if (deleteErr) throw deleteErr;
+
+    const { data: queue, error: getErr } = await supabase
+      .from('turn_queue')
+      .select('*')
+      .order('position');
+    if (getErr) throw getErr;
+
+    for (let i = 0; i < queue.length; i++) {
+      const newPos = i + 1;
+      if (queue[i].position !== newPos) {
+        await supabase
+          .from('turn_queue')
+          .update({ position: newPos })
+          .eq('id', queue[i].id);
+      }
+    }
+  },
+
+  async getTopClientsOfMonth() {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const isoString = thirtyDaysAgo.toISOString();
+
+    const { data: txs, error } = await supabase
+      .from('transactions')
+      .select('client_id, amount, status, type, created_at')
+      .eq('status', 'PAID')
+      .eq('type', 'income')
+      .gte('created_at', isoString);
+
+    if (error) throw error;
+
+    const counts = {};
+    _asArray(txs).forEach(tx => {
+      if (tx.client_id) {
+        counts[tx.client_id] = (counts[tx.client_id] || 0) + 1;
+      }
+    });
+
+    const sorted = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+
+    if (sorted.length === 0) return [];
+
+    const clientIds = sorted.map(s => s[0]);
+    const { data: clientsData, error: clientErr } = await supabase
+      .from('clients')
+      .select('*')
+      .in('id', clientIds);
+
+    if (clientErr) throw clientErr;
+
+    return sorted.map(([id, count]) => {
+      const client = _asArray(clientsData).find(c => c.id === id);
+      if (!client) return null;
+      return { ...client, visit_count: count };
+    }).filter(Boolean);
+  },
+
+  // Coupons
+  async getRoulettePrizes() {
+    try {
+      const { data, error } = await supabase.from('service_extras').select('*');
+      if (error) return [];
+      return data.filter(d => d.name && d.name.startsWith('ROULETTE_PRIZE:'));
+    } catch { return []; }
+  },
+  async addRoulettePrize(prizeName) {
+    const { data, error } = await supabase.from('service_extras').insert([{ name: 'ROULETTE_PRIZE:' + prizeName, price: 0 }]).select();
+    if (error) throw error;
+    return data;
+  },
+  async removeRoulettePrize(id) {
+    const { error } = await supabase.from('service_extras').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+  },
+
+  async getCoupons(clientId = null) {
+    let query = supabase.from('coupons').select('*, clients:client_id(*)');
+    if (clientId) {
+      query = query.eq('client_id', clientId);
+    }
+    const { data, error } = await query.order('generated_at', { ascending: false });
+    if (error) throw error;
+    return _asArray(data);
+  },
+
+  async generateCoupon(clientId, prizeName) {
+    const { data, error } = await supabase
+      .from('coupons')
+      .insert([{ client_id: clientId || null, prize_name: prizeName, status: 'UNUSED' }])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateCoupon(couponId, newPrizeName) {
+    const { data, error } = await supabase.from('coupons').update({ prize_name: newPrizeName }).eq('id', couponId).select().single();
+    if (error) throw error;
+    return data;
+  },
+  async deleteCoupon(couponId) {
+    const { error } = await supabase.from('coupons').delete().eq('id', couponId);
+    if (error) throw error;
+    return true;
+  },
+  async assignCoupon(couponId, clientId) {
+    const { data, error } = await supabase
+      .from('coupons')
+      .update({ client_id: clientId })
+      .eq('id', couponId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async redeemCoupon(couponId) {
+    const { data, error } = await supabase
+      .from('coupons')
+      .update({ status: 'USED', redeemed_at: new Date().toISOString() })
+      .eq('id', couponId)
+      .eq('status', 'UNUSED')
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+
+  async getStaffReviews(staffId = null) {
+    let query = supabase.from('staff_reviews').select('*');
+    if (staffId) {
+      query = query.eq('staff_id', staffId);
+    }
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) throw error;
+    return _asArray(data);
+  },
+
+  async submitStaffReview(staffId, rating, comment) {
+    const { data, error } = await supabase
+      .from('staff_reviews')
+      .insert([{ staff_id: staffId, rating: Number(rating), comment }])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
   },
 
   async resetDatabase() {

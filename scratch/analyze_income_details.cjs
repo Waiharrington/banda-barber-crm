@@ -1,19 +1,29 @@
-const XLSX = require('xlsx');
-const fs = require('fs');
+const ExcelJS = require('exceljs');
 
 const file = 'C:\\Users\\Waiha\\Downloads\\_Registro de Ingresos ASTRO.xlsx';
 
-try {
-  const workbook = XLSX.readFile(file);
-  console.log('Sheets:', workbook.SheetNames);
-  
-  const sheet = workbook.Sheets['ANALISIS'];
-  const data = XLSX.utils.sheet_to_json(sheet, {header: 1});
-  
-  console.log('Detailed Data from ANALISIS:');
-  data.slice(0, 20).forEach((row, i) => {
-    console.log(`Row ${i}:`, JSON.stringify(row));
-  });
-} catch (e) {
-  console.error('Error:', e.message);
-}
+(async () => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(file);
+    console.log('Sheets:', workbook.worksheets.map(s => s.name));
+
+    const sheet = workbook.getWorksheet('ANALISIS');
+    if (!sheet) { console.log('Sheet ANALISIS not found'); return; }
+
+    const data = [];
+    sheet.eachRow({ includeEmpty: true }, (row) => {
+      const rowData = [];
+      row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        rowData[colNumber - 1] = cell.value;
+      });
+      data.push(rowData);
+    });
+    console.log('Detailed Data from ANALISIS:');
+    data.slice(0, 20).forEach((row, i) => {
+      console.log(`Row ${i}:`, JSON.stringify(row));
+    });
+  } catch (e) {
+    console.error('Error:', e.message);
+  }
+})();

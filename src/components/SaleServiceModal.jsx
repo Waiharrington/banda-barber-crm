@@ -308,7 +308,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
                   label="Servicio"
                   value={selectedService?.id || ''}
                   onChange={val => setSelectedService(services.find(s => s.id == val))}
-                  options={services.map(s => ({ label: `${s.name} — $${s.price}`, value: s.id }))}
+                  options={services.map(s => ({ label: `${s.name} — €${s.price}`, value: s.id }))}
                   icon={<Rocket size={18} color="var(--gold-primary)" />}
                 />
                 <PandaSelect 

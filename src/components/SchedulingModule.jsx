@@ -856,6 +856,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
           <h1 style={{ fontSize: '32px', fontWeight: '950', letterSpacing: '-0.8px', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>Agenda <span className="text-gold">Panda</span></h1>
           <p style={{ color: 'var(--text-secondary)' }}>Gestión inteligente de citas y disponibilidad.</p>
         </div>
+        {!(user?.role === 'Barbero' || user?.role?.startsWith('Barbero|')) && (
         <button className="btn-gold" style={{ boxShadow: '0 5px 15px rgba(255, 255, 255, 0.25)' }} onClick={() => {
             setEditingApp(null);
             setNewApp({ clientId: '', serviceId: '', staffId: user?.id || '', time: '10:00', extras: [], products: [] });
@@ -865,6 +866,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
           }}>
           <Plus size={18} /> Agendar Cita
         </button>
+        )}
       </header>
 
       <div className="scheduling-grid-container" style={{ gridTemplateColumns: isMobile ? '1fr' : undefined }}>
@@ -1192,7 +1194,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                           </div>
                                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0, paddingLeft: '8px' }}>
                                             <span className="price-highlight-tag" style={{ fontSize: '14px', fontWeight: '950', color: 'var(--gold-primary)', lineHeight: '1.2' }}>
-                                              {rates?.usd > 0 ? `${Math.round(app.total_price * rates.usd).toLocaleString('es-VE')} Bs.` : `${app.total_price} USD`}
+                                              {rates?.usd > 0 ? `${Math.round(app.total_price * rates.usd).toLocaleString('es-VE')} Bs.` : `${app.total_price} EUR`}
                                             </span>
                                             <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.55)', fontWeight: '800', marginTop: '1px' }}>
                                               Ref: ${app.total_price}
@@ -1260,7 +1262,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                       </div>
                                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0, paddingLeft: '8px' }}>
                                         <span className="price-highlight-tag" style={{ fontSize: '15px', fontWeight: '950', color: 'var(--gold-primary)', lineHeight: '1.2' }}>
-                                          {rates?.usd > 0 ? `${Math.round(app.total_price * rates.usd).toLocaleString('es-VE')} Bs.` : `${app.total_price} USD`}
+                                          {rates?.usd > 0 ? `${Math.round(app.total_price * rates.usd).toLocaleString('es-VE')} Bs.` : `${app.total_price} EUR`}
                                         </span>
                                         <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.55)', fontWeight: '800', marginTop: '1px' }}>
                                           Ref: ${app.total_price}
@@ -1880,11 +1882,11 @@ const SchedulingModule = ({ isMobile, rates }) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, rgba(255, 255, 255,0.12) 0%, rgba(255, 255, 255,0.02) 100%)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255, 255, 255,0.25)', boxShadow: '0 8px 32px rgba(255, 255, 255,0.06)' }}>
                   <div>
                     <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--gold-primary)', textTransform: 'uppercase', display: 'block', marginBottom: '2px', letterSpacing: '0.5px' }}>Total de la Cita</span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Ref: ${activeDetail.total_price} USD</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Ref: ${activeDetail.total_price} EUR</span>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <span style={{ fontSize: '22px', fontWeight: '950', color: 'var(--gold-primary)', textShadow: '0 0 15px rgba(255, 255, 255,0.35)', fontFamily: 'Outfit, sans-serif' }}>
-                      {rates?.usd > 0 ? `${Math.round(activeDetail.total_price * rates.usd).toLocaleString('es-VE')} Bs.` : `${activeDetail.total_price} USD`}
+                      {rates?.usd > 0 ? `${Math.round(activeDetail.total_price * rates.usd).toLocaleString('es-VE')} Bs.` : `${activeDetail.total_price} EUR`}
                     </span>
                   </div>
                 </div>

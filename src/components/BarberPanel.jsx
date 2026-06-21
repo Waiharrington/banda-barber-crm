@@ -22,7 +22,7 @@ import {
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import PandaCamera from './PandaCamera';
-import { Plus, ShoppingBag, Loader2 } from 'lucide-react';
+import { Plus, ShoppingBag, Loader2, Users } from 'lucide-react';
 
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -50,8 +50,13 @@ const BarberPanel = ({ isMobile, rates }) => {
   const [showCamera, setShowCamera] = useState(false);
   const [cameraTarget, setCameraTarget] = useState({ appId: null, type: 'Antes' });
   const [editingExtraPriceId, setEditingExtraPriceId] = useState(null);
-  const [selectedCompletedApp, setSelectedCompletedApp] = useState(null);
   const [visibleCompletedCount, setVisibleCompletedCount] = useState(5);
+  const [showWashModal, setShowWashModal] = useState(false);
+  const [washAppId, setWashAppId] = useState(null);
+  const [assistantQueue, setAssistantQueue] = useState([]);
+  const [loadingAssistantQueue, setLoadingAssistantQueue] = useState(false);
+  const [selectedCompletedApp, setSelectedCompletedApp] = useState(null);
+
 
   const handleUpdateExtraPrice = async (extraId, newPrice) => {
     try {
@@ -105,12 +110,12 @@ const BarberPanel = ({ isMobile, rates }) => {
 
   // Sync modal state with global context to hide sidebar
   useEffect(() => {
-    const isAnyModalOpen = !!selectedCompletedApp || showAddModal || showCamera;
+    const isAnyModalOpen = !!selectedCompletedApp || showAddModal || showCamera || showWashModal;
     if (isAnyModalOpen) {
       pushModal();
       return () => popModal();
     }
-  }, [selectedCompletedApp, showAddModal, showCamera, pushModal, popModal]);
+  }, [selectedCompletedApp, showAddModal, showCamera, showWashModal, pushModal, popModal]);
 
   const loadMyWork = useCallback(async () => {
     if (!selectedBarber) return;
@@ -261,22 +266,65 @@ const BarberPanel = ({ isMobile, rates }) => {
     }
   };
 
-  const handleSendToWash = async (serviceId) => {
+  const handlePullFromWash = async (serviceId) => {
     try {
       setLoading(true);
-      const app = myServices.find(s => s.id === serviceId);
+      await dataService.updateAppointmentStatus(serviceId, 'En Silla');
+      showToast("¡Cliente recuperado a tu silla!");
+      loadMyWork();
+      loadStats();
+      loadCompletedToday();
+    } catch (err) {
+      showToast("Error al recuperar de lavado", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAssistantQueue = async () => {
+    try {
+      setLoadingAssistantQueue(true);
+      const queue = await dataService.getTurnQueue();
+      const assistants = queue.filter(q => 
+        q.status !== 'ABSENT' && 
+        (q.staff?.role?.toLowerCase().includes('asistente') || 
+         q.staff?.role?.toLowerCase().includes('lavado') || 
+         q.staff?.role?.toLowerCase().includes('operaciones'))
+      );
+      setAssistantQueue(assistants);
+    } catch (e) {
+      console.error("Error loading assistant queue:", e);
+    } finally {
+      setLoadingAssistantQueue(false);
+    }
+  };
+
+  const handleSendToWash = async (serviceId) => {
+    setWashAppId(serviceId);
+    setShowWashModal(true);
+    await loadAssistantQueue();
+  };
+
+  const confirmSendToWash = async (assistantId) => {
+    try {
+      setLoading(true);
+      const app = myServices.find(s => s.id === washAppId);
       const clientName = app?.clients?.name || 'Cliente';
 
-      await dataService.updateAppointmentStatus(serviceId, 'En Lavado');
+      if (assistantId) {
+        await dataService.assignAssistantToAppointment(washAppId, assistantId);
+      }
+
+      await dataService.updateAppointmentStatus(washAppId, 'En Lavado');
       showToast("¡Cliente enviado a la estación de lavado!");
       triggerRocket();
+      setShowWashModal(false);
       
-      // Broadcast to wash assistants
       notificationService.broadcastNotification(
         supabase,
         '💧 Nuevo Cliente para Lavado',
         `Hey, te toca lavar a ${clientName}. (Enviado por: ${selectedBarber.name})`,
-        { recipientRole: 'Asistente' }
+        assistantId ? { recipientId: assistantId } : { recipientRole: 'Asistente' }
       );
 
       loadMyWork();
@@ -284,6 +332,19 @@ const BarberPanel = ({ isMobile, rates }) => {
       loadCompletedToday();
     } catch (err) {
       showToast("Error al enviar a lavado", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const skipAssistantTurn = async (assistantId) => {
+    try {
+      setLoading(true);
+      await dataService.skipTurn(assistantId);
+      showToast("Turno del asistente saltado");
+      await loadAssistantQueue();
+    } catch (err) {
+      showToast("Error al saltar turno", "error");
     } finally {
       setLoading(false);
     }
@@ -299,12 +360,20 @@ const BarberPanel = ({ isMobile, rates }) => {
 
       await dataService.updateAppointmentStatus(serviceId, 'En Silla');
       showToast("¡Cliente enviado de regreso al barbero!");
+      
+      // Notify barbers that client is ready
+      notificationService.broadcastNotification(
+        supabase,
+        '💈 Cliente listo',
+        `El cliente ${clientName} terminó su lavado y está listo para pasar a silla.`,
+        { recipientRole: 'Barbero' }
+      );
 
       loadMyWork();
       loadStats();
       loadCompletedToday();
     } catch (err) {
-      showToast("Error al regresar al barbero", "error");
+      showToast("Error al procesar", "error");
     } finally {
       setLoading(false);
     }
@@ -738,7 +807,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                               {editingExtraPriceId === ex.id ? (
                                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                  <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>$</span>
+                                  <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>€</span>
                                   <input 
                                     type="number"
                                     autoFocus
@@ -846,92 +915,6 @@ const BarberPanel = ({ isMobile, rates }) => {
                         <CheckCircle size={16} /> COMPLETAR Y ENVIAR A CAJA
                       </button>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* 2. Clientes en Silla de Barbero (Con Lavado) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <Scissors size={18} color="var(--gold-primary)" />
-              <span style={{ fontWeight: '800', fontSize: '14px', letterSpacing: '1px', textTransform: 'uppercase' }}>En Silla de Barbero (Con Lavado)</span>
-              <span style={{ 
-                marginLeft: 'auto', 
-                fontSize: '12px', 
-                fontWeight: '900', 
-                color: 'white', 
-                background: 'rgba(255, 255, 255,0.1)', 
-                padding: '4px 12px', 
-                borderRadius: '20px',
-                border: '1px solid rgba(255, 255, 255,0.2)'
-              }}>{
-                myServices.filter(app => 
-                  app.status === 'En Silla' && (
-                    app.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || 
-                    app.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'))
-                  )
-                ).length
-              }</span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {myServices.filter(app => 
-                app.status === 'En Silla' && (
-                  app.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || 
-                  app.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'))
-                )
-              ).length === 0 ? (
-                <div className="glass-card" style={{ textAlign: 'center', padding: '30px', borderRadius: '20px', opacity: 0.4 }}>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Ningún barbero tiene clientes con lavado activo en este momento.</p>
-                </div>
-              ) : (
-                myServices.filter(app => 
-                  app.status === 'En Silla' && (
-                    app.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || 
-                    app.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'))
-                  )
-                ).map(app => (
-                  <div key={app.id} className="glass-card animate-slide-up" style={{ borderRadius: '20px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.85, background: 'rgba(255,255,255,0.02)' }}>
-                    <div>
-                      <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', margin: 0 }}>{app.clients?.name}</h4>
-                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-                        Barbero: <span style={{ color: 'var(--gold-primary)', fontWeight: '700' }}>{app.staff?.name || 'Otro'}</span> · <span style={{ color: 'var(--text-muted)' }}>{app.services?.name}</span>
-                      </p>
-                      {app.services?.included_items && app.services.included_items.length > 0 && (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
-                          {app.services.included_items.map((item, idx) => (
-                            <span key={idx} style={{ fontSize: '9px', fontWeight: '800', color: item.toLowerCase().includes('lavado') ? '#007aff' : 'var(--text-muted)', background: item.toLowerCase().includes('lavado') ? 'rgba(0,122,255,0.1)' : 'rgba(255,255,255,0.04)', padding: '2px 6px', borderRadius: '12px', border: item.toLowerCase().includes('lavado') ? '1px solid rgba(0,122,255,0.15)' : '1px solid rgba(255,255,255,0.06)' }}>
-                              {item.toLowerCase().includes('lavado') ? '💧' : '✦'} {item}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <span style={{ 
-                      fontSize: '11px', 
-                      fontWeight: '900', 
-                      color: 'var(--gold-primary)', 
-                      background: 'rgba(255, 255, 255,0.1)', 
-                      padding: '6px 12px', 
-                      borderRadius: '12px', 
-                      border: '1px solid rgba(255, 255, 255,0.2)',
-                      whiteSpace: 'nowrap',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}>
-                      EN SILLA 
-                      <img 
-                        src="/barber-chair.png" 
-                        alt="Silla" 
-                        style={{ 
-                          width: '16px', 
-                          height: '16px', 
-                          objectFit: 'contain',
-                          filter: 'drop-shadow(0 1px 2px rgba(255, 255, 255, 0.6))'
-                        }} 
-                      />
-                    </span>
                   </div>
                 ))
               )}
@@ -1208,7 +1191,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 {editingExtraPriceId === ex.id ? (
                                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                    <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>$</span>
+                                    <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>€</span>
                                     <input 
                                       type="number"
                                       autoFocus
@@ -1351,12 +1334,22 @@ const BarberPanel = ({ isMobile, rates }) => {
                           </button>
                         </div>
                       ) : app.status === 'En Lavado' ? (
-                        <button 
-                          disabled
-                          style={{ width: '100%', height: '56px', borderRadius: '16px', backgroundColor: 'rgba(0,122,255,0.1)', color: '#007aff', border: '1px solid rgba(0,122,255,0.2)', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                        >
-                          <Droplets size={18} className="animate-pulse" /> EN PROCESO DE LAVADO...
-                        </button>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                          <button 
+                            disabled
+                            style={{ flex: 1.5, height: '56px', borderRadius: '16px', backgroundColor: 'rgba(0,122,255,0.1)', color: '#007aff', border: '1px solid rgba(0,122,255,0.2)', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                          >
+                            <Droplets size={18} className="animate-pulse" /> EN LAVADO...
+                          </button>
+                          <button 
+                            onClick={() => handlePullFromWash(app.id)}
+                            disabled={loading}
+                            className="hover-item"
+                            style={{ flex: 1, height: '56px', borderRadius: '16px', backgroundColor: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.15)', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
+                          >
+                            <RefreshCw size={16} /> VOLVER A SILLA
+                          </button>
+                        </div>
                       ) : (
                         <button 
                           disabled
@@ -1376,21 +1369,65 @@ const BarberPanel = ({ isMobile, rates }) => {
         {/* Add Modal */}
         <AnimatedModal isOpen={showAddModal}>
           {(overlayClass, cardClass) => (
-            <div className={overlayClass} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-              <div className={`glass-card ${cardClass}`} style={{ maxWidth: '400px', width: '100%', borderRadius: '24px', padding: '24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <h3 style={{ fontWeight: '900' }}>Añadir <span className="text-gold">{addMode === 'extra' ? 'Extra' : 'Producto'}</span></h3>
-                  <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+            <div 
+              className={overlayClass.replace('global-modal-overlay', '')} 
+              onClick={() => setShowAddModal(false)}
+              style={{ 
+                position: 'fixed', 
+                top: 0, 
+                left: 0, 
+                right: 0, 
+                bottom: 0, 
+                backgroundColor: 'rgba(0,0,0,0.85)', 
+                backdropFilter: 'blur(10px)', 
+                zIndex: 99999, 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                padding: '20px' 
+              }}
+            >
+              <div 
+                className={`glass-card ${cardClass.replace('global-modal-card', '')}`} 
+                onClick={(e) => e.stopPropagation()}
+                style={{ 
+                  width: '100%', 
+                  maxWidth: '360px', 
+                  borderRadius: '24px', 
+                  padding: '20px',
+                  maxHeight: '90vh', 
+                  overflowY: 'auto',
+                  boxSizing: 'border-box',
+                  border: '1.5px solid rgba(255, 255, 255, 0.25)',
+                  color: 'white'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '900' }}>Añadir <span className="text-gold">{addMode === 'extra' ? 'Extra' : 'Producto'}</span></h3>
+                  <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer', padding: '4px' }}>&times;</button>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto', paddingRight: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto', paddingRight: '4px' }}>
                   {(addMode === 'extra' ? allExtras : inventory).map(item => (
                     <button 
                       key={item.id}
                       onClick={() => addMode === 'extra' ? handleAddExtra(item) : handleAddProduct(item)}
-                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)', color: 'white', cursor: 'pointer', textAlign: 'left' }}
+                      className="selection-modal-item"
+                      style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        padding: '12px 16px', 
+                        borderRadius: '16px', 
+                        background: 'rgba(255,255,255,0.02)', 
+                        border: '1px solid rgba(255,255,255,0.05)', 
+                        color: 'white', 
+                        cursor: 'pointer', 
+                        textAlign: 'left',
+                        transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+                      }}
                     >
-                      <span style={{ fontWeight: '700' }}>{item.name}</span>
-                      <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>${item.price}</span>
+                      <span style={{ fontWeight: '700', fontSize: '13px' }}>{item.name}</span>
+                      <span style={{ color: 'var(--gold-primary)', fontWeight: '800', fontSize: '13px' }}>${item.price}</span>
                     </button>
                   ))}
                 </div>
@@ -1845,11 +1882,191 @@ const BarberPanel = ({ isMobile, rates }) => {
         }}
       </AnimatedModal>
 
+      {/* Modal Enviar a Lavado con Cola de Asistentes */}
+      <AnimatedModal isOpen={showWashModal}>
+        {(overlayClass, cardClass) => (
+          <div
+            className={overlayClass.replace('global-modal-overlay', '')}
+            onClick={() => setShowWashModal(false)}
+            style={{ 
+              position: 'fixed', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              bottom: 0, 
+              backgroundColor: 'rgba(0,0,0,0.85)', 
+              backdropFilter: 'blur(10px)', 
+              zIndex: 99999, 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              padding: '20px' 
+            }}
+          >
+            <div
+              className={`glass-card ${cardClass.replace('global-modal-card', '')}`}
+              onClick={(e) => e.stopPropagation()}
+              style={{ 
+                padding: '20px', 
+                color: 'white', 
+                width: '100%', 
+                maxWidth: '360px', 
+                borderRadius: '24px', 
+                maxHeight: '90vh', 
+                overflowY: 'auto',
+                boxSizing: 'border-box',
+                border: '1.5px solid rgba(255, 255, 255, 0.25)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Droplets size={18} color="#64d2ff" /> Enviar a Lavado
+                </h3>
+                <button 
+                  onClick={() => setShowWashModal(false)} 
+                  style={{ background: 'none', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer', padding: '4px' }}
+                >
+                  &times;
+                </button>
+              </div>
+
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
+                Selecciona la asistente de lavado:
+              </p>
+
+              {loadingAssistantQueue ? (
+                <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 8px auto' }} />
+                  Cargando cola de asistentes...
+                </div>
+              ) : assistantQueue.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '13px', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '16px' }}>
+                    No hay asistentes de lavado activos/disponibles hoy.
+                  </div>
+                  <button
+                    onClick={() => confirmSendToWash(null)}
+                    style={{
+                      height: '48px',
+                      borderRadius: '14px',
+                      background: 'linear-gradient(135deg, #007aff, #00d2ff)',
+                      color: 'white',
+                      border: 'none',
+                      fontSize: '13px',
+                      fontWeight: '900',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Enviar a Lavado sin Asignar
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto', paddingRight: '4px' }}>
+                  {assistantQueue.map((q, idx) => {
+                    const isActuallyBusy = q.status === 'BUSY';
+                    return (
+                      <div 
+                        key={q.id}
+                        className="selection-modal-item"
+                        style={{
+                          padding: '10px 14px',
+                          borderRadius: '16px',
+                          border: '1px solid rgba(255,255,255,0.05)',
+                          background: 'rgba(255,255,255,0.02)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          width: '100%',
+                          transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+                        }}
+                      >
+                        <div style={{ 
+                          width: '36px', 
+                          height: '36px', 
+                          borderRadius: '10px', 
+                          background: 'rgba(255,255,255,0.04)', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          flexShrink: 0,
+                          fontWeight: '900',
+                          color: 'var(--gold-primary)',
+                          fontSize: '13px',
+                          border: '1px solid rgba(255,255,255,0.1)'
+                        }}>
+                          #{idx + 1}
+                        </div>
+                        
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '13px', fontWeight: '750', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{q.staff?.name}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
+                            <span style={{ display: 'inline-block', width: '5px', height: '5px', borderRadius: '50%', backgroundColor: !isActuallyBusy ? '#32d74b' : '#ff9500' }}></span>
+                            <span style={{ fontSize: '10px', color: !isActuallyBusy ? '#32d74b' : '#ff9500', fontWeight: '700' }}>
+                              {!isActuallyBusy ? 'Disponible' : 'Atendiendo'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                          <button
+                            onClick={() => skipAssistantTurn(q.staff_id)}
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: '8px',
+                              background: 'rgba(255, 69, 58, 0.1)',
+                              border: '1px solid rgba(255, 69, 58, 0.15)',
+                              color: '#ff453a',
+                              fontSize: '10px',
+                              fontWeight: '850',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            Saltar
+                          </button>
+                          <button
+                            onClick={() => confirmSendToWash(q.staff_id)}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              background: 'var(--gold-primary)',
+                              border: 'none',
+                              color: 'black',
+                              fontSize: '10px',
+                              fontWeight: '900',
+                              cursor: 'pointer',
+                              boxShadow: '0 3px 8px rgba(212, 175, 55, 0.2)',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            Asignar
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </AnimatedModal>
+
+
       <style>{`
         .hover-item:hover {
           border-color: var(--gold-primary) !important;
           transform: translateY(-5px);
           box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .selection-modal-item {
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .selection-modal-item:hover {
+          transform: translateY(-2px) scale(1.008);
+          background: rgba(255, 255, 255, 0.04) !important;
+          border-color: rgba(255, 255, 255, 0.3) !important;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
         @keyframes pulse-blue {
           0% {

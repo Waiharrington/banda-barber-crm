@@ -339,7 +339,8 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
     commission_barber: 40,
     commission_washer: 0,
     commission_cashier: 0,
-    commission_receptionist: 0
+    commission_receptionist: 0,
+    is_tattoo: false
   });
 
   const totalCommissions = 
@@ -364,7 +365,8 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
       commission_barber: service.commission_barber !== undefined ? service.commission_barber : 40,
       commission_washer: service.commission_washer || 0,
       commission_cashier: service.commission_cashier || 0,
-      commission_receptionist: service.commission_receptionist || 0
+      commission_receptionist: service.commission_receptionist || 0,
+      is_tattoo: service.is_tattoo || false
     });
     setShowAddForm(true);
   };
@@ -393,7 +395,8 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
         commission_barber: 40,
         commission_washer: 0,
         commission_cashier: 0,
-        commission_receptionist: 0
+        commission_receptionist: 0,
+        is_tattoo: false
       });
       setIsEditing(false);
       setShowAddForm(false);
@@ -532,7 +535,8 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                 commission_barber: 40,
                 commission_washer: 0,
                 commission_cashier: 0,
-                commission_receptionist: 0
+                commission_receptionist: 0,
+                is_tattoo: false
               });
               setShowAddForm(true);
             }} 
@@ -925,7 +929,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                         <div style={{ position: 'relative', width: '80px' }}>
-                          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '800' }}>$</span>
+                          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '800' }}>€</span>
                           <input 
                             className="form-input"
                             type="number"
@@ -976,7 +980,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   <div style={{ width: '90px', flexShrink: 0 }}>
                     <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '0.5px' }}>PRECIO</label>
                     <div style={{ position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '12px', fontWeight: '800' }}>$</span>
+                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '12px', fontWeight: '800' }}>€</span>
                       <input className="form-input" type="number" step="0.01" value={newExtraPrice} onChange={e => setNewExtraPrice(e.target.value)} style={{ height: '44px', paddingLeft: '24px', fontSize: '13px', fontWeight: '800', width: '100%' }} />
                     </div>
                   </div>
@@ -1431,9 +1435,9 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
 
                       <div className="modal-grid-2col">
                         <div className="form-group">
-                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>PRECIO ($)</label>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>PRECIO (€)</label>
                           <div className="premium-price-input-container">
-                            <span className="price-currency-symbol">$</span>
+                            <span className="price-currency-symbol">€</span>
                             <input 
                               className="price-input-field" 
                               type="number" 
@@ -1467,6 +1471,19 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                           onChange={val => setNewService({...newService, strategy_type: val})}
                           options={strategies.map(strat => ({ label: strat.label, value: strat.value }))}
                         />
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)', marginBottom: '16px' }}>
+                        <input 
+                          type="checkbox" 
+                          id="is_tattoo"
+                          checked={newService.is_tattoo || false} 
+                          onChange={e => setNewService({...newService, is_tattoo: e.target.checked})}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        <label htmlFor="is_tattoo" style={{ fontSize: '13px', fontWeight: '800', color: 'white', cursor: 'pointer' }}>
+                          💉 Es un servicio de Tatuaje (Se excluye de colas FIFO y permite cotización de precio libre)
+                        </label>
                       </div>
 
                       {/* Commissions Distribution */}

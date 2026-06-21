@@ -14,6 +14,12 @@ class NotificationService {
         const registration = await navigator.serviceWorker.register('/sw.js');
         console.log('Service Worker registrado con éxito:', registration.scope);
         this.swRegistered = true;
+
+        window.addEventListener('online', () => {
+          if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ action: 'sync' });
+          }
+        });
       } catch (error) {
         console.error('Fallo al registrar el Service Worker:', error);
       }

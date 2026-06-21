@@ -5,7 +5,7 @@ const path = require('path');
 const https = require('https');
 const { createClient } = require('@supabase/supabase-js');
 const Papa = require('papaparse');
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 
 const DEFAULT_CSV = 'C:/Users/Waiha/Downloads/_Registro de Ingresos ASTRO - HISTORIAL (2).csv';
 const SERVICE_ROLE_FILE = 'C:/Users/Waiha/Downloads/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ.txt';
@@ -90,6 +90,20 @@ function parseDmyFromCell(value) {
   return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
 }
 
+async function readSheetAsArrays(workbook, sheetName) {
+  const sheet = workbook.getWorksheet(sheetName);
+  if (!sheet) return null;
+  const data = [];
+  sheet.eachRow({ includeEmpty: true }, (row) => {
+    const rowData = [];
+    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      rowData[colNumber - 1] = cell.value;
+    });
+    data.push(rowData);
+  });
+  return data;
+}
+
 async function loadBcvRates() {
   const tempDir = path.join(__dirname, 'tmp_bcv_rates');
   fs.mkdirSync(tempDir, { recursive: true });
@@ -100,13 +114,11 @@ async function loadBcvRates() {
     const filePath = path.join(tempDir, fileName);
     fs.writeFileSync(filePath, await download(url));
 
-    const workbook = XLSX.readFile(filePath);
-    for (const sheetName of workbook.SheetNames) {
-      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
-        header: 1,
-        raw: false,
-        blankrows: false
-      });
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(filePath);
+    for (const sheet of workbook.worksheets) {
+      const rows = await readSheetAsArrays(workbook, sheet.name);
+      if (!rows) continue;
       const operationDate = parseDmyFromCell(rows[2]?.[0]);
       const valueDate = parseDmyFromCell(rows[2]?.[2]);
       const usdRow = rows.find(row => String(row[0] || '').trim() === 'USD');
@@ -117,7 +129,7 @@ async function loadBcvRates() {
         buy: parseBcvNumber(usdRow[4]),
         sell: parseBcvNumber(usdRow[5]),
         sourceUrl: url,
-        sheetName
+        sheetName: sheet.name
       });
     }
   }

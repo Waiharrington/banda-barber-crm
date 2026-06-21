@@ -150,12 +150,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       avgServiceTime: 45, 
       extraCosts: [],
       customLabels: {
-        rent: 'Alquiler ($)',
-        services: 'Servicios ($)',
-        payroll: 'Nómina Fija ($)',
-        software: 'Software ($)',
-        marketing: 'Marketing ($)',
-        tax: 'Impuestos ($)',
+        rent: 'Alquiler (€)',
+        services: 'Servicios (€)',
+        payroll: 'Nómina Fija (€)',
+        software: 'Software (€)',
+        marketing: 'Marketing (€)',
+        tax: 'Impuestos (€)',
         workstations: 'Sillas Activas',
         avgServiceTime: 'Tiempo Prom. (min)'
       }
@@ -212,10 +212,10 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
     paymentAmountBs: 0,
     isAbono: false,
     file: null,
-    paymentMethod: 'Efectivo ($)'
+    paymentMethod: 'Efectivo (€)'
   });
   const [payrollDetail, setPayrollDetail] = useState({ isOpen: false, staff: null, transactions: [] });
-  const [valeModal, setValeModal] = useState({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo ($)' });
+  const [valeModal, setValeModal] = useState({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo (€)' });
 
   useScrollLock(
     isEditingCosts || 
@@ -242,14 +242,14 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       setLoading(true);
       const amountBs = Number(valeModal.amountBs);
       const amountUsd = amountBs / (rates?.usd || 550);
-      const chosenMethod = valeModal.paymentMethod || 'Efectivo ($)';
+      const chosenMethod = valeModal.paymentMethod || 'Efectivo (€)';
       
       const newTx = {
         description: `ADELANTO VALE - Barbero: ${valeModal.staff.name} (${chosenMethod})`,
         amount: amountUsd,
         type: 'expense',
         category: 'Vales Barberos',
-        currency: 'USD',
+        currency: 'EUR',
         exchange_rate: rates?.usd || 550,
         metadata: {
           staffId: valeModal.staff.id,
@@ -260,34 +260,10 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       };
       
       await dataService.addTransaction(newTx);
-      
-      // Sincronizar Vale con Google Sheets de forma dinámica
-      try {
-        const isUsdMethod = ['Efectivo ($)', 'Zelle', 'Binance', 'Zinli'].includes(chosenMethod);
-        const formattedMethod = chosenMethod.includes('($)') || chosenMethod.includes('(Bs)')
-          ? chosenMethod
-          : `${chosenMethod} (${isUsdMethod ? '$' : 'Bs'})`;
 
-        await dataService.syncValeToSheets({
-          fecha: new Date().toLocaleDateString('es-VE'),
-          barbero: valeModal.staff.name,
-          vale: amountBs,
-          montoUsd: isUsdMethod ? `${amountUsd.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}$` : "0,00$",
-          montoBs: !isUsdMethod ? `${amountBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs.` : "0,00Bs.",
-          metodoPagoUsd: isUsdMethod ? formattedMethod : "No aplica",
-          metodoPagoBs: !isUsdMethod ? formattedMethod : "No aplica",
-          servicio: "Adelanto (Vale)",
-          cliente: "ADELANTO VALE",
-          cedula: "S/C",
-          lavado: 0,
-          tasa: `${(rates?.usd || 550).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}Bs./$`
-        });
-      } catch (sheetErr) {
-        console.error("Error al sincronizar vale a Sheets:", sheetErr);
-      }
 
       showToast(`Vale de ${amountBs} Bs registrado con éxito para ${valeModal.staff.name} en ${chosenMethod}`, 'success');
-      setValeModal({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo ($)' });
+      setValeModal({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo (€)' });
       fetchTransactions();
     } catch (err) {
       console.error(err);
@@ -370,14 +346,14 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       setLoading(true);
       const finalAmountBs = payrollModal.isAbono ? payrollModal.paymentAmountBs : (payrollModal.earnedBs - payrollModal.deductionBs);
       const amountUsd = finalAmountBs / (rates?.usd || 550); 
-      const chosenMethod = payrollModal.paymentMethod || 'Efectivo ($)';
+      const chosenMethod = payrollModal.paymentMethod || 'Efectivo (€)';
       
       const newTx = {
         description: `Pago Nómina: ${payrollModal.staff.name}${payrollModal.isAbono ? ' (Abono)' : ''} (Descuento Asist. ${payrollModal.isAbono ? 0 : payrollModal.deductionBs}Bs) [${chosenMethod}]`,
         amount: amountUsd,
         type: 'expense',
         category: 'Pago Nómina',
-        currency: 'USD',
+        currency: 'EUR',
         exchange_rate: rates?.usd || 550,
         metadata: {
           staffId: payrollModal.staff.id,
@@ -457,7 +433,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           type: 'prompt',
           title: 'Monto de la Operación',
           message: `¿Cuánto es el monto para: "${desc}"?`,
-          placeholder: 'Monto en $ (USD)',
+          placeholder: 'Monto en € (USD)',
           step: 2,
           tempData: { type, desc },
           onConfirm: async (amount) => {
@@ -472,7 +448,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 amount: parseFloat(amount),
                 type: type,
                 category: type === 'income' ? 'Ingreso Manual' : 'Gasto Manual',
-                currency: 'USD',
+                currency: 'EUR',
                 exchange_rate: 1
               });
               fetchTransactions();
@@ -532,7 +508,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   meta.staffInvolved?.[0]?.name || 
                   "N/A";
     
-    let paymentMethod = meta.paymentMethod || "Efectivo ($)";
+    let paymentMethod = meta.paymentMethod || "Efectivo (€)";
     if (!meta.paymentMethod) {
       const transferAmount = Number(meta.transfer_bs || meta.transferBs || 0);
       const isMixed = meta.mixed_payment || meta.isMixed;
@@ -553,7 +529,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
     return { clientName, serviceName, barbero, paymentMethod, didWash };
   };
 
-  const formatCurrency = (amount, currencySymbol = '$') => {
+  const formatCurrency = (amount, currencySymbol = '€') => {
     return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -1089,7 +1065,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '20px' }}>
           <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
-            <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>EFECTIVO ($)</div>
+            <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>EFECTIVO (€)</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: '#32d74b' }}>
               {formatCurrency(cashCloseCashUsd * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
             </div>
@@ -1962,7 +1938,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                             isOpen: true,
                             staff: st,
                             amountBs: '',
-                            paymentMethod: 'Efectivo ($)',
+                            paymentMethod: 'Efectivo (€)',
                             maxBalance: st.balanceBs
                           });
                         }}
@@ -1982,7 +1958,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                           paymentAmountBs: Math.round(st.balanceBs / 2),
                           isAbono: true,
                           file: null,
-                          paymentMethod: 'Efectivo ($)'
+                          paymentMethod: 'Efectivo (€)'
                         });
                       }}
                       disabled={st.balanceBs <= 0}
@@ -2001,7 +1977,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                           paymentAmountBs: st.balanceBs,
                           isAbono: false,
                           file: null,
-                          paymentMethod: 'Efectivo ($)'
+                          paymentMethod: 'Efectivo (€)'
                         });
                       }}
                       disabled={st.balanceBs <= 0}
@@ -2230,12 +2206,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 </div>
                 <form onSubmit={handleSaveCosts} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   {[
-                    { key: 'rent', defaultLabel: 'Alquiler ($)' },
-                    { key: 'services', defaultLabel: 'Servicios ($)' },
-                    { key: 'payroll', defaultLabel: 'Nómina Fija ($)' },
-                    { key: 'software', defaultLabel: 'Software ($)' },
-                    { key: 'marketing', defaultLabel: 'Marketing ($)' },
-                    { key: 'tax', defaultLabel: 'Impuestos ($)' },
+                    { key: 'rent', defaultLabel: 'Alquiler (€)' },
+                    { key: 'services', defaultLabel: 'Servicios (€)' },
+                    { key: 'payroll', defaultLabel: 'Nómina Fija (€)' },
+                    { key: 'software', defaultLabel: 'Software (€)' },
+                    { key: 'marketing', defaultLabel: 'Marketing (€)' },
+                    { key: 'tax', defaultLabel: 'Impuestos (€)' },
                     { key: 'workstations', defaultLabel: 'Sillas Activas' },
                     { key: 'avgServiceTime', defaultLabel: 'Tiempo Prom. (min)' },
                   ].map(field => (
@@ -2254,7 +2230,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                         />
                       </div>
                       <div style={{ flex: 1.5 }}>
-                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{field.key === 'workstations' || field.key === 'avgServiceTime' ? 'Valor' : 'Monto ($)'}</label>
+                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{field.key === 'workstations' || field.key === 'avgServiceTime' ? 'Valor' : 'Monto (€)'}</label>
                         <input 
                           type="number" 
                           disabled={isCostsLocked}
@@ -2286,7 +2262,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                         />
                       </div>
                       <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Monto ($)</label>
+                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Monto (€)</label>
                         <input 
                           type="number" 
                           value={cost.value} 
@@ -2344,7 +2320,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '24px' }}>Configuración <span className="text-gold">Sueldo Asistente</span></h3>
                 <form onSubmit={handleSaveAssistantConfig} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Monto Semanal del Salario (USD $)</label>
+                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Monto Semanal del Salario (USD €)</label>
                     <input 
                       type="number" 
                       step="any"
@@ -2354,7 +2330,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     />
                   </div>
                   <div>
-                    <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>Aporte Semanal por Barbero (USD $)</h4>
+                    <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>Aporte Semanal por Barbero (USD €)</h4>
                     {eligibleBarbers.map(s => (
                       <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <div>
@@ -2364,7 +2340,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ color: 'var(--text-muted)' }}>$</span>
+                          <span style={{ color: 'var(--text-muted)' }}>€</span>
                           <input 
                             type="number" 
                             step="any"
@@ -2506,7 +2482,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       value={payrollModal.paymentMethod} 
                       onChange={(val) => setPayrollModal({...payrollModal, paymentMethod: val})} 
                       options={[
-                        { value: 'Efectivo ($)', label: 'Efectivo ($)' },
+                        { value: 'Efectivo (€)', label: 'Efectivo (€)' },
                         { value: 'Zelle', label: 'Zelle' },
                         { value: 'Pago Móvil', label: 'Pago Móvil' },
                         { value: 'Efectivo (Bs)', label: 'Efectivo (Bs)' },
@@ -2584,7 +2560,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       value={valeModal.paymentMethod} 
                       onChange={(val) => setValeModal({...valeModal, paymentMethod: val})} 
                       options={[
-                        { value: 'Efectivo ($)', label: 'Efectivo ($)' },
+                        { value: 'Efectivo (€)', label: 'Efectivo (€)' },
                         { value: 'Zelle', label: 'Zelle' },
                         { value: 'Pago Móvil', label: 'Pago Móvil' },
                         { value: 'Efectivo (Bs)', label: 'Efectivo (Bs)' },
@@ -2596,7 +2572,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
                   <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
                     <button 
-                      onClick={() => setValeModal({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo ($)' })} 
+                      onClick={() => setValeModal({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo (€)' })} 
                       style={{ flex: 1, padding: '14px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', fontWeight: '700', cursor: 'pointer' }}
                     >
                       Cancelar

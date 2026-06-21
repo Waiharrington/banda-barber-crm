@@ -1,4 +1,4 @@
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const fs = require('fs');
 
 const files = [
@@ -6,25 +6,34 @@ const files = [
   'C:\\Users\\Waiha\\Downloads\\Copia de Versión Actualizada de Costos, Ocupación y Rentabilidad.xlsx'
 ];
 
-files.forEach(file => {
-  console.log('--- FILE:', file, '---');
-  try {
-    if (!fs.existsSync(file)) {
-      console.log('File does not exist!');
-      return;
+(async () => {
+  for (const file of files) {
+    console.log('--- FILE:', file, '---');
+    try {
+      if (!fs.existsSync(file)) {
+        console.log('File does not exist!');
+        continue;
+      }
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(file);
+      console.log('Sheets:', workbook.worksheets.map(s => s.name));
+
+      for (const sheet of workbook.worksheets) {
+        console.log('Sheet:', sheet.name);
+        const data = [];
+        sheet.eachRow({ includeEmpty: true }, (row) => {
+          const rowData = [];
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            rowData[colNumber - 1] = cell.value;
+          });
+          data.push(rowData);
+        });
+        console.log('Headers:', JSON.stringify(data[0]));
+        console.log('Sample Rows (up to 3):', JSON.stringify(data.slice(1, 4)));
+      }
+    } catch (e) {
+      console.error('Error reading file:', e.message);
     }
-    const workbook = XLSX.readFile(file);
-    console.log('Sheets:', workbook.SheetNames);
-    
-    workbook.SheetNames.forEach(sheetName => {
-      console.log('Sheet:', sheetName);
-      const sheet = workbook.Sheets[sheetName];
-      const data = XLSX.utils.sheet_to_json(sheet, {header: 1});
-      console.log('Headers:', JSON.stringify(data[0]));
-      console.log('Sample Rows (up to 3):', JSON.stringify(data.slice(1, 4)));
-    });
-  } catch (e) {
-    console.error('Error reading file:', e.message);
+    console.log('\n');
   }
-  console.log('\n');
-});
+})();

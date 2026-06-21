@@ -179,8 +179,8 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
       // KPI Grid - Row 1 (y = 53 to 73)
       const cardW = 56.6;
       const kpis = [
-        { title: "TOTAL REF. $", value: `$${totalIncome.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, isGold: true },
-        { title: "TICKET PROMEDIO", value: `$${avgTicket.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, isGold: false },
+        { title: "TOTAL REF. €", value: `€${totalIncome.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, isGold: true },
+        { title: "TICKET PROMEDIO", value: `€${avgTicket.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, isGold: false },
         { title: "PROMEDIO SEMANAL", value: `${weeklyAvg}`, isGold: false },
         { title: "SERVICIOS REALIZADOS", value: `${totalServices}`, isGold: false },
         { title: "LAVADOS REALIZADOS", value: `${totalLavados}`, isGold: false },
@@ -301,8 +301,8 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           pdf.setFontSize(7.5);
           pdf.setTextColor(160, 160, 165);
           pdf.text(`Lavados: ${Math.round(as.lavados || 0)}`, assistX + 4, 226);
-          pdf.text(`Comisión: $${(as.comision || 0).toFixed(2)}`, assistX + 4, 233);
-          pdf.text(`Propinas: $${(as.propinas || 0).toFixed(2)}`, assistX + 4, 240);
+          pdf.text(`Comisión: €${(as.comision || 0).toFixed(2)}`, assistX + 4, 233);
+          pdf.text(`Propinas: €${(as.propinas || 0).toFixed(2)}`, assistX + 4, 240);
 
           assistX += 61.6;
         });
@@ -356,7 +356,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
 
         pdf.setFont("helvetica", "bold");
         pdf.setTextColor(255, 255, 255);
-        pdf.text(`$${t.amount.toFixed(2)}`, 192, rowY + 4.5, { align: 'right' });
+        pdf.text(`€${t.amount.toFixed(2)}`, 192, rowY + 4.5, { align: 'right' });
 
         rowY += 6.5;
       });
@@ -755,7 +755,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
     };
   })();
 
-  // 5. REF $ OVER TIME (Line Chart with Custom Granularity)
+  // 5. REF € OVER TIME (Line Chart with Custom Granularity)
   const toInputDate = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -1076,7 +1076,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
 
         {/* Chart Granularity Selector */}
         <PandaSelect 
-          label="Agrupamiento Ref. $"
+          label="Agrupamiento Ref. €"
           value={chartGranularity}
           onChange={setChartGranularity}
           options={[
@@ -1165,8 +1165,8 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         marginBottom: '32px' 
       }}>
         {[
-          { label: "Total Ref. $", value: `$${totalIncome.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` },
-          { label: "Ticket Promedio Ref. $", value: `$${avgTicket.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, isGold: true },
+          { label: "Total Ref. €", value: `€${totalIncome.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` },
+          { label: "Ticket Promedio Ref. €", value: `€${avgTicket.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, isGold: true },
           { label: "Promedio semanal", value: weeklyAvg.toString() },
           { label: "Servicios", value: totalServices.toString() },
           { label: "Lavados", value: totalLavados.toString() },
@@ -1221,11 +1221,11 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
         marginBottom: '24px' 
       }}>
         
-        {/* CHART 1: Ref $ Over Time Line Chart */}
+        {/* CHART 1: Ref € Over Time Line Chart */}
         <div className="glass-card" style={{ padding: '24px', borderRadius: '24px', position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
             <div style={{ width: '12px', height: '6px', backgroundColor: 'var(--gold-primary)', borderRadius: '2px' }}></div>
-            <span style={{ fontSize: '11px', fontWeight: '900', color: '#b3b3b3', textTransform: 'uppercase', letterSpacing: '1px' }}>Ref. $</span>
+            <span style={{ fontSize: '11px', fontWeight: '900', color: '#b3b3b3', textTransform: 'uppercase', letterSpacing: '1px' }}>Ref. €</span>
           </div>
           
           <div style={{ position: 'relative', height: '170px' }}>
@@ -1284,7 +1284,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
                     <g transform={`translate(${p.x}, ${p.y - 18})`}>
                       <rect x="-30" y="-8" width="60" height="15" rx="3" fill="#ffffff" />
                       <text x="0" y="3" fill="#000000" fontSize="9" fontWeight="950" textAnchor="middle">
-                        {p.amount >= 1000 ? `$${(p.amount/1000).toFixed(2)} mil` : `$${Math.round(p.amount)}`}
+                        {p.amount >= 1000 ? `€${(p.amount/1000).toFixed(2)} mil` : `€${Math.round(p.amount)}`}
                       </text>
                     </g>
                     
@@ -1339,9 +1339,9 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
                         background: 'var(--gold-primary)'
                       }} />
                     </span>
-                    Ref $
+                    Ref €
                   </span>
-                  <span>${hoveredTimelinePoint.amount.toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                  <span>€${hoveredTimelinePoint.amount.toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                 </div>
                 <div style={{ marginTop: '8px', color: '#5e6068', fontSize: '10px', fontWeight: '800' }}>
                   Click para filtrar este rango
@@ -1461,7 +1461,7 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
               <thead>
                 <tr style={{ background: '#ffffff', color: '#000000', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', fontStyle: 'italic' }}>
                   <th style={{ padding: '12px 16px', textAlign: 'left', borderRadius: '4px 0 0 4px' }}>SERVICIO</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right' }}>Ref $</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'right' }}>Ref €</th>
                   <th style={{ padding: '12px 16px', textAlign: 'right', borderRadius: '0 4px 4px 0' }}>%</th>
                 </tr>
               </thead>
@@ -1687,8 +1687,8 @@ const ReportsModule = ({ isMobile, rates, staff = [] }) => {
           {[
             { label: 'Lavados', value: Math.round(assistantReport.totalLavados).toString() },
             { label: 'Clientes asistidos', value: Math.round(assistantReport.totalClientes).toString() },
-            { label: 'Tarifa Ref. $', value: `$${assistantReport.totalComision.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
-            { label: 'Propinas Ref. $', value: `$${assistantReport.totalPropinas.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+            { label: 'Tarifa Ref. €', value: `€${assistantReport.totalComision.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+            { label: 'Propinas Ref. €', value: `€${assistantReport.totalPropinas.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
             { label: 'Sin asignar', value: Math.round(assistantReport.unassignedWashes).toString() }
           ].map((m, idx) => (
             <div key={idx} style={{

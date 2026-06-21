@@ -319,7 +319,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
 
             {/* Dynamic Price Fields */}
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO DE COSTO ($)</label>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO DE COSTO (€)</label>
               <input 
                 type="number" 
                 placeholder="0.00" 
@@ -331,7 +331,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
 
             {(newItem.category === 'Venta' || newItem.category === 'Accesorios') && (
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO DE VENTA ($)</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO DE VENTA (€)</label>
                 <input 
                   type="number" 
                   placeholder="0.00" 
@@ -519,7 +519,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                         </div>
                       </td>
                       <td style={{ padding: isMobile ? '12px 6px' : '16px 20px', textAlign: 'right' }}>
-                        <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: isMobile ? '13px' : '14px' }}>${item.price?.toFixed(2) || '0.00'}</div>
+                        <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: isMobile ? '13px' : '14px' }}>€${item.price?.toFixed(2) || '0.00'}</div>
                       </td>
                       <td style={{ padding: isMobile ? '12px 16px 12px 6px' : '16px 20px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
@@ -649,7 +649,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)' }}>VENTA</span>
                             <div style={{ fontSize: '20px', fontWeight: '950', color: 'var(--gold-primary)', lineHeight: '1.1' }}>
-                              <span style={{ fontSize: '13px', verticalAlign: 'super', marginRight: '2px' }}>$</span>
+                              <span style={{ fontSize: '13px', verticalAlign: 'super', marginRight: '2px' }}>€</span>
                               {item.price?.toFixed(2) || '0.00'}
                             </div>
                             {rates?.usd > 0 && (
@@ -661,7 +661,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)' }}>COSTO</span>
                             <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-secondary)' }}>
-                              <span style={{ fontSize: '9px', verticalAlign: 'super', marginRight: '2px' }}>$</span>
+                              <span style={{ fontSize: '9px', verticalAlign: 'super', marginRight: '2px' }}>€</span>
                               {item.cost_price?.toFixed(2) || '0.00'}
                             </div>
                           </div>
@@ -670,7 +670,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)' }}>COSTO (USO INTERNO)</span>
                           <div style={{ fontSize: '20px', fontWeight: '950', color: 'white' }}>
-                            <span style={{ fontSize: '12px', verticalAlign: 'super', marginRight: '2px' }}>$</span>
+                            <span style={{ fontSize: '12px', verticalAlign: 'super', marginRight: '2px' }}>€</span>
                             {item.cost_price?.toFixed(2) || '0.00'}
                           </div>
                         </div>
@@ -1028,11 +1028,11 @@ const EditInventoryModal = ({ isOpen, item, onClose, onSave }) => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO COSTO ($)</label>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO COSTO (€)</label>
                   <input type="number" className="panda-input" value={formData.cost_price || 0} onChange={(e) => setFormData({...formData, cost_price: Number(e.target.value)})} style={{ width: '100%' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO VENTA ($)</label>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO VENTA (€)</label>
                   <input type="number" className="panda-input" value={formData.price || 0} onChange={(e) => setFormData({...formData, price: Number(e.target.value)})} style={{ width: '100%' }} />
                 </div>
               </div>

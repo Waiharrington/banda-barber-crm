@@ -14,7 +14,9 @@ import {
   ClipboardList,
   CreditCard,
   UserCheck,
-  Settings
+  UserCircle,
+  Settings,
+  History
 } from 'lucide-react';
 import logo from '../assets/logo.png';
 import sidebarLogo from '../assets/sidebar_logo.png';
@@ -26,7 +28,8 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
   const { isModalOpen } = useModal();
 
   const allMenuItems = [
-    { id: 'dashboard', label: 'Inicio', icon: BarChart3, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
+    { id: 'my-profile', label: 'Mi Perfil', icon: UserCircle, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
+    { id: 'dashboard', label: 'Inicio', icon: BarChart3, roles: ['Admin', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
     { id: 'scheduling', label: 'Agenda', icon: Calendar, roles: ['Admin', 'Barbero', 'Recepcionista'] },
     { id: 'reception', label: 'Recepción', icon: ClipboardList, roles: ['Admin', 'Recepcionista'] },
     { id: 'checkout', label: 'Caja', icon: CreditCard, roles: ['Admin', 'Caja'] },
@@ -37,7 +40,8 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
     { id: 'inventory', label: 'Inventario', icon: Package, roles: ['Admin', 'Caja'] },
     { id: 'reports', label: 'Reportes', icon: PieChart, roles: ['Admin'] },
     { id: 'finance', label: 'Finanzas', icon: Wallet, roles: ['Admin', 'Caja'] },
-    { id: 'history', label: 'Ajustes', icon: Settings, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
+    { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
+    { id: 'settings', label: 'Ajustes', icon: Settings, roles: ['Admin'] },
   ];
 
   const menuItems = allMenuItems.filter(item => {

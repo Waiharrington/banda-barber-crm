@@ -662,7 +662,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                         >
                           <span style={{ color: newTool.inventory_id ? 'white' : 'rgba(255, 255, 255, 0.4)' }}>
                             {newTool.inventory_id 
-                              ? availableInventoryTools.find(t => t.id === newTool.inventory_id)?.name + ` (Ref: $${availableInventoryTools.find(t => t.id === newTool.inventory_id)?.price})`
+                              ? availableInventoryTools.find(t => t.id === newTool.inventory_id)?.name + ` (Ref: €${availableInventoryTools.find(t => t.id === newTool.inventory_id)?.price})`
                               : 'Selecciona una herramienta...'}
                           </span>
                           <ChevronDown size={16} color="var(--gold-primary)" style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />

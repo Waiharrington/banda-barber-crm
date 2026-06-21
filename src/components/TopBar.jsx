@@ -165,9 +165,9 @@ const TopBar = ({
             </span>
           </button>
 
-          {/* USDT Button */}
+          {/* EURO Button */}
           <button
-            onClick={() => onToggleRateType('usdt')}
+            onClick={() => onToggleRateType('euro')}
             style={{
               padding: '6px 12px',
               borderRadius: '10px',
@@ -178,25 +178,25 @@ const TopBar = ({
               alignItems: 'center',
               gap: '1px',
               transition: 'all 0.3s ease',
-              background: activeRateType === 'usdt' ? 'rgba(34, 197, 94, 0.08)' : 'transparent',
-              border: activeRateType === 'usdt' ? '1.5px solid #22c55e' : '1.5px solid transparent',
+              background: activeRateType === 'euro' ? 'rgba(34, 197, 94, 0.08)' : 'transparent',
+              border: activeRateType === 'euro' ? '1.5px solid #22c55e' : '1.5px solid transparent',
               boxShadow: 'none'
             }}
           >
             <span style={{ 
               fontSize: '8px', 
               fontWeight: '800', 
-              color: activeRateType === 'usdt' ? '#22c55e' : 'rgba(255,255,255,0.5)',
+              color: activeRateType === 'euro' ? '#22c55e' : 'rgba(255,255,255,0.5)',
               letterSpacing: '0.5px'
             }}>
-              USDT
+              EURO
             </span>
             <span style={{ 
               fontSize: '12px', 
               fontWeight: '800', 
-              color: activeRateType === 'usdt' ? '#22c55e' : 'white'
+              color: activeRateType === 'euro' ? '#22c55e' : 'white'
             }}>
-              {rates.usdt > 0 ? rates.usdt.toFixed(2) : '—'}
+              {rates.euro > 0 ? rates.euro.toFixed(2) : '—'}
             </span>
           </button>
 
@@ -287,6 +287,7 @@ const TopBar = ({
         </button>
 
         {/* "+ Nueva cita" rounded button (mockup style) */}
+        {!(user?.role === 'Barbero' || user?.role?.startsWith('Barbero|')) && (
         <button
           onClick={onOpenSale}
           style={{
@@ -316,6 +317,7 @@ const TopBar = ({
           <Plus size={16} strokeWidth={2.5} />
           Nueva cita
         </button>
+        )}
 
       </div>
     </div>

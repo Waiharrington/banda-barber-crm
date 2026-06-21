@@ -29,6 +29,8 @@ import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import PandaSelect from './PandaSelect';
 import { notificationService } from '../services/notificationService';
+import { whatsappService } from '../services/whatsappService';
+import PandaDatePicker from './PandaDatePicker';
 import PandaDialog from './PandaDialog';
 import NewClientModal from './NewClientModal';
 import { UserPlus, ChevronDown, VenetianMask, Ear, ScanFace, ShowerHead, Waves } from 'lucide-react';
@@ -116,6 +118,46 @@ const CartSellerSelect = ({ value, onChange, options }) => {
     </div>
   );
 };
+
+const calculateCouponDiscount = (coupon, apps, washes, wRate) => {
+  if (!coupon || !coupon.prize_name) return 0;
+  
+  const sPrice = apps.reduce((acc, app) => acc + (app.total_price !== undefined && app.total_price !== null && Number(app.total_price) > 0 ? Number(app.total_price) : (app.services?.price || 0)), 0);
+
+  const name = coupon.prize_name.toUpperCase();
+  
+  if (name.includes('% DESCUENTO')) {
+    const match = name.match(/(\d+)%/);
+    if (match) {
+       return sPrice * (parseInt(match[1]) / 100);
+    }
+  }
+  
+  if (name.startsWith('PREMIO:')) {
+    const target = name.replace('PREMIO:', '').trim();
+    if (target.includes('CORTE')) {
+      const corteApp = apps.find(a => a.services?.name?.toUpperCase().includes('CORTE'));
+      return corteApp ? (corteApp.total_price || corteApp.services?.price || 0) : 0;
+    } else if (target.includes('LAVADO')) {
+      return washes * (wRate || 1);
+    } else if (target.includes('BARBA') || target.includes('CEJAS')) {
+      const extraApp = apps.find(a => a.services?.name?.toUpperCase().includes(target));
+      return extraApp ? (extraApp.total_price || extraApp.services?.price || 0) : 0;
+    } else {
+      return 0; 
+    }
+  }
+
+  // Fallback
+  if (name.includes('10%')) return sPrice * 0.1;
+  if (name.includes('CORTE')) {
+    const corteApp = apps.find(a => a.services?.name?.toUpperCase().includes('CORTE'));
+    return corteApp ? (corteApp.total_price || corteApp.services?.price || 0) : 0;
+  }
+  if (name.includes('LAVADO')) return washes * (wRate || 1);
+  return 5;
+};
+
 const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const { showToast, triggerConfetti, triggerRocket } = useNotifs();
   const formatCurrency = (amount) => {
@@ -159,6 +201,15 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const [linkedApps, setLinkedApps] = useState([]);
   const [totalAppsInCheckout, setTotalAppsInCheckout] = useState([]);
   const [activeAppForBarberChange, setActiveAppForBarberChange] = useState(null);
+
+  // Coupon & Reminder States
+  const [couponCode, setCouponCode] = useState('');
+  const [activeCoupon, setActiveCoupon] = useState(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [clientCoupons, setClientCoupons] = useState([]);
+  const [scheduleReminder, setScheduleReminder] = useState(true);
+  const [reminderPreset, setReminderPreset] = useState('14_days');
+  const [reminderDate, setReminderDate] = useState(null);
 
   // Modal State
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -244,9 +295,47 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     setLinkedApps([]);
   }, [selectedApp]);
 
+  // Reset coupon state & fetch client coupons when appointment changes
+  useEffect(() => {
+    setCouponCode('');
+    setActiveCoupon(null);
+    setCouponDiscount(0);
+    const fetchCoupons = async () => {
+      const cId = selectedApp?.client_id;
+      if (cId) {
+        try {
+          const fetched = await dataService.getCoupons(cId);
+          setClientCoupons(fetched.filter(c => c.status === 'UNUSED'));
+        } catch(e) {
+          console.error('Error fetching coupons', e);
+        }
+      } else {
+        setClientCoupons([]);
+      }
+    };
+    fetchCoupons();
+  }, [selectedApp]);
+
+
   useEffect(() => {
     setTotalAppsInCheckout([...bundledApps, ...linkedApps]);
   }, [bundledApps, linkedApps]);
+
+  // Auto-apply coupon from metadata
+  useEffect(() => {
+    if (selectedApp?.metadata?.coupon_id && clientCoupons.length > 0 && !activeCoupon) {
+      const autoCoupon = clientCoupons.find(c => c.id === selectedApp.metadata.coupon_id);
+      if (autoCoupon) {
+        setActiveCoupon(autoCoupon);
+        // Calculate discount
+        const wRate = allStaff.find(s => s.id === selectedWasherId) ? Number(allStaff.find(s => s.id === selectedWasherId).washing_rate || 0) : 0;
+        const discount = calculateCouponDiscount(autoCoupon, totalAppsInCheckout, washCount, wRate);
+        setCouponDiscount(discount);
+        showToast(`Cupón automático aplicado: ${autoCoupon.prize_name}`, "success");
+      }
+    }
+  }, [selectedApp, clientCoupons, totalAppsInCheckout, activeCoupon, selectedWasherId, washCount, allStaff]);
+
 
   useEffect(() => {
     if (totalAppsInCheckout.length > 0) {
@@ -289,7 +378,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             id: (Date.now() + idx).toString(),
             staffId: staffId,
             amount: 0,
-            currency: 'USD'
+            currency: 'EUR'
           };
         });
 
@@ -440,7 +529,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     const usdVal = isBs ? (amountVal / fixedRate) : amountVal;
     return acc + usdVal;
   }, 0);
-  const totalUsd = servicePrice + productsTotal + extrasTotal + totalTips;
+  const totalUsd = Math.max(0, servicePrice + productsTotal + extrasTotal + totalTips - couponDiscount);
   const totalBs = (totalUsd * fixedRate).toFixed(2);
   
   const remainingBs = Math.max(0, (totalUsd - Number(cashUsd)) * fixedRate).toFixed(2);
@@ -861,14 +950,14 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       // Enviar notificación Push y agregar a historial local
       let paymentDetail = '';
       if (paymentMode === 'full_usd') {
-        paymentDetail = `por un total de $${Number(paymentData.totalUsd).toFixed(2)} USD (${methodUsd})`;
+        paymentDetail = `por un total de €${Number(paymentData.totalUsd).toFixed(2)} EUR (${methodUsd})`;
       } else if (paymentMode === 'full_bs') {
         const amountBs = Number(paymentData.totalUsd) * Number(paymentData.fixedRate);
         paymentDetail = `por un total de ${amountBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs. (${methodBs})`;
       } else {
         const cashPart = Number(cashUsd);
         const transferPart = Number(paymentData.transferBs);
-        paymentDetail = `por un total mixto de $${cashPart.toFixed(2)} USD (${methodUsd}) y ${transferPart.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs. (${methodBs})`;
+        paymentDetail = `por un total mixto de €${cashPart.toFixed(2)} EUR (${methodUsd}) y ${transferPart.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs. (${methodBs})`;
       }
 
       notificationService.sendNotification(
@@ -884,7 +973,31 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         { recipientRole: 'Admin' }
       );
       
-      triggerRocket();
+
+      // Redeem coupon if active
+      if (activeCoupon?.id) {
+        try { await dataService.redeemCoupon(activeCoupon.id); } catch(e) { console.error('Error redeeming coupon', e); }
+      }
+      // Schedule WhatsApp reminder
+      if (scheduleReminder && selectedApp) {
+        try {
+          let followUpDate = null;
+          if (reminderPreset === 'custom' && reminderDate) {
+            followUpDate = reminderDate;
+          } else if (reminderPreset === '1_week') {
+            const d = new Date(); d.setDate(d.getDate() + 7); followUpDate = d.toISOString();
+          } else if (reminderPreset === '1_month') {
+            const d = new Date(); d.setMonth(d.getMonth() + 1); followUpDate = d.toISOString();
+          } else {
+            const d = new Date(); d.setDate(d.getDate() + 14); followUpDate = d.toISOString();
+          }
+          if (typeof whatsappService.scheduleFollowUpReminder === 'function') {
+            await whatsappService.scheduleFollowUpReminder(selectedApp.client_id, selectedApp.id, followUpDate);
+          }
+        } catch(e) { console.error('Error scheduling reminder', e); }
+      }
+
+            triggerRocket();
       showToast("¡Venta completada con éxito!", "success");
       
       setSelectedApp(null);
@@ -1255,7 +1368,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
                           <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>{(totalUsd * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
-                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: ${Number(totalUsd).toFixed(2)}</span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: €{Number(totalUsd).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -1439,7 +1552,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   </div>
                 </div>
                 <div style={{ textAlign: isMobile ? 'left' : 'right', display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: isMobile ? 'center' : 'flex-end', gap: '8px', flexShrink: 0 }}>
-                  <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '900', whiteSpace: 'nowrap' }}>TASA MANUAL ($)</label>
+                  <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '900', whiteSpace: 'nowrap' }}>TASA MANUAL (€)</label>
                   <input 
                     type="number" 
                     value={fixedRate} 
@@ -1565,7 +1678,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                                   <span style={{ fontWeight: '800', fontSize: isMobile ? '12px' : '14px', color: 'white' }}>
                                     {isMobile ? `${Math.round(sPrice * fixedRate).toLocaleString('es-VE')} Bs.` : `${(sPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`}
                                   </span>
-                                  <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: ${Number(sPrice).toFixed(2)}</span>
+                                  <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: €{Number(sPrice).toFixed(2)}</span>
                                 </div>
                                 <Edit3 size={12} color="var(--gold-primary)" style={{ opacity: 0.8 }} />
                               </div>
@@ -1637,7 +1750,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                       <span style={{ fontWeight: '800', fontSize: isMobile ? '12px' : '14px', color: 'white' }}>
                         {isMobile ? `${Math.round(p.price * p.quantity * fixedRate).toLocaleString('es-VE')} Bs.` : `${(p.price * p.quantity * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`}
                       </span>
-                      <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: ${(p.price * p.quantity).toFixed(2)}</span>
+                      <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: €{(p.price * p.quantity).toFixed(2)}</span>
                     </div>
                   </div>
                 ))}
@@ -1686,7 +1799,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                             <span style={{ fontWeight: '800', fontSize: isMobile ? '12px' : '14px' }}>
                               {isMobile ? `${Math.round(extra.price * fixedRate).toLocaleString('es-VE')} Bs.` : `${(extra.price * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`}
                             </span>
-                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: ${Number(extra.price).toFixed(2)}</span>
+                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: €{Number(extra.price).toFixed(2)}</span>
                           </div>
                           <Edit3 size={12} color="var(--gold-primary)" style={{ opacity: 0.8 }} />
                         </div>
@@ -1760,7 +1873,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                             {selectedWasherId 
                               ? (() => {
                                   const washer = allStaff.find(s => s.id === selectedWasherId);
-                                  return washer ? `${washer.name} ($${washer.washing_rate || 0}/lavado) - Disponible` : 'Seleccionar Asistente de Lavado';
+                                  return washer ? `${washer.name} (€${washer.washing_rate || 0}/lavado) - Disponible` : 'Seleccionar Asistente de Lavado';
                                 })()
                               : 'Seleccionar Asistente de Lavado'
                             }
@@ -1841,7 +1954,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                                     onMouseLeave={e => e.currentTarget.style.backgroundColor = selectedWasherId === s.id ? 'rgba(255, 255, 255, 0.1)' : 'transparent'}
                                   >
                                     <span style={{ fontWeight: selectedWasherId === s.id ? '800' : '500' }}>{s.name}</span>
-                                    <span style={{ fontSize: '11px', color: 'var(--gold-primary)' }}>${s.washing_rate || 0}/lavado</span>
+                                    <span style={{ fontSize: '11px', color: 'var(--gold-primary)' }}>€${s.washing_rate || 0}/lavado</span>
                                   </div>
                                 ))
                               }
@@ -1865,7 +1978,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                       <TrendingUp size={14} color="var(--gold-primary)" /> PROPINAS
                     </span>
                     <button 
-                      onClick={() => setTips([...tips, { id: Date.now().toString(), staffId: allStaff[0]?.id || '', amount: 0, currency: 'USD' }])}
+                      onClick={() => setTips([...tips, { id: Date.now().toString(), staffId: allStaff[0]?.id || '', amount: 0, currency: 'EUR' }])}
                       style={{ background: 'rgba(255, 255, 255,0.1)', border: 'none', color: 'var(--gold-primary)', borderRadius: '8px', padding: '4px 8px', fontSize: '10px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
                       <Plus size={12} /> AGREGAR PROPINA
@@ -1981,12 +2094,12 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           )}
                         </div>
                         
-                        {/* Currency Selector (USD/BS Toggle) */}
+                        {/* Currency Selector (EUR/BS Toggle) */}
                         <button
                           type="button"
                           onClick={() => {
                             const newTips = [...tips];
-                            newTips[idx].currency = newTips[idx].currency === 'BS' ? 'USD' : 'BS';
+                            newTips[idx].currency = newTips[idx].currency === 'BS' ? 'EUR' : 'BS';
                             setTips(newTips);
                           }}
                           style={{ 
@@ -2005,7 +2118,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                             transition: 'all 0.2s ease'
                           }}
                         >
-                          {t.currency === 'BS' ? 'Bs' : '$'}
+                          {t.currency === 'BS' ? 'Bs' : '€'}
                         </button>
                         
                         <div style={{ position: 'relative', width: '80px' }}>
@@ -2032,11 +2145,169 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '12px' }}>
+                
+                {/* WhatsApp Reminder Section */}
+                {selectedApp && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px', padding: '12px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)' }}>📱 Recordatorio para su siguiente corte</span>
+                      <input 
+                        type="checkbox" 
+                        checked={scheduleReminder} 
+                        onChange={(e) => setScheduleReminder(e.target.checked)}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                    </div>
+                    {scheduleReminder && (
+                      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {[
+                            { value: '1_week', label: '1 Semana' },
+                            { value: '14_days', label: '14 Días' },
+                            { value: '1_month', label: '1 Mes' },
+                            { value: 'custom', label: 'Personalizado' }
+                          ].map(opt => (
+                            <button
+                              key={opt.value}
+                              onClick={() => setReminderPreset(opt.value)}
+                              style={{
+                                flex: 1,
+                                padding: '6px 10px',
+                                borderRadius: '8px',
+                                border: '1px solid',
+                                borderColor: reminderPreset === opt.value ? 'var(--gold-primary)' : 'rgba(255,255,255,0.1)',
+                                background: reminderPreset === opt.value ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                color: reminderPreset === opt.value ? 'var(--gold-primary)' : 'var(--text-muted)',
+                                fontSize: '11px',
+                                fontWeight: '800',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                        {reminderPreset === 'custom' && (
+                          <div style={{ marginTop: '4px' }}>
+                            <PandaDatePicker 
+                              value={reminderDate}
+                              onChange={setReminderDate}
+                              placeholder="Seleccionar fecha del recordatorio"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Coupon Section */}
+                {selectedApp && (
+                  <div style={{ padding: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', marginBottom: '16px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '0.5px' }}>🎁 CANJEAR CUPÓN DE REGALO</div>
+                    
+                    {!activeCoupon ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {clientCoupons.length > 0 ? (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                            {clientCoupons.map(c => (
+                              <button 
+                                key={c.id}
+                                onClick={() => {
+                                  setActiveCoupon(c);
+                                  showToast(`Cupón válido: ${c.prize_name}`, "success");
+                                  const wRate = allStaff.find(s => s.id === selectedWasherId) ? Number(allStaff.find(s => s.id === selectedWasherId).washing_rate || 0) : 0;
+                                  const discount = calculateCouponDiscount(c, totalAppsInCheckout, washCount, wRate);
+                                  setCouponDiscount(discount);
+                                }}
+                                style={{
+                                  flex: '1 1 calc(50% - 4px)',
+                                  padding: '8px',
+                                  background: 'rgba(255, 215, 0, 0.1)',
+                                  border: '1px solid var(--gold-primary)',
+                                  borderRadius: '8px',
+                                  color: 'var(--gold-primary)',
+                                  fontSize: '11px',
+                                  fontWeight: '800',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'flex-start',
+                                  gap: '4px',
+                                  textAlign: 'left'
+                                }}
+                              >
+                                <span>{c.prize_name}</span>
+                                <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Click para canjear</span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px 0' }}>
+                            No hay cupones disponibles para este cliente.
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                          <input 
+                            type="text" 
+                            placeholder="O ingresa código manual..."
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value)}
+                            style={{ flex: 1, height: '36px', fontSize: '12px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: 'white', paddingLeft: '8px' }}
+                          />
+                          <button 
+                            onClick={async () => {
+                              if (!couponCode) return;
+                              try {
+                                setLoading(true);
+                                const coupons = await dataService.getCoupons();
+                                const code = couponCode.trim().toUpperCase();
+                                const found = coupons.find(c => c.id?.substring(0, 8).toUpperCase() === code || c.id === couponCode.trim());
+                                if (!found) { showToast("Cupón no encontrado", "error"); return; }
+                                if (found.status === 'USED') { showToast("El cupón ya ha sido utilizado", "warning"); return; }
+                                setActiveCoupon(found);
+                                showToast(`Cupón válido: ${found.prize_name}`, "success");
+                                const wRate = allStaff.find(s => s.id === selectedWasherId) ? Number(allStaff.find(s => s.id === selectedWasherId).washing_rate || 0) : 0;
+                                const discount = calculateCouponDiscount(found, totalAppsInCheckout, washCount, wRate);
+                                setCouponDiscount(discount);
+                              } catch (err) {
+                                console.error(err);
+                                showToast("Error al validar cupón", "error");
+                              } finally {
+                                setLoading(false);
+                              }
+                            }}
+                            className="btn-gold" 
+                            style={{ height: '36px', padding: '0 12px', borderRadius: '8px', fontSize: '11px' }}
+                          >
+                            VALIDAR
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(50, 215, 75, 0.1)', border: '1px solid rgba(50, 215, 75, 0.3)', padding: '8px 12px', borderRadius: '8px' }}>
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: '800', color: '#32d74b' }}>{activeCoupon.prize_name} ✓ Aplicado</div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Descuento: -${couponDiscount.toFixed(2)}</div>
+                        </div>
+                        <button 
+                          onClick={() => { setActiveCoupon(null); setCouponDiscount(0); setCouponCode(''); }}
+                          style={{ background: 'none', border: 'none', color: '#ff453a', fontWeight: '950', fontSize: '16px', cursor: 'pointer' }}
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '12px' }}>
                   <span style={{ fontSize: isMobile ? '13px' : '16px', fontWeight: '900' }}>TOTAL A PAGAR</span>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '950', color: 'var(--gold-primary)' }}>{formatCurrency(totalBs)} Bs.</div>
-                    <div style={{ fontSize: isMobile ? '11px' : '13px', color: 'var(--text-muted)' }}>Ref: ${formatCurrency(totalUsd)}</div>
+                    <div style={{ fontSize: isMobile ? '11px' : '13px', color: 'var(--text-muted)' }}>Ref: €{formatCurrency(totalUsd)}</div>
                   </div>
                 </div>
               </div>
@@ -2046,7 +2317,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   <button 
                     onClick={() => { setPaymentMode('full_usd'); setCashUsd(totalUsd); }}
                     style={{ flex: 1, height: '38px', borderRadius: '10px', border: paymentMode === 'full_usd' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)', background: paymentMode === 'full_usd' ? 'rgba(255, 255, 255,0.1)' : 'none', color: paymentMode === 'full_usd' ? 'var(--gold-primary)' : 'white', fontWeight: '800', cursor: 'pointer', fontSize: '9px' }}
-                  >TODO EN $</button>
+                  >TODO EN €</button>
                   <button 
                     onClick={() => { setPaymentMode('full_bs'); setCashUsd(0); }}
                     style={{ flex: 1, height: '38px', borderRadius: '10px', border: paymentMode === 'full_bs' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)', background: paymentMode === 'full_bs' ? 'rgba(255, 255, 255,0.1)' : 'none', color: paymentMode === 'full_bs' ? 'var(--gold-primary)' : 'white', fontWeight: '800', cursor: 'pointer', fontSize: '9px' }}
@@ -2059,7 +2330,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
 
                 {paymentMode === 'full_usd' && (
                   <div className="animate-slide-up" style={{ padding: '16px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '16px', marginBottom: '12px' }}>
-                    <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>MÉTODO DE PAGO ($)</label>
+                    <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>MÉTODO DE PAGO (€)</label>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       {['Efectivo', 'Zelle', 'Binance', 'Zinli'].map(m => (
                         <button 
@@ -2094,7 +2365,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                 {paymentMode === 'mixed' && (
                   <div className="animate-slide-up" style={{ padding: '16px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>1. PAGO EN DÓLARES ($)</label>
+                      <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>1. PAGO EN EUROS (€)</label>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
                         <input 
                           type="number" 
@@ -2280,7 +2551,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           <div style={{ padding: '12px 14px 14px' }}>
                             <div style={{ fontWeight: '800', fontSize: '13px', color: 'white', marginBottom: '8px', lineHeight: '1.3' }}>{item.name}</div>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                              <span style={{ color: 'var(--gold-primary)', fontWeight: '900', fontSize: '18px' }}>${item.price}</span>
+                              <span style={{ color: 'var(--gold-primary)', fontWeight: '900', fontSize: '18px' }}>€${item.price}</span>
                             </div>
                             {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>≈ {Math.round(item.price * rates.usd).toLocaleString()} Bs.</div>}
                           </div>
@@ -2389,7 +2660,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                         <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'transparent', border: '1px solid var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 10px rgba(255, 255, 255,0.1)' }}>
                           <IconComponent size={20} color="var(--gold-primary)" strokeWidth={1.5} />
                         </div>
-                        <div style={{ fontWeight: '900', fontSize: '18px', color: 'var(--gold-primary)', background: 'rgba(255, 255, 255,0.1)', padding: '4px 10px', borderRadius: '10px' }}>${extra.price}</div>
+                        <div style={{ fontWeight: '900', fontSize: '18px', color: 'var(--gold-primary)', background: 'rgba(255, 255, 255,0.1)', padding: '4px 10px', borderRadius: '10px' }}>€${extra.price}</div>
                       </div>
                       
                       <div style={{ width: '100%' }}>
@@ -2448,7 +2719,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                       <Scissors size={15} color="var(--gold-primary)" />
                     </div>
                     <div style={{ fontWeight: '800', fontSize: '14px', color: 'white', marginBottom: '6px', lineHeight: '1.3' }}>{service.name}</div>
-                    <div style={{ fontWeight: '900', fontSize: '20px', color: 'var(--gold-primary)' }}>${service.price}</div>
+                    <div style={{ fontWeight: '900', fontSize: '20px', color: 'var(--gold-primary)' }}>€${service.price}</div>
                     {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>≈ {Math.round(service.price * rates.usd).toLocaleString()} Bs.</div>}
                   </button>
                 ))}
@@ -2586,7 +2857,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{ textAlign: 'right' }}>
                               <div style={{ fontWeight: '700', color: 'var(--gold-primary)', fontSize: '13px' }}>{(tPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
-                              <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: ${Number(tPrice).toFixed(2)}</div>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: €{Number(tPrice).toFixed(2)}</div>
                             </div>
                             <button 
                               onClick={() => {

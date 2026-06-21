@@ -481,7 +481,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
           icon={<Trophy size={16} />}
           data={teamOverview}
           labelKey="name"
-          scoreKey={(item) => `$${(item.stats?.monthlyIncome || 0).toFixed(0)}`}
+          scoreKey={(item) => `€${(item.stats?.monthlyIncome || 0).toFixed(0)}`}
           scoreLabel="MES EN CURSO"
         />
       )}
@@ -493,7 +493,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
           icon={<Users size={16} />}
           data={topClients}
           labelKey="name"
-          scoreKey={(item) => `$${(item.total_spent || 0).toFixed(0)}`}
+          scoreKey={(item) => `€${(item.total_spent || 0).toFixed(0)}`}
           scoreLabel="TOTAL CONSUMIDO"
           isClient={true}
           onNavigate={onNavigate}
@@ -697,7 +697,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '6px', letterSpacing: '1px' }}>META DIARIA ($)</label>
+                <label style={{ display: 'block', fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '6px', letterSpacing: '1px' }}>META DIARIA (€)</label>
                 <input 
                   type="number" 
                   value={goals.daily} 
@@ -706,7 +706,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '6px', letterSpacing: '1px' }}>META SEMANAL ($)</label>
+                <label style={{ display: 'block', fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '6px', letterSpacing: '1px' }}>META SEMANAL (€)</label>
                 <input 
                   type="number" 
                   value={goals.weekly} 
@@ -715,7 +715,7 @@ const MobileDashboard = ({ onOpenSale, stats, chartData, dbData, onNavigate, onO
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '6px', letterSpacing: '1px' }}>META MENSUAL ($)</label>
+                <label style={{ display: 'block', fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '6px', letterSpacing: '1px' }}>META MENSUAL (€)</label>
                 <input 
                   type="number" 
                   value={goals.monthly} 

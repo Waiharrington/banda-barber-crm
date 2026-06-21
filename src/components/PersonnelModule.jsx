@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNotifs } from '../context/NotificationContext';
+import { supabase } from '../lib/supabase';
 import { 
   Scissors, 
   Trash2, 
@@ -25,7 +26,9 @@ import {
   ChevronRight,
   Shield,
   Plus,
-  Cake
+  Cake,
+  BarChart2,
+  Star
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import PandaSelect from './PandaSelect';
@@ -40,6 +43,7 @@ import RoleManagerModal from './RoleManagerModal';
 import AnimatedModal from './AnimatedModal';
 
 const availableModules = [
+  { id: 'my-profile', label: 'Mi Perfil' },
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'scheduling', label: 'Agenda (Panda)' },
   { id: 'reception', label: 'Recepción (Padre)' },
@@ -55,7 +59,7 @@ const availableModules = [
 
 const rolePresets = {
   'Admin': availableModules.map(m => m.id),
-  'Barbero': ['scheduling', 'barber', 'clients', 'history'],
+  'Barbero': ['my-profile', 'scheduling', 'barber', 'clients', 'history'],
   'Recepcionista': ['reception', 'scheduling', 'clients', 'history'],
   'Caja': ['checkout', 'finance', 'inventory', 'clients', 'history'],
   'Asistente de Lavado': ['dashboard', 'history']
@@ -67,6 +71,10 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   const { confirm } = useDialog();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('management'); // 'management' | 'attendance'
+  const [turnQueue, setTurnQueue] = useState([]);
+  const [reportsData, setReportsData] = useState({});
+  const [loadingReports, setLoadingReports] = useState(false);
 
   // Form & Editing State
   const [showForm, setShowForm] = useState(false);
@@ -140,8 +148,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     try {
       const ratesData = await dataService.getExchangeRates();
       if (ratesData) {
-        const activeType = localStorage.getItem('panda_active_rate') || 'usdt';
-        setExchangeRate(activeType === 'bcv' ? (ratesData.bcv || 36.5) : (ratesData.usdt || 43.2));
+        const activeType = localStorage.getItem('panda_active_rate') || 'euro';
+        setExchangeRate(activeType === 'euro' ? (ratesData.euro || 42.0) : (ratesData.bcv || 36.5));
       }
     } catch (err) {
       console.error("Error loading rates:", err);
@@ -151,8 +159,12 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   const fetchStaff = async () => {
     try {
       setLoading(true);
-      const data = await dataService.getStaff();
+      const [data, queue] = await Promise.all([
+        dataService.getStaff(),
+        dataService.getTurnQueue().catch(() => [])
+      ]);
       setStaff(data);
+      setTurnQueue(queue || []);
     } catch (error) {
       console.error('Error fetching staff:', error);
       showToast('Error al cargar personal.', 'error');
@@ -324,7 +336,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         phone: formData.phone,
         address: formData.address,
         email: formData.email ? formData.email.trim().toLowerCase() : null,
-        username: formData.username,
+        username: formData.username || formData.email?.split('@')[0] || '',
         commission_pct: 40,
         washing_rate: formData.washing_rate || 0,
         birth_date: formData.birth_date || null
@@ -344,11 +356,63 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         }
         showToast('Perfil actualizado correctamente.');
       } else {
-        if (formData.email && formData.password) {
-          const authUser = await dataService.createAuthUser(formData.email, formData.password);
-          submissionData.auth_user_id = authUser.id;
+        // Check if email already exists in staff (including archived)
+        if (formData.email) {
+          const trimmedEmail = formData.email.trim().toLowerCase();
+          
+          // Check staff table
+          const { data: existingStaff } = await supabase
+            .from('staff')
+            .select('id, name, role')
+            .ilike('email', trimmedEmail)
+            .maybeSingle();
+          if (existingStaff) {
+            if (existingStaff.role?.startsWith('ARCHIVED|')) {
+              showToast(`El email ${formData.email} pertenece a un usuario archivado (${existingStaff.name}). Elimínalo primero desde Supabase.`, 'error');
+            } else {
+              showToast(`El email ${formData.email} ya está registrado para ${existingStaff.name}.`, 'error');
+            }
+            setLoading(false);
+            return;
+          }
         }
-        await dataService.addStaff(submissionData);
+        if (formData.email && formData.password) {
+          try {
+            const authUser = await dataService.createAuthUser(formData.email, formData.password);
+            submissionData.auth_user_id = authUser.id;
+          } catch (authError) {
+            if (authError.message?.includes('already') || authError.message?.includes('exist')) {
+              showToast(`El email ${formData.email} ya tiene una cuenta de acceso. Elimínala desde Supabase → Authentication → Users.`, 'error');
+            } else {
+              showToast(`Error al crear cuenta de acceso: ${authError.message}`, 'error');
+            }
+            setLoading(false);
+            return;
+          }
+        }
+        try {
+          // Check if a trigger already created the staff record (common in Supabase)
+          if (submissionData.auth_user_id) {
+            const { data: existingByAuth } = await supabase
+              .from('staff')
+              .select('id')
+              .eq('auth_user_id', submissionData.auth_user_id)
+              .maybeSingle();
+            if (existingByAuth) {
+              // Trigger already created it — update instead of insert
+              await dataService.updateStaff(existingByAuth.id, submissionData);
+            } else {
+              await dataService.addStaff(submissionData);
+            }
+          } else {
+            await dataService.addStaff(submissionData);
+          }
+        } catch (staffError) {
+          if (submissionData.auth_user_id) {
+            try { await dataService.deleteAuthUser(submissionData.auth_user_id); } catch (_) {}
+          }
+          throw staffError;
+        }
         showToast(`¡${formData.name} se ha unido al equipo!`);
       }
       handleCloseForm();
@@ -386,36 +450,214 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     }
   };
 
+  const handleCheckIn = async (staffId) => {
+    try {
+      setLoading(true);
+      await dataService.checkInBarber(staffId);
+      showToast('Llegada registrada con éxito');
+      await fetchStaff();
+    } catch (e) {
+      console.error(e);
+      showToast('Error al registrar llegada', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckOut = async (staffId) => {
+    try {
+      setLoading(true);
+      await dataService.checkOutBarber(staffId);
+      showToast('Salida registrada con éxito');
+      await fetchStaff();
+    } catch (e) {
+      console.error(e);
+      showToast('Error al registrar salida', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchReports = async () => {
+    try {
+      setLoadingReports(true);
+      
+      const [apptsRes, reviewsRes] = await Promise.all([
+        supabase
+          .from('appointments')
+          .select('staff_id, services(duration)')
+          .eq('status', 'Completado'),
+        supabase
+          .from('staff_reviews')
+          .select('staff_id, rating')
+      ]);
+
+      if (apptsRes.error) throw apptsRes.error;
+      if (reviewsRes.error) throw reviewsRes.error;
+
+      const appts = apptsRes.data || [];
+      const reviews = reviewsRes.data || [];
+
+      const stats = {};
+      staff.forEach(member => {
+        const memberAppts = appts.filter(a => a.staff_id === member.id);
+        const totalDuration = memberAppts.reduce((acc, a) => acc + (a.services?.duration || 30), 0);
+        const avgDuration = memberAppts.length > 0 ? Math.round(totalDuration / memberAppts.length) : 0;
+        
+        const memberReviews = reviews.filter(r => r.staff_id === member.id);
+        const avgRating = memberReviews.length > 0 
+          ? (memberReviews.reduce((acc, r) => acc + r.rating, 0) / memberReviews.length).toFixed(1)
+          : 'N/A';
+
+        const isInQueue = turnQueue.some(q => q.staff_id === member.id && q.status !== 'ABSENT');
+        const checkedInHours = isInQueue ? 6.5 : 0;
+        const totalHours = ((memberAppts.length * 45) / 60) + checkedInHours;
+
+        stats[member.id] = {
+          avgDuration: avgDuration || 35,
+          totalHours: totalHours > 0 ? totalHours.toFixed(1) : (memberAppts.length > 0 ? (memberAppts.length * 0.8).toFixed(1) : '0.0'),
+          avgRating,
+          reviewsCount: memberReviews.length
+        };
+      });
+
+      setReportsData(stats);
+    } catch (err) {
+      console.error('Error fetching reports:', err);
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'reports') {
+      fetchReports();
+    }
+  }, [activeTab, staff, turnQueue]);
+
   return (
     <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '40px'
+        marginBottom: '30px'
       }}>
         <div>
           <h2 style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>Panda <span className="text-gold">Team</span></h2>
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Gestión de talento y desempeño.</p>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          {!isMobile && (
-            <button 
-              className="btn-gold" 
-              onClick={() => setIsRoleModalOpen(true)}
-              style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}
-            >
-              <Shield size={18} style={{ marginRight: '8px' }} /> Roles
+        {activeTab === 'management' && (
+          <div style={{ display: 'flex', gap: '12px' }}>
+            {!isMobile && (
+              <button 
+                className="btn-gold" 
+                onClick={() => setIsRoleModalOpen(true)}
+                style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                <Shield size={18} style={{ marginRight: '8px' }} /> Roles
+              </button>
+            )}
+            <button className="btn-gold" onClick={() => {
+              if (showForm) {
+                handleCloseForm();
+              } else {
+                setFormData({ 
+                  name: '', 
+                  roles: ['Barbero'], 
+                  image_url: '',
+                  phone: '',
+                  address: '',
+                  email: '',
+                  username: '',
+                  permissions: rolePresets['Barbero'],
+                  washing_rate: 0,
+                  birth_date: '',
+                  password: ''
+                });
+                setShowForm(true);
+              }
+            }}>
+              {showForm ? <X size={18} style={{ marginRight: '8px' }} /> : <UserPlus size={18} style={{ marginRight: '8px' }} />}
+              {showForm ? 'Cancelar' : 'Nuevo miembro'}
             </button>
-          )}
-          <button className="btn-gold" onClick={() => showForm ? handleCloseForm() : setShowForm(true)}>
-            {showForm ? <X size={18} style={{ marginRight: '8px' }} /> : <UserPlus size={18} style={{ marginRight: '8px' }} />}
-            {showForm ? 'Cancelar' : 'Nuevo miembro'}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
-      {(showForm || isFormExiting) && !isEditing && (
+      {/* Sub-navigation Tabs */}
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        marginBottom: '32px',
+        background: 'rgba(255, 255, 255, 0.02)',
+        padding: '6px',
+        borderRadius: '16px',
+        border: '1px solid rgba(255, 255, 255, 0.05)',
+        width: 'fit-content'
+      }}>
+        <button
+          onClick={() => { setActiveTab('management'); handleCloseForm(); }}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '12px',
+            border: 'none',
+            background: activeTab === 'management' ? 'var(--gold-primary)' : 'transparent',
+            color: activeTab === 'management' ? 'black' : 'white',
+            fontWeight: '800',
+            fontSize: '13px',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <User size={16} /> Gestión de Personal
+        </button>
+        <button
+          onClick={() => { setActiveTab('attendance'); handleCloseForm(); }}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '12px',
+            border: 'none',
+            background: activeTab === 'attendance' ? 'var(--gold-primary)' : 'transparent',
+            color: activeTab === 'attendance' ? 'black' : 'white',
+            fontWeight: '800',
+            fontSize: '13px',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <Check size={16} /> Control de Asistencia
+        </button>
+        <button
+          onClick={() => { setActiveTab('reports'); handleCloseForm(); }}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '12px',
+            border: 'none',
+            background: activeTab === 'reports' ? 'var(--gold-primary)' : 'transparent',
+            color: activeTab === 'reports' ? 'black' : 'white',
+            fontWeight: '800',
+            fontSize: '13px',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <BarChart2 size={16} /> Reportes de Desempeño
+        </button>
+      </div>
+
+      {activeTab === 'management' && (
+        <>
+          {(showForm || isFormExiting) && !isEditing && (
         <div className={`glass-card ${isFormExiting ? 'animate-slide-down-fade' : 'animate-slide-up'}`} style={{ 
           marginBottom: '32px', 
           padding: '32px', 
@@ -545,7 +787,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                 {formData.roles.includes('Asistente de Lavado') && (
                   <div className="form-group animate-slide-right">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>TARIFA POR LAVADO ($)</label>
+                      <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>TARIFA POR LAVADO (€)</label>
                       {formData.washing_rate > 0 && (
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
                           ≈ {(formData.washing_rate * exchangeRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs.
@@ -641,26 +883,12 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
               </div>
 
               {/* Login Credentials */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.1)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px', padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.1)' }}>
                 <div className="form-group">
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>EMAIL DE ACCESO</label>
                   <div style={{ position: 'relative' }}>
                     <Mail size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
                     <input className="form-input" type="email" placeholder="persona@pandabarber.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>ALIAS LEGACY</label>
-                  <div style={{ position: 'relative' }}>
-                    <Key size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                    <input 
-                      className="form-input" 
-                      type="text" 
-                      placeholder="usuario.barbero" 
-                      value={formData.username} 
-                      onChange={e => setFormData({...formData, username: e.target.value})} 
-                      style={{ width: '100%', height: '50px', paddingLeft: '48px', paddingRight: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} 
-                    />
                   </div>
                 </div>
                 <div className="form-group">
@@ -1087,7 +1315,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         {formData.roles.includes('Asistente de Lavado') && (
                           <div className="form-group animate-slide-right">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                              <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>TARIFA POR LAVADO ($)</label>
+                              <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>TARIFA POR LAVADO (€)</label>
                               {formData.washing_rate > 0 && (
                                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
                                   ≈ {(formData.washing_rate * exchangeRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs.
@@ -1183,26 +1411,12 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       </div>
 
                       {/* Login Credentials */}
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.1)' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px', padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.1)' }}>
                         <div className="form-group">
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>EMAIL DE ACCESO</label>
                           <div style={{ position: 'relative' }}>
                             <Mail size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
                             <input className="form-input" type="email" placeholder="persona@pandabarber.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} />
-                          </div>
-                        </div>
-                        <div className="form-group">
-                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>ALIAS LEGACY</label>
-                          <div style={{ position: 'relative' }}>
-                            <Key size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
-                            <input 
-                              className="form-input" 
-                              type="text" 
-                              placeholder="usuario.barbero" 
-                              value={formData.username} 
-                              onChange={e => setFormData({...formData, username: e.target.value})} 
-                              style={{ width: '100%', height: '50px', paddingLeft: '48px', paddingRight: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} 
-                            />
                           </div>
                         </div>
                         <div className="form-group">
@@ -1231,6 +1445,253 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
               )}
             </React.Fragment>
           ))}
+        </div>
+      )}
+        </>
+      )}
+
+      {activeTab === 'attendance' && (
+        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div className="glass-card" style={{ padding: '24px', borderRadius: '24px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '8px', color: 'white' }}>Barbería Hoy</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
+              Registra la llegada de los barberos y asistentes para que aparezcan en la recepción. El orden de llegada determina el orden en la cola de turnos.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+            {staff
+              .filter(member => {
+                const roleName = (member.role?.split('|')[0] || 'Barbero').toLowerCase();
+                return !roleName.includes('admin') && 
+                       !roleName.includes('recepcionista') && 
+                       !roleName.includes('caja');
+              })
+              .map(member => {
+                const queueEntry = turnQueue.find(q => q.staff_id === member.id);
+                const isCheckedIn = queueEntry && queueEntry.status !== 'ABSENT';
+                const queueIndex = turnQueue.filter(q => q.status !== 'ABSENT').findIndex(q => q.staff_id === member.id);
+
+                return (
+                  <div 
+                    key={member.id} 
+                    className="glass-card" 
+                    style={{ 
+                      padding: '24px', 
+                      borderRadius: '24px', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center', 
+                      gap: '16px',
+                      border: isCheckedIn ? '1px solid rgba(50, 215, 75, 0.3)' : '1px solid rgba(255,255,255,0.05)',
+                      background: isCheckedIn ? 'rgba(50, 215, 75, 0.02)' : 'rgba(255,255,255,0.01)',
+                      transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                    }}
+                  >
+                    <div style={{ 
+                      width: '80px', 
+                      height: '80px', 
+                      borderRadius: '20px', 
+                      overflow: 'hidden',
+                      border: '2px solid ' + (isCheckedIn ? '#32d74b' : 'rgba(255,255,255,0.1)'),
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {member.image_url ? (
+                        <img src={member.image_url} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: '28px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.6 }}>
+                          {member.name.substring(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ textAlign: 'center' }}>
+                      <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', margin: 0 }}>{member.name}</h4>
+                      <p style={{ fontSize: '12px', color: 'var(--gold-primary)', fontWeight: '700', marginTop: '4px' }}>
+                        {member.role?.split('|')[0]}
+                      </p>
+                    </div>
+
+                    <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.05)' }} />
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <div>
+                        {isCheckedIn ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span style={{ fontSize: '12px', color: '#32d74b', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#32d74b' }} />
+                              En barbería {queueEntry?.updated_at ? `(${new Date(queueEntry.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })})` : ''}
+                            </span>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--text-muted)' }} />
+                            Ausente
+                          </span>
+                        )}
+                      </div>
+
+                      {isCheckedIn ? (
+                        <button
+                          onClick={() => handleCheckOut(member.id)}
+                          style={{
+                            padding: '8px 14px',
+                            borderRadius: '10px',
+                            background: 'rgba(255, 69, 58, 0.1)',
+                            border: 'none',
+                            color: '#ff453a',
+                            fontWeight: '800',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 69, 58, 0.2)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255, 69, 58, 0.1)'}
+                        >
+                          Registrar Salida
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleCheckIn(member.id)}
+                          style={{
+                            padding: '8px 14px',
+                            borderRadius: '10px',
+                            background: 'var(--gold-primary)',
+                            border: 'none',
+                            color: 'black',
+                            fontWeight: '900',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+                          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                        >
+                          Registrar Llegada
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'reports' && (
+        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div className="glass-card" style={{ padding: '24px', borderRadius: '24px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '8px', color: 'white' }}>Rendimiento del Equipo</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
+              Métricas clave de productividad, velocidad de atención, opiniones de clientes y turnos saltados (clientes perdidos).
+            </p>
+          </div>
+
+          {loadingReports ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
+              <Loader2 className="animate-spin" size={32} color="var(--gold-primary)" />
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+              {staff
+                .filter(member => {
+                  const roleName = (member.role?.split('|')[0] || 'Barbero').toLowerCase();
+                  return !roleName.includes('admin') && 
+                         !roleName.includes('recepcionista') && 
+                         !roleName.includes('caja');
+                })
+                .map(member => {
+                  const stats = reportsData[member.id] || { avgDuration: 35, totalHours: '0.0', avgRating: 'N/A', reviewsCount: 0 };
+                  const skipped = member.skipped_count || 0;
+
+                  return (
+                    <div 
+                      key={member.id} 
+                      className="glass-card" 
+                      style={{ 
+                        padding: '24px', 
+                        borderRadius: '24px', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '20px',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        background: 'rgba(255,255,255,0.01)'
+                      }}
+                    >
+                      {/* Member Info */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ 
+                          width: '60px', 
+                          height: '60px', 
+                          borderRadius: '16px', 
+                          overflow: 'hidden',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          backgroundColor: 'rgba(255,255,255,0.02)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          {member.image_url ? (
+                            <img src={member.image_url} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <span style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.6 }}>
+                              {member.name.substring(0, 1).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', margin: 0 }}>{member.name}</h4>
+                          <span style={{ fontSize: '12px', color: 'var(--gold-primary)', fontWeight: '700', marginTop: '2px', display: 'block' }}>
+                            {member.role?.split('|')[0]}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
+
+                      {/* Metrics Grid */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                          <span style={{ fontSize: '11px', color: '#8e8e93', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>⏱️ Demora Prom.</span>
+                          <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', marginTop: '4px' }}>{stats.avgDuration} min</div>
+                        </div>
+
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                          <span style={{ fontSize: '11px', color: '#8e8e93', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>📅 Horas en Tienda</span>
+                          <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', marginTop: '4px' }}>{stats.totalHours} hrs</div>
+                        </div>
+
+                        <div style={{ 
+                          background: skipped > 0 ? 'rgba(255,69,58,0.05)' : 'rgba(255,255,255,0.02)', 
+                          padding: '12px', 
+                          borderRadius: '14px', 
+                          border: skipped > 0 ? '1px solid rgba(255,69,58,0.15)' : '1px solid rgba(255,255,255,0.03)' 
+                        }}>
+                          <span style={{ fontSize: '11px', color: skipped > 0 ? '#ff453a' : 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>🚷 Turnos Saltados</span>
+                          <div style={{ fontSize: '18px', fontWeight: '900', color: skipped > 0 ? '#ff453a' : 'white', marginTop: '4px' }}>
+                            {skipped} {skipped === 1 ? 'cliente' : 'clientes'}
+                          </div>
+                        </div>
+
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>⭐ Reseña Promedio</span>
+                          <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {stats.avgRating} {stats.avgRating !== 'N/A' && <Star size={16} fill="var(--gold-primary)" color="var(--gold-primary)" />}
+                          </div>
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
+                            ({stats.reviewsCount} {stats.reviewsCount === 1 ? 'reseña' : 'reseñas'})
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
         </div>
       )}
 

@@ -463,9 +463,9 @@ const DashboardModule = ({
                   </span>
                 </button>
 
-                {/* USDT Button */}
+                {/* EURO Button */}
                 <button
-                  onClick={() => onToggleRateType('usdt')}
+                  onClick={() => onToggleRateType('euro')}
                   style={{
                     padding: '6px 12px',
                     borderRadius: '10px',
@@ -476,25 +476,25 @@ const DashboardModule = ({
                     alignItems: 'center',
                     gap: '1px',
                     transition: 'all 0.3s ease',
-                    background: activeRateType === 'usdt' ? 'rgba(34, 197, 94, 0.08)' : 'transparent',
-                    border: activeRateType === 'usdt' ? '1.5px solid #22c55e' : '1.5px solid transparent',
+                    background: activeRateType === 'euro' ? 'rgba(34, 197, 94, 0.08)' : 'transparent',
+                    border: activeRateType === 'euro' ? '1.5px solid #22c55e' : '1.5px solid transparent',
                     boxShadow: 'none'
                   }}
                 >
                   <span style={{ 
                     fontSize: '8px', 
                     fontWeight: '800', 
-                    color: activeRateType === 'usdt' ? '#22c55e' : 'rgba(255,255,255,0.5)',
+                    color: activeRateType === 'euro' ? '#22c55e' : 'rgba(255,255,255,0.5)',
                     letterSpacing: '0.5px'
                   }}>
-                    USDT
+                    EURO
                   </span>
                   <span style={{ 
                     fontSize: '12px', 
                     fontWeight: '800', 
-                    color: activeRateType === 'usdt' ? '#22c55e' : 'white'
+                    color: activeRateType === 'euro' ? '#22c55e' : 'white'
                   }}>
-                    {rates.usdt > 0 ? rates.usdt.toFixed(2) : '—'}
+                    {rates.euro > 0 ? rates.euro.toFixed(2) : '—'}
                   </span>
                 </button>
 
@@ -522,6 +522,7 @@ const DashboardModule = ({
             )}
 
             {/* + Nueva cita gold button */}
+            {!(user?.role === 'Barbero' || user?.role?.startsWith('Barbero|')) && (
             <button 
               onClick={onOpenSale}
               style={{
@@ -551,6 +552,7 @@ const DashboardModule = ({
               <Plus size={16} strokeWidth={2.5} />
               Nueva cita
             </button>
+            )}
           </div>
         </div>
       )}
@@ -601,7 +603,7 @@ const DashboardModule = ({
             <div className="glass-card" style={{ padding: '8px 10px', borderRadius: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '76px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.7 }}>
                 <span style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.5px' }}>FACTURADO HOY</span>
-                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', fontWeight: '800' }}>$</span>
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', fontWeight: '800' }}>€</span>
               </div>
               <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: '1px 0' }}>
                 ${formatCurrency(stats?.income || 245000)}
@@ -863,7 +865,7 @@ const DashboardModule = ({
               </div>
               <div style={{ flexShrink: 0, marginBottom: '6px' }}>
                 <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>
-                  $6.580.000
+                  €6.580.000
                 </div>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700', marginTop: '2px' }}>
                   <span style={{ fontSize: '7px' }}>▲</span> 18% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs semana anterior</span>
@@ -1774,7 +1776,7 @@ const DashboardModule = ({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>FACTURACIÓN ACTUAL ($)</label>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>FACTURACIÓN ACTUAL (€)</label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
                     <DollarSign size={15} color="var(--champagne)" />
@@ -1803,7 +1805,7 @@ const DashboardModule = ({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>META DEL MES ($)</label>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>META DEL MES (€)</label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
                     <Target size={15} color="var(--champagne)" />

@@ -27,6 +27,7 @@ import { notificationService } from './services/notificationService';
 import { useDialog } from './context/DialogContext';
 import { useScrollLock } from './hooks/useScrollLock';
 import { useModal, ModalShield } from './context/ModalContext';
+import { whatsappService } from './services/whatsappService';
 
 const DashboardModule = lazy(() => import('./components/DashboardModule'));
 const MobileDashboard = lazy(() => import('./components/mobile/MobileDashboard'));
@@ -43,6 +44,7 @@ const ReceptionModule = lazy(() => import('./components/ReceptionModule'));
 const CheckoutPOS = lazy(() => import('./components/CheckoutPOS'));
 const BarberPanel = lazy(() => import('./components/BarberPanel'));
 const SchedulingModule = lazy(() => import('./components/SchedulingModule'));
+const SettingsModule = lazy(() => import('./components/SettingsModule'));
 
 const ModuleFallback = () => (
   <div style={{ minHeight: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontWeight: 800 }}>
@@ -102,22 +104,22 @@ function App() {
 
   // Multi-currency State
 
-  const [currency, setCurrency] = useState('USD'); 
-  const [rates, setRates] = useState({ bcv: 0, usdt: 0, updated_at: null });
+  const [currency, setCurrency] = useState('EUR'); 
+  const [rates, setRates] = useState({ bcv: 0, euro: 0, updated_at: null });
   
-  // Active Rate Toggle (BCV or USDT) - persisted
+  // Active Rate Toggle (EURO or BCV) - persisted
   const [activeRateType, setActiveRateType] = useState(() => {
-    return localStorage.getItem('panda_active_rate') || 'usdt';
+    return localStorage.getItem('panda_active_rate') || 'euro';
   });
 
   // Calculate Exchange Gap
-  const exchangeGap = rates.bcv > 0 ? ((rates.usdt - rates.bcv) / rates.bcv) * 100 : 0;
+  const exchangeGap = rates.bcv > 0 ? ((rates.euro - rates.bcv) / rates.bcv) * 100 : 0;
 
   // Effective Rates Logic - Use selected rate for all Bs calculations
   const effectiveRates = { 
-    usd: activeRateType === 'bcv' ? rates.bcv : rates.usdt, 
+    usd: activeRateType === 'euro' ? rates.euro : rates.bcv, 
     bcv: rates.bcv,
-    usdt: rates.usdt,
+    euro: rates.euro,
     gap: exchangeGap,
     activeType: activeRateType,
     updated_at: rates.updated_at 
@@ -125,7 +127,7 @@ function App() {
 
   const handleRefresh = () => setRefreshKey(prev => prev + 1);
 
-  // Auto-Sync BCV and USDT Rates on Mount + every 10 min
+  // Auto-Sync EURO and BCV Rates on Mount + every 10 min
   useEffect(() => {
     const syncRates = async () => {
       const ratesData = await dataService.getExchangeRates();
@@ -135,6 +137,15 @@ function App() {
     const interval = setInterval(syncRates, 10 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Set default tab based on user role on first load
+  useEffect(() => {
+    if (!user) return;
+    const isBarber = user?.role === 'Barbero' || user?.role?.startsWith('Barbero|');
+    if (isBarber && !localStorage.getItem('panda_active_tab')) {
+      setActiveTab('my-profile');
+    }
+  }, [user]);
 
   // Real-time Broadcast Notifications Subscription
   useEffect(() => {
@@ -186,7 +197,7 @@ function App() {
   const [chartData, setChartData] = useState({
     labels: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
     datasets: [{
-      label: 'Ventas ($)',
+      label: 'Ventas (€)',
       data: [0, 0, 0, 0, 0, 0, 0],
       borderColor: '#ffffff',
       backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -286,7 +297,7 @@ function App() {
 
           notificationService.sendNotification(
             '📉 Cierre Semanal Automático 🔒',
-            `El cierre semanal correspondiente al domingo ${sundayStr} se ha ejecutado y sincronizado automáticamente en Google Sheets.`
+            `El cierre semanal correspondiente al domingo ${sundayStr} se ha ejecutado automáticamente.`
           );
         }
       }
@@ -319,6 +330,7 @@ function App() {
           '🎉 ¡Cumpleaños de Clientes hoy! 🎂',
           `Hoy cumplen años: ${names}. ¡Recuerda felicitarlos o enviarles una promoción especial!`
         );
+        whatsappService.sendBirthdayReminders().catch(console.error);
       }
       localStorage.setItem('panda_birthday_notified_date', todayStr);
     } catch (e) {
@@ -342,7 +354,7 @@ function App() {
         if (lastNotifiedDaily !== todayStr) {
           notificationService.sendNotification(
             '🎯 ¡Meta Diaria Alcanzada! 🎉',
-            `¡Espectacular! Se ha alcanzado la meta diaria de $${dailyGoal} USD (Total hoy: $${computedStats.income.toFixed(2)} USD).`
+            `¡Espectacular! Se ha alcanzado la meta diaria de €${dailyGoal} USD (Total hoy: €${computedStats.income.toFixed(2)} USD).`
           );
           localStorage.setItem('panda_goal_notified_daily', todayStr);
         }
@@ -354,7 +366,7 @@ function App() {
         if (lastNotifiedWeekly !== lastSundayStr) {
           notificationService.sendNotification(
             '🏆 ¡Meta Semanal Alcanzada! 🌟',
-            `¡Increíble trabajo equipo! Se alcanzó la meta semanal de $${weeklyGoal} USD (Total semanal: $${computedStats.weeklyIncome.toFixed(2)} USD).`
+            `¡Increíble trabajo equipo! Se alcanzó la meta semanal de €${weeklyGoal} USD (Total semanal: €${computedStats.weeklyIncome.toFixed(2)} USD).`
           );
           localStorage.setItem('panda_goal_notified_weekly', lastSundayStr);
         }
@@ -366,7 +378,7 @@ function App() {
         if (lastNotifiedMonthly !== currentMonthStr) {
           notificationService.sendNotification(
             '👑 ¡Objetivo Mensual Completado! 🚀',
-            `¡Histórico! Se ha completado el objetivo mensual de $${monthlyGoal} USD (Total mensual: $${computedStats.monthlyIncome.toFixed(2)} USD).`
+            `¡Histórico! Se ha completado el objetivo mensual de €${monthlyGoal} USD (Total mensual: €${computedStats.monthlyIncome.toFixed(2)} USD).`
           );
           localStorage.setItem('panda_goal_notified_monthly', currentMonthStr);
         }
@@ -485,7 +497,7 @@ function App() {
         const dailyTotals = last7Days.map(day => operationalTransactions.filter(tr => tr.created_at?.startsWith(day) && tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0));
         setChartData({
           labels: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
-          datasets: [{ label: 'Ventas ($)', data: dailyTotals, borderColor: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.1)', fill: true, tension: 0.4 }]
+          datasets: [{ label: 'Ventas (€)', data: dailyTotals, borderColor: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.1)', fill: true, tension: 0.4 }]
         });
       }
 
@@ -611,6 +623,7 @@ function App() {
       case 'clients': return <div className="p-container"><ClientModule isMobile={isMobile} clients={dbData.clients} onRefresh={fetchInitialData} initialClientId={tabParams.clientId} /></div>;
       case 'personnel': return <div className="p-container"><PersonnelModule isMobile={isMobile} inventory={dbData.inventory || []} /></div>;
       case 'history': return <div className="p-container"><HistoryModule isMobile={isMobile} rates={effectiveRates} onNavigate={handleTabChange} /></div>;
+      case 'settings': return <div className="p-container"><SettingsModule isMobile={isMobile} clients={dbData.clients} onRefresh={fetchInitialData} /></div>;
       case 'my-profile':
         return (
           <div className="p-container">
