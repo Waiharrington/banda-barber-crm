@@ -563,7 +563,7 @@ export default function BookAppointment() {
         )}
 
         {/* ── INTERACTIVE WIZARD FLOW SCREEN (STEPS 1-6) ── */}
-        {!showWelcome && !isTransitioning && !success && (
+        {(!showWelcome || isTransitioning) && !success && (
           <div className="w-full max-w-xl mx-auto px-4 py-8 flex flex-col justify-between flex-1 relative z-10 wizard-3d-reveal">
             
             {/* Wizard Header: PASO X DE 6 with title/subtitle and back button */}
