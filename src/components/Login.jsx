@@ -1542,7 +1542,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
                 {error && <div className="l-error" style={{ margin: '4px 0 0 0' }}>{error}</div>}
 
                 <button type="submit" disabled={loading} className="panda-submit-btn">
-                  {loading ? <Loader2 size={18} className="l-spin" /> : <>Iniciar sesión <span className="panda-btn-arrow">→</span></>}
+                  {loading ? <Loader2 size={18} className="l-spin" /> : <>INICIAR SESIÓN <span className="panda-btn-arrow">→</span></>}
                 </button>
 
                 {isMobileDevice && (

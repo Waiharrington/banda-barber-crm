@@ -24,9 +24,9 @@ export default function PublicRouter() {
               <Routes>
                 <Route path="/admin.html" element={<Home />} />  {/* legacy redirect */}
                 <Route element={<PublicLayout />}>
-                  <Route path="/" element={<Home />} />
+                  <Route path="/" element={<BookAppointment />} />
                   <Route path="/servicios" element={<Services />} />
-                  <Route path="/agendar" element={<BookAppointment />} />
+                  <Route path="/agendar" element={<Home />} />
                   <Route path="/registro" element={<Register />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/olvidar-contraseña" element={<ForgotPassword />} />
