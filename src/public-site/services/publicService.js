@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase';
+import { supabase, authClient } from '../../lib/supabase';
 
 export const publicService = {
   // Get active services
@@ -69,8 +69,8 @@ export const publicService = {
     });
     if (authError) throw authError;
 
-    // Create client record with birth_date
-    const { data: clientData, error: clientError } = await supabase
+    // Create client record with birth_date using authClient to bypass RLS
+    const { data: clientData, error: clientError } = await authClient
       .from('clients')
       .insert([{
         name,

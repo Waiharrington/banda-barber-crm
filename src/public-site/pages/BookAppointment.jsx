@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { publicService } from '../services/publicService';
 import PandaLoader from '../../components/PandaLoader';
+import PandaDatePicker from '../../components/PandaDatePicker';
 
 // Import background images and logo
 import bgDesktop from '../../assets/barbershop_desktop.png';
@@ -1960,12 +1961,12 @@ export default function BookAppointment() {
                             <div className="grid grid-cols-2 gap-3">
                               <div className="space-y-1">
                                 <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Fecha de Nacimiento</label>
-                                <input
-                                  type="date"
+                                <PandaDatePicker
                                   value={authForm.birth_date}
                                   onChange={(e) => setAuthForm({ ...authForm, birth_date: e.target.value })}
-                                  className="w-full bg-[#0e0e12] border border-white/5 rounded-xl px-3 py-3 text-xs text-white focus:border-[var(--champagne)] transition-all outline-none"
-                                  required
+                                  placeholder="Seleccionar fecha"
+                                  className="w-full"
+                                  style={{ height: '40px', padding: '0 12px' }}
                                 />
                               </div>
                               <div className="space-y-1">

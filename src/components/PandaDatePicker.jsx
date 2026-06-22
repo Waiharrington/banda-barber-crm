@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Calendar as CalendarIcon } from 'lucide-react';
 
 const PandaDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", className = "", style = {}, min, max }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(value ? new Date(value) : new Date());
   const [dropdownStyle, setDropdownStyle] = useState({});
+  const [showMonthSelect, setShowMonthSelect] = useState(false);
+  const [showYearSelect, setShowYearSelect] = useState(false);
   const containerRef = useRef(null);
+  const yearScrollRef = useRef(null);
 
   useEffect(() => {
     if (value) {
@@ -94,6 +97,17 @@ const PandaDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
     e.stopPropagation();
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
   };
+
+  const handleMonthChange = (e) => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), parseInt(e.target.value), 1));
+  };
+
+  const handleYearChange = (e) => {
+    setCurrentMonth(new Date(parseInt(e.target.value), currentMonth.getMonth(), 1));
+  };
+
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 120 }, (_, i) => currentYear - 110 + i);
 
   const handleDateClick = (day) => {
     const year = currentMonth.getFullYear();
@@ -194,8 +208,69 @@ const PandaDatePicker = ({ value, onChange, placeholder = "Seleccionar fecha", c
             <button onClick={handlePrevMonth} className="action-btn" style={{ width: '32px', height: '32px' }}>
               <ChevronLeft size={18} />
             </button>
-            <div style={{ fontWeight: '700', fontSize: '15px', color: 'white' }}>
-              {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+            <div style={{ display: 'flex', gap: '8px', fontWeight: '700', fontSize: '14px', color: 'white', position: 'relative' }}>
+              <div 
+                onClick={(e) => { e.stopPropagation(); setShowMonthSelect(!showMonthSelect); setShowYearSelect(false); }}
+                style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: '8px', background: showMonthSelect ? 'rgba(255,255,255,0.1)' : 'transparent', transition: 'all 0.2s' }}
+                className="hover:bg-white/5"
+              >
+                {monthNames[currentMonth.getMonth()]}
+              </div>
+              <div 
+                onClick={(e) => { e.stopPropagation(); setShowYearSelect(!showYearSelect); setShowMonthSelect(false); }}
+                style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: '8px', background: showYearSelect ? 'rgba(255,255,255,0.1)' : 'transparent', color: 'var(--gold-primary)', transition: 'all 0.2s' }}
+                className="hover:bg-white/5"
+              >
+                {currentMonth.getFullYear()}
+              </div>
+
+              {showMonthSelect && (
+                <div style={{ position: 'absolute', top: '100%', left: '-20px', marginTop: '8px', background: '#161616', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', zIndex: 20, boxShadow: '0 10px 25px rgba(0,0,0,0.5)', width: '180px' }}>
+                  {monthNames.map((m, idx) => (
+                    <button
+                      key={m}
+                      onClick={(e) => { e.stopPropagation(); handleMonthChange({ target: { value: idx }}); setShowMonthSelect(false); }}
+                      style={{ padding: '8px', borderRadius: '8px', background: currentMonth.getMonth() === idx ? 'var(--gold-primary)' : 'transparent', color: currentMonth.getMonth() === idx ? '#000' : 'white', border: 'none', cursor: 'pointer', fontSize: '13px', textAlign: 'center', transition: 'all 0.2s' }}
+                      className="hover:bg-white/10"
+                    >
+                      {m.slice(0,3)}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {showYearSelect && (
+                <div 
+                  style={{ position: 'absolute', top: '100%', right: '-20px', marginTop: '8px', background: '#161616', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '8px', zIndex: 20, boxShadow: '0 10px 25px rgba(0,0,0,0.5)', width: '220px', display: 'flex', flexDirection: 'column' }} 
+                >
+                  <div 
+                    onClick={(e) => { e.stopPropagation(); if (yearScrollRef.current) yearScrollRef.current.scrollBy({ top: -120, behavior: 'smooth' }); }}
+                    style={{ display: 'flex', justifyContent: 'center', color: 'rgba(255,255,255,0.4)', paddingBottom: '4px', cursor: 'pointer' }}
+                    className="hover:text-white"
+                  >
+                    <ChevronUp size={16} />
+                  </div>
+                  <div ref={yearScrollRef} className="hours-scroll-container" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {yearOptions.map(y => (
+                      <button
+                        key={y}
+                        onClick={(e) => { e.stopPropagation(); handleYearChange({ target: { value: y }}); setShowYearSelect(false); }}
+                        style={{ padding: '8px', borderRadius: '8px', background: currentMonth.getFullYear() === y ? 'var(--gold-primary)' : 'transparent', color: currentMonth.getFullYear() === y ? '#000' : 'white', border: 'none', cursor: 'pointer', fontSize: '13px', textAlign: 'center', transition: 'all 0.2s' }}
+                        className="hover:bg-white/10"
+                      >
+                        {y}
+                      </button>
+                    ))}
+                  </div>
+                  <div 
+                    onClick={(e) => { e.stopPropagation(); if (yearScrollRef.current) yearScrollRef.current.scrollBy({ top: 120, behavior: 'smooth' }); }}
+                    style={{ display: 'flex', justifyContent: 'center', color: 'rgba(255,255,255,0.4)', paddingTop: '4px', cursor: 'pointer' }}
+                    className="hover:text-white"
+                  >
+                    <ChevronDown size={16} />
+                  </div>
+                </div>
+              )}
             </div>
             <button onClick={handleNextMonth} className="action-btn" style={{ width: '32px', height: '32px' }}>
               <ChevronRight size={18} />
