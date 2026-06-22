@@ -167,6 +167,13 @@ export default function BookAppointment() {
     const saved = localStorage.getItem('bookingState');
     return saved && JSON.parse(saved).selectedDate ? new Date(JSON.parse(saved).selectedDate) : null;
   });
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(() => {
+    const saved = localStorage.getItem('bookingState');
+    if (saved && JSON.parse(saved).selectedDate) {
+      return new Date(JSON.parse(saved).selectedDate);
+    }
+    return new Date();
+  });
   const [selectedTime, setSelectedTime] = useState(() => {
     const saved = localStorage.getItem('bookingState');
     return saved ? JSON.parse(saved).selectedTime : null;
@@ -370,7 +377,7 @@ export default function BookAppointment() {
             if (parsed.notes) setNotes(parsed.notes);
             if (parsed.category) setSelectedCategory(parsed.category);
             if (parsed.step) {
-              setStep(parsed.step);
+              setStep(parsed.step === 6 ? 5 : parsed.step);
               setShowWelcome(false);
             }
             localStorage.removeItem('panda_draft_booking');
@@ -409,6 +416,77 @@ export default function BookAppointment() {
     };
     fetchOccupied();
   }, [selectedBarber, selectedDate]);
+
+  const calendarDays = useMemo(() => {
+    const year = currentCalendarMonth.getFullYear();
+    const month = currentCalendarMonth.getMonth();
+    
+    // First day of current calendar month
+    const firstDay = new Date(year, month, 1);
+    // Last day of current calendar month
+    const lastDay = new Date(year, month + 1, 0);
+    const totalDays = lastDay.getDate();
+    
+    // Weekday of 1st day (Spanish: Mon=0, Tue=1, ..., Sun=6)
+    const startDayIndex = (firstDay.getDay() + 6) % 7;
+    
+    const days = [];
+    
+    // Trailing days from previous month
+    const prevMonthLastDay = new Date(year, month, 0);
+    const prevMonthTotalDays = prevMonthLastDay.getDate();
+    for (let i = startDayIndex - 1; i >= 0; i--) {
+      const d = prevMonthTotalDays - i;
+      const dateVal = new Date(year, month - 1, d);
+      days.push({
+        dayNumber: d,
+        date: dateVal,
+        isCurrentMonth: false,
+        isSelectable: false,
+        isToday: false,
+        isSelected: false
+      });
+    }
+    
+    // Days of current month
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    for (let d = 1; d <= totalDays; d++) {
+      const dateVal = new Date(year, month, d);
+      const dateValCompare = new Date(year, month, d);
+      dateValCompare.setHours(0,0,0,0);
+      
+      const isSelectable = dateValCompare >= today;
+      const isToday = dateValCompare.getTime() === today.getTime();
+      const isSelected = selectedDate && selectedDate.toDateString() === dateVal.toDateString();
+      
+      days.push({
+        dayNumber: d,
+        date: dateVal,
+        isCurrentMonth: true,
+        isSelectable,
+        isToday,
+        isSelected
+      });
+    }
+    
+    // Padding days from next month to complete the week
+    const remaining = (7 - (days.length % 7)) % 7;
+    for (let d = 1; d <= remaining; d++) {
+      const dateVal = new Date(year, month + 1, d);
+      days.push({
+        dayNumber: d,
+        date: dateVal,
+        isCurrentMonth: false,
+        isSelectable: false,
+        isToday: false,
+        isSelected: false
+      });
+    }
+    
+    return days;
+  }, [currentCalendarMonth, selectedDate]);
 
   // Filter visible time slots
   const visibleSlots = useMemo(() => {
@@ -449,18 +527,16 @@ export default function BookAppointment() {
   const steps = [
     { num: 1, label: 'Servicio' },
     { num: 2, label: 'Artista' },
-    { num: 3, label: 'Fecha' },
-    { num: 4, label: 'Hora' },
-    { num: 5, label: 'Bebida' },
-    { num: 6, label: 'Cierre' },
+    { num: 3, label: 'Fecha y Hora' },
+    { num: 4, label: 'Bebida' },
+    { num: 5, label: 'Cierre' },
   ];
 
   const canNext = () => {
     if (step === 1) return selectedService;
     if (step === 2) return selectedBarber;
-    if (step === 3) return selectedDate;
-    if (step === 4) return selectedTime;
-    if (step === 5) return selectedBeverage;
+    if (step === 3) return selectedDate && selectedTime;
+    if (step === 4) return selectedBeverage;
     return false;
   };
 
@@ -474,7 +550,7 @@ export default function BookAppointment() {
       beverage: selectedBeverage,
       notes: notes,
       category: selectedCategory,
-      step: 6
+      step: 5
     }));
     publicService.signInWithGoogle();
   };
@@ -796,12 +872,12 @@ export default function BookAppointment() {
               {/* Step indicator */}
               <div className="inline-block mt-2">
                 <span className="text-[10px] font-black tracking-[0.25em] text-[var(--champagne)] uppercase block mb-2.5">
-                  PASO {step} DE 6
+                  PASO {step} DE 5
                 </span>
                 
                 {/* Segmented Progress Bar */}
                 <div className="flex gap-1 w-32 justify-center mx-auto mb-4">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                  {[1, 2, 3, 4, 5].map((i) => (
                     <div 
                       key={i} 
                       className={`h-0.5 rounded-full transition-all duration-300 ${
@@ -822,19 +898,17 @@ export default function BookAppointment() {
                   {step === 1 && "¿Qué servicio buscas hoy?"}
                   {step === 2 && selectedCategory === 'Tatuajes' && <>Elige tu <span className="text-[var(--champagne)]">Tatuador</span></>}
                   {step === 2 && selectedCategory !== 'Tatuajes' && <>Elige tu <span className="text-[var(--champagne)]">Barbero</span></>}
-                  {step === 3 && <>Selecciona la <span className="text-[var(--champagne)]">Fecha</span></>}
-                  {step === 4 && <>Elige la <span className="text-[var(--champagne)]">Hora</span></>}
-                  {step === 5 && <>Personaliza tu <span className="text-[var(--champagne)]">Experiencia</span></>}
-                  {step === 6 && <>Completa tu <span className="text-[var(--champagne)]">Reserva</span></>}
+                  {step === 3 && <>Elige tu <span className="text-[var(--champagne)]">fecha y hora</span></>}
+                  {step === 4 && <>Personaliza tu <span className="text-[var(--champagne)]">Experiencia</span></>}
+                  {step === 5 && <>Completa tu <span className="text-[var(--champagne)]">Reserva</span></>}
                 </h1>
                 <p className="text-[var(--text-secondary)] text-[11px] font-medium max-w-sm mx-auto">
                   {step === 1 && "Elige el servicio que mejor se adapte a tu estilo."}
                   {step === 2 && selectedCategory === 'Tatuajes' && "Cada artista tiene su estilo único. Escoge el que mejor se adapte a tu visión."}
                   {step === 2 && selectedCategory !== 'Tatuajes' && "Cada barbero tiene su especialidad. Escoge el que mejor va contigo."}
-                  {step === 3 && "Elige el día que mejor se adapte a tu agenda."}
-                  {step === 4 && "Elige el bloque horario disponible."}
-                  {step === 5 && "Queremos que tu visita sea perfecta desde que llegas hasta que te vas."}
-                  {step === 6 && "Ingresa tus datos para asegurar tu cita en 1 clic."}
+                  {step === 3 && "Selecciona el día y la hora que mejor se adapten a ti."}
+                  {step === 4 && "Queremos que tu visita sea perfecta desde que llegas hasta que te vas."}
+                  {step === 5 && "Ingresa tus datos para asegurar tu cita en 1 clic."}
                 </p>
               </div>
             </div>
@@ -1169,25 +1243,33 @@ export default function BookAppointment() {
                                     <span className="text-[9px] text-white/30">({reviews})</span>
                                   </div>
                                 </div>
-                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                                <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-white/5">
+                                  {/* Availability */}
                                   <div className="flex items-center gap-1.5">
                                     <span className={`w-1.5 h-1.5 rounded-full availability-pulse ${available ? '' : 'amber'}`}></span>
                                     <span className={`text-[9px] font-bold ${available ? 'text-emerald-400' : 'text-amber-400'}`}>{availText}</span>
                                   </div>
+                                  {/* Full-width ELEGIR button */}
                                   <button 
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setSelectedBarber(isSelected ? null : barber);
                                       if (!isSelected) scrollToNextButton();
                                     }}
-                                    className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                                    className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 cursor-pointer haptic-bounce ${
                                       isSelected 
-                                        ? 'bg-[var(--champagne)] text-black shadow-lg border border-[var(--champagne)] scale-105' 
-                                        : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
+                                        ? 'bg-[var(--champagne)] text-black shadow-[0_4px_14px_rgba(203,183,154,0.35)] scale-[1.02]' 
+                                        : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
                                     }`}
                                   >
-                                    {isSelected ? 'Elegido' : 'Elegir'}
+                                    {isSelected ? '✓ Elegido' : 'Elegir'}
                                   </button>
+                                  {/* Tap hint — only when not selected */}
+                                  {!isSelected && (
+                                    <p className="text-center text-[8px] text-white/20 font-medium tracking-wide -mt-0.5">
+                                      Tócame para escoger
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                             </button>
@@ -1198,140 +1280,328 @@ export default function BookAppointment() {
                   </div>
                 )}
 
-                {/* STEP 3: Dates */}
+                {/* STEP 3: Unified Date & Time Selection */}
                 {step === 3 && (
-                  <div className="space-y-6 w-full">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-white/50">Selecciona el Día</h3>
+                  <div className="space-y-6 w-full animate-fade-in py-2">
                     
-                    <div className="space-y-6">
-                      {(() => {
-                        // Group the 12 days by month
-                        const monthsMap = new Map();
+                    {/* Calendar Card */}
+                    <div className="bg-[#0b0b0d]/60 backdrop-blur-md border border-white/5 rounded-3xl p-5 shadow-xl space-y-4">
+                      
+                      {/* Calendar Header: Month, Year and Arrows */}
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-base font-extrabold text-white">
+                          {(() => {
+                            const monthName = currentCalendarMonth.toLocaleDateString('es-ES', { month: 'long' });
+                            const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+                            const year = currentCalendarMonth.getFullYear();
+                            return `${capitalizedMonth} ${year}`;
+                          })()}
+                        </span>
                         
-                        for (let i = 0; i < 12; i++) {
-                          const date = new Date();
-                          date.setDate(date.getDate() + i);
-                          const monthName = date.toLocaleDateString('es', { month: 'long' });
-                          const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+                        <div className="flex items-center gap-3">
+                          {/* Prev Month Button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const today = new Date();
+                              const isPrevDisabled = currentCalendarMonth.getFullYear() === today.getFullYear() && currentCalendarMonth.getMonth() === today.getMonth();
+                              if (!isPrevDisabled) {
+                                setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() - 1, 1));
+                              }
+                            }}
+                            disabled={currentCalendarMonth.getFullYear() === new Date().getFullYear() && currentCalendarMonth.getMonth() === new Date().getMonth()}
+                            className={`p-1.5 transition-colors cursor-pointer ${
+                              currentCalendarMonth.getFullYear() === new Date().getFullYear() && currentCalendarMonth.getMonth() === new Date().getMonth()
+                                ? 'text-white/10 cursor-not-allowed'
+                                : 'text-white/40 hover:text-white'
+                            }`}
+                          >
+                            <ChevronLeft size={20} />
+                          </button>
                           
-                          if (!monthsMap.has(capitalizedMonth)) {
-                            monthsMap.set(capitalizedMonth, []);
-                          }
-                          monthsMap.get(capitalizedMonth).push({ date, relativeIndex: i });
-                        }
+                          {/* Next Month Button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1, 1));
+                            }}
+                            className="w-8 h-8 rounded-full bg-[var(--champagne)] text-black flex items-center justify-center hover:bg-[#b8a283] transition-all active:scale-95 cursor-pointer shadow-md"
+                          >
+                            <ChevronRight size={18} strokeWidth={2.5} />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Weekday abbreviations */}
+                      <div className="grid grid-cols-7 gap-1 text-center">
+                        {['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'].map(d => (
+                          <span key={d} className="text-[10px] font-black text-white/30 tracking-wider">
+                            {d}
+                          </span>
+                        ))}
+                      </div>
+                      
+                      {/* Days Grid */}
+                      <div className="grid grid-cols-7 gap-y-2 gap-x-1">
+                        {calendarDays.map((dayObj, index) => {
+                          const { dayNumber, date, isCurrentMonth, isSelectable, isToday, isSelected } = dayObj;
+                          
+                          return (
+                            <button
+                              key={index}
+                              type="button"
+                              disabled={!isSelectable}
+                              onClick={() => {
+                                if (isSelectable) {
+                                  if (!selectedDate || selectedDate.toDateString() !== date.toDateString()) {
+                                    setSelectedDate(date);
+                                    setSelectedTime(null);
+                                  }
+                                }
+                              }}
+                              className="relative py-1 cursor-pointer outline-none focus:outline-none"
+                            >
+                              <div
+                                className={`w-9 h-9 rounded-full mx-auto flex items-center justify-center text-sm transition-all duration-200 ${
+                                  isSelected
+                                    ? 'bg-[var(--champagne)] text-black font-extrabold shadow-[0_0_12px_rgba(203,183,154,0.4)] scale-105'
+                                    : isToday
+                                      ? 'border border-[var(--champagne)]/40 text-white font-bold'
+                                      : !isCurrentMonth
+                                        ? 'text-white/10 pointer-events-none'
+                                        : isSelectable
+                                          ? 'text-white hover:bg-white/5'
+                                          : 'text-white/20 pointer-events-none'
+                                }`}
+                              >
+                                {dayNumber}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      
+                    </div>
+                    
+                    {/* Time Slots Block */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold uppercase tracking-widest text-white/50">
+                          {selectedDate ? (
+                            (() => {
+                              const weekday = selectedDate.toLocaleDateString('es-ES', { weekday: 'long' });
+                              const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+                              const day = selectedDate.getDate();
+                              const monthName = selectedDate.toLocaleDateString('es-ES', { month: 'long' });
+                              const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+                              return `${capitalizedWeekday} ${day} de ${capitalizedMonth}`;
+                            })()
+                          ) : (
+                            "Horarios Disponibles"
+                          )}
+                        </h4>
+                        
+                        {selectedDate && (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
+                            Disponible
+                          </span>
+                        )}
+                      </div>
+                      
+                      {!selectedDate ? (
+                        <div className="text-center py-10 bg-white/[0.01] border border-white/5 rounded-2xl text-white/30 text-xs">
+                          Selecciona un día en el calendario para ver las horas disponibles.
+                        </div>
+                      ) : loadingSlots ? (
+                        <div className="text-center py-12 text-white/30 text-sm">
+                          Cargando disponibilidad...
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-4 gap-2.5">
+                          {visibleSlots.map(({ time, label, isPast, isOccupied }) => {
+                            const isSelected = selectedTime === time;
+                            const isDisabled = isPast || isOccupied;
+                            
+                            return (
+                              <button
+                                key={time}
+                                type="button"
+                                onClick={() => {
+                                  if (!isDisabled) {
+                                    setSelectedTime(time);
+                                  }
+                                }}
+                                disabled={isDisabled}
+                                className={`py-3 rounded-xl border text-center transition-all duration-200 cursor-pointer ${
+                                  isOccupied
+                                    ? 'border-red-500/20 bg-red-500/5 text-red-400/40 cursor-not-allowed opacity-50'
+                                    : isPast
+                                      ? 'border-white/3 bg-transparent text-white/10 cursor-not-allowed'
+                                      : isSelected
+                                        ? 'border-[var(--champagne)] bg-[rgba(203,183,154,0.12)] text-[var(--champagne)] font-bold scale-[1.02] shadow-[0_0_12px_rgba(203,183,154,0.2)]'
+                                        : 'border-white/5 bg-black/40 hover:bg-[#0e0e12] hover:border-white/10 text-white'
+                                }`}
+                              >
+                                <span className="text-xs font-bold block">{label}</span>
+                                {isOccupied && <span className="text-[7px] tracking-wider uppercase font-semibold text-red-500/60 mt-0.5 block">Ocupado</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* TU SELECCIÓN Card — Premium */}
+                    {selectedDate && selectedTime && (
+                      <div className="relative rounded-3xl overflow-hidden animate-fade-in" style={{
+                        background: 'linear-gradient(135deg, rgba(203,183,154,0.08) 0%, rgba(13,13,17,0.95) 50%, rgba(203,183,154,0.04) 100%)',
+                        border: '1px solid rgba(203,183,154,0.25)',
+                        boxShadow: '0 0 40px rgba(203,183,154,0.08), inset 0 1px 0 rgba(203,183,154,0.12)'
+                      }}>
+                        {/* Top shimmer line */}
+                        <div className="absolute top-0 left-0 right-0 h-px" style={{background: 'linear-gradient(90deg, transparent, rgba(203,183,154,0.5), transparent)'}} />
+                        
+                        {/* Glow orb */}
+                        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none" style={{background: 'radial-gradient(circle, rgba(203,183,154,0.12) 0%, transparent 70%)'}} />
+                        <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full pointer-events-none" style={{background: 'radial-gradient(circle, rgba(203,183,154,0.06) 0%, transparent 70%)'}} />
 
-                        return Array.from(monthsMap.entries()).map(([monthName, items]) => (
-                          <div key={monthName} className="space-y-3">
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--champagne)]/60 flex items-center gap-2">
-                              <span>{monthName}</span>
-                              <div className="h-[1px] bg-white/5 flex-1"></div>
-                            </h4>
-                            <div className="grid grid-cols-4 gap-3">
-                              {items.map(({ date, relativeIndex }) => {
-                                const isSelected = selectedDate?.toDateString() === date.toDateString();
-                                const isToday = relativeIndex === 0;
-                                const isTomorrow = relativeIndex === 1;
+                        <div className="relative p-4">
+                          {/* Header label */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-1 h-3 rounded-full" style={{background: 'var(--champagne)'}} />
+                              <span className="text-[9px] font-black tracking-[0.22em] uppercase" style={{color: 'var(--champagne)'}}>Tu Reserva</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setStep(1)}
+                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
+                              style={{
+                                background: 'rgba(203,183,154,0.08)',
+                                border: '1px solid rgba(203,183,154,0.2)',
+                              }}
+                            >
+                              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(203,183,154,0.9)" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                              <span className="text-[9px] font-bold tracking-wider" style={{color: 'rgba(203,183,154,0.9)'}}>Editar</span>
+                            </button>
+                          </div>
 
-                                return (
-                                  <button
-                                    key={relativeIndex}
-                                    type="button"
-                                    onClick={() => { setSelectedDate(date); scrollToNextButton(); }}
-                                    className={`relative p-3.5 rounded-2xl text-center flex flex-col items-center justify-center border transition-all duration-300 cursor-pointer overflow-visible ${
-                                      isSelected
-                                        ? 'border-[var(--champagne)] bg-[rgba(203,183,154,0.12)] shadow-[0_0_20px_rgba(203,183,154,0.15)] scale-105 ring-1 ring-[var(--champagne)]'
-                                        : 'border-white/5 bg-black/40 hover:bg-[#0e0e12]/60 hover:border-white/10 hover:scale-[1.02]'
-                                    }`}
-                                  >
-                                    {/* Relative day badges */}
-                                    {(isToday || isTomorrow) && (
-                                      <span className="absolute -top-2 px-1.5 py-0.5 rounded-full bg-[var(--champagne)] text-black font-black text-[7px] uppercase tracking-widest leading-none shadow-md z-10 scale-90 animate-pulse">
-                                        {isToday ? 'Hoy' : 'Mañ.'}
-                                      </span>
-                                    )}
+                          {/* Main content row */}
+                          <div className="flex items-center gap-3">
+                            {/* Barber photo with gold ring */}
+                            <div className="flex-shrink-0 relative">
+                              <div className="w-14 h-14 rounded-2xl overflow-hidden" style={{
+                                border: '1.5px solid rgba(203,183,154,0.35)',
+                                boxShadow: '0 0 16px rgba(203,183,154,0.15)'
+                              }}>
+                                {selectedBarber?.image_url ? (
+                                  <img src={selectedBarber.image_url} alt={selectedBarber.name} className="w-full h-full object-cover object-top" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center" style={{background: 'rgba(203,183,154,0.05)'}}>
+                                    <User size={22} strokeWidth={1.5} style={{color: 'rgba(203,183,154,0.6)'}} />
+                                  </div>
+                                )}
+                              </div>
+                              {/* Confirmed badge */}
+                              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center" style={{
+                                background: 'linear-gradient(135deg, #CBB79A, #a8936b)',
+                                boxShadow: '0 2px 8px rgba(203,183,154,0.4)'
+                              }}>
+                                <Check size={10} className="text-black" strokeWidth={3} />
+                              </div>
+                            </div>
 
-                                    <span className={`text-[9px] uppercase font-bold tracking-wider ${isSelected ? 'text-[var(--champagne)]' : 'text-white/40'}`}>
-                                      {date.toLocaleDateString('es', { weekday: 'short' })}
-                                    </span>
-                                    <span className="text-xl font-black my-1 text-white">{date.getDate()}</span>
-                                    <span className="text-[8px] font-bold text-white/30 capitalize">
-                                      {date.toLocaleDateString('es', { month: 'short' }).replace('.', '')}
-                                    </span>
-                                  </button>
-                                );
-                              })}
+                            {/* Date & time info */}
+                            <div className="flex-1 min-w-0">
+                              {/* Date */}
+                              <div className="text-white font-extrabold text-[14px] leading-tight tracking-tight">
+                                {(() => {
+                                  const weekday = selectedDate.toLocaleDateString('es-ES', { weekday: 'long' });
+                                  const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+                                  const day = selectedDate.getDate();
+                                  const monthName = selectedDate.toLocaleDateString('es-ES', { month: 'long' });
+                                  const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+                                  return `${capitalizedWeekday} ${day} de ${capitalizedMonth}`;
+                                })()}
+                              </div>
+                              {/* Time chip */}
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{
+                                  background: 'rgba(203,183,154,0.1)',
+                                  border: '1px solid rgba(203,183,154,0.2)'
+                                }}>
+                                  <Clock size={9} style={{color: 'var(--champagne)'}} />
+                                  <span className="text-[10px] font-bold" style={{color: 'var(--champagne)'}}>{formatTime12(selectedTime)}</span>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        ));
-                      })()}
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-white/40 text-xs bg-white/3 p-3 rounded-lg border border-white/5">
-                      <Info size={14} className="text-[var(--champagne)] flex-shrink-0" />
-                      <span>Atendemos todos los días de la semana (incluyendo domingos) para adaptarnos mejor a tu horario.</span>
-                    </div>
-                  </div>
-                )}
 
-                {/* STEP 4: Time Slots */}
-                {step === 4 && (
-                  <div className="space-y-5 w-full">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-white/50">Módulos de Hora</h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
-                        {selectedDate?.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                      </span>
-                    </div>
+                          {/* Divider */}
+                          <div className="mt-3 mb-3 h-px" style={{background: 'linear-gradient(90deg, rgba(203,183,154,0.15), rgba(203,183,154,0.04), transparent)'}} />
 
-                    {loadingSlots ? (
-                      <div className="text-center py-12 text-white/30 text-sm">
-                        Cargando disponibilidad...
-                      </div>
-                    ) : (
-                      <div className="hours-infinite-wrapper">
-                        <div className="hours-scroll-container">
-                          <div className="grid grid-cols-3 gap-2.5 pr-1 py-1">
-                            {visibleSlots.map(({ time, label, isPast, isOccupied }) => {
-                              const isSelected = selectedTime === time;
-                              const isDisabled = isPast || isOccupied;
-
-                              return (
-                                <button
-                                  key={time}
-                                  onClick={() => { if (!isDisabled) { setSelectedTime(time); scrollToNextButton(); } }}
-                                  disabled={isDisabled}
-                                  className={`py-3 rounded-xl border text-center transition-all duration-200 cursor-pointer ${
-                                    isOccupied 
-                                      ? 'border-red-500/20 bg-red-500/5 text-red-400/40 cursor-not-allowed opacity-50'
-                                      : isPast
-                                        ? 'border-white/3 bg-transparent text-white/10 cursor-not-allowed'
-                                        : isSelected
-                                          ? 'border-[var(--champagne)] bg-[rgba(203,183,154,0.1)] text-[var(--champagne)] font-bold scale-[1.02] shadow-[0_0_12px_rgba(203,183,154,0.15)]'
-                                          : 'border-white/5 bg-black/40 hover:bg-[#0e0e12] hover:border-white/10 text-white'
-                                  }`}
-                                >
-                                  <span className="text-sm font-bold block">{label}</span>
-                                  {isOccupied && <span className="text-[8px] tracking-wider uppercase font-semibold text-red-500/60 mt-0.5 block">Ocupado</span>}
-                                </button>
-                              );
-                            })}
+                          {/* Service & Artist chips row */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)'}}>
+                              <Scissors size={9} className="text-white/40" />
+                              <span className="text-[9px] font-semibold text-white/60 truncate max-w-[100px]">{selectedService?.name}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)'}}>
+                              <User size={9} className="text-white/40" />
+                              <span className="text-[9px] font-semibold text-white/60">{selectedBarber?.name}</span>
+                            </div>
+                            {selectedService?.price && (
+                              <div className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-full" style={{
+                                background: 'rgba(203,183,154,0.06)',
+                                border: '1px solid rgba(203,183,154,0.15)'
+                              }}>
+                                <span className="text-[10px] font-black" style={{color: 'rgba(203,183,154,0.8)'}}>
+                                  ${selectedService.price}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
                     )}
+                    
+
+                    {/* Big Gold CONTINUAR Button */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          createRipple(e);
+                          if (selectedDate && selectedTime) {
+                            setStep(4);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }
+                        }}
+                        disabled={!selectedDate || !selectedTime}
+                        className={`w-full py-4 px-6 rounded-3xl font-extrabold text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-300 haptic-bounce ripple-container shadow-[0_4px_20px_rgba(203,183,154,0.15)] ${
+                          selectedDate && selectedTime
+                            ? 'btn-gold cursor-pointer text-black'
+                            : 'bg-white/5 border border-white/10 text-white/25 cursor-not-allowed'
+                        }`}
+                      >
+                        Continuar
+                        <ChevronRight size={18} strokeWidth={2.5} />
+                      </button>
+                    </div>
+                    
                   </div>
                 )}
 
-                {/* STEP 5: Beverage Concierge & Experience Customization */}
-                {step === 5 && (
+                {/* STEP 4: Beverage Concierge & Experience Customization */}
+                {step === 4 && (
                   <div className="space-y-10 w-full animate-fade-in py-2">
                     {/* 1. Beverage Section */}
                     <div className="space-y-4">
-                      <div className="flex items-center gap-2 text-white/90">
+                      <div className="flex items-center gap-2 text-white/90 text-left">
                         <Coffee size={18} className="text-[var(--champagne)]" />
                         <h3 className="text-xs font-bold uppercase tracking-widest">¿Qué te gustaría tomar?</h3>
                       </div>
-                      <p className="text-[10px] text-white/40 -mt-1">
+                      <p className="text-[10px] text-white/40 -mt-1 text-left">
                         Tu bebida estará lista cuando llegues.
                       </p>
                       <div className="grid grid-cols-4 gap-2.5">
@@ -1395,11 +1665,11 @@ export default function BookAppointment() {
 
                     {/* 2. Customer Notes Section */}
                     <div className="space-y-4">
-                      <div className="flex items-center gap-2 text-white/90">
+                      <div className="flex items-center gap-2 text-white/90 text-left">
                         <MessageSquare size={18} className="text-[var(--champagne)]" />
                         <h3 className="text-xs font-bold uppercase tracking-widest">¿Algo que debamos saber?</h3>
                       </div>
-                      <p className="text-[10px] text-white/40 -mt-1">
+                      <p className="text-[10px] text-white/40 -mt-1 text-left">
                         Cuéntanos cualquier detalle especial.
                       </p>
 
@@ -1419,8 +1689,8 @@ export default function BookAppointment() {
                   </div>
                 )}
 
-                {/* STEP 6: Confirmation & Cierre Mágico (Registration) */}
-                {step === 6 && (
+                {/* STEP 5: Confirmation & Cierre Mágico (Registration) */}
+                {step === 5 && (
                   <div className="space-y-6 w-full animate-fade-in">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-white/50 text-center">Resumen de tu Turno</h3>
 
@@ -1500,7 +1770,7 @@ export default function BookAppointment() {
                         </div>
 
                         {authError && (
-                          <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-3 rounded-xl">
+                          <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-3 rounded-xl text-left">
                             {authError}
                           </div>
                         )}
@@ -1540,7 +1810,7 @@ export default function BookAppointment() {
                                   value={authForm.phone}
                                   onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })}
                                   className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-[var(--champagne)] focus:bg-white/[0.04] focus:shadow-[0_0_12px_rgba(203,183,154,0.1)] transition-all duration-200 outline-none"
-                                  placeholder="+58 412..."
+                                  placeholder="04121234567"
                                   required
                                 />
                               </div>
@@ -1558,17 +1828,6 @@ export default function BookAppointment() {
                             </div>
 
                             <div className="space-y-1">
-                              <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Fecha de Nacimiento</label>
-                              <input
-                                type="date"
-                                value={authForm.birth_date}
-                                onChange={(e) => setAuthForm({ ...authForm, birth_date: e.target.value })}
-                                className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-[var(--champagne)] focus:bg-white/[0.04] focus:shadow-[0_0_12px_rgba(203,183,154,0.1)] transition-all duration-200 outline-none"
-                                required
-                              />
-                            </div>
-
-                            <div className="space-y-1">
                               <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Email (Opcional)</label>
                               <input
                                 type="email"
@@ -1579,25 +1838,36 @@ export default function BookAppointment() {
                               />
                             </div>
 
-                            <div className="space-y-1">
-                              <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Contraseña de Cuenta</label>
-                              <div className="relative">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Fecha de Nacimiento</label>
                                 <input
-                                  type={showPassword ? 'text' : 'password'}
-                                  value={authForm.password}
-                                  onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
-                                  className="w-full bg-white/[0.02] border border-white/5 rounded-xl pl-4 pr-10 py-3 text-xs text-white focus:border-[var(--champagne)] focus:bg-white/[0.04] focus:shadow-[0_0_12px_rgba(203,183,154,0.1)] transition-all duration-200 outline-none"
-                                  placeholder="Mínimo 6 caracteres"
-                                  minLength={6}
+                                  type="date"
+                                  value={authForm.birth_date}
+                                  onChange={(e) => setAuthForm({ ...authForm, birth_date: e.target.value })}
+                                  className="w-full bg-[#0e0e12] border border-white/5 rounded-xl px-3 py-3 text-xs text-white focus:border-[var(--champagne)] transition-all outline-none"
                                   required
                                 />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowPassword(!showPassword)}
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white cursor-pointer"
-                                >
-                                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                                </button>
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Contraseña</label>
+                                <div className="relative">
+                                  <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={authForm.password}
+                                    onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+                                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl pl-4 pr-10 py-3 text-xs text-white focus:border-[var(--champagne)] focus:bg-white/[0.04] focus:shadow-[0_0_12px_rgba(203,183,154,0.1)] transition-all duration-200 outline-none"
+                                    placeholder="••••••••"
+                                    required
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white cursor-pointer"
+                                  >
+                                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                                  </button>
+                                </div>
                               </div>
                             </div>
 
@@ -1661,9 +1931,9 @@ export default function BookAppointment() {
               </div>
             </div>
 
-            {/* Footer Navigation Buttons — hidden when barber profile is expanded */}
-            <div className={`mt-4 pb-2 ${step === 2 && expandedBarber ? 'hidden' : ''}`}>
-              {step < 6 ? (
+            {/* Footer Navigation Buttons — hidden when barber profile is expanded or when in Step 3 (which has its own button) */}
+            <div className={`mt-4 pb-2 ${(step === 2 && expandedBarber) || step === 3 ? 'hidden' : ''}`}>
+              {step < 5 ? (
                 <button
                   ref={nextBtnRef}
                   onClick={(e) => { createRipple(e); if (canNext()) { setStep(step + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}
