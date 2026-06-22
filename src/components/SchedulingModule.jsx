@@ -1191,6 +1191,18 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                             <span style={{ fontWeight: '800', color: '#fff', fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                               {app.clients?.name}
                                             </span>
+                                            {app.beverage_selection && (
+                                              <span title={`Bebida: ${app.beverage_selection}`} style={{ marginLeft: '4px', fontSize: '11px', flexShrink: 0 }}>
+                                                {app.beverage_selection.includes('Café') ? '☕' : 
+                                                 app.beverage_selection.includes('Cerveza') ? '🍺' : 
+                                                 app.beverage_selection.includes('Whiskey') ? '🥃' : '💧'}
+                                              </span>
+                                            )}
+                                            {app.notes && (
+                                              <span title={`Nota: ${app.notes}`} style={{ marginLeft: '4px', fontSize: '11px', flexShrink: 0 }}>
+                                                📝
+                                              </span>
+                                            )}
                                           </div>
                                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0, paddingLeft: '8px' }}>
                                             <span className="price-highlight-tag" style={{ fontSize: '14px', fontWeight: '950', color: 'var(--gold-primary)', lineHeight: '1.2' }}>
@@ -1259,6 +1271,18 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                         <span style={{ fontWeight: '800', color: '#fff', fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                           {app.clients?.name}
                                         </span>
+                                        {app.beverage_selection && (
+                                          <span title={`Bebida: ${app.beverage_selection}`} style={{ marginLeft: '4px', fontSize: '12px', flexShrink: 0 }}>
+                                            {app.beverage_selection.includes('Café') ? '☕' : 
+                                             app.beverage_selection.includes('Cerveza') ? '🍺' : 
+                                             app.beverage_selection.includes('Whiskey') ? '🥃' : '💧'}
+                                          </span>
+                                        )}
+                                        {app.notes && (
+                                          <span title={`Nota: ${app.notes}`} style={{ marginLeft: '4px', fontSize: '12px', flexShrink: 0 }}>
+                                            📝
+                                          </span>
+                                        )}
                                       </div>
                                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0, paddingLeft: '8px' }}>
                                         <span className="price-highlight-tag" style={{ fontSize: '15px', fontWeight: '950', color: 'var(--gold-primary)', lineHeight: '1.2' }}>
@@ -1877,6 +1901,42 @@ const SchedulingModule = ({ isMobile, rates }) => {
                     </div>
                   )}
                 </div>
+                {/* Beverage & Notes */}
+                {(activeDetail.beverage_selection || activeDetail.notes) && (
+                  <div style={{ 
+                    background: 'rgba(255,255,255,0.02)', 
+                    padding: '16px', 
+                    borderRadius: '14px', 
+                    border: '1px solid rgba(255,255,255,0.04)', 
+                    marginBottom: '24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }}>
+                    {activeDetail.beverage_selection && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '16px' }}>
+                          {activeDetail.beverage_selection.includes('Café') ? '☕' : 
+                           activeDetail.beverage_selection.includes('Cerveza') ? '🍺' : 
+                           activeDetail.beverage_selection.includes('Whiskey') ? '🥃' : '💧'}
+                        </span>
+                        <div>
+                          <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block' }}>Bebida Solicitada</span>
+                          <span style={{ fontSize: '13px', fontWeight: '800', color: 'white' }}>{activeDetail.beverage_selection}</span>
+                        </div>
+                      </div>
+                    )}
+                    {activeDetail.notes && (
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                        <span style={{ fontSize: '16px', marginTop: '1px' }}>📝</span>
+                        <div>
+                          <span style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block' }}>Notas Especiales</span>
+                          <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--gold-primary)', fontStyle: 'italic', wordBreak: 'break-word' }}>"{activeDetail.notes}"</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Total Block */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, rgba(255, 255, 255,0.12) 0%, rgba(255, 255, 255,0.02) 100%)', padding: '20px', borderRadius: '18px', border: '1px solid rgba(255, 255, 255,0.25)', boxShadow: '0 8px 32px rgba(255, 255, 255,0.06)' }}>

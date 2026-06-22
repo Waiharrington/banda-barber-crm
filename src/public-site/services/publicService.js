@@ -16,12 +16,27 @@ export const publicService = {
   async getStaff() {
     const { data, error } = await supabase
       .from('staff')
-      .select('id, name, role, image_url, active')
+      .select('id, name, role, image_url, active, specialty, badge, biography')
       .eq('active', true)
       .not('role', 'like', 'ARCHIVED|%')
       .order('name');
     if (error) throw error;
     return (data || []).filter(s => !s.role?.startsWith('ARCHIVED|'));
+  },
+
+  // Get portfolio photos for a specific staff member
+  async getStaffPortfolio(staffId) {
+    if (!staffId) return [];
+    const { data, error } = await supabase
+      .from('staff_portfolio')
+      .select('id, image_url, created_at')
+      .eq('staff_id', staffId)
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.warn('Portfolio fetch error:', error.message);
+      return [];
+    }
+    return data || [];
   },
 
   // Get available time slots for a specific barber and date
@@ -208,7 +223,7 @@ export const publicService = {
   },
 
   // Create appointment
-  async createAppointment({ client_id, service_id, staff_id, scheduled_at, beverage_selection }) {
+  async createAppointment({ client_id, service_id, staff_id, scheduled_at, beverage_selection, notes }) {
     const { data: service } = await supabase
       .from('services')
       .select('price')
@@ -224,7 +239,8 @@ export const publicService = {
         scheduled_at,
         total_price: service?.price || 0,
         status: 'Agendado',
-        beverage_selection: beverage_selection || null
+        beverage_selection: beverage_selection || null,
+        notes: notes || null
       }])
       .select()
       .single();

@@ -21,7 +21,13 @@ import {
   Star,
   Award,
   ChevronDown,
-  PenTool
+  PenTool,
+  MessageSquare,
+  Sunrise,
+  Sun,
+  Moon,
+  Beer,
+  GlassWater
 } from 'lucide-react';
 import { publicService } from '../services/publicService';
 import PandaLoader from '../../components/PandaLoader';
@@ -30,6 +36,16 @@ import PandaLoader from '../../components/PandaLoader';
 import bgDesktop from '../../assets/barbershop_desktop.png';
 import bgMobile from '../../assets/barbershop_mobile.png';
 import logo from '../../assets/logo.png';
+
+// Helper to render beverage icons uniformly without using raw system emojis
+const renderBeverageIcon = (beverageName, size = 16, className = "text-[var(--champagne)]") => {
+  if (!beverageName) return null;
+  const name = beverageName.toLowerCase();
+  if (name.includes('café') || name.includes('cafe')) return <Coffee size={size} className={className} />;
+  if (name.includes('cerveza')) return <Beer size={size} className={className} />;
+  if (name.includes('whiskey')) return <GlassWater size={size} className={className} />;
+  return <GlassWater size={size} className={className} />;
+};
 
 // Generate time slots from 9 AM to 10 PM (22:00) in 30-min intervals
 function generateTimeSlots() {
@@ -79,6 +95,7 @@ export default function BookAppointment() {
   const [stepKey, setStepKey] = useState(0);
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
+  const scrollContainerRef = useRef(null);
   
   // Selections
   const [selectedCategory, setSelectedCategory] = useState(() => {
@@ -95,6 +112,57 @@ export default function BookAppointment() {
     return saved ? JSON.parse(saved).selectedBarber : null;
   });
   const [expandedBarber, setExpandedBarber] = useState(null);
+  const [expandedBarberPortfolio, setExpandedBarberPortfolio] = useState([]);
+  const [portfolioLoading, setPortfolioLoading] = useState(false);
+  const [activeLightboxImage, setActiveLightboxImage] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('favorite_barbers') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const triggerToast = (type, text) => {
+    setToast({ type, text });
+    setTimeout(() => {
+      setToast(null);
+    }, 2500);
+  };
+
+  const handleShare = async (barber) => {
+    if (!barber) return;
+    const shareData = {
+      title: `Panda Barber - ${barber.name}`,
+      text: `¡Mira el perfil de ${barber.name} en Panda Barber y reserva tu cita!`,
+      url: window.location.href
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        triggerToast('success', 'Enlace copiado al portapapeles');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const toggleFavorite = (barberId) => {
+    let updated;
+    const isFav = favorites.includes(barberId);
+    if (isFav) {
+      updated = favorites.filter(id => id !== barberId);
+      triggerToast('unfavorite', 'Removido de favoritos');
+    } else {
+      updated = [...favorites, barberId];
+      triggerToast('favorite', 'Agregado a favoritos');
+    }
+    setFavorites(updated);
+    localStorage.setItem('favorite_barbers', JSON.stringify(updated));
+  };
   const [selectedDate, setSelectedDate] = useState(() => {
     const saved = localStorage.getItem('bookingState');
     return saved && JSON.parse(saved).selectedDate ? new Date(JSON.parse(saved).selectedDate) : null;
@@ -104,6 +172,8 @@ export default function BookAppointment() {
     return saved ? JSON.parse(saved).selectedTime : null;
   });
   const [selectedBeverage, setSelectedBeverage] = useState('');
+  const [notes, setNotes] = useState('');
+  const [imgErrors, setImgErrors] = useState({});
   
   // Auth state at step 6
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -132,7 +202,7 @@ export default function BookAppointment() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   
   const allTimeSlots = useMemo(() => generateTimeSlots(), []);
-
+  
   // Persist booking progress to localStorage
   useEffect(() => {
     if (success) {
@@ -147,10 +217,34 @@ export default function BookAppointment() {
       selectedService,
       selectedBarber,
       selectedDate: selectedDate?.toISOString() || null,
-      selectedTime
+      selectedTime,
+      selectedBeverage,
+      notes
     };
     localStorage.setItem('bookingState', JSON.stringify(state));
-  }, [showWelcome, hasVisited, step, selectedCategory, selectedService, selectedBarber, selectedDate, selectedTime, success]);
+  }, [showWelcome, hasVisited, step, selectedCategory, selectedService, selectedBarber, selectedDate, selectedTime, selectedBeverage, notes, success]);
+
+  // Scroll to top on step changes
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo(0, 0);
+      scrollContainerRef.current.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+    
+    const timer = setTimeout(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo(0, 0);
+        scrollContainerRef.current.scrollTop = 0;
+      }
+      window.scrollTo(0, 0);
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [step]);
 
   // Ripple effect handler
   const createRipple = (e) => {
@@ -195,6 +289,11 @@ export default function BookAppointment() {
   // Step transition - instant (no animation)
   const prevStepRef = useRef(1);
   const nextBtnRef = useRef(null);
+  const scrollToNextButton = () => {
+    setTimeout(() => {
+      nextBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+  };
   useEffect(() => {
     if (step !== prevStepRef.current) {
       setExpandedBarber(null);
@@ -226,35 +325,8 @@ export default function BookAppointment() {
     };
   }, [showWelcome, isTransitioning, isReturning]);
 
-  // Restore draft booking (e.g. after Google OAuth redirect)
+  // Check if client is logged in
   useEffect(() => {
-    const draft = localStorage.getItem('panda_draft_booking');
-    if (draft) {
-      try {
-        const parsed = JSON.parse(draft);
-        if (parsed.service) {
-          setSelectedService(parsed.service);
-          const nameLower = parsed.service.name.toLowerCase();
-          if (parsed.service.category === 'Barbería' || parsed.service.category === 'Servicios') setOpenCategory('Corte');
-          else if (parsed.service.category === 'Tratamientos' || nameLower.includes('barba')) setOpenCategory('Barba');
-          else if (parsed.service.category === 'Tatuajes') setOpenCategory('Tatuajes');
-        }
-        if (parsed.barber) setSelectedBarber(parsed.barber);
-        if (parsed.date) setSelectedDate(new Date(parsed.date));
-        if (parsed.time) setSelectedTime(parsed.time);
-        if (parsed.beverage) setSelectedBeverage(parsed.beverage);
-        if (parsed.category) setSelectedCategory(parsed.category);
-        if (parsed.step) {
-          setStep(parsed.step);
-          setShowWelcome(false);
-        }
-        localStorage.removeItem('panda_draft_booking');
-      } catch (e) {
-        console.error('Error restoring draft booking:', e);
-      }
-    }
-    
-    // Check if client is logged in
     const clientData = localStorage.getItem('panda_public_client');
     if (clientData) {
       setIsLoggedIn(true);
@@ -270,7 +342,42 @@ export default function BookAppointment() {
           publicService.getStaff()
         ]);
         setServices(servicesData);
-        setBarbers(staffData.filter(s => s.role?.includes('Barbero') || s.role?.includes('Artista') || s.role?.includes('Tatuador')));
+        const filteredBarbers = staffData.filter(s => s.role?.includes('Barbero') || s.role?.includes('Artista') || s.role?.includes('Tatuador'));
+        setBarbers(filteredBarbers);
+
+        // Restore draft booking (e.g. after Google OAuth redirect)
+        const draft = localStorage.getItem('panda_draft_booking');
+        if (draft) {
+          try {
+            const parsed = JSON.parse(draft);
+            if (parsed.serviceId) {
+              const matchedService = servicesData.find(s => s.id === parsed.serviceId);
+              if (matchedService) {
+                setSelectedService(matchedService);
+                const nameLower = matchedService.name.toLowerCase();
+                if (matchedService.category === 'Barbería' || matchedService.category === 'Servicios') setOpenCategory('Corte');
+                else if (matchedService.category === 'Tratamientos' || nameLower.includes('barba')) setOpenCategory('Barba');
+                else if (matchedService.category === 'Tatuajes') setOpenCategory('Tatuajes');
+              }
+            }
+            if (parsed.barberId) {
+              const matchedBarber = filteredBarbers.find(b => b.id === parsed.barberId);
+              if (matchedBarber) setSelectedBarber(matchedBarber);
+            }
+            if (parsed.date) setSelectedDate(new Date(parsed.date));
+            if (parsed.time) setSelectedTime(parsed.time);
+            if (parsed.beverage) setSelectedBeverage(parsed.beverage);
+            if (parsed.notes) setNotes(parsed.notes);
+            if (parsed.category) setSelectedCategory(parsed.category);
+            if (parsed.step) {
+              setStep(parsed.step);
+              setShowWelcome(false);
+            }
+            localStorage.removeItem('panda_draft_booking');
+          } catch (e) {
+            console.error('Error restoring draft booking:', e);
+          }
+        }
       } catch (e) {
         console.error('Error loading data:', e);
       } finally {
@@ -360,11 +467,12 @@ export default function BookAppointment() {
   // Save current progress & trigger Google Login redirect
   const handleGoogleLogin = () => {
     localStorage.setItem('panda_draft_booking', JSON.stringify({
-      service: selectedService,
-      barber: selectedBarber,
+      serviceId: selectedService?.id,
+      barberId: selectedBarber?.id,
       date: selectedDate ? selectedDate.toISOString() : null,
       time: selectedTime,
       beverage: selectedBeverage,
+      notes: notes,
       category: selectedCategory,
       step: 6
     }));
@@ -442,7 +550,8 @@ export default function BookAppointment() {
         service_id: selectedService.id,
         staff_id: selectedBarber.id,
         scheduled_at: scheduledAt.toISOString(),
-        beverage_selection: selectedBeverage
+        beverage_selection: selectedBeverage,
+        notes: notes
       });
       setSuccess(true);
     } catch (err) {
@@ -567,6 +676,7 @@ export default function BookAppointment() {
     >
       <PandaLoader visible={loading && !showWelcome} />
       <div 
+        ref={scrollContainerRef}
         className={`relative w-full h-full overflow-x-hidden flex flex-col justify-between items-center bg-center ${showWelcome ? 'overflow-y-hidden text-clip' : 'overflow-y-auto'}`}
         style={{
           height: window.innerWidth > 768 ? 'calc(100vh - 48px)' : '100dvh',
@@ -667,9 +777,10 @@ export default function BookAppointment() {
 
         {/* ── INTERACTIVE WIZARD FLOW SCREEN (STEPS 1-6) ── */}
         {(!showWelcome || isTransitioning) && !success && (
-          <div className="w-full max-w-xl mx-auto px-4 pt-6 pb-24 flex flex-col flex-1 relative z-10">
+          <div className={`w-full max-w-xl mx-auto px-4 pb-24 flex flex-col flex-1 relative z-10 ${step === 2 && expandedBarber ? 'pt-0' : 'pt-6'}`}>
             
             {/* Wizard Header: PASO X DE 6 with title/subtitle and back button */}
+            {!(step === 2 && expandedBarber) && (
             <div className="mb-4 relative text-center">
               {/* Circular back button on the left */}
               <div className="absolute left-0 top-0">
@@ -709,26 +820,29 @@ export default function BookAppointment() {
               <div className="mt-2 space-y-1">
                 <h1 className="text-2xl font-extrabold tracking-tight text-white leading-tight">
                   {step === 1 && "¿Qué servicio buscas hoy?"}
-                  {step === 2 && <>Elige tu <span className="text-[var(--champagne)]">Artista</span></>}
+                  {step === 2 && selectedCategory === 'Tatuajes' && <>Elige tu <span className="text-[var(--champagne)]">Tatuador</span></>}
+                  {step === 2 && selectedCategory !== 'Tatuajes' && <>Elige tu <span className="text-[var(--champagne)]">Barbero</span></>}
                   {step === 3 && <>Selecciona la <span className="text-[var(--champagne)]">Fecha</span></>}
                   {step === 4 && <>Elige la <span className="text-[var(--champagne)]">Hora</span></>}
-                  {step === 5 && <>Protocolo de <span className="text-[var(--champagne)]">Conserjería</span></>}
+                  {step === 5 && <>Personaliza tu <span className="text-[var(--champagne)]">Experiencia</span></>}
                   {step === 6 && <>Completa tu <span className="text-[var(--champagne)]">Reserva</span></>}
                 </h1>
                 <p className="text-[var(--text-secondary)] text-[11px] font-medium max-w-sm mx-auto">
                   {step === 1 && "Elige el servicio que mejor se adapte a tu estilo."}
-                  {step === 2 && "Cada barbero tiene su especialidad. Escoge el que mejor va contigo."}
+                  {step === 2 && selectedCategory === 'Tatuajes' && "Cada artista tiene su estilo único. Escoge el que mejor se adapte a tu visión."}
+                  {step === 2 && selectedCategory !== 'Tatuajes' && "Cada barbero tiene su especialidad. Escoge el que mejor va contigo."}
                   {step === 3 && "Elige el día que mejor se adapte a tu agenda."}
                   {step === 4 && "Elige el bloque horario disponible."}
-                  {step === 5 && "Ameniza tu espera con una de nuestras bebidas de cortesía."}
+                  {step === 5 && "Queremos que tu visita sea perfecta desde que llegas hasta que te vas."}
                   {step === 6 && "Ingresa tus datos para asegurar tu cita en 1 clic."}
                 </p>
               </div>
             </div>
+            )}
 
             {/* Content - No wrapper card */}
             <div className="flex flex-col flex-1 relative z-10">
-              <div key={step} className="transition-step-container w-full h-full flex flex-col justify-between flex-1 wizard-content-enter">
+              <div key={step} className="transition-step-container w-full h-full flex flex-col justify-between flex-1 wizard-content-enter pt-4">
                 
                 {/* STEP 1: Categories & Services (Accordion) */}
                 {step === 1 && (
@@ -785,9 +899,7 @@ export default function BookAppointment() {
                                       onClick={() => {
                                         setSelectedService(service);
                                         setSelectedCategory(cat.key);
-                                        setTimeout(() => {
-                                          nextBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                        }, 100);
+                                        scrollToNextButton();
                                       }}
                                       type="button"
                                       className={`accordion-service-item ${isSelected ? 'is-selected' : ''}`}
@@ -821,18 +933,15 @@ export default function BookAppointment() {
                 )}
 
                 {/* STEP 2: Barbers */}
+{/* STEP 2: Barbers */}
                 {step === 2 && (
                   <div className="w-full">
                     {expandedBarber ? (
                       <div className="expanded-card-reveal">
                         {(() => {
                           const bIdx = barbers.findIndex(b => b.id === expandedBarber.id);
-                          const barberPhotos = ['/barbers/barber1.jpg', '/barbers/barber2.jpg', '/barbers/barber3.jpg', '/barbers/barber4.jpg', '/barbers/barber5.jpg'];
-                          const photo = expandedBarber.image_url || barberPhotos[bIdx % barberPhotos.length];
-                          const specialties = ['Especialista en Fade', 'Especialista en Barba', 'Especialista en Diseños', 'Master Barber', 'Especialista en Fade'];
-                          const specialty = specialties[bIdx % specialties.length];
-                          const badges = ['TOP FADE ARTIST', 'EXPERTO EN BARBA', 'DISEÑADOR CREATIVO', 'MASTER BARBER', 'FADE SPECIALIST'];
-                          const badge = badges[bIdx % badges.length];
+                          const specialty = expandedBarber.specialty || (expandedBarber.role?.includes('Tatuador') ? 'Artista Tatuador' : 'Barbero Profesional');
+                          const badge = expandedBarber.badge || '';
                           const ratings = ['4.9', '4.8', '4.9', '4.7', '4.8'];
                           const rating = ratings[bIdx % ratings.length];
                           const reviewsList = [324, 210, 189, 98, 142];
@@ -840,22 +949,39 @@ export default function BookAppointment() {
                           return (
                             <>
                               {/* Hero photo */}
-                              <div className="relative h-56 -mx-4 -mt-4 mb-4 overflow-hidden">
-                                {photo && <img src={photo} alt={expandedBarber.name} className="w-full h-full object-cover" />}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0e] via-[#0a0a0e]/30 to-transparent"></div>
-                                <button onClick={() => setExpandedBarber(null)} className="absolute top-3 left-3 w-9 h-9 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center z-10">
+                              <div className="relative h-56 -mx-4 mb-4 overflow-hidden rounded-b-3xl border-b border-white/5 shadow-2xl bg-white/[0.02]">
+                                {expandedBarber.image_url ? (
+                                  <img src={expandedBarber.image_url} alt={expandedBarber.name} className="w-full h-full object-cover object-top" />
+                                ) : (
+                                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-white/[0.04] to-transparent">
+                                    <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/20">
+                                      <User size={32} />
+                                    </div>
+                                    <span className="text-[10px] text-white/20 font-bold uppercase tracking-wider">Sin foto de perfil</span>
+                                  </div>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0e] via-[#0a0a0e]/20 to-transparent"></div>
+                                <button onClick={() => { setExpandedBarber(null); setExpandedBarberPortfolio([]); }} className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center z-10 hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer">
                                   <ChevronLeft size={18} className="text-white" />
                                 </button>
-                                <div className="absolute top-3 right-3 flex gap-2 z-10">
-                                  <button className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center">
+                                <div className="absolute top-4 right-4 flex gap-2 z-10">
+                                  <button 
+                                    onClick={() => handleShare(expandedBarber)}
+                                    className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer"
+                                    title="Compartir"
+                                  >
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                                   </button>
-                                  <button className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                  <button 
+                                    onClick={() => toggleFavorite(expandedBarber.id)}
+                                    className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer"
+                                    title="Favorito"
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill={favorites.includes(expandedBarber.id) ? "#ff453a" : "none"} stroke={favorites.includes(expandedBarber.id) ? "#ff453a" : "white"} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                                   </button>
                                 </div>
                                 <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-                                  <span className="inline-block px-3 py-1 rounded-lg bg-white/10 backdrop-blur-sm text-[9px] font-black text-white uppercase tracking-wider mb-2">{badge}</span>
+                                  {badge && <span className="inline-block px-3 py-1 rounded-lg bg-white/10 backdrop-blur-sm text-[9px] font-black text-white uppercase tracking-wider mb-2">{badge}</span>}
                                   <h3 className="font-black text-3xl text-white leading-none">{expandedBarber.name}</h3>
                                   <div className="flex items-center gap-2 mt-1.5">
                                     <Star size={14} className="text-amber-400 fill-amber-400" />
@@ -883,26 +1009,40 @@ export default function BookAppointment() {
 
                               {/* About */}
                               <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4 mb-4">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-bold text-sm text-white">Sobre {expandedBarber.name}</h4>
-                                  <button className="text-[var(--champagne)] text-[11px] font-bold flex items-center gap-1">Más información <ChevronRight size={12} /></button>
-                                </div>
-                                <p className="text-[11px] text-white/40 leading-relaxed">Especialista en fades y cortes modernos. Me enfoco en resaltar tu estilo y personalidad con cada detalle.</p>
+                                <h4 className="font-bold text-sm text-white mb-2">Sobre {expandedBarber.name}</h4>
+                                <p className="text-[11px] text-white/40 leading-relaxed">
+                                  {expandedBarber.biography || "Especialista en fades y cortes modernos. Me enfoco en resaltar tu estilo y personalidad con cada detalle."}
+                                </p>
                               </div>
 
-                              {/* Recent works */}
+                              {/* Recent works — real photos from staff_portfolio */}
                               <div className="mb-4">
                                 <div className="flex items-center justify-between mb-3">
                                   <h4 className="font-bold text-sm text-white">Trabajos recientes</h4>
-                                  <button className="text-[var(--champagne)] text-[11px] font-bold">Ver todos</button>
                                 </div>
-                                <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-                                  {[1,2,3,4].map(i => (
-                                    <div key={i} className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white/5">
-                                      {photo && <img src={photo} alt="" className="w-full h-full object-cover" />}
-                                    </div>
-                                  ))}
-                                </div>
+                                {portfolioLoading ? (
+                                  <div className="flex gap-2">
+                                    {[1,2,3].map(i => (
+                                      <div key={i} className="w-28 h-36 rounded-2xl flex-shrink-0 bg-white/5 animate-pulse" />
+                                    ))}
+                                  </div>
+                                ) : expandedBarberPortfolio.length === 0 ? (
+                                  <div className="flex items-center justify-center h-16 rounded-xl border border-white/5 bg-white/[0.02]">
+                                    <p className="text-[10px] text-white/25 font-medium">Sin fotos de trabajos aún</p>
+                                  </div>
+                                ) : (
+                                  <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+                                    {expandedBarberPortfolio.map(photo => (
+                                      <div 
+                                        key={photo.id} 
+                                        onClick={() => setActiveLightboxImage(photo.image_url)}
+                                        className="w-28 h-36 rounded-2xl overflow-hidden flex-shrink-0 bg-white/5 border border-white/10 hover:border-[var(--champagne)] cursor-pointer transition-all duration-300 active:scale-95 shadow-lg group"
+                                      >
+                                        <img src={photo.image_url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
 
                               {/* Services */}
@@ -929,10 +1069,26 @@ export default function BookAppointment() {
 
                               {/* CTA */}
                               <button
-                                onClick={() => { setSelectedBarber(expandedBarber); setStep(step + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                                className="w-full py-3.5 bg-gradient-to-b from-[#d2c1aa] to-[#bba789] text-black font-extrabold text-xs uppercase tracking-widest flex items-center justify-center gap-2 haptic-bounce ripple-container"
+                                onClick={(e) => { createRipple(e); setSelectedBarber(expandedBarber); setStep(step + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                className="w-full relative overflow-hidden rounded-2xl haptic-bounce ripple-container group"
+                                style={{
+                                  background: 'linear-gradient(135deg, #d4bc9a 0%, #c4a882 40%, #b8976e 100%)',
+                                  boxShadow: '0 8px 32px rgba(203,183,154,0.35), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25)'
+                                }}
                               >
-                                Seleccionar {expandedBarber.name} <ChevronRight size={14} />
+                                {/* Shimmer sweep */}
+                                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+                                <div className="relative z-10 py-4 px-6 flex items-center justify-between">
+                                  <div className="flex flex-col items-start">
+                                    <span className="text-black/50 text-[9px] font-black uppercase tracking-[0.2em] leading-none mb-1">Reservar con</span>
+                                    <span className="text-black font-black text-lg leading-none tracking-tight">{expandedBarber.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-9 h-9 rounded-full bg-black/15 flex items-center justify-center">
+                                      <Check size={18} className="text-black" strokeWidth={3} />
+                                    </div>
+                                  </div>
+                                </div>
                               </button>
                             </>
                           );
@@ -941,13 +1097,14 @@ export default function BookAppointment() {
                     ) : (
                       /* GRID CARDS */
                       <div className="grid grid-cols-2 gap-3">
-                        {barbers.map((barber, bIdx) => {
-                          const specialties = ['Especialista en Fade', 'Especialista en Barba', 'Especialista en Diseños', 'Master Barber', 'Especialista en Fade'];
-                          const specialty = specialties[bIdx % specialties.length];
-                          const badgeLabels = ['TOP FADE', 'EXPERTO BARBA', 'DISEÑOS', 'PREMIUM', 'FADE PRO'];
-                          const badge = badgeLabels[bIdx % badgeLabels.length];
-                          const badgeColors = ['from-amber-500/80 to-orange-600/80', 'from-purple-500/80 to-purple-700/80', 'from-blue-500/80 to-blue-700/80', 'from-amber-400/80 to-yellow-600/80', 'from-emerald-500/80 to-emerald-700/80'];
-                          const badgeColor = badgeColors[bIdx % badgeColors.length];
+                        {barbers
+                          .filter(b => selectedCategory === 'Tatuajes'
+                            ? b.role?.includes('Tatuador') || b.role?.includes('Artista')
+                            : b.role?.includes('Barbero')
+                          )
+                          .map((barber, bIdx) => {
+                          const specialty = barber.specialty || (barber.role?.includes('Tatuador') ? 'Artista Tatuador' : 'Barbero Profesional');
+                          const badge = barber.badge || '';
                           const ratings = ['4.9', '4.8', '4.9', '4.7', '4.8'];
                           const rating = ratings[bIdx % ratings.length];
                           const reviewsList = [324, 210, 189, 98, 142];
@@ -955,35 +1112,82 @@ export default function BookAppointment() {
                           const available = bIdx % 4 !== 2;
                           const availTexts = ['Disponible hoy', 'Disponible hoy', 'Disponible mañana', 'Disponible hoy', 'Disponible el sábado'];
                           const availText = availTexts[bIdx % availTexts.length];
-                          const barberPhotos = ['/barbers/barber1.jpg', '/barbers/barber2.jpg', '/barbers/barber3.jpg', '/barbers/barber4.jpg', '/barbers/barber5.jpg'];
-                          const photo = barber.image_url || barberPhotos[bIdx % barberPhotos.length];
+                          const isSelected = selectedBarber?.id === barber.id;
                           return (
                             <button
                               key={barber.id}
-                              onClick={() => setExpandedBarber(barber)}
-                              className="relative rounded-2xl border border-white/8 overflow-hidden transition-all duration-300 cursor-pointer text-left bg-[#131316] hover:border-white/15 active:scale-[0.98] collapsed-card-reveal flex flex-col"
+                              onClick={async () => {
+                                setExpandedBarber(barber);
+                                setExpandedBarberPortfolio([]);
+                                setPortfolioLoading(true);
+                                const photos = await publicService.getStaffPortfolio(barber.id);
+                                setExpandedBarberPortfolio(photos);
+                                setPortfolioLoading(false);
+                              }}
+                              className={`relative rounded-2xl border overflow-hidden transition-all duration-300 cursor-pointer text-left bg-[#131316] hover:border-white/15 active:scale-[0.98] collapsed-card-reveal flex flex-col ${
+                                isSelected 
+                                  ? 'border-[var(--champagne)] shadow-[0_0_22px_rgba(203,183,154,0.18)] ring-1 ring-[var(--champagne)]' 
+                                  : 'border-white/8'
+                              }`}
                             >
-                              <div className="relative h-44 overflow-hidden">
-                                {photo && <img src={photo} alt={barber.name} className="w-full h-full object-cover" />}
+                              <div className="relative h-44 overflow-hidden bg-white/[0.02]">
+                                {barber.image_url ? (
+                                  <img src={barber.image_url} alt={barber.name} className="w-full h-full object-cover object-top" />
+                                ) : (
+                                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-[var(--champagne-dark)]/5 to-transparent">
+                                    <div className="w-14 h-14 rounded-full bg-white/[0.03] border border-white/5 flex items-center justify-center text-[var(--champagne)] shadow-inner">
+                                      <User size={26} strokeWidth={1.5} />
+                                    </div>
+                                    <span className="text-[8px] text-[var(--champagne)]/40 font-bold uppercase tracking-widest">Panda Barber</span>
+                                  </div>
+                                )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#131316] via-transparent to-transparent"></div>
-                                <div className={`absolute top-2 left-2 px-2 py-1 rounded-lg bg-gradient-to-br ${badgeColor} backdrop-blur-sm flex items-center gap-1`}>
-                                  <span className="text-[8px] font-black text-white uppercase tracking-wider">{badge}</span>
-                                </div>
-                                <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                
+                                {/* Selection mark */}
+                                {isSelected && (
+                                  <div className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-[var(--champagne)] flex items-center justify-center shadow-lg border border-black/10 z-10 animate-scale-up">
+                                    <Check size={14} className="text-black" strokeWidth={3} />
+                                  </div>
+                                )}
+
+                                {badge && (
+                                  <div className="absolute top-2 left-2 px-2 py-1 rounded-lg bg-gradient-to-br from-amber-500/80 to-orange-600/80 backdrop-blur-sm flex items-center gap-1">
+                                    <span className="text-[8px] font-black text-white uppercase tracking-wider">{badge}</span>
+                                  </div>
+                                )}
+                                <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center z-10" onClick={(e) => { e.stopPropagation(); toggleFavorite(barber.id); }}>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill={favorites.includes(barber.id) ? "#ff453a" : "none"} stroke={favorites.includes(barber.id) ? "#ff453a" : "white"} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                                 </div>
                               </div>
-                              <div className="p-3 flex flex-col gap-1.5">
-                                <h4 className="font-extrabold text-sm text-white leading-tight">{barber.name}</h4>
-                                <p className="text-white/40 text-[10px] font-medium">{specialty}</p>
-                                <div className="flex items-center gap-1">
-                                  <Star size={10} className="text-amber-400 fill-amber-400" />
-                                  <span className="text-[11px] font-bold text-white">{rating}</span>
-                                  <span className="text-[9px] text-white/30">({reviews})</span>
+                              <div className="p-3 flex flex-col gap-1.5 flex-1 justify-between">
+                                <div>
+                                  <h4 className="font-extrabold text-sm text-white leading-tight">{barber.name}</h4>
+                                  <p className="text-white/40 text-[10px] font-medium mt-0.5">{specialty}</p>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <Star size={10} className="text-amber-400 fill-amber-400" />
+                                    <span className="text-[11px] font-bold text-white">{rating}</span>
+                                    <span className="text-[9px] text-white/30">({reviews})</span>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-1.5 mt-1">
-                                  <span className={`w-1.5 h-1.5 rounded-full availability-pulse ${available ? '' : 'amber'}`}></span>
-                                  <span className={`text-[9px] font-bold ${available ? 'text-emerald-400' : 'text-amber-400'}`}>{availText}</span>
+                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className={`w-1.5 h-1.5 rounded-full availability-pulse ${available ? '' : 'amber'}`}></span>
+                                    <span className={`text-[9px] font-bold ${available ? 'text-emerald-400' : 'text-amber-400'}`}>{availText}</span>
+                                  </div>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedBarber(isSelected ? null : barber);
+                                      if (!isSelected) scrollToNextButton();
+                                    }}
+                                    className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                                      isSelected 
+                                        ? 'bg-[var(--champagne)] text-black shadow-lg border border-[var(--champagne)] scale-105' 
+                                        : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
+                                    }`}
+                                  >
+                                    {isSelected ? 'Elegido' : 'Elegir'}
+                                  </button>
                                 </div>
                               </div>
                             </button>
@@ -999,41 +1203,72 @@ export default function BookAppointment() {
                   <div className="space-y-6 w-full">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-white/50">Selecciona el Día</h3>
                     
-                    <div className="grid grid-cols-4 gap-3">
-                      {Array.from({ length: 12 }, (_, i) => {
-                        const date = new Date();
-                        date.setDate(date.getDate() + i);
-                        const isSelected = selectedDate?.toDateString() === date.toDateString();
-                        const isWeekend = date.getDay() === 0;
+                    <div className="space-y-6">
+                      {(() => {
+                        // Group the 12 days by month
+                        const monthsMap = new Map();
                         
-                        return (
-                          <button
-                            key={i}
-                            onClick={() => !isWeekend && setSelectedDate(date)}
-                            disabled={isWeekend}
-                            className={`p-3.5 rounded-xl text-center flex flex-col items-center justify-center border transition-all duration-200 cursor-pointer ${
-                              isWeekend
-                                ? 'opacity-20 cursor-not-allowed border-none bg-transparent'
-                                : isSelected
-                                  ? 'border-[var(--champagne)] bg-[rgba(203,183,154,0.1)] shadow-sm'
-                                  : 'border-white/5 bg-black/40 hover:bg-[#0e0e12]/60 hover:border-white/10'
-                            }`}
-                          >
-                            <span className={`text-[10px] uppercase font-bold tracking-wider ${isSelected ? 'text-[var(--champagne)]' : 'text-white/40'}`}>
-                              {date.toLocaleDateString('es', { weekday: 'short' })}
-                            </span>
-                            <span className="text-xl font-extrabold my-1">{date.getDate()}</span>
-                            <span className="text-[9px] font-semibold text-white/40 capitalize">
-                              {date.toLocaleDateString('es', { month: 'short' })}
-                            </span>
-                          </button>
-                        );
-                      })}
+                        for (let i = 0; i < 12; i++) {
+                          const date = new Date();
+                          date.setDate(date.getDate() + i);
+                          const monthName = date.toLocaleDateString('es', { month: 'long' });
+                          const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+                          
+                          if (!monthsMap.has(capitalizedMonth)) {
+                            monthsMap.set(capitalizedMonth, []);
+                          }
+                          monthsMap.get(capitalizedMonth).push({ date, relativeIndex: i });
+                        }
+
+                        return Array.from(monthsMap.entries()).map(([monthName, items]) => (
+                          <div key={monthName} className="space-y-3">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--champagne)]/60 flex items-center gap-2">
+                              <span>{monthName}</span>
+                              <div className="h-[1px] bg-white/5 flex-1"></div>
+                            </h4>
+                            <div className="grid grid-cols-4 gap-3">
+                              {items.map(({ date, relativeIndex }) => {
+                                const isSelected = selectedDate?.toDateString() === date.toDateString();
+                                const isToday = relativeIndex === 0;
+                                const isTomorrow = relativeIndex === 1;
+
+                                return (
+                                  <button
+                                    key={relativeIndex}
+                                    type="button"
+                                    onClick={() => { setSelectedDate(date); scrollToNextButton(); }}
+                                    className={`relative p-3.5 rounded-2xl text-center flex flex-col items-center justify-center border transition-all duration-300 cursor-pointer overflow-visible ${
+                                      isSelected
+                                        ? 'border-[var(--champagne)] bg-[rgba(203,183,154,0.12)] shadow-[0_0_20px_rgba(203,183,154,0.15)] scale-105 ring-1 ring-[var(--champagne)]'
+                                        : 'border-white/5 bg-black/40 hover:bg-[#0e0e12]/60 hover:border-white/10 hover:scale-[1.02]'
+                                    }`}
+                                  >
+                                    {/* Relative day badges */}
+                                    {(isToday || isTomorrow) && (
+                                      <span className="absolute -top-2 px-1.5 py-0.5 rounded-full bg-[var(--champagne)] text-black font-black text-[7px] uppercase tracking-widest leading-none shadow-md z-10 scale-90 animate-pulse">
+                                        {isToday ? 'Hoy' : 'Mañ.'}
+                                      </span>
+                                    )}
+
+                                    <span className={`text-[9px] uppercase font-bold tracking-wider ${isSelected ? 'text-[var(--champagne)]' : 'text-white/40'}`}>
+                                      {date.toLocaleDateString('es', { weekday: 'short' })}
+                                    </span>
+                                    <span className="text-xl font-black my-1 text-white">{date.getDate()}</span>
+                                    <span className="text-[8px] font-bold text-white/30 capitalize">
+                                      {date.toLocaleDateString('es', { month: 'short' }).replace('.', '')}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ));
+                      })()}
                     </div>
                     
                     <div className="flex items-center gap-2 text-white/40 text-xs bg-white/3 p-3 rounded-lg border border-white/5">
                       <Info size={14} className="text-[var(--champagne)] flex-shrink-0" />
-                      <span>Atendemos de lunes a sábado. Los domingos permanecemos cerrados por descanso.</span>
+                      <span>Atendemos todos los días de la semana (incluyendo domingos) para adaptarnos mejor a tu horario.</span>
                     </div>
                   </div>
                 )}
@@ -1053,126 +1288,184 @@ export default function BookAppointment() {
                         Cargando disponibilidad...
                       </div>
                     ) : (
-                      <div className="grid grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1">
-                        {visibleSlots.map(({ time, label, isPast, isOccupied }) => {
-                          const isSelected = selectedTime === time;
-                          const isDisabled = isPast || isOccupied;
+                      <div className="hours-infinite-wrapper">
+                        <div className="hours-scroll-container">
+                          <div className="grid grid-cols-3 gap-2.5 pr-1 py-1">
+                            {visibleSlots.map(({ time, label, isPast, isOccupied }) => {
+                              const isSelected = selectedTime === time;
+                              const isDisabled = isPast || isOccupied;
 
-                          return (
-                            <button
-                              key={time}
-                              onClick={() => !isDisabled && setSelectedTime(time)}
-                              disabled={isDisabled}
-                              className={`py-3 rounded-xl border text-center transition-all duration-200 cursor-pointer ${
-                                isOccupied 
-                                  ? 'border-red-500/20 bg-red-500/5 text-red-400/40 cursor-not-allowed opacity-50'
-                                  : isPast
-                                    ? 'border-white/3 bg-transparent text-white/10 cursor-not-allowed'
-                                    : isSelected
-                                      ? 'border-[var(--champagne)] bg-[rgba(203,183,154,0.1)] text-[var(--champagne)] font-bold scale-[1.02]'
-                                      : 'border-white/5 bg-black/40 hover:bg-[#0e0e12] hover:border-white/10 text-white'
-                              }`}
-                            >
-                              <span className="text-sm font-bold block">{label}</span>
-                              {isOccupied && <span className="text-[8px] tracking-wider uppercase font-semibold text-red-500/60 mt-0.5 block">Ocupado</span>}
-                            </button>
-                          );
-                        })}
+                              return (
+                                <button
+                                  key={time}
+                                  onClick={() => { if (!isDisabled) { setSelectedTime(time); scrollToNextButton(); } }}
+                                  disabled={isDisabled}
+                                  className={`py-3 rounded-xl border text-center transition-all duration-200 cursor-pointer ${
+                                    isOccupied 
+                                      ? 'border-red-500/20 bg-red-500/5 text-red-400/40 cursor-not-allowed opacity-50'
+                                      : isPast
+                                        ? 'border-white/3 bg-transparent text-white/10 cursor-not-allowed'
+                                        : isSelected
+                                          ? 'border-[var(--champagne)] bg-[rgba(203,183,154,0.1)] text-[var(--champagne)] font-bold scale-[1.02] shadow-[0_0_12px_rgba(203,183,154,0.15)]'
+                                          : 'border-white/5 bg-black/40 hover:bg-[#0e0e12] hover:border-white/10 text-white'
+                                  }`}
+                                >
+                                  <span className="text-sm font-bold block">{label}</span>
+                                  {isOccupied && <span className="text-[8px] tracking-wider uppercase font-semibold text-red-500/60 mt-0.5 block">Ocupado</span>}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* STEP 5: Beverage Concierge */}
+                {/* STEP 5: Beverage Concierge & Experience Customization */}
                 {step === 5 && (
-                  <div className="space-y-6 w-full">
-                    <div>
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-white/50 mb-1">Protocolo de Bienvenida</h3>
-                      <p className="text-xs text-white/40">
-                        Disfruta de una bebida premium de cortesía durante tu espera o servicio.
+                  <div className="space-y-10 w-full animate-fade-in py-2">
+                    {/* 1. Beverage Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 text-white/90">
+                        <Coffee size={18} className="text-[var(--champagne)]" />
+                        <h3 className="text-xs font-bold uppercase tracking-widest">¿Qué te gustaría tomar?</h3>
+                      </div>
+                      <p className="text-[10px] text-white/40 -mt-1">
+                        Tu bebida estará lista cuando llegues.
                       </p>
+                      <div className="grid grid-cols-4 gap-2.5">
+                        {[
+                          { id: 'Cerveza Fría', label: 'Cerveza Fría', img: '/cerveza.png', fallbackIcon: '🍺' },
+                          { id: 'Café Premium', label: 'Café Premium', img: '/cafe.png', fallbackIcon: '☕' },
+                          { id: 'Whiskey Premium', label: 'Whiskey Premium', img: '/whiskey.png', fallbackIcon: '🥃' },
+                          { id: 'Agua Natural', label: 'Agua Natural', img: '/agua.png', fallbackIcon: '💧' }
+                        ].map((bev) => {
+                          const isSelected = selectedBeverage === bev.id;
+                          return (
+                            <button
+                              key={bev.id}
+                              type="button"
+                              onClick={() => { setSelectedBeverage(bev.id); scrollToNextButton(); }}
+                              className={`relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 flex flex-col justify-between h-36 border text-center ${
+                                isSelected 
+                                  ? 'border-[var(--champagne)] bg-[rgba(203,183,154,0.05)] scale-[1.03] shadow-[0_4px_15px_rgba(203,183,154,0.15)]' 
+                                  : 'border-white/5 bg-[#0e0e12] hover:bg-[#121216] hover:border-white/10'
+                              }`}
+                            >
+                              {/* Selection Indicator Badge */}
+                              <div className="absolute top-1.5 right-1.5 z-20">
+                                <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-extrabold transition-all duration-300 ${
+                                  isSelected 
+                                    ? 'bg-[var(--champagne)] text-black scale-100' 
+                                    : 'bg-black/40 text-transparent border border-white/15 scale-90'
+                                }`}>
+                                  ✓
+                                </div>
+                              </div>
+
+                              {/* Drink image */}
+                              <div className="h-24 w-full overflow-hidden relative bg-black/40 flex items-center justify-center">
+                                {!imgErrors[bev.id] ? (
+                                  <img 
+                                    src={bev.img} 
+                                    alt={bev.label} 
+                                    onError={() => setImgErrors(prev => ({ ...prev, [bev.id]: true }))}
+                                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                                  />
+                                ) : (
+                                  <span className="text-3xl filter drop-shadow-[0_2px_8px_rgba(203,183,154,0.3)] animate-pulse">{bev.fallbackIcon}</span>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0e0e12] via-transparent to-transparent z-10" />
+                              </div>
+
+                              {/* Label */}
+                              <div className="pb-2.5 px-1 z-20">
+                                <span className={`block font-extrabold text-[9px] uppercase tracking-wider ${
+                                  isSelected ? 'text-[var(--champagne)]' : 'text-white/80'
+                                }`}>
+                                  {bev.label}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      {[
-                        { id: 'Cerveza', label: 'Cerveza Fría', desc: 'Polar Light / Pilsen', icon: '🍺' },
-                        { id: 'Café', label: 'Café Premium', desc: 'Expreso / Macchiato', icon: '☕' },
-                        { id: 'Whiskey', label: 'Whiskey On Rocks', desc: 'Servicio premium de bar', icon: '🥃' },
-                        { id: 'Agua', label: 'Agua Mineral', desc: 'Con o sin gas', icon: '💧' }
-                      ].map((bev) => {
-                        const isSelected = selectedBeverage === bev.id;
-                        return (
-                          <button
-                            key={bev.id}
-                            onClick={() => setSelectedBeverage(bev.id)}
-                            className={`p-4 rounded-2xl text-left cursor-pointer transition-all duration-300 flex flex-col justify-between h-28 beverage-card ${
-                              isSelected ? 'selected' : ''
-                            }`}
-                          >
-                            <div className="flex justify-between items-start w-full">
-                              <span className="text-xl filter drop-shadow-[0_2px_6px_rgba(203,183,154,0.35)]">{bev.icon}</span>
-                              {isSelected && (
-                                <span className="w-4 h-4 rounded-full bg-[var(--champagne)] flex items-center justify-center text-black text-[9px] font-extrabold">
-                                  ✓
-                                </span>
-                              )}
-                            </div>
-                            <div className="space-y-0.5">
-                              <span className={`block font-extrabold text-[11px] uppercase tracking-wider ${isSelected ? 'text-[var(--champagne)]' : 'text-white/95'}`}>
-                                {bev.label}
-                              </span>
-                              <span className="text-[9px] text-white/45 font-medium block leading-tight">
-                                {bev.desc}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
+                    {/* 2. Customer Notes Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 text-white/90">
+                        <MessageSquare size={18} className="text-[var(--champagne)]" />
+                        <h3 className="text-xs font-bold uppercase tracking-widest">¿Algo que debamos saber?</h3>
+                      </div>
+                      <p className="text-[10px] text-white/40 -mt-1">
+                        Cuéntanos cualquier detalle especial.
+                      </p>
+
+                      <div className="relative">
+                        <textarea
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value.slice(0, 120))}
+                          placeholder="Ej: Mantener laterales bajos, no tocar la barra, quiero probar algo nuevo, etc."
+                          className="w-full h-20 bg-black/40 border border-white/5 rounded-xl p-3 text-xs text-white placeholder-white/20 focus:outline-none focus:border-[var(--champagne)]/40 focus:bg-black/60 transition-all resize-none pr-12 text-left"
+                        />
+                        <span className="absolute bottom-2.5 right-3 text-[9px] font-bold text-white/25">
+                          {notes.length}/120
+                        </span>
+                      </div>
                     </div>
+
                   </div>
                 )}
 
                 {/* STEP 6: Confirmation & Cierre Mágico (Registration) */}
                 {step === 6 && (
-                  <div className="space-y-6 w-full">
+                  <div className="space-y-6 w-full animate-fade-in">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-white/50 text-center">Resumen de tu Turno</h3>
 
-                    <div className="bg-[#0e0e12] border border-white/5 rounded-2xl p-4 text-sm space-y-3 shadow-inner">
-                      <div className="flex justify-between items-center">
-                        <span className="text-white/40 text-xs uppercase tracking-wider">Servicio</span>
-                        <span className="font-bold text-white">{selectedService?.name}</span>
+                    <div className="relative bg-[#0d0d11]/80 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-sm space-y-4 shadow-xl overflow-hidden">
+                      {/* Decorative Gold Glow in Background */}
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--champagne)]/5 rounded-full blur-3xl pointer-events-none" />
+                      
+                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                        <span className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Servicio</span>
+                        <span className="font-extrabold text-white text-base">{selectedService?.name}</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-white/40 text-xs uppercase tracking-wider">Especialista</span>
-                        <span className="font-bold text-[var(--champagne)]">{selectedBarber?.name}</span>
+                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                        <span className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Especialista</span>
+                        <span className="font-extrabold text-[var(--champagne)] text-base">{selectedBarber?.name}</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-white/40 text-xs uppercase tracking-wider">Horario</span>
-                        <span className="font-bold text-white">
+                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                        <span className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Horario</span>
+                        <span className="font-bold text-white text-sm">
                           {selectedDate?.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} • {formatTime12(selectedTime)}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-white/40 text-xs uppercase tracking-wider">Bebida</span>
-                        <span className="font-bold text-emerald-400">{selectedBeverage}</span>
+                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                        <span className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Bebida</span>
+                        <span className="font-bold text-emerald-400 text-sm flex items-center gap-1.5">
+                          {renderBeverageIcon(selectedBeverage, 14, "text-emerald-400")}
+                          {selectedBeverage}
+                        </span>
                       </div>
-                      <div className="border-t border-white/5 pt-3 flex justify-between items-center">
-                        <span className="text-white/60 font-bold">Total a Pagar:</span>
-                        <span className="text-xl font-extrabold text-[var(--champagne)]">${selectedService?.price}</span>
+                      <div className="pt-2 flex justify-between items-center">
+                        <span className="text-white/60 font-bold uppercase text-[11px] tracking-wider">Total a Pagar:</span>
+                        <span className="text-2xl font-black text-[var(--champagne)] tracking-tight">${selectedService?.price}</span>
                       </div>
                     </div>
 
                     {!isLoggedIn && (
-                      <div className="bg-black/50 border border-[var(--border-color)] rounded-2xl p-5 space-y-5">
+                      <div className="bg-[#0b0b0e]/90 backdrop-blur-md border border-white/5 rounded-3xl p-6 space-y-6 shadow-2xl">
                         <div className="text-center space-y-1">
-                          <h4 className="font-bold text-white text-base">Cierre Mágico</h4>
+                          <h4 className="font-bold text-white text-lg tracking-tight">Cierre Mágico</h4>
                           <p className="text-xs text-white/40">Agenda tu cita y crea tu perfil express en un paso.</p>
                         </div>
 
                         <button
                           type="button"
                           onClick={handleGoogleLogin}
-                          className="w-full py-3 px-4 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                          className="w-full py-3.5 px-4 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold text-xs flex items-center justify-center gap-2.5 transition-all duration-300 hover:scale-[1.01] hover:border-white/20 active:scale-[0.99] cursor-pointer shadow-md"
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
@@ -1183,24 +1476,24 @@ export default function BookAppointment() {
                           Conectar con Google
                         </button>
 
-                        <div className="flex items-center gap-3">
-                          <div className="h-px bg-white/5 flex-1"></div>
-                          <span className="text-[10px] uppercase font-bold tracking-widest text-white/20">o llena tus datos</span>
-                          <div className="h-px bg-white/5 flex-1"></div>
+                        <div className="flex items-center gap-4 py-1">
+                          <div className="h-px bg-white/10 flex-1"></div>
+                          <span className="text-[9px] uppercase font-black tracking-widest text-white/30">o completa tus datos</span>
+                          <div className="h-px bg-white/10 flex-1"></div>
                         </div>
 
-                        <div className="flex p-0.5 rounded-lg bg-[#0e0e12] border border-white/5">
+                        <div className="flex p-1 rounded-xl bg-black/40 border border-white/5">
                           <button
                             type="button"
                             onClick={() => { setAuthTab('register'); setAuthError(''); }}
-                            className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${authTab === 'register' ? 'bg-[var(--champagne)] text-black' : 'text-white/40'}`}
+                            className={`flex-1 py-2.5 rounded-lg text-xs font-black transition-all duration-300 cursor-pointer ${authTab === 'register' ? 'bg-[var(--champagne)] text-black shadow-md' : 'text-white/40 hover:text-white/60'}`}
                           >
                             Registro Rápido
                           </button>
                           <button
                             type="button"
                             onClick={() => { setAuthTab('login'); setAuthError(''); }}
-                            className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${authTab === 'login' ? 'bg-[var(--champagne)] text-black' : 'text-white/40'}`}
+                            className={`flex-1 py-2.5 rounded-lg text-xs font-black transition-all duration-300 cursor-pointer ${authTab === 'login' ? 'bg-[var(--champagne)] text-black shadow-md' : 'text-white/40 hover:text-white/60'}`}
                           >
                             Tengo Cuenta
                           </button>
@@ -1213,26 +1506,26 @@ export default function BookAppointment() {
                         )}
 
                         {authTab === 'register' ? (
-                          <form onSubmit={handleCheckout} className="space-y-3.5 text-left">
+                          <form onSubmit={handleCheckout} className="space-y-4 text-left">
                             <div className="grid grid-cols-2 gap-3">
                               <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Nombre</label>
+                                <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Nombre</label>
                                 <input
                                   type="text"
                                   value={authForm.name}
                                   onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
-                                  className="w-full bg-[#0e0e12] border border-white/5 rounded-xl px-3 py-2 text-xs focus:border-[var(--champagne)] outline-none"
+                                  className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-[var(--champagne)] focus:bg-white/[0.04] focus:shadow-[0_0_12px_rgba(203,183,154,0.1)] transition-all duration-200 outline-none"
                                   placeholder="Juan"
                                   required
                                 />
                               </div>
                               <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Apellido</label>
+                                <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Apellido</label>
                                 <input
                                   type="text"
                                   value={authForm.lastname}
                                   onChange={(e) => setAuthForm({ ...authForm, lastname: e.target.value })}
-                                  className="w-full bg-[#0e0e12] border border-white/5 rounded-xl px-3 py-2 text-xs focus:border-[var(--champagne)] outline-none"
+                                  className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-[var(--champagne)] focus:bg-white/[0.04] focus:shadow-[0_0_12px_rgba(203,183,154,0.1)] transition-all duration-200 outline-none"
                                   placeholder="Pérez"
                                   required
                                 />
@@ -1241,23 +1534,23 @@ export default function BookAppointment() {
 
                             <div className="grid grid-cols-2 gap-3">
                               <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Teléfono</label>
+                                <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Teléfono</label>
                                 <input
                                   type="tel"
                                   value={authForm.phone}
                                   onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })}
-                                  className="w-full bg-[#0e0e12] border border-white/5 rounded-xl px-3 py-2 text-xs focus:border-[var(--champagne)] outline-none"
+                                  className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-[var(--champagne)] focus:bg-white/[0.04] focus:shadow-[0_0_12px_rgba(203,183,154,0.1)] transition-all duration-200 outline-none"
                                   placeholder="+58 412..."
                                   required
                                 />
                               </div>
                               <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Cédula</label>
+                                <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Cédula</label>
                                 <input
                                   type="text"
                                   value={authForm.id_card}
                                   onChange={(e) => setAuthForm({ ...authForm, id_card: e.target.value })}
-                                  className="w-full bg-[#0e0e12] border border-white/5 rounded-xl px-3 py-2 text-xs focus:border-[var(--champagne)] outline-none"
+                                  className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-[var(--champagne)] focus:bg-white/[0.04] focus:shadow-[0_0_12px_rgba(203,183,154,0.1)] transition-all duration-200 outline-none"
                                   placeholder="V-12345678"
                                   required
                                 />
@@ -1265,35 +1558,35 @@ export default function BookAppointment() {
                             </div>
 
                             <div className="space-y-1">
-                              <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Fecha de Nacimiento</label>
+                              <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Fecha de Nacimiento</label>
                               <input
                                 type="date"
                                 value={authForm.birth_date}
                                 onChange={(e) => setAuthForm({ ...authForm, birth_date: e.target.value })}
-                                className="w-full bg-[#0e0e12] border border-white/5 rounded-xl px-3 py-2 text-xs focus:border-[var(--champagne)] outline-none text-white"
+                                className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-[var(--champagne)] focus:bg-white/[0.04] focus:shadow-[0_0_12px_rgba(203,183,154,0.1)] transition-all duration-200 outline-none"
                                 required
                               />
                             </div>
 
                             <div className="space-y-1">
-                              <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Email (Opcional)</label>
+                              <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Email (Opcional)</label>
                               <input
                                 type="email"
                                 value={authForm.email}
                                 onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
-                                className="w-full bg-[#0e0e12] border border-white/5 rounded-xl px-3 py-2 text-xs focus:border-[var(--champagne)] outline-none"
+                                className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-[var(--champagne)] focus:bg-white/[0.04] focus:shadow-[0_0_12px_rgba(203,183,154,0.1)] transition-all duration-200 outline-none"
                                 placeholder="juan@ejemplo.com"
                               />
                             </div>
 
                             <div className="space-y-1">
-                              <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Contraseña de Cuenta</label>
+                              <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Contraseña de Cuenta</label>
                               <div className="relative">
                                 <input
                                   type={showPassword ? 'text' : 'password'}
                                   value={authForm.password}
                                   onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
-                                  className="w-full bg-[#0e0e12] border border-white/5 rounded-xl pl-3 pr-10 py-2 text-xs focus:border-[var(--champagne)] outline-none"
+                                  className="w-full bg-white/[0.02] border border-white/5 rounded-xl pl-4 pr-10 py-3 text-xs text-white focus:border-[var(--champagne)] focus:bg-white/[0.04] focus:shadow-[0_0_12px_rgba(203,183,154,0.1)] transition-all duration-200 outline-none"
                                   placeholder="Mínimo 6 caracteres"
                                   minLength={6}
                                   required
@@ -1311,7 +1604,7 @@ export default function BookAppointment() {
                             <button
                               type="submit"
                               disabled={submitting}
-                              className="btn-gold w-full py-3.5 mt-2 rounded-full font-bold uppercase tracking-wider text-xs shadow-md cursor-pointer"
+                              className="btn-gold w-full py-4 mt-3 rounded-full font-bold uppercase tracking-wider text-xs shadow-md cursor-pointer haptic-bounce"
                             >
                               {submitting ? 'Agendando...' : 'Crear Cuenta & Confirmar'}
                             </button>
@@ -1319,25 +1612,25 @@ export default function BookAppointment() {
                         ) : (
                           <form onSubmit={handleCheckout} className="space-y-4 text-left">
                             <div className="space-y-1">
-                              <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Email o Teléfono</label>
+                              <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Email o Teléfono</label>
                               <input
                                 type="text"
                                 value={loginForm.identifier}
                                 onChange={(e) => setLoginForm({ ...loginForm, identifier: e.target.value })}
-                                className="w-full bg-[#0e0e12] border border-white/5 rounded-xl px-3 py-2 text-xs focus:border-[var(--champagne)] outline-none"
+                                className="w-full bg-white/[0.02] border border-white/5 rounded-xl px-4 py-3 text-xs text-white focus:border-[var(--champagne)] focus:bg-white/[0.04] focus:shadow-[0_0_12px_rgba(203,183,154,0.1)] transition-all duration-200 outline-none"
                                 placeholder="juan@ejemplo.com o 0412..."
                                 required
                               />
                             </div>
 
                             <div className="space-y-1">
-                              <label className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Contraseña</label>
+                              <label className="text-[10px] font-extrabold text-white/40 uppercase tracking-widest">Contraseña</label>
                               <div className="relative">
                                 <input
                                   type={showPassword ? 'text' : 'password'}
                                   value={loginForm.password}
                                   onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                                  className="w-full bg-[#0e0e12] border border-white/5 rounded-xl pl-3 pr-10 py-2 text-xs focus:border-[var(--champagne)] outline-none"
+                                  className="w-full bg-white/[0.02] border border-white/5 rounded-xl pl-4 pr-10 py-3 text-xs text-white focus:border-[var(--champagne)] focus:bg-white/[0.04] focus:shadow-[0_0_12px_rgba(203,183,154,0.1)] transition-all duration-200 outline-none"
                                   placeholder="Contraseña"
                                   required
                                 />
@@ -1354,7 +1647,7 @@ export default function BookAppointment() {
                             <button
                               type="submit"
                               disabled={submitting}
-                              className="btn-gold w-full py-3.5 mt-2 rounded-full font-bold uppercase tracking-wider text-xs shadow-md cursor-pointer"
+                              className="btn-gold w-full py-4 mt-3 rounded-full font-bold uppercase tracking-wider text-xs shadow-md cursor-pointer haptic-bounce"
                             >
                               {submitting ? 'Verificando...' : 'Iniciar Sesión & Confirmar'}
                             </button>
@@ -1368,8 +1661,8 @@ export default function BookAppointment() {
               </div>
             </div>
 
-            {/* Footer Navigation Buttons */}
-            <div className="mt-4 pb-2">
+            {/* Footer Navigation Buttons — hidden when barber profile is expanded */}
+            <div className={`mt-4 pb-2 ${step === 2 && expandedBarber ? 'hidden' : ''}`}>
               {step < 6 ? (
                 <button
                   ref={nextBtnRef}
@@ -1383,7 +1676,7 @@ export default function BookAppointment() {
                 >
                   Siguiente <ChevronRight size={18} />
                 </button>
-              ) : (
+              ) : isLoggedIn ? (
                 <button
                   onClick={(e) => { createRipple(e); handleCheckout(); }}
                   disabled={submitting}
@@ -1391,12 +1684,53 @@ export default function BookAppointment() {
                 >
                   {submitting ? 'Agendando...' : 'Confirmar Reserva'}
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
         )}
 
       </div>
+
+      {/* Lightbox Overlay for Recent Works */}
+      {activeLightboxImage && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-[99999] flex items-center justify-center p-4 transition-all duration-300 animate-fade-in"
+          onClick={() => setActiveLightboxImage(null)}
+        >
+          <button 
+            className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 active:scale-95 transition-all rounded-full flex items-center justify-center text-white border border-white/10 cursor-pointer"
+            onClick={() => setActiveLightboxImage(null)}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+          <div 
+            className="relative max-w-full max-h-[85vh] aspect-[3/4] rounded-3xl overflow-hidden border border-white/15 shadow-2xl animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={activeLightboxImage} 
+              alt="Recent Work" 
+              className="w-full h-full object-cover" 
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Toast Alert for Share & Favorites */}
+      {toast && (
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[999999] bg-black/80 border border-white/10 text-white/90 px-4 py-2.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6)] text-[11px] font-semibold flex items-center gap-3 backdrop-blur-xl animate-scale-in tracking-wide border-t border-white/15">
+          {toast.type === 'success' && (
+            <svg className="text-[var(--champagne)] animate-pulse" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          )}
+          {toast.type === 'favorite' && (
+            <svg className="text-red-500 animate-pulse" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          )}
+          {toast.type === 'unfavorite' && (
+            <svg className="text-white/40" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          )}
+          <span className="opacity-95 leading-none pr-1">{toast.text}</span>
+        </div>
+      )}
     </div>
   );
 }

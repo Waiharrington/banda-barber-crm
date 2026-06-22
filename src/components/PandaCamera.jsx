@@ -1,9 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Camera, X, Check, RefreshCw, Upload, Image as ImageIcon } from 'lucide-react';
 
 /**
  * PandaCamera - Un componente premium para capturar o subir fotos.
- * Diseñado para permitir ambas opciones desde el primer momento.
+ * Diseñado para permitir ambas opciones desde el primer momento, con reencuadre interactivo (drag-to-crop).
  */
 const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
   const videoRef = useRef(null);
@@ -12,6 +12,25 @@ const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
   const streamRef = useRef(null);
   const [capturedImage, setCapturedImage] = useState(null);
   const [error, setError] = useState(null);
+
+  // Crop / Drag States
+  const [imgDetails, setImgDetails] = useState({
+    naturalWidth: 0,
+    naturalHeight: 0,
+    scaledWidth: 0,
+    scaledHeight: 0,
+    minX: 0,
+    maxX: 0,
+    minY: 0,
+    maxY: 0,
+    viewportWidth: 0,
+    viewportHeight: 0
+  });
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const dragStart = useRef({ x: 0, y: 0 });
+  const positionStart = useRef({ x: 0, y: 0 });
+  const isDragging = useRef(false);
 
   const stopCamera = () => {
     if (streamRef.current) {
@@ -82,16 +101,152 @@ const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
 
   const retake = () => {
     setCapturedImage(null);
+    setImgDetails({
+      naturalWidth: 0,
+      naturalHeight: 0,
+      scaledWidth: 0,
+      scaledHeight: 0,
+      minX: 0,
+      maxX: 0,
+      minY: 0,
+      maxY: 0,
+      viewportWidth: 0,
+      viewportHeight: 0
+    });
+    setPosition({ x: 0, y: 0 });
     startCamera();
   };
 
-  const confirm = () => {
-    onCapture(capturedImage);
-    stopCamera();
-    onClose();
+  const handleImageLoad = (e) => {
+    const img = e.target;
+    const container = img.parentElement;
+    const vW = container.clientWidth || 300;
+    const vH = container.clientHeight || 400;
+
+    const iW = img.naturalWidth || 300;
+    const iH = img.naturalHeight || 400;
+
+    const scale = Math.max(vW / iW, vH / iH);
+    const sW = iW * scale;
+    const sH = iH * scale;
+
+    const minX = vW - sW;
+    const minY = vH - sH;
+
+    setImgDetails({
+      naturalWidth: iW,
+      naturalHeight: iH,
+      scaledWidth: sW,
+      scaledHeight: sH,
+      minX,
+      maxX: 0,
+      minY,
+      maxY: 0,
+      viewportWidth: vW,
+      viewportHeight: vH
+    });
+
+    // Center the image initially
+    setPosition({
+      x: (vW - sW) / 2,
+      y: (vH - sH) / 2
+    });
   };
 
-  React.useEffect(() => {
+  // Mouse Drag Events
+  const handleDragStart = (e) => {
+    isDragging.current = true;
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    positionStart.current = { ...position };
+  };
+
+  const handleDragMove = (e) => {
+    if (!isDragging.current || imgDetails.naturalWidth === 0) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+
+    let newX = positionStart.current.x + dx;
+    let newY = positionStart.current.y + dy;
+
+    newX = Math.max(imgDetails.minX, Math.min(imgDetails.maxX, newX));
+    newY = Math.max(imgDetails.minY, Math.min(imgDetails.maxY, newY));
+
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handleDragEnd = () => {
+    isDragging.current = false;
+  };
+
+  // Touch Events
+  const handleTouchStart = (e) => {
+    if (e.touches.length !== 1) return;
+    isDragging.current = true;
+    dragStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    positionStart.current = { ...position };
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging.current || e.touches.length !== 1 || imgDetails.naturalWidth === 0) return;
+    const dx = e.touches[0].clientX - dragStart.current.x;
+    const dy = e.touches[0].clientY - dragStart.current.y;
+
+    let newX = positionStart.current.x + dx;
+    let newY = positionStart.current.y + dy;
+
+    newX = Math.max(imgDetails.minX, Math.min(imgDetails.maxX, newX));
+    newY = Math.max(imgDetails.minY, Math.min(imgDetails.maxY, newY));
+
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handleTouchEnd = () => {
+    isDragging.current = false;
+  };
+
+  const confirm = () => {
+    if (imgDetails.naturalWidth > 0 && imgDetails.naturalHeight > 0) {
+      const cropCanvas = document.createElement('canvas');
+      const scale = imgDetails.scaledWidth / imgDetails.naturalWidth;
+      
+      const wCrop = imgDetails.viewportWidth / scale;
+      const hCrop = imgDetails.viewportHeight / scale;
+
+      const sX = -position.x / scale;
+      const sY = -position.y / scale;
+
+      // High-res output standardizing on exactly 3:4 aspect ratio (900x1200)
+      const targetW = 900;
+      const targetH = 1200;
+
+      cropCanvas.width = targetW;
+      cropCanvas.height = targetH;
+
+      const ctx = cropCanvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      const tempImg = new Image();
+      tempImg.onload = () => {
+        ctx.drawImage(
+          tempImg,
+          sX, sY, wCrop, hCrop,
+          0, 0, targetW, targetH
+        );
+        const croppedDataUrl = cropCanvas.toDataURL('image/jpeg', 0.85);
+        onCapture(croppedDataUrl);
+        stopCamera();
+        onClose();
+      };
+      tempImg.src = capturedImage;
+    } else {
+      onCapture(capturedImage);
+      stopCamera();
+      onClose();
+    }
+  };
+
+  useEffect(() => {
     startCamera();
     return stopCamera;
   }, []);
@@ -154,7 +309,7 @@ const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
               </div>
             )}
             
-            {/* Action Bar (Simplified & Integrated) */}
+            {/* Action Bar */}
             <div style={{ 
               position: 'absolute', 
               bottom: '0', 
@@ -202,13 +357,94 @@ const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
                 }} />
               </button>
 
-              <div style={{ width: '56px' }} /> {/* Spacer for balance */}
+              <div style={{ width: '56px' }} />
             </div>
           </>
         ) : (
-          <div style={{ width: '100%', height: '100%', animation: 'slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-            <img src={capturedImage} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            <div style={{ position: 'absolute', bottom: '32px', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '24px' }}>
+          <div 
+            style={{ 
+              position: 'relative', 
+              width: '100%', 
+              height: '100%', 
+              overflow: 'hidden', 
+              cursor: 'grab',
+              animation: 'slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)' 
+            }}
+            onMouseDown={handleDragStart}
+            onMouseMove={handleDragMove}
+            onMouseUp={handleDragEnd}
+            onMouseLeave={handleDragEnd}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <img 
+              src={capturedImage} 
+              alt="Preview" 
+              onLoad={handleImageLoad}
+              style={{ 
+                position: 'absolute',
+                width: imgDetails.scaledWidth ? `${imgDetails.scaledWidth}px` : '100%', 
+                height: imgDetails.scaledHeight ? `${imgDetails.scaledHeight}px` : '100%', 
+                left: `${position.x}px`,
+                top: `${position.y}px`,
+                userSelect: 'none',
+                pointerEvents: 'none',
+                maxWidth: 'none',
+                maxHeight: 'none'
+              }} 
+            />
+
+            {/* Grid overlay for cropping guides */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              border: '2px solid var(--gold-primary)',
+              pointerEvents: 'none',
+              boxShadow: 'inset 0 0 40px rgba(0,0,0,0.6)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', height: '33.33%', borderBottom: '1px dashed rgba(255,255,255,0.15)' }}>
+                <div style={{ width: '33.33%', borderRight: '1px dashed rgba(255,255,255,0.15)' }} />
+                <div style={{ width: '33.33%', borderRight: '1px dashed rgba(255,255,255,0.15)' }} />
+                <div style={{ width: '33.33%' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', height: '33.33%', borderBottom: '1px dashed rgba(255,255,255,0.15)' }}>
+                <div style={{ width: '33.33%', borderRight: '1px dashed rgba(255,255,255,0.15)' }} />
+                <div style={{ width: '33.33%', borderRight: '1px dashed rgba(255,255,255,0.15)' }} />
+                <div style={{ width: '33.33%' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', height: '33.33%' }}>
+                <div style={{ width: '33.33%', borderRight: '1px dashed rgba(255,255,255,0.15)' }} />
+                <div style={{ width: '33.33%', borderRight: '1px dashed rgba(255,255,255,0.15)' }} />
+                <div style={{ width: '33.33%' }} />
+              </div>
+            </div>
+
+            {/* Instruction Banner */}
+            <div style={{
+              position: 'absolute',
+              top: '16px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: 'rgba(0,0,0,0.75)',
+              padding: '6px 16px',
+              borderRadius: '30px',
+              fontSize: '11px',
+              color: 'white',
+              pointerEvents: 'none',
+              fontWeight: '700',
+              border: '1px solid rgba(255,255,255,0.1)',
+              letterSpacing: '0.5px',
+              whiteSpace: 'nowrap'
+            }}>
+              ↔️ Arrastra para reencuadrar la foto ↕️
+            </div>
+
+            {/* Bottom buttons */}
+            <div style={{ position: 'absolute', bottom: '32px', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '24px', pointerEvents: 'auto' }}>
               <button 
                 onClick={retake}
                 style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(10px)' }}

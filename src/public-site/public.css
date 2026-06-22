@@ -768,8 +768,9 @@
 
 /* Custom Category Accordion Styles */
 .accordion-category-card {
+  --card-bg: rgb(18, 18, 22);
   border-color: rgba(203, 183, 154, 0.1);
-  background: rgba(18, 18, 22, 0.9);
+  background: var(--card-bg);
   border-radius: 16px;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
@@ -778,8 +779,9 @@
 }
 
 .accordion-category-card.is-open {
+  --card-bg: rgb(22, 22, 26);
   border-color: rgba(203, 183, 154, 0.35);
-  background: rgba(18, 18, 22, 0.95);
+  background: var(--card-bg);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
@@ -861,7 +863,7 @@
   right: 0;
   top: 0;
   bottom: 0;
-  width: 35%;
+  width: 48%;
   z-index: 1;
   overflow: hidden;
   border-radius: 0 16px 16px 0;
@@ -878,7 +880,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(18, 18, 22, 1) 0%, rgba(18, 18, 22, 0.8) 30%, rgba(18, 18, 22, 0.2) 60%, transparent 100%);
+  background: linear-gradient(90deg, var(--card-bg) 0%, rgba(18, 18, 22, 0.75) 20%, rgba(18, 18, 22, 0.1) 60%, transparent 95%);
   z-index: 1;
 }
 
@@ -886,7 +888,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(18, 18, 22, 0.9) 0%, rgba(18, 18, 22, 0.2) 20%, transparent 35%, transparent 65%, rgba(18, 18, 22, 0.2) 80%, rgba(18, 18, 22, 0.9) 100%);
+  background: linear-gradient(180deg, var(--card-bg) 0%, rgba(18, 18, 22, 0.08) 6%, transparent 15%, transparent 85%, rgba(18, 18, 22, 0.08) 94%, var(--card-bg) 100%);
   z-index: 2;
 }
 
@@ -1286,3 +1288,41 @@
 .collapsed-card-reveal:nth-child(3) { animation-delay: 0.14s; }
 .collapsed-card-reveal:nth-child(4) { animation-delay: 0.21s; }
 .collapsed-card-reveal:nth-child(5) { animation-delay: 0.28s; }
+
+/* Infinite Scroll visual fade for hour blocks */
+.hours-infinite-wrapper {
+  position: relative;
+  width: 100%;
+}
+.hours-scroll-container {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 12px 2px;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+.hours-scroll-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+.hours-infinite-wrapper::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  background: linear-gradient(to top, #07070a 15%, rgba(7, 7, 10, 0.8) 40%, transparent 100%);
+  pointer-events: none;
+  z-index: 10;
+}
+.hours-infinite-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(to bottom, #07070a 10%, transparent 100%);
+  pointer-events: none;
+  z-index: 10;
+}
