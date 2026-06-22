@@ -36,6 +36,7 @@ import PandaLoader from '../../components/PandaLoader';
 import bgDesktop from '../../assets/barbershop_desktop.png';
 import bgMobile from '../../assets/barbershop_mobile.png';
 import logo from '../../assets/logo.png';
+import pandaImg from '../../assets/panda_logo_nobg.png';
 
 // Helper to render beverage icons uniformly without using raw system emojis
 const renderBeverageIcon = (beverageName, size = 16, className = "text-[var(--champagne)]") => {
@@ -75,6 +76,32 @@ function isTimePast(time24) {
   return h < now.getHours() || (h === now.getHours() && m <= now.getMinutes());
 }
 
+// Custom Barber Avatar component that falls back gracefully if image is missing or fails to load
+function BarberAvatar({ url, name }) {
+  const [error, setError] = useState(!url);
+  
+  useEffect(() => {
+    setError(!url);
+  }, [url]);
+
+  if (error) {
+    return (
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 flex-shrink-0">
+        <User size={16} className="text-[#CBB79A]" />
+      </div>
+    );
+  }
+
+  return (
+    <img 
+      src={url} 
+      alt={name} 
+      onError={() => setError(true)}
+      className="w-10 h-10 rounded-xl object-cover object-top border border-white/10 flex-shrink-0" 
+    />
+  );
+}
+
 export default function BookAppointment() {
   const navigate = useNavigate();
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -111,6 +138,23 @@ export default function BookAppointment() {
     const saved = localStorage.getItem('bookingState');
     return saved ? JSON.parse(saved).selectedBarber : null;
   });
+  const [showInlineEdit, setShowInlineEdit] = useState(false);
+  const [isInlineEditOpen, setIsInlineEditOpen] = useState(false);
+  const [inlineEditTab, setInlineEditTab] = useState('barber');
+  
+  const handleOpenInlineEdit = () => {
+    setShowInlineEdit(true);
+    setTimeout(() => {
+      setIsInlineEditOpen(true);
+    }, 20);
+  };
+
+  const handleCloseInlineEdit = () => {
+    setIsInlineEditOpen(false);
+    setTimeout(() => {
+      setShowInlineEdit(false);
+    }, 300);
+  };
   const [expandedBarber, setExpandedBarber] = useState(null);
   const [expandedBarberPortfolio, setExpandedBarberPortfolio] = useState([]);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
@@ -1474,7 +1518,7 @@ export default function BookAppointment() {
                             </div>
                             <button
                               type="button"
-                              onClick={() => setStep(1)}
+                              onClick={() => { handleOpenInlineEdit(); setInlineEditTab('barber'); }}
                               className="flex items-center gap-1.5 px-2.5 py-1 rounded-full cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95"
                               style={{
                                 background: 'rgba(203,183,154,0.08)',
@@ -1692,36 +1736,111 @@ export default function BookAppointment() {
                 {/* STEP 5: Confirmation & Cierre Mágico (Registration) */}
                 {step === 5 && (
                   <div className="space-y-6 w-full animate-fade-in">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-white/50 text-center">Resumen de tu Turno</h3>
+                    {/* PREMIUM BOOKING SUMMARY CARD */}
+                    <div className="relative rounded-3xl overflow-hidden shadow-2xl animate-fade-in" style={{
+                      border: '1px solid rgba(203,183,154,0.2)',
+                      boxShadow: '0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(203,183,154,0.08)'
+                    }}>
+                      {/* Premium Header: Barber Avatar + Details */}
+                      <div className="relative p-5 bg-[#0a0a0f] border-b border-white/5 flex items-center justify-between gap-4 overflow-hidden">
+                        {/* Ambient glow in header */}
+                        <div className="absolute top-0 left-0 w-32 h-32 rounded-full" style={{background: 'radial-gradient(circle, rgba(203,183,154,0.08) 0%, transparent 70%)'}} />
+                        
+                        <div className="flex items-center gap-4 relative z-10">
+                          {/* Barber Portrait Avatar */}
+                          <div className="w-20 h-20 rounded-2xl overflow-hidden border border-[#CBB79A]/30 shadow-lg flex-shrink-0 bg-black">
+                            {selectedBarber?.image_url ? (
+                              <img src={selectedBarber.image_url} alt={selectedBarber.name} className="w-full h-full object-cover object-top" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center" style={{
+                                background: 'linear-gradient(135deg, #111110 0%, #1a1810 100%)'
+                              }}>
+                                <User size={24} className="text-[#CBB79A]" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div>
+                            <p className="text-[9px] font-black tracking-[0.2em] uppercase text-white/40 mb-1">Tu especialista</p>
+                            <h3 className="text-lg font-black text-white leading-none">{selectedBarber?.name}</h3>
+                          </div>
+                        </div>
 
-                    <div className="relative bg-[#0d0d11]/80 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-sm space-y-4 shadow-xl overflow-hidden">
-                      {/* Decorative Gold Glow in Background */}
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--champagne)]/5 rounded-full blur-3xl pointer-events-none" />
-                      
-                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                        <span className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Servicio</span>
-                        <span className="font-extrabold text-white text-base">{selectedService?.name}</span>
+                        {/* Price */}
+                        <div className="flex flex-col items-end relative z-10">
+                          <span className="text-[8px] font-bold text-white/40 uppercase tracking-wider mb-0.5">Total</span>
+                          <span className="text-2xl font-black leading-none" style={{
+                            background: 'linear-gradient(135deg, #CBB79A, #e8d5b7)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent'
+                          }}>${selectedService?.price}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                        <span className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Especialista</span>
-                        <span className="font-extrabold text-[var(--champagne)] text-base">{selectedBarber?.name}</span>
-                      </div>
-                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                        <span className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Horario</span>
-                        <span className="font-bold text-white text-sm">
-                          {selectedDate?.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} • {formatTime12(selectedTime)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                        <span className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Bebida</span>
-                        <span className="font-bold text-emerald-400 text-sm flex items-center gap-1.5">
-                          {renderBeverageIcon(selectedBeverage, 14, "text-emerald-400")}
-                          {selectedBeverage}
-                        </span>
-                      </div>
-                      <div className="pt-2 flex justify-between items-center">
-                        <span className="text-white/60 font-bold uppercase text-[11px] tracking-wider">Total a Pagar:</span>
-                        <span className="text-2xl font-black text-[var(--champagne)] tracking-tight">${selectedService?.price}</span>
+
+                      {/* Content section */}
+                      <div className="p-4 space-y-2.5" style={{background: 'linear-gradient(180deg, #0a0a0f 0%, #0d0d13 100%)'}}>
+                        
+                        {/* Service chip — champagne */}
+                        <div className="flex items-center gap-3 p-3 rounded-2xl" style={{
+                          background: 'rgba(203,183,154,0.06)',
+                          border: '1px solid rgba(203,183,154,0.14)'
+                        }}>
+                          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{background: 'rgba(203,183,154,0.12)'}}>
+                            <Scissors size={14} style={{color: '#CBB79A'}} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[8px] font-black uppercase tracking-widest" style={{color: 'rgba(203,183,154,0.55)'}}>Servicio</p>
+                            <p className="text-sm font-extrabold text-white truncate">{selectedService?.name}</p>
+                          </div>
+                        </div>
+
+                        {/* Date & Time chip — champagne slightly lighter */}
+                        <div className="flex items-center gap-3 p-3 rounded-2xl" style={{
+                          background: 'rgba(203,183,154,0.04)',
+                          border: '1px solid rgba(203,183,154,0.10)'
+                        }}>
+                          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{background: 'rgba(203,183,154,0.10)'}}>
+                            <CalendarIcon size={14} style={{color: '#CBB79A'}} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[8px] font-black uppercase tracking-widest" style={{color: 'rgba(203,183,154,0.55)'}}>Fecha y Hora</p>
+                            <p className="text-sm font-extrabold text-white">
+                              {selectedDate?.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+                              <span className="mx-1.5 text-white/20">·</span>
+                              <span style={{color: '#CBB79A'}}>{formatTime12(selectedTime)}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Beverage chip — champagne darkest */}
+                        {selectedBeverage && (
+                          <div className="flex items-center gap-3 p-3 rounded-2xl" style={{
+                            background: 'rgba(203,183,154,0.06)',
+                            border: '1px solid rgba(203,183,154,0.14)'
+                          }}>
+                            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{background: 'rgba(203,183,154,0.10)'}}>
+                              {renderBeverageIcon(selectedBeverage, 14, '')}
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-[8px] font-black uppercase tracking-widest" style={{color: 'rgba(203,183,154,0.55)'}}>Tu Bebida</p>
+                              <p className="text-sm font-extrabold text-white">{selectedBeverage}</p>
+                            </div>
+                            <span className="text-[9px] font-black px-2.5 py-1 rounded-full" style={{
+                              background: 'rgba(203,183,154,0.1)',
+                              color: 'rgba(203,183,154,0.85)',
+                              border: '1px solid rgba(203,183,154,0.2)'
+                            }}>Gratis</span>
+                          </div>
+                        )}
+
+                        {/* Shimmer divider */}
+                        <div className="h-px w-full" style={{background: 'linear-gradient(90deg, transparent, rgba(203,183,154,0.25), transparent)'}} />
+
+                        {/* Confirmed indicator */}
+                        <div className="flex items-center justify-center gap-2 py-0.5">
+                          <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{background: '#CBB79A'}} />
+                          <span className="text-[10px] font-bold tracking-wider" style={{color: 'rgba(203,183,154,0.45)'}}>Todo listo para confirmar</span>
+                        </div>
                       </div>
                     </div>
 
@@ -1982,6 +2101,123 @@ export default function BookAppointment() {
               alt="Recent Work" 
               className="w-full h-full object-cover" 
             />
+          </div>
+        </div>
+      )}
+
+      {/* INLINE EDIT MODAL */}
+      {showInlineEdit && (
+        <div 
+          className={`fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all duration-300 ${
+            isInlineEditOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`} 
+          style={{fontFamily: 'Outfit, sans-serif'}}
+        >
+          <div 
+            className={`w-full max-w-md bg-[#0e0e12] border border-white/10 rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl relative overflow-hidden transition-all duration-300 ${
+              isInlineEditOpen ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-12 opacity-0 scale-95'
+            }`}
+            style={{transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'}}
+          >
+            <div className="absolute top-0 left-0 right-0 h-1 bg-[var(--champagne)]/20" />
+            
+            {/* Header */}
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-xs font-black uppercase tracking-widest text-white">Editar Reserva</h3>
+              <button 
+                type="button" 
+                onClick={handleCloseInlineEdit}
+                className="text-white/40 hover:text-white text-[10px] font-bold px-3 py-1.5 rounded-full bg-white/5 border border-white/5 cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+            
+            {/* Unified Inline Content */}
+            <div className="space-y-5">
+              
+              {/* 1. Especialistas Section - Horizontal Scroll */}
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2.5">Especialista</p>
+                <div className="flex gap-2.5 overflow-x-auto pb-1.5 -mx-1 px-1 scrollbar-none">
+                  {barbers.map((b) => {
+                    const isSelected = selectedBarber?.id === b.id;
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => setSelectedBarber(b)}
+                        className={`flex-shrink-0 flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all cursor-pointer w-20 text-center ${
+                          isSelected
+                            ? 'border-[var(--champagne)] bg-[rgba(203,183,154,0.08)]'
+                            : 'border-white/5 bg-black/40 hover:bg-black/60'
+                        }`}
+                      >
+                        <div className="relative">
+                          <BarberAvatar url={b.image_url} name={b.name} />
+                          {isSelected && (
+                            <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-[var(--champagne)] text-black flex items-center justify-center text-[8px] font-black border border-[#0e0e12]">
+                              ✓
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-bold text-white truncate w-full">{b.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Servicios Section - Two Column Grid */}
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-2.5">Servicio</p>
+                <div className="max-h-60 overflow-y-auto grid grid-cols-2 gap-2 pr-1">
+                  {services.map((s) => {
+                    const isSelected = selectedService?.id === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setSelectedService(s)}
+                        className={`w-full flex flex-col justify-between p-3 rounded-2xl border transition-all text-left cursor-pointer relative h-22 ${
+                          isSelected
+                            ? 'border-[var(--champagne)] bg-[rgba(203,183,154,0.06)] shadow-[0_0_12px_rgba(203,183,154,0.1)]'
+                            : 'border-white/5 bg-black/40 hover:bg-black/60'
+                        }`}
+                      >
+                        {/* Selection Check Circle */}
+                        <div className={`absolute top-2.5 right-2.5 w-4.5 h-4.5 rounded-full flex items-center justify-center text-[8px] font-black transition-all duration-300 ${
+                          isSelected 
+                            ? 'bg-[var(--champagne)] text-black scale-100' 
+                            : 'bg-black/40 text-transparent border border-white/15 scale-90'
+                        }`}>
+                          ✓
+                        </div>
+
+                        <div className="pr-4">
+                          <p className="text-[11px] font-bold text-white leading-tight line-clamp-2">{s.name}</p>
+                          <p className="text-[9px] text-white/40 mt-1">{s.duration} min</p>
+                        </div>
+                        
+                        <div className="mt-1.5 flex items-center justify-between">
+                          <span className="text-xs font-black text-[var(--champagne)]">${s.price}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+            </div>
+            
+            {/* Done Button */}
+            <button
+              type="button"
+              onClick={handleCloseInlineEdit}
+              className="w-full mt-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider bg-[var(--champagne)] text-black hover:bg-[#b8a283] transition-all cursor-pointer text-center"
+            >
+              Listo
+            </button>
           </div>
         </div>
       )}

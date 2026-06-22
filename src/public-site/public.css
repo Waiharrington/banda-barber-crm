@@ -1326,3 +1326,63 @@
   pointer-events: none;
   z-index: 10;
 }
+
+/* ── PREMIUM GLOBAL FLUID TRANSITIONS & INTERACTIVE MICRO-ANIMATIONS ── */
+
+/* Apply smooth cubic-bezier transitions to all interactive, hoverable, and focusable elements */
+button,
+a,
+select,
+input,
+textarea,
+.glass-card,
+.accordion-category-card,
+.accordion-service-item,
+.barber-card,
+.beverage-card,
+.btn-gold,
+.btn-outline,
+.btn-glass-gold,
+.time-slot-btn,
+.calendar-day-btn,
+svg,
+img,
+.haptic-bounce,
+.ripple-container {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Micro-interactions: spring hover lifting */
+.accordion-category-card:hover,
+.accordion-service-item:hover,
+.beverage-card:hover,
+.glass-card:hover,
+.btn-gold:hover,
+.btn-glass-gold:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+/* Micro-interactions: active haptic press down */
+button:active,
+a:active,
+.accordion-category-card:active,
+.accordion-service-item:active,
+.beverage-card:active,
+.glass-card:active,
+.btn-gold:active,
+.btn-glass-gold:active,
+.time-slot-btn:active,
+.calendar-day-btn:active {
+  transform: scale(0.96) translateY(0) !important;
+  filter: brightness(0.95);
+}
+
+/* Smooth focus rings */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--champagne);
+  outline-offset: 2px;
+}
