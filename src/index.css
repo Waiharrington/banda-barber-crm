@@ -1305,3 +1305,77 @@ input[type="submit"]:active {
   height: 100%;
   width: 100%;
 }
+
+/* ==========================================
+   PRINT RECEIPT STYLES
+   ========================================== */
+
+@media print {
+  body * {
+    visibility: hidden; /* Oculta todo por defecto */
+  }
+
+  .receipt-ticket, .receipt-ticket * {
+    visibility: visible; /* Muestra solo el ticket */
+  }
+
+  .receipt-ticket {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm; /* Ancho estándar de impresora térmica */
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', Courier, monospace; /* Fuente de ticket */
+    color: black !important;
+    background: white !important;
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  /* Ocultar scrollbars e interfaz al imprimir */
+  ::-webkit-scrollbar { display: none; }
+  @page { margin: 0; }
+}
+
+/* ESTILOS DEL TICKET EN PANTALLA (Para previsualizar si es necesario) */
+.receipt-ticket {
+  background: white;
+  color: black;
+  padding: 16px;
+  width: 80mm; /* Simulando impresora de 80mm */
+  margin: 0 auto;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  line-height: 1.2;
+  display: none; /* Oculto en pantalla normal, solo sale al imprimir */
+}
+
+@media print {
+  .receipt-ticket { display: block; }
+}
+
+.receipt-header { text-align: center; margin-bottom: 10px; }
+.receipt-title { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
+.receipt-header p { margin: 2px 0; }
+.receipt-divider { margin: 8px 0; font-family: monospace; white-space: pre; overflow: hidden; }
+.receipt-info p { margin: 4px 0; }
+
+.receipt-table { width: 100%; border-collapse: collapse; }
+.receipt-table th { border-bottom: 1px dashed black; padding-bottom: 4px; }
+.receipt-table td { padding: 4px 0; vertical-align: top; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.receipt-totals { margin-top: 10px; }
+.receipt-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.receipt-grand-total { font-weight: bold; font-size: 14px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed black; }
+
+.receipt-payments { margin-top: 10px; }
+.receipt-subtitle { font-weight: bold; margin-bottom: 4px; text-align: center; }
+.receipt-change { font-weight: bold; margin-top: 4px; }
+
+.receipt-footer { text-align: center; margin-top: 15px; }
+.receipt-thanks { font-weight: bold; font-size: 14px; }
+.receipt-slogan { font-style: italic; margin-top: 4px; }
+

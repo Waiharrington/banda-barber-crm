@@ -60,6 +60,7 @@ const availableModules = [
 const rolePresets = {
   'Admin': availableModules.map(m => m.id),
   'Barbero': ['my-profile', 'scheduling', 'barber', 'clients', 'history'],
+  'Tatuador': ['my-profile', 'scheduling', 'barber', 'clients', 'history'],
   'Recepcionista': ['reception', 'scheduling', 'clients', 'history'],
   'Caja': ['checkout', 'finance', 'inventory', 'clients', 'history'],
   'Asistente de Lavado': ['dashboard', 'history']

@@ -372,15 +372,17 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
   };
 
   const handleCreateService = async () => {
-    if (!newService.name || !newService.price) return;
+    const isTattoo = (newService.category || '').toLowerCase().includes('tatuaj');
+    if (!newService.name || (!isTattoo && !newService.price)) return;
     try {
       setLoading(true);
-      if (isEditing && newService.id) {
-        await dataService.updateService(newService.id, newService);
-        showToast(`¡Servicio ${newService.name} actualizado!`);
+      const serviceToSave = { ...newService, price: isTattoo ? 0 : (newService.price || 0) };
+      if (isEditing && serviceToSave.id) {
+        await dataService.updateService(serviceToSave.id, serviceToSave);
+        showToast(`¡Servicio ${serviceToSave.name} actualizado!`);
       } else {
-        await dataService.addService(newService);
-        showToast(`¡Servicio ${newService.name} agregado al catálogo!`);
+        await dataService.addService(serviceToSave);
+        showToast(`¡Servicio ${serviceToSave.name} agregado al catálogo!`);
       }
       setNewService({ 
         name: '', 
@@ -1436,22 +1438,33 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                       <div className="modal-grid-2col">
                         <div className="form-group">
                           <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>PRECIO (€)</label>
-                          <div className="premium-price-input-container">
-                            <span className="price-currency-symbol">€</span>
-                            <input 
-                              className="price-input-field" 
-                              type="number" 
-                              placeholder="25" 
-                              value={newService.price === 0 ? '' : newService.price} 
-                              onChange={e => setNewService({...newService, price: e.target.value === '' ? '' : Number(e.target.value)})} 
-                            />
-                            {rates?.usd > 0 && (
-                              <div className="price-bs-equivalent" style={{ color: 'var(--text-muted)' }}>
-                                ≈ {Math.round((Number(newService.price) || 0) * rates.usd).toLocaleString()} Bs.
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                          {(newService.category || '').toLowerCase().includes('tatuaj') ? (
+                            <div style={{ 
+                              display: 'flex', alignItems: 'center', gap: '8px', 
+                              padding: '12px 16px', borderRadius: '12px', 
+                              background: 'rgba(212, 175, 55, 0.08)', border: '1px solid rgba(212, 175, 55, 0.2)',
+                              color: 'var(--gold-primary)', fontSize: '14px', fontWeight: '800', fontStyle: 'italic', height: '48px'
+                            }}>
+                              <span style={{ fontSize: '18px' }}>✏️</span> A cotizar
+                            </div>
+                          ) : (
+                            <div className="premium-price-input-container">
+                              <span className="price-currency-symbol">€</span>
+                              <input 
+                                className="price-input-field" 
+                                type="number" 
+                                placeholder="25" 
+                                value={newService.price === 0 ? '' : newService.price} 
+                                onChange={e => setNewService({...newService, price: e.target.value === '' ? '' : Number(e.target.value)})} 
+                              />
+                              {rates?.usd > 0 && (
+                                <div className="price-bs-equivalent" style={{ color: 'var(--text-muted)' }}>
+                                  ≈ {Math.round((Number(newService.price) || 0) * rates.usd).toLocaleString()} Bs.
+                                </div>
+                              )}
+                            </div>
+                          )}
+                      </div>
                         <div className="form-group">
                           <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>DURACIÓN (MIN)</label>
                           <input className="form-input" type="number" placeholder="45" value={newService.duration === 0 ? '' : newService.duration} onChange={e => setNewService({...newService, duration: e.target.value === '' ? '' : Number(e.target.value)})} style={{ width: '100%' }} />
@@ -1473,20 +1486,10 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         />
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)', marginBottom: '16px' }}>
-                        <input 
-                          type="checkbox" 
-                          id="is_tattoo"
-                          checked={newService.is_tattoo || false} 
-                          onChange={e => setNewService({...newService, is_tattoo: e.target.checked})}
-                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                        />
-                        <label htmlFor="is_tattoo" style={{ fontSize: '13px', fontWeight: '800', color: 'white', cursor: 'pointer' }}>
-                          💉 Es un servicio de Tatuaje (Se excluye de colas FIFO y permite cotización de precio libre)
-                        </label>
-                      </div>
-
                       {/* Commissions Distribution */}
+                      {(() => {
+                        const isTattoo = (newService.category || '').toLowerCase().includes('tatuaj');
+                        return (
                       <div className="modal-commissions">
                         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>
                           <DollarSign size={14} /> DISTRIBUCIÓN DE INGRESOS (%)
@@ -1494,7 +1497,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         
                         <div className="commissions-fields-grid" style={{ marginBottom: '16px' }}>
                           <div className="form-group">
-                            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>COMISIÓN BARBERO (%)</label>
+                            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>COMISIÓN {isTattoo ? 'TATUADOR' : 'BARBERO'} (%)</label>
                             <input 
                               className="form-input" 
                               type="number" 
@@ -1561,7 +1564,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                             }}>
                               <div>
                                 <div style={{ fontSize: '9px', fontWeight: '800', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                  Pago Real Barbero
+                                  Pago Real {isTattoo ? 'Tatuador' : 'Barbero'}
                                 </div>
                                 <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)', marginTop: '2px' }}>
                                   ${(((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0)) / 100).toFixed(2)}
@@ -1580,6 +1583,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                           </div>
                         )}
                       </div>
+                      )})()}
                     </div>
 
                     {/* Right Column: Checklist */}

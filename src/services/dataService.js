@@ -513,7 +513,8 @@ export const dataService = {
         const name = parts[0];
         const icon = parts[1] || '';
         return { name, icon };
-      });
+      })
+      .filter((cat, idx, arr) => arr.findIndex(c => c.name === cat.name) === idx);
 
     if (categories.length === 0) {
       // Seed default categories
@@ -1658,4 +1659,27 @@ export const dataService = {
       throw error;
     }
   }
+};
+
+
+// ==========================================
+// SYSTEM SETTINGS
+// ==========================================
+
+export const getSystemSettings = async () => {
+  try {
+    const { data, error } = await supabase.from('system_settings').select('*');
+    if (error) throw error;
+    const settingsObj = {};
+    if (data) { data.forEach(item => { settingsObj[item.key] = item.value; }); }
+    return settingsObj;
+  } catch (error) { console.error('Error fetching system settings:', error); return {}; }
+};
+
+export const updateSystemSetting = async (key, value) => {
+  try {
+    const { data, error } = await supabase.from('system_settings').upsert({ key, value, updated_at: new Date().toISOString() }).select();
+    if (error) throw error;
+    return data;
+  } catch (error) { console.error('Error updating setting:', error); throw error; }
 };

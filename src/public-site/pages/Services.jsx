@@ -13,7 +13,8 @@ export default function Services() {
         // Group by category
         const grouped = {};
         services.forEach(service => {
-          const cat = service.category || 'Servicios';
+          let cat = (service.category || 'Servicios').trim();
+          cat = cat.charAt(0).toUpperCase() + cat.slice(1);
           if (!grouped[cat]) grouped[cat] = { name: cat, icon: getCategoryIcon(cat), services: [] };
           grouped[cat].services.push({
             id: service.id,

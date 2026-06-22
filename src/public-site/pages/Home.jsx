@@ -176,6 +176,29 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Cliente del Mes Promo */}
+      <section style={{ padding: '40px 16px', background: 'var(--bg-primary)' }}>
+        <div className="glass-card" style={{ maxWidth: 1000, margin: '0 auto', padding: '32px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap', border: '1px solid rgba(255, 215, 0, 0.3)', background: 'linear-gradient(135deg, rgba(203, 183, 154, 0.05) 0%, rgba(203, 183, 154, 0.15) 100%)', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ flex: '1 1 500px', zIndex: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <Star size={20} color="var(--gold-primary)" fill="var(--gold-primary)" />
+              <h2 style={{ fontSize: '24px', fontWeight: '900', color: 'var(--gold-primary)', margin: 0 }}>Programa: Cliente del Mes</h2>
+            </div>
+            <p style={{ color: 'white', fontSize: '16px', lineHeight: '1.5', marginBottom: '16px', fontWeight: '500' }}>
+              ¿Quieres ser nuestro próximo <strong>Cliente Top #1</strong>? Visítanos la mayor cantidad de veces posible durante el mes. 
+              ¡El cliente con más visitas al final del mes ganará un giro gratis en nuestra <strong style={{ color: 'var(--champagne)' }}>Ruleta de Premios Exclusivos</strong>!
+            </p>
+            <Link to={isLoggedIn ? '/perfil' : '/login'} className="btn-gold" style={{ padding: '10px 20px', fontSize: '14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Sparkles size={16} /> {isLoggedIn ? 'Revisar mi Perfil' : 'Únete Ahora'}
+            </Link>
+          </div>
+          <div style={{ fontSize: '80px', opacity: 0.8, filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.4))', zIndex: 2, transform: 'rotate(15deg)' }}>
+            🏆
+          </div>
+          <div style={{ position: 'absolute', right: '-10%', top: '-50%', width: '300px', height: '300px', background: 'var(--gold-primary)', filter: 'blur(100px)', opacity: 0.1, zIndex: 1 }} />
+        </div>
+      </section>
+
       {/* Services */}
       <section id="servicios" style={{ padding: '80px 16px', background: 'var(--bg-secondary)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>

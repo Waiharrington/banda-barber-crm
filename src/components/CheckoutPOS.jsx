@@ -38,6 +38,7 @@ import { ModalShield, useModal } from '../context/ModalContext';
 import AnimatedModal from './AnimatedModal';
 import { normalizeForSearch } from '../utils/stringUtils';
 import { useScrollLock } from '../hooks/useScrollLock';
+import ReceiptTicket from './ReceiptTicket';
 
 const CartSellerSelect = ({ value, onChange, options }) => {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -167,6 +168,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
     }).format(amount);
   };
   const [pendingServices, setPendingServices] = useState([]);
+  const [printTransaction, setPrintTransaction] = useState(null);
   const [inventory, setInventory] = useState([]);
   const [allExtras, setAllExtras] = useState([]);
   const [allServices, setAllServices] = useState([]);
@@ -997,16 +999,42 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
         } catch(e) { console.error('Error scheduling reminder', e); }
       }
 
-            triggerRocket();
+      // Initialize Receipt
+      const receiptData = {
+        client: { name: paymentData.clientName },
+        staff: { name: paymentData.staffInvolved.map(s => s.name).join(', ') },
+        items: [
+          ...totalAppsInCheckout.map(app => ({
+            name: app.services?.name || 'Servicio',
+            price: (app.total_price !== undefined && app.total_price !== null && Number(app.total_price) > 0 ? Number(app.total_price) : (app.services?.price || 0)),
+            quantity: 1
+          })),
+          ...paymentData.products.map(p => ({
+            name: p.name,
+            price: p.price,
+            quantity: p.quantity
+          })),
+          ...paymentData.extras.map(e => ({
+            name: e.service_extras?.name || 'Extra',
+            price: e.price,
+            quantity: 1
+          }))
+        ],
+        paymentMethods: [
+          ...(paymentMode === 'full_usd' || paymentMode === 'mixed' ? [{ method: methodUsd, amount: cashUsd }] : []),
+          ...(paymentMode === 'full_bs' || paymentMode === 'mixed' ? [{ method: methodBs + ' (Bs)', amount: Number(paymentData.transferBs) / fixedRate }] : [])
+        ],
+        subtotal: servicePrice + productsTotal + extrasTotal,
+        discount: couponDiscount,
+        tip: paymentData.totalTips,
+        total: paymentData.totalUsd,
+        change: 0,
+        generated_at: new Date().toISOString()
+      };
+
+      setPrintTransaction(receiptData);
+      triggerRocket();
       showToast("¡Venta completada con éxito!", "success");
-      
-      setSelectedApp(null);
-      setSelectedClient(null);
-      setIsDirectSale(false);
-      setCart([]);
-      setTips([]);
-      setCashUsd(0);
-      setPaymentMode('full_bs');
       loadData();
     } catch (err) {
       console.error("Error en checkout:", err);
@@ -2897,8 +2925,62 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
           transform: translateY(-2px);
         }
       `}</style>
+
+      {/* TICKET DE IMPRESIÓN OCULTO Y MODAL DE ÉXITO */}
+      {printTransaction && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(10px)',
+          zIndex: 99999,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <div className="glass-card animate-scale-in" style={{ padding: '32px', borderRadius: '24px', textAlign: 'center', maxWidth: '400px', width: '90%' }}>
+            <CheckCircle size={64} color="var(--success-color)" style={{ margin: '0 auto 20px auto' }} />
+            <h2 style={{ marginBottom: '12px', fontSize: '24px', fontWeight: '900' }}>¡Cobro Exitoso!</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>El pago de {printTransaction.client?.name} ha sido procesado.</p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button 
+                onClick={() => {
+                  window.print();
+                }}
+                className="btn-gold" 
+                style={{ width: '100%', padding: '16px', borderRadius: '14px', fontWeight: '800', fontSize: '15px' }}
+              >
+                🖨️ Imprimir Recibo
+              </button>
+              <button 
+                onClick={() => {
+                  setPrintTransaction(null);
+                  setSelectedApp(null);
+                  setSelectedClient(null);
+                  setIsDirectSale(false);
+                  setCart([]);
+                  setTips([]);
+                  setCashUsd(0);
+                  setPaymentMode('full_bs');
+                }}
+                style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontWeight: '800', cursor: 'pointer' }}
+              >
+                Cerrar y Continuar
+              </button>
+            </div>
+          </div>
+          
+          <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
+            <ReceiptTicket transaction={printTransaction} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default CheckoutPOS;
+
+
+

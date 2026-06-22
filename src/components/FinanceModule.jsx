@@ -17,8 +17,7 @@ import {
   Edit2,
   Eye,
   WalletCards,
-  List,
-  RefreshCw
+  List
 } from 'lucide-react';
 
 import { dataService } from '../services/dataService';
@@ -198,12 +197,6 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
     return defaults;
   });
   const [isConfiguringPayroll, setIsConfiguringPayroll] = useState(false);
-  const [weeklyCloseModal, setWeeklyCloseModal] = useState({
-    isOpen: false,
-    loading: false,
-    success: false,
-    error: null
-  });
   const [payrollModal, setPayrollModal] = useState({ 
     isOpen: false, 
     staff: null, 
@@ -220,7 +213,6 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   useScrollLock(
     isEditingCosts || 
     isConfiguringPayroll || 
-    weeklyCloseModal.isOpen || 
     payrollModal.isOpen || 
     payrollDetail.isOpen || 
     valeModal.isOpen ||
@@ -270,27 +262,6 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       showToast("Error al registrar vale", "error");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleWeeklyCloseExecute = async () => {
-    setWeeklyCloseModal(prev => ({ ...prev, loading: true, error: null }));
-    try {
-      const success = await dataService.triggerWeeklyClosing();
-      if (success) {
-        setWeeklyCloseModal(prev => ({ ...prev, loading: false, success: true }));
-        showToast("Cierre semanal ejecutado en Google Sheets con éxito", "success");
-      } else {
-        throw new Error("El URL de Google Sheets no está configurado.");
-      }
-    } catch (e) {
-      console.error(e);
-      setWeeklyCloseModal(prev => ({ 
-        ...prev, 
-        loading: false, 
-        error: e.message || "Error al ejecutar el cierre en Google Sheets." 
-      }));
-      showToast("Error al ejecutar cierre semanal", "error");
     }
   };
 
@@ -1738,27 +1709,6 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 >
                   <WalletCards size={16} /> Salario Asistente
                 </button>
-                <button 
-                  onClick={() => setWeeklyCloseModal({ isOpen: true, loading: false, success: false, error: null })} 
-                  style={{ 
-                    padding: '14px 16px', 
-                    fontSize: '13px', 
-                    borderRadius: '12px', 
-                    background: 'rgba(255, 69, 58, 0.1)', 
-                    border: '1px solid rgba(255, 69, 58, 0.3)', 
-                    color: '#ff453a',
-                    fontWeight: '800',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    width: isMobile ? '100%' : 'auto'
-                  }}
-                >
-                  <RefreshCw size={16} className={weeklyCloseModal.loading ? "animate-spin" : ""} /> Cierre Semanal
-                </button>
               </div>
             </div>
 
@@ -2357,77 +2307,6 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     <button type="submit" className="btn-gold" style={{ flex: 1, padding: '14px', borderRadius: '12px', fontWeight: '800' }}>Guardar</button>
                   </div>
                 </form>
-              </div>
-            </div>
-            )}
-          </AnimatedModal>
-
-          {/* Weekly Close Modal */}
-          <AnimatedModal isOpen={weeklyCloseModal.isOpen}>
-            {(overlayClass, cardClass) => (
-            <div className={overlayClass} onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-              <div className={`glass-card ${cardClass}`} style={{ maxWidth: '450px', width: '100%', borderRadius: '32px', padding: '32px', textAlign: 'center' }}>
-                {!weeklyCloseModal.success ? (
-                  <>
-                    <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(255, 69, 58, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#ff453a' }}>
-                      <RefreshCw size={30} className={weeklyCloseModal.loading ? "animate-spin" : ""} />
-                    </div>
-                    <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '12px' }}>Realizar <span style={{ color: '#ff453a' }}>Cierre Semanal</span></h3>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.6', marginBottom: '20px' }}>
-                      {weeklyCloseModal.loading 
-                        ? 'Archivando registros de la semana en Google Sheets... Por favor espera.'
-                        : 'Esta acción moverá todos los registros de la pestaña "DATOS" a "HISTORIAL" en la hoja de cálculo de Google Sheets y limpiará la hoja activa para el nuevo ciclo.'
-                      }
-                    </p>
-
-                    {weeklyCloseModal.error && (
-                      <div style={{ background: 'rgba(255, 69, 58, 0.1)', border: '1px solid rgba(255, 69, 58, 0.2)', color: '#ff453a', padding: '12px', borderRadius: '12px', fontSize: '13px', marginBottom: '20px', textAlign: 'left' }}>
-                        <strong>Error:</strong> {weeklyCloseModal.error}
-                      </div>
-                    )}
-
-                    {!weeklyCloseModal.loading && (
-                      <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', textAlign: 'left' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                          ⚠️ Asegúrate de haber completado y registrado todos los pagos de nómina en el CRM antes de archivar.
-                        </span>
-                      </div>
-                    )}
-
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                      <button 
-                        disabled={weeklyCloseModal.loading} 
-                        onClick={() => setWeeklyCloseModal({ isOpen: false, loading: false, success: false, error: null })} 
-                        style={{ flex: 1, padding: '14px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', fontWeight: '700', cursor: weeklyCloseModal.loading ? 'not-allowed' : 'pointer' }}
-                      >
-                        Cancelar
-                      </button>
-                      <button 
-                        disabled={weeklyCloseModal.loading} 
-                        onClick={handleWeeklyCloseExecute} 
-                        style={{ flex: 1, padding: '14px', borderRadius: '12px', background: '#ff453a', border: 'none', color: 'white', fontWeight: '800', cursor: weeklyCloseModal.loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                      >
-                        {weeklyCloseModal.loading ? 'Cerrando...' : 'Confirmar Cierre'}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(50, 215, 75, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#32d74b' }}>
-                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    </div>
-                    <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '12px' }}><span style={{ color: '#32d74b' }}>Cierre Exitoso</span></h3>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
-                      Las transacciones de la semana se han archivado correctamente en la pestaña "HISTORIAL" de tu hoja de cálculo.
-                    </p>
-                    <button 
-                      onClick={() => setWeeklyCloseModal({ isOpen: false, loading: false, success: false, error: null })} 
-                      style={{ width: '100%', padding: '14px', borderRadius: '12px', background: 'var(--gold-primary)', border: 'none', color: '#000', fontWeight: '900', cursor: 'pointer' }}
-                    >
-                      Entendido
-                    </button>
-                  </>
-                )}
               </div>
             </div>
             )}

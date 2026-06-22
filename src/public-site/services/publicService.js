@@ -34,11 +34,20 @@ export const publicService = {
       .lte('scheduled_at', `${date}T23:59:59`)
       .in('status', ['Agendado', 'En Silla', 'Por Pagar']);
     if (error) throw error;
-    // Return occupied time slots (hour:minute)
-    return (data || []).map(a => {
+    
+    // Return occupied time slots (hour:minute) based on duration
+    const occupied = [];
+    (data || []).forEach(a => {
       const d = new Date(a.scheduled_at);
-      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      const durationMins = a.services?.duration || 30; // Default 30 mins
+      const slotsCount = Math.ceil(durationMins / 30);
+      
+      for (let i = 0; i < slotsCount; i++) {
+        const slotTime = new Date(d.getTime() + (i * 30 * 60000));
+        occupied.push(`${String(slotTime.getHours()).padStart(2, '0')}:${String(slotTime.getMinutes()).padStart(2, '0')}`);
+      }
     });
+    return occupied;
   },
 
   // Register new client
@@ -174,6 +183,18 @@ export const publicService = {
     return data;
   },
 
+  // Update client profile
+  async updateClientProfile(clientId, updates) {
+    const { data, error } = await supabase
+      .from('clients')
+      .update(updates)
+      .eq('id', clientId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   // Check if client exists by email
   async getClientByEmail(email) {
     const { data, error } = await supabase
@@ -287,6 +308,14 @@ export const publicService = {
   },
 
   // Coupons
+  async getRoulettePrizes() {
+    try {
+      const { data, error } = await supabase.from('service_extras').select('*');
+      if (error) return [];
+      return data.filter(d => d.name && d.name.startsWith('ROULETTE_PRIZE:'));
+    } catch { return []; }
+  },
+
   async getCoupons(clientId = null) {
     let query = supabase.from('coupons').select('*');
     if (clientId) {
@@ -325,5 +354,15 @@ export const publicService = {
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
+  },
+
+  async getWhatsAppNumber() {
+    const { data, error } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'whatsapp_business_number')
+      .single();
+    if (error || !data?.value) return '584129206984';
+    return data.value;
   }
 };

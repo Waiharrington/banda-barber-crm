@@ -856,7 +856,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
           <h1 style={{ fontSize: '32px', fontWeight: '950', letterSpacing: '-0.8px', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>Agenda <span className="text-gold">Panda</span></h1>
           <p style={{ color: 'var(--text-secondary)' }}>Gestión inteligente de citas y disponibilidad.</p>
         </div>
-        {!(user?.role === 'Barbero' || user?.role?.startsWith('Barbero|')) && (
+        {!(user?.role === 'Barbero' || user?.role?.startsWith('Barbero|') || user?.role === 'Tatuador' || user?.role?.startsWith('Tatuador|')) && (
         <button className="btn-gold" style={{ boxShadow: '0 5px 15px rgba(255, 255, 255, 0.25)' }} onClick={() => {
             setEditingApp(null);
             setNewApp({ clientId: '', serviceId: '', staffId: user?.id || '', time: '10:00', extras: [], products: [] });
@@ -1295,6 +1295,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                   </div>
 
                                   {/* Right side: Action Buttons */}
+                                  {!(user?.role === 'Barbero' || user?.role?.startsWith('Barbero|') || user?.role === 'Tatuador' || user?.role?.startsWith('Tatuador|')) && (
                                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                                     <button onClick={() => handleEditAppointment(app)} className="action-icon-btn edit" title="Editar detalles" style={{ padding: '8px', borderRadius: '8px' }}>
                                       <Pencil size={14} />
@@ -1306,6 +1307,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                                       <Trash2 size={14} />
                                     </button>
                                   </div>
+                                  )}
                                 </div>
                               );
                             })}

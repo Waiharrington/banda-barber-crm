@@ -270,42 +270,6 @@ function App() {
     };
   }, [user]);
 
-  const checkAutomaticWeeklyClose = async () => {
-    try {
-      const sundayStr = getLastSundayDateString();
-      
-      const { data, error } = await dataService.supabase
-        .from('transactions')
-        .select('id')
-        .eq('description', 'Cierre Semanal Automático')
-        .contains('metadata', { week_date: sundayStr });
-
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
-        console.log(`Ejecutando cierre semanal automático para la semana finalizada en ${sundayStr}...`);
-        
-        const success = await dataService.triggerWeeklyClosing();
-        if (success) {
-          await dataService.addTransaction({
-            amount: 0,
-            type: 'expense',
-            description: 'Cierre Semanal Automático',
-            exchange_rate: 1,
-            metadata: { type: 'weekly_close', week_date: sundayStr }
-          });
-
-          notificationService.sendNotification(
-            '📉 Cierre Semanal Automático 🔒',
-            `El cierre semanal correspondiente al domingo ${sundayStr} se ha ejecutado automáticamente.`
-          );
-        }
-      }
-    } catch (e) {
-      console.error('Error en checkAutomaticWeeklyClose:', e);
-    }
-  };
-
   const checkBirthdaysAndNotify = (clients) => {
     try {
       const today = new Date();
@@ -500,9 +464,6 @@ function App() {
           datasets: [{ label: 'Ventas (€)', data: dailyTotals, borderColor: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.1)', fill: true, tension: 0.4 }]
         });
       }
-
-      // Automatic weekly close
-      await checkAutomaticWeeklyClose();
 
       // Check goals
       checkGoalsAndNotify({
