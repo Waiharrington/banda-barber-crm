@@ -245,9 +245,9 @@ export default function BookAppointment() {
   // One-time migration: the hero was recomposed (text left / bear right), so the
   // old bear & hand fine-tuning offsets no longer apply. Clear them once so the
   // new reference-matched defaults take effect. Video & gradient tuning is kept.
-  if (typeof window !== 'undefined' && localStorage.getItem('hero_cfg_v') !== '8') {
-    ['bear_scale', 'bear_x', 'bear_y', 'hand_x', 'hand_y', 'hand_scale', 'hand_rotate', 'hero_height', 'hero_y_offset', 'hero_zoom', 'hero_gradient_stop'].forEach(k => localStorage.removeItem(k));
-    localStorage.setItem('hero_cfg_v', '8');
+  if (typeof window !== 'undefined' && localStorage.getItem('hero_cfg_v') !== '9') {
+    ['bear_scale', 'bear_x', 'bear_y', 'bear_rotate', 'hand_x', 'hand_y', 'hand_scale', 'hand_rotate', 'hero_height', 'hero_y_offset', 'hero_zoom', 'hero_gradient_stop'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('hero_cfg_v', '9');
   }
 
   const [heroHeight, setHeroHeight] = useState(() => Number(localStorage.getItem('hero_height') || 102));
@@ -257,11 +257,12 @@ export default function BookAppointment() {
   const [showConfigurator, setShowConfigurator] = useState(false);
   const [configTab, setConfigTab] = useState('video'); // 'video' or 'bear'
   const [bearScale, setBearScale] = useState(() => Number(localStorage.getItem('bear_scale') || 1.11));
-  const [bearX, setBearX] = useState(() => Number(localStorage.getItem('bear_x') || -14.5));
-  const [bearY, setBearY] = useState(() => Number(localStorage.getItem('bear_y') || 10));
-  const [handX, setHandX] = useState(() => Number(localStorage.getItem('hand_x') || 0));
-  const [handY, setHandY] = useState(() => Number(localStorage.getItem('hand_y') || 49.5));
-  const [handScale, setHandScale] = useState(() => Number(localStorage.getItem('hand_scale') || 0.55));
+  const [bearX, setBearX] = useState(() => Number(localStorage.getItem('bear_x') || -20));
+  const [bearY, setBearY] = useState(() => Number(localStorage.getItem('bear_y') || 11.5));
+  const [bearRotate, setBearRotate] = useState(() => Number(localStorage.getItem('bear_rotate') || -8));
+  const [handX, setHandX] = useState(() => Number(localStorage.getItem('hand_x') || 2));
+  const [handY, setHandY] = useState(() => Number(localStorage.getItem('hand_y') || 52));
+  const [handScale, setHandScale] = useState(() => Number(localStorage.getItem('hand_scale') || 0.52));
   const [handRotate, setHandRotate] = useState(() => Number(localStorage.getItem('hand_rotate') || 21));
 
 
@@ -869,6 +870,8 @@ export default function BookAppointment() {
                 maxWidth: `${280 * bearScale}px`,
                 bottom: `${bearY}%`,
                 right: `${bearX}%`,
+                transform: `rotate(${bearRotate}deg)`,
+                transformOrigin: 'center bottom',
                 filter: 'drop-shadow(-6px 12px 18px rgba(0,0,0,0.65)) drop-shadow(0px 4px 8px rgba(0,0,0,0.4))',
               }}
             />
@@ -1018,6 +1021,7 @@ export default function BookAppointment() {
                       { label: 'Escala oso', val: bearScale, set: setBearScale, min: 0.3, max: 2.5, step: 0.01, key: 'bear_scale' },
                       { label: 'Oso X (right %)', val: bearX, set: setBearX, min: -30, max: 80, step: 0.5, key: 'bear_x' },
                       { label: 'Oso Y (bottom %)', val: bearY, set: setBearY, min: -20, max: 80, step: 0.5, key: 'bear_y' },
+                      { label: 'Rotación oso °', val: bearRotate, set: setBearRotate, min: -180, max: 180, step: 1, key: 'bear_rotate' },
                       { label: 'Escala mano', val: handScale, set: setHandScale, min: 0.1, max: 1.5, step: 0.01, key: 'hand_scale' },
                       { label: 'Mano X (right %)', val: handX, set: setHandX, min: -30, max: 80, step: 0.5, key: 'hand_x' },
                       { label: 'Mano Y (bottom %)', val: handY, set: setHandY, min: -20, max: 100, step: 0.5, key: 'hand_y' },

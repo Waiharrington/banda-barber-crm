@@ -1936,29 +1936,33 @@ input[type="date"] {
 }
 
 @keyframes bearFloat {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-12px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-12px); }
+}
+
+@keyframes bearEnter {
+  0%   { opacity: 0; transform: translateX(70px) translateY(24px) scale(0.8); }
+  100% { opacity: 1; transform: translateX(0)    translateY(0)    scale(1);   }
 }
 
 .animate-bear-float {
-  animation: bearFloat 6s ease-in-out infinite;
+  animation: bearEnter 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+             bearFloat 6s ease-in-out infinite 0.9s;
 }
 
 @keyframes handWave {
-  0%, 100% {
-    transform: rotate(0deg);
-  }
-  50% {
-    transform: rotate(-18deg);
-  }
+  0%, 100% { transform: rotate(0deg); }
+  50%       { transform: rotate(-18deg); }
+}
+
+@keyframes handEnter {
+  0%   { opacity: 0; transform: translateX(40px) scale(0.6); }
+  100% { opacity: 1; transform: translateX(0)    scale(1);   }
 }
 
 .animate-hand-wave {
-  animation: handWave 2.2s ease-in-out infinite;
+  animation: handEnter 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+             handWave  2.2s ease-in-out infinite 0.9s;
 }
 
 @keyframes videoFadeIn {
