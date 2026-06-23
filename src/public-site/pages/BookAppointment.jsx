@@ -486,6 +486,7 @@ export default function BookAppointment() {
 
   const handleReturnToWelcome = () => {
     setIsReturning(true);
+    setVideoBlocked(false);
     localStorage.removeItem('bookingState');
     setTimeout(() => {
       setShowWelcome(true);
@@ -1373,14 +1374,12 @@ export default function BookAppointment() {
         <div 
           className={`absolute top-0 left-0 w-full pointer-events-none z-0 animate-bg-zoom ${isTransitioning ? 'welcome-exit-bg' : ''}`}
           style={{
-            height: '45%',
+            height: '100%',
             backgroundImage: `url(${window.innerWidth > 768 ? bgDesktop : bgMobile})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
             filter: 'brightness(0.70) contrast(1.05) blur(10px)',
-            maskImage: 'linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 50%, rgba(0, 0, 0, 0) 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 50%, rgba(0, 0, 0, 0) 100%)',
           }}
         />
         {heroContent}
