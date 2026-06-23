@@ -467,13 +467,17 @@ export default function BookAppointment() {
   };
 
   const handleStartBooking = () => {
+    setIsTransitioning(true);
     setHasVisited(true);
     setShowWelcome(false);
-    setIsTransitioning(false);
     window.scrollTo(0, 0);
     if (document.documentElement) document.documentElement.scrollTop = 0;
     if (document.body) document.body.scrollTop = 0;
     if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 750);
   };
 
   const handleReturnToWelcome = () => {
@@ -1055,10 +1059,13 @@ export default function BookAppointment() {
 
             <button
               onClick={() => {
+                setIsTransitioning(true);
                 setStep(6);
                 setAuthTab('login');
                 setShowWelcome(false);
-                setIsTransitioning(false);
+                setTimeout(() => {
+                  setIsTransitioning(false);
+                }, 750);
               }}
               className="btn-glass-gold w-full lg:w-auto py-4 px-6 rounded-xl text-[11px] lg:text-[13px] uppercase tracking-widest font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer haptic-bounce"
             >
