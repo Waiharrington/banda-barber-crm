@@ -504,7 +504,7 @@ export default function BookAppointment() {
   const nextBtnRef = useRef(null);
   const scrollToNextButton = () => {
     setTimeout(() => {
-      nextBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      nextBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 150);
   };
   const scrollToTimeSlots = () => {

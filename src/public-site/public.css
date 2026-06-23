@@ -1693,151 +1693,111 @@ input[type="date"] {
   filter: brightness(1.08);
 }
 
-/* ── Equipo Disponible (horizontal scroll) ── */
-.landing-team-carousel-wrapper {
-  position: relative;
+/* ── Equipo Disponible (flush top photo card) ── */
+.landing-team-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
   width: 100%;
 }
 
-.landing-carousel-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  width: 38px;
-  height: 38px;
+.landing-barber-card-v2 {
+  width: 100%;
+  background: #0e0e12;
+  border: 1px solid rgba(203, 183, 154, 0.12);
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.landing-barber-card-v2:hover {
+  border-color: rgba(203, 183, 154, 0.35);
+  transform: translateY(-4px);
+  box-shadow: 0 15px 30px rgba(203, 183, 154, 0.08);
+}
+
+.landing-bc-photo-wrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.landing-bc-photo-flush {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.landing-barber-card-v2:hover .landing-bc-photo-flush {
+  transform: scale(1.04);
+}
+
+.landing-bc-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #0d0d11;
+  border-top: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.landing-bc-info-area {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  text-align: left;
+}
+
+.landing-bc-name-v2 {
+  font-size: 13px;
+  font-weight: 850;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.landing-bc-role-v2 {
+  font-size: 9.5px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.landing-bc-btn-circle {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: rgba(10, 10, 12, 0.85);
-  border: 1px solid rgba(203, 183, 154, 0.3);
-  backdrop-filter: blur(8px);
-  color: #cbb79a;
+  background: #cbb79a;
+  color: #0a0a0c;
+  font-size: 18px;
+  font-weight: 800;
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 4px 10px rgba(203, 183, 154, 0.2);
 }
 
-.landing-carousel-arrow:hover {
-  background: #cbb79a;
-  color: #0a0a0c;
-  border-color: #cbb79a;
-  transform: translateY(-50%) scale(1.08);
-  box-shadow: 0 0 12px rgba(203, 183, 154, 0.4);
-}
-
-.landing-carousel-arrow:active {
-  transform: translateY(-50%) scale(0.95);
-}
-
-.landing-carousel-arrow.prev {
-  left: -12px;
-}
-
-.landing-carousel-arrow.next {
-  right: -12px;
-}
-
-/* Hide navigation arrows on small screens with hover support to avoid overlapping touch elements if they aren't needed, or make them slightly offset. Let's keep them visible but slightly translucent by default. */
-.landing-carousel-arrow {
-  opacity: 0.85;
-}
-.landing-carousel-arrow:hover {
-  opacity: 1;
-}
-
-.landing-team-scroll {
-  display: flex;
-  gap: 12px;
-  width: 100%;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  padding-bottom: 4px;
-  scrollbar-width: none;
-}
-
-.landing-team-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.landing-barber-card {
-  min-width: 148px;
-  scroll-snap-align: start;
-  background: rgba(22, 22, 26, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-}
-
-.landing-barber-card:hover {
-  background: rgba(29, 29, 34, 0.6);
-  border-color: rgba(203, 183, 154, 0.15);
-  transform: translateY(-2px);
-}
-
-.landing-bc-photo {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 10px;
-  margin-bottom: 10px;
-}
-
-.landing-bc-name {
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--white);
-}
-
-.landing-bc-role {
-  font-size: 9px;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: 2px;
-}
-
-.landing-bc-avail {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 9px;
-  font-weight: 600;
-  color: #5fd38a;
-  margin: 9px 0;
-}
-
-.landing-bc-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 6px #4ade80;
-}
-
-.landing-bc-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--white);
-  padding: 7px 18px;
-  border-radius: 10px;
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.landing-bc-btn:hover {
-  border-color: var(--champagne);
-  background: rgba(255, 255, 255, 0.1);
+.landing-barber-card-v2:hover .landing-bc-btn-circle {
+  background: #FFD66B;
+  transform: rotate(90deg);
+  box-shadow: 0 0 12px rgba(255, 214, 107, 0.4);
 }
 
 /* ── Club Panda VIP ── */

@@ -1511,7 +1511,7 @@ export const dataService = {
 
     const { data: txs, error } = await supabase
       .from('transactions')
-      .select('client_id, amount, status, type, created_at')
+      .select('metadata, amount, status, type, created_at')
       .eq('status', 'PAID')
       .eq('type', 'income')
       .gte('created_at', isoString);
@@ -1520,8 +1520,9 @@ export const dataService = {
 
     const counts = {};
     _asArray(txs).forEach(tx => {
-      if (tx.client_id) {
-        counts[tx.client_id] = (counts[tx.client_id] || 0) + 1;
+      const clientId = tx.metadata?.client_id;
+      if (clientId) {
+        counts[clientId] = (counts[clientId] || 0) + 1;
       }
     });
 
