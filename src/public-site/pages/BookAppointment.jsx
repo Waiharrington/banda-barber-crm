@@ -863,7 +863,7 @@ export default function BookAppointment() {
           muted
           playsInline
           webkit-playsinline="true"
-          preload="none"
+          preload="auto"
           poster={heroWebp}
           className="absolute top-0 left-0 w-full object-cover pointer-events-none z-1 animate-video-fade-in"
           style={{
