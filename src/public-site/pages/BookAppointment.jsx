@@ -245,9 +245,9 @@ export default function BookAppointment() {
   // One-time migration: the hero was recomposed (text left / bear right), so the
   // old bear & hand fine-tuning offsets no longer apply. Clear them once so the
   // new reference-matched defaults take effect. Video & gradient tuning is kept.
-  if (typeof window !== 'undefined' && localStorage.getItem('hero_cfg_v') !== '9') {
+  if (typeof window !== 'undefined' && localStorage.getItem('hero_cfg_v') !== '10') {
     ['bear_scale', 'bear_x', 'bear_y', 'bear_rotate', 'hand_x', 'hand_y', 'hand_scale', 'hand_rotate', 'hero_height', 'hero_y_offset', 'hero_zoom', 'hero_gradient_stop'].forEach(k => localStorage.removeItem(k));
-    localStorage.setItem('hero_cfg_v', '9');
+    localStorage.setItem('hero_cfg_v', '10');
   }
 
   const [heroHeight, setHeroHeight] = useState(() => Number(localStorage.getItem('hero_height') || 102));
@@ -256,12 +256,12 @@ export default function BookAppointment() {
   const [gradientStop, setGradientStop] = useState(() => Number(localStorage.getItem('hero_gradient_stop') || 51));
   const [showConfigurator, setShowConfigurator] = useState(false);
   const [configTab, setConfigTab] = useState('video'); // 'video' or 'bear'
-  const [bearScale, setBearScale] = useState(() => Number(localStorage.getItem('bear_scale') || 1.11));
+  const [bearScale, setBearScale] = useState(() => Number(localStorage.getItem('bear_scale') || 0.98));
   const [bearX, setBearX] = useState(() => Number(localStorage.getItem('bear_x') || -20));
-  const [bearY, setBearY] = useState(() => Number(localStorage.getItem('bear_y') || 11.5));
-  const [bearRotate, setBearRotate] = useState(() => Number(localStorage.getItem('bear_rotate') || -8));
-  const [handX, setHandX] = useState(() => Number(localStorage.getItem('hand_x') || 2));
-  const [handY, setHandY] = useState(() => Number(localStorage.getItem('hand_y') || 52));
+  const [bearY, setBearY] = useState(() => Number(localStorage.getItem('bear_y') || 16));
+  const [bearRotate, setBearRotate] = useState(() => Number(localStorage.getItem('bear_rotate') || -7));
+  const [handX, setHandX] = useState(() => Number(localStorage.getItem('hand_x') || -2));
+  const [handY, setHandY] = useState(() => Number(localStorage.getItem('hand_y') || 51.5));
   const [handScale, setHandScale] = useState(() => Number(localStorage.getItem('hand_scale') || 0.52));
   const [handRotate, setHandRotate] = useState(() => Number(localStorage.getItem('hand_rotate') || 21));
 
@@ -804,7 +804,7 @@ export default function BookAppointment() {
     const activeHeroVideo = heroVideo;
 
     const heroContent = (
-      <div className={`w-full ${isResting ? 'min-h-[66vh]' : 'min-h-screen'} flex flex-col justify-between items-stretch text-left px-6 pt-8 pb-4 relative overflow-hidden box-border gap-5`}>
+      <div className="w-full min-h-[66vh] flex flex-col justify-between items-stretch text-left px-6 pt-8 pb-4 relative overflow-hidden box-border gap-5">
         {/* Background media (video or photo) inside Hero */}
         {activeHeroVideo ? (
           <video
@@ -846,8 +846,8 @@ export default function BookAppointment() {
           background: 'linear-gradient(to right, rgba(5,5,6,0.72) 0%, rgba(5,5,6,0.45) 38%, rgba(5,5,6,0.1) 58%, transparent 75%)',
         }} />
 
-        {/* ── 3D PANDA BEAR & WAVING HAND LAYERING ── */}
-        <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center overflow-hidden">
+        {/* ── 3D PANDA BEAR & WAVING HAND LAYERING — solo en landing, no en slices de transición ── */}
+        <div className={`absolute inset-0 pointer-events-none z-20 flex items-center justify-center overflow-hidden ${!isResting ? 'opacity-0' : ''}`}>
           <div className="relative w-full h-full animate-bear-float">
             {/* Floor shadow ellipse under the bear's feet */}
             <div className="absolute" style={{
@@ -947,9 +947,9 @@ export default function BookAppointment() {
                   setIsTransitioning(false);
                 }, 750);
               }}
-              className="btn-glass-gold py-3.5 text-xs font-extrabold"
+              className="btn-glass-gold py-3.5 text-xs font-extrabold flex items-center justify-center gap-2"
             >
-              Ya soy cliente
+              <User size={15} /> Ya soy cliente
             </button>
           </div>
         </div>
