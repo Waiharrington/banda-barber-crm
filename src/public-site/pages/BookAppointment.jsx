@@ -44,7 +44,7 @@ import bearBody from '../../assets/oso_saludando.png';
 import bearHand from '../../assets/mano_oso_saludando.png';
 
 // Reusable AnimatedSection component to perform fade-up on scroll reveal
-function AnimatedSection({ children, className = "" }) {
+function AnimatedSection({ children, className = "", delay = 0, from = "bottom" }) {
   const ref = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -56,26 +56,24 @@ function AnimatedSection({ children, className = "" }) {
           observer.unobserve(entry.target);
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.08 }
     );
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current);
-      }
-    };
+    if (ref.current) observer.observe(ref.current);
+    return () => { if (ref.current) observer.unobserve(ref.current); };
   }, []);
 
+  const hiddenTransform = from === "left" ? "translateX(-32px)" : from === "right" ? "translateX(32px)" : "translateY(30px)";
+
   return (
-    <div 
-      ref={ref} 
-      className={`${className} transition-all duration-[900ms] ease-[cubic-bezier(0.25,1,0.5,1)] ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-      }`}
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        transition: `opacity 650ms cubic-bezier(0.25,1,0.5,1) ${delay}ms, transform 650ms cubic-bezier(0.25,1,0.5,1) ${delay}ms`,
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'none' : hiddenTransform,
+        willChange: 'opacity, transform',
+      }}
     >
       {children}
     </div>
@@ -841,10 +839,23 @@ export default function BookAppointment() {
           />
         )}
 
-        {/* ── Left-side text legibility gradient (text side only, doesn't touch the bear) ── */}
+        {/* ── Left-side text legibility gradient ── */}
         <div className="absolute inset-0 pointer-events-none z-10" style={{
           background: 'linear-gradient(to right, rgba(5,5,6,0.72) 0%, rgba(5,5,6,0.45) 38%, rgba(5,5,6,0.1) 58%, transparent 75%)',
         }} />
+
+        {/* ── Cinematic vignette ── */}
+        <div className="absolute inset-0 pointer-events-none z-10" style={{
+          background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.72) 100%)',
+        }} />
+
+        {/* ── Spotlight behind bear ── */}
+        <div className={`absolute inset-0 pointer-events-none z-11 ${!isResting ? 'opacity-0' : ''}`} style={{
+          background: `radial-gradient(ellipse 55% 60% at ${100 - bearX}% ${100 - bearY - 20}%, rgba(203,183,154,0.09) 0%, transparent 70%)`,
+        }} />
+
+        {/* ── Grain/noise texture ── */}
+        <div className="absolute inset-0 pointer-events-none z-10 hero-grain" />
 
         {/* ── 3D PANDA BEAR & WAVING HAND LAYERING — solo en landing, no en slices de transición ── */}
         <div className={`absolute inset-0 pointer-events-none z-20 flex items-center justify-center overflow-hidden ${!isResting ? 'opacity-0' : ''}`}>
@@ -1062,36 +1073,45 @@ export default function BookAppointment() {
           <div className={`landing-content relative z-10 w-full ${isTransitioning ? 'landing-content-exit' : ''}`}>
             
             {/* Section: Servicios Populares */}
-            <AnimatedSection className="landing-section">
-              <div className="landing-section-head">
+            <div className="landing-section">
+              <AnimatedSection className="landing-section-head" delay={0}>
                 <span className="landing-section-head-title">Servicios Populares</span>
                 <button onClick={() => handleStartBooking()} className="landing-see-all">
                   Ver todos <ChevronRight size={13} />
                 </button>
-              </div>
-              <div className="landing-services-grid">
-                {services.slice(0, 4).map(service => (
-                  <button
-                    key={service.id}
-                    onClick={() => { setSelectedService(service); handleStartBooking(); }}
-                    className="landing-service-card"
-                  >
-                    {getServiceIcon(service)}
-                    <span className="landing-service-name">{service.name}</span>
-                    <span className="landing-service-meta">{service.duration} min • Desde</span>
-                    <span className="landing-service-price">${service.price}</span>
-                  </button>
+              </AnimatedSection>
+              <div className="landing-services-scroll">
+                {services.slice(0, 4).map((service, i) => (
+                  <AnimatedSection key={service.id} delay={i * 70} className="landing-service-snap">
+                    <button
+                      onClick={() => { setSelectedService(service); handleStartBooking(); }}
+                      className="landing-service-card"
+                    >
+                      <span className="landing-service-num">0{i + 1}</span>
+                      {i === 0 && <span className="landing-service-badge">Popular</span>}
+                      <div className="landing-service-icon-area">
+                        {getServiceIcon(service)}
+                      </div>
+                      <div className="landing-service-info">
+                        <span className="landing-service-name">{service.name}</span>
+                        <span className="landing-service-meta">{service.duration} min</span>
+                        <span className="landing-service-price">${service.price}</span>
+                      </div>
+                    </button>
+                  </AnimatedSection>
                 ))}
               </div>
-            </AnimatedSection>
+            </div>
 
             {/* Section: Barbero Destacado del Mes */}
-            <AnimatedSection className="landing-section">
+            <div className="landing-section">
               {topBarber ? (
                 <div className="landing-barber-month-card">
-                  <div className="landing-bm-medal"><Award size={20} /></div>
-                  <BarberAvatar url={topBarber.image_url} name={topBarber.name} className="landing-bm-photo" iconSize={34} />
-                  <div className="landing-bm-content">
+                  <AnimatedSection delay={0} from="left">
+                    <div className="landing-bm-medal"><Award size={20} /></div>
+                    <BarberAvatar url={topBarber.image_url} name={topBarber.name} className="landing-bm-photo" iconSize={34} />
+                  </AnimatedSection>
+                  <AnimatedSection className="landing-bm-content" delay={120}>
                     <span className="landing-bm-label"><Crown size={12} /> Barbero Destacado del Mes</span>
                     <h3 className="landing-bm-name">{topBarber.name.split(' ')[0]}</h3>
                     <span className="landing-bm-role">{topBarber.specialty || 'Master Barber'}</span>
@@ -1116,48 +1136,50 @@ export default function BookAppointment() {
                     >
                       Agendar con {topBarber.name.split(' ')[0]} <ChevronRight size={14} />
                     </button>
-                  </div>
+                  </AnimatedSection>
                 </div>
               ) : (
                 <p className="text-white/40 text-xs">Cargando especialista destacado...</p>
               )}
-            </AnimatedSection>
+            </div>
 
             {/* Section: Equipo Disponible */}
-            <AnimatedSection className="landing-section">
-              <div className="landing-section-head">
+            <div className="landing-section">
+              <AnimatedSection className="landing-section-head" delay={0}>
                 <span className="landing-section-head-title">Equipo Disponible</span>
                 <button onClick={() => handleStartBooking()} className="landing-see-all">
                   Ver todos <ChevronRight size={13} />
                 </button>
-              </div>
+              </AnimatedSection>
               <div className="landing-team-scroll">
-                {barbers.slice(0, 6).map(barber => (
-                  <div key={barber.id} className="landing-barber-card">
-                    <BarberAvatar url={barber.image_url} name={barber.name} className="landing-bc-photo" iconSize={26} />
-                    <span className="landing-bc-name">{barber.name.split(' ')[0]}</span>
-                    <span className="landing-bc-role">{barber.specialty || barber.role?.split('|')[0] || 'Barber'}</span>
-                    <span className="landing-bc-avail"><span className="landing-bc-dot" /> Disponible hoy</span>
-                    <button
-                      onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
-                      className="landing-bc-btn"
-                    >
-                      Reservar
-                    </button>
-                  </div>
+                {barbers.slice(0, 6).map((barber, i) => (
+                  <AnimatedSection key={barber.id} delay={i * 70}>
+                    <div className="landing-barber-card">
+                      <BarberAvatar url={barber.image_url} name={barber.name} className="landing-bc-photo" iconSize={26} />
+                      <span className="landing-bc-name">{barber.name.split(' ')[0]}</span>
+                      <span className="landing-bc-role">{barber.specialty || barber.role?.split('|')[0] || 'Barber'}</span>
+                      <span className="landing-bc-avail"><span className="landing-bc-dot" /> Disponible hoy</span>
+                      <button
+                        onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
+                        className="landing-bc-btn"
+                      >
+                        Reservar
+                      </button>
+                    </div>
+                  </AnimatedSection>
                 ))}
               </div>
-            </AnimatedSection>
+            </div>
 
-            {/* Section: Cliente del Mes (basado en quien más visita la barbería en el mes) */}
-            <AnimatedSection className="landing-section">
+            {/* Section: Cliente del Mes */}
+            <div className="landing-section">
               <div className="landing-vip-card">
-                <div className="landing-vip-left">
+                <AnimatedSection className="landing-vip-left" delay={0} from="left">
                   <div className="landing-vip-badge"><Crown size={22} /></div>
                   <span className="landing-vip-title">Cliente del Mes</span>
                   <p className="landing-vip-desc">El cliente que más nos visita este mes se lleva el reconocimiento. ¿Serás tú el próximo?</p>
-                </div>
-                <div className="landing-vip-winner">
+                </AnimatedSection>
+                <AnimatedSection className="landing-vip-winner" delay={180} from="right">
                   <Crown size={28} className="vip-winner-crown" />
                   <span className="vip-winner-name">
                     {topClients[0] ? topClients[0].name.split(' ')[0] : '???'}
@@ -1165,9 +1187,9 @@ export default function BookAppointment() {
                   <span className="vip-winner-visits">
                     {topClients[0] ? `${topClients[0].visit_count} visitas este mes` : 'Sin ganador aún'}
                   </span>
-                </div>
+                </AnimatedSection>
               </div>
-            </AnimatedSection>
+            </div>
 
           </div>
         </div>
