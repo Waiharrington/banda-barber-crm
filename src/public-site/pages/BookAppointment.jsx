@@ -40,10 +40,10 @@ import bgDesktop from '../../assets/barbershop_desktop.png';
 import bgMobile from '../../assets/barbershop_mobile.png';
 import logo from '../../assets/logo.png';
 import pandaImg from '../../assets/panda_logo_nobg.png';
+import heroWebp from '../../assets/hero_video.webp';
 import heroVideo from '../../assets/hero_video.mp4';
 import bearBody from '../../assets/oso_saludando.png';
 import bearHand from '../../assets/mano_oso_saludando.png';
-import posterMobile from '../../assets/fondo_panda_telefoon.png';
 
 // Reusable AnimatedSection component to perform fade-up on scroll reveal
 function AnimatedSection({ children, className = "", delay = 0, from = "bottom" }) {
@@ -190,7 +190,7 @@ export default function BookAppointment() {
       videoRef.current.muted = true;
       videoRef.current.play().catch(e => {
         console.log('Autoplay blocked by browser:', e);
-        setVideoBlocked(true);
+        // The poster attribute automatically handles the animated WebP fallback
       });
     }
   }, [showWelcome]);
@@ -852,51 +852,37 @@ export default function BookAppointment() {
     const fade = (n) => skipAnimations ? '' : `fade-up-${n}`;
     const isResting = sliceClass === "";
 
-    // Set variable to reference imported video asset
-    const activeHeroVideo = heroVideo;
-    const showPhoto = videoBlocked || configTab === 'foto' || !activeHeroVideo;
-    const showVideo = !showPhoto && activeHeroVideo;
-
     const heroContent = (
-      <div className={`w-full ${showPhoto ? 'h-auto min-h-[58vh] lg:min-h-[60vh]' : 'min-h-[66vh] lg:min-h-[65vh]'} flex flex-col justify-between items-stretch text-left px-6 lg:px-12 pt-8 pb-8 relative lg:overflow-visible overflow-hidden box-border gap-5 transition-all duration-500`}>
-        {/* Background Fallback Photo */}
-        {showPhoto && (
-          <div 
-            className="absolute top-0 left-0 w-full pointer-events-none z-0"
-            style={{
-              height: '100%',
-              backgroundImage: `url(${isDesktop ? bgDesktop : posterMobile})`,
-              backgroundSize: 'cover',
-              backgroundPosition: `${posterXOffset}% ${posterYOffset}%`,
-              transform: `scale(${posterZoom})`,
-              filter: 'brightness(0.55) contrast(1.05)',
-              maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
-              WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
-            }}
-          />
-        )}
+      <div className={`w-full min-h-[66vh] lg:min-h-[65vh] flex flex-col justify-between items-stretch text-left px-6 lg:px-12 pt-8 pb-8 relative lg:overflow-visible overflow-hidden box-border gap-5 transition-all duration-500`}>
+        
+        {/* Highly Optimized Video (Hardware Accelerated + Native Animated Fallback via Poster) */}
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          webkit-playsinline="true"
+          preload="none"
+          poster={heroWebp}
+          className="absolute top-0 left-0 w-full object-cover pointer-events-none z-1 animate-video-fade-in"
+          style={{
+            height: '100%',
+            objectPosition: `center ${videoYOffset}%`,
+            transform: `scale(${videoZoom})`,
+            willChange: 'transform',
+            filter: 'brightness(0.55) contrast(1.05)',
+            maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
+            WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
+          }}
+        >
+          <source src={heroVideo} type="video/mp4" />
+        </video>
 
-        {/* Background Video */}
-        {showVideo && (
-          <video
-            ref={videoRef}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute top-0 left-0 w-full object-cover pointer-events-none z-1 animate-video-fade-in"
-            style={{
-              height: '100%',
-              objectPosition: `center ${videoYOffset}%`,
-              transform: `scale(${videoZoom})`,
-              filter: 'brightness(0.55) contrast(1.05)',
-              maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
-              WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
-            }}
-          >
-            <source src={activeHeroVideo} type="video/mp4" />
-          </video>
-        )}
+        {/* Subtle gradient overlay to ensure text contrast as requested */}
+        <div className="absolute inset-0 z-2 pointer-events-none bg-gradient-to-b from-black/20 via-transparent to-black/60"></div>
+
+
 
         {/* ── Spotlight behind bear ── */}
         <div className={`absolute inset-0 pointer-events-none z-1 ${!isResting ? 'opacity-0' : ''}`} style={{
@@ -1076,7 +1062,7 @@ export default function BookAppointment() {
                 width: 28, height: 28, borderRadius: '50%',
                 background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
                 color: 'rgba(255,255,255,0.25)', fontSize: 14,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                display: 'none', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', backdropFilter: 'blur(6px)',
               }}
               title="Configurador"
@@ -1193,7 +1179,8 @@ export default function BookAppointment() {
     );
 
     if (isResting) {
-      const topBarber = barberOfMonth || (barbers.length > 0 ? barbers[0] : null);
+      const marco = barbers.find(b => b.name.toLowerCase().includes('marco'));
+      const topBarber = marco || barberOfMonth || (barbers.length > 0 ? barbers[0] : null);
       const featuredReviews = topBarber ? reviews.filter(r => r.staff_id === topBarber.id) : [];
       const featuredAvg = featuredReviews.length
         ? (featuredReviews.reduce((acc, r) => acc + (r.rating || 0), 0) / featuredReviews.length).toFixed(1)
@@ -1229,8 +1216,8 @@ export default function BookAppointment() {
                       <div className="landing-service-info">
                         <span className="landing-service-name">{service.name}</span>
                         <span className="landing-service-meta">{service.duration} min</span>
-                        <span className="landing-service-price">${service.price}</span>
                       </div>
+                      <div className="landing-service-price">${service.price}</div>
                     </button>
                   </AnimatedSection>
                 ))}
@@ -1326,50 +1313,7 @@ export default function BookAppointment() {
             </div>
 
             {/* Section: Footer Features (Desktop only or responsive) */}
-            <div className="landing-section lg:col-span-12 mt-6 lg:mt-10 mb-8 hidden lg:block">
-              <div className="grid grid-cols-4 gap-6 pt-8 border-t border-[rgba(203,183,154,0.15)]">
-                {/* Feature 1 */}
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[rgba(203,183,154,0.08)] border border-[rgba(203,183,154,0.2)] flex items-center justify-center text-[var(--champagne)]">
-                    <User size={20} />
-                  </div>
-                  <div>
-                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-white mb-1">Profesionales Expertos</h4>
-                    <p className="text-[10px] text-white/50">Barberos altamente capacitados</p>
-                  </div>
-                </div>
-                {/* Feature 2 */}
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[rgba(203,183,154,0.08)] border border-[rgba(203,183,154,0.2)] flex items-center justify-center text-[var(--champagne)]">
-                    <Award size={20} />
-                  </div>
-                  <div>
-                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-white mb-1">Productos Premium</h4>
-                    <p className="text-[10px] text-white/50">Solo lo mejor para tu cuidado</p>
-                  </div>
-                </div>
-                {/* Feature 3 */}
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[rgba(203,183,154,0.08)] border border-[rgba(203,183,154,0.2)] flex items-center justify-center text-[var(--champagne)]">
-                    <Check size={20} />
-                  </div>
-                  <div>
-                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-white mb-1">Atención Personalizada</h4>
-                    <p className="text-[10px] text-white/50">Tu estilo, nuestra prioridad</p>
-                  </div>
-                </div>
-                {/* Feature 4 */}
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[rgba(203,183,154,0.08)] border border-[rgba(203,183,154,0.2)] flex items-center justify-center text-[var(--champagne)]">
-                    <span className="font-bold">WhatsApp</span>
-                  </div>
-                  <div>
-                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-white mb-1">¿Dudas? Escríbenos</h4>
-                    <p className="text-[10px] text-white/50">Estamos para ayudarte</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+
 
           </div>
         </div>
