@@ -42,6 +42,44 @@ import heroVideo from '../../assets/hero_video.mp4';
 import bearBody from '../../assets/oso_saludando.png';
 import bearHand from '../../assets/mano_oso_saludando.png';
 
+// Reusable AnimatedSection component to perform fade-up on scroll reveal
+function AnimatedSection({ children, className = "" }) {
+  const ref = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      if (ref.current) {
+        observer.unobserve(ref.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div 
+      ref={ref} 
+      className={`${className} transition-all duration-[900ms] ease-[cubic-bezier(0.25,1,0.5,1)] ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
 
 // Helper to render beverage icons uniformly without using raw system emojis
 const renderBeverageIcon = (beverageName, size = 16, className = "text-[var(--champagne)]") => {
@@ -1223,12 +1261,11 @@ export default function BookAppointment() {
         <div className="landing-scroll-container">
           {heroContent}
 
-
           {/* Additional landing sections */}
-          <div className="landing-content relative z-10 w-full">
+          <div className={`landing-content relative z-10 w-full ${isTransitioning ? 'landing-content-exit' : ''}`}>
             
             {/* Section: Services */}
-            <div className="landing-section">
+            <AnimatedSection className="landing-section">
               <span className="landing-section-title">Nuestros Servicios</span>
               <span className="landing-section-subtitle">Lo mejor para tu estilo y cuidado personal</span>
               <div className="landing-services-grid">
@@ -1249,10 +1286,10 @@ export default function BookAppointment() {
               >
                 Ver todos los servicios
               </button>
-            </div>
+            </AnimatedSection>
 
             {/* Section: Barber of the Month */}
-            <div className="landing-section">
+            <AnimatedSection className="landing-section">
               <span className="landing-section-title">Especialista Destacado</span>
               <span className="landing-section-subtitle">El barbero más valorado por nuestra comunidad</span>
               
@@ -1283,10 +1320,10 @@ export default function BookAppointment() {
               ) : (
                 <p className="text-white/40 text-xs">Cargando especialista destacado...</p>
               )}
-            </div>
+            </AnimatedSection>
 
             {/* Section: Our Team */}
-            <div className="landing-section">
+            <AnimatedSection className="landing-section">
               <span className="landing-section-title">Nuestro Equipo</span>
               <span className="landing-section-subtitle">Profesionales listos para transformar tu estilo</span>
               <div className="landing-team-grid">
@@ -1311,10 +1348,10 @@ export default function BookAppointment() {
                   </div>
                 ))}
               </div>
-            </div>
+            </AnimatedSection>
 
             {/* Section: Client of the Month (Leaderboard podium) */}
-            <div className="landing-section">
+            <AnimatedSection className="landing-section">
               <span className="landing-section-title">Clientes del Mes</span>
               <span className="landing-section-subtitle">Premio a la fidelidad: nuestros clientes más frecuentes</span>
               
@@ -1355,7 +1392,7 @@ export default function BookAppointment() {
               <p className="text-[10px] text-white/50 max-w-xs mt-6 leading-relaxed">
                 ¿Quieres aparecer aquí el próximo mes? Agenda tus visitas regularmente y sé parte de nuestro podio VIP.
               </p>
-            </div>
+            </AnimatedSection>
 
           </div>
         </div>
@@ -1411,13 +1448,17 @@ export default function BookAppointment() {
           <div className="ambient-aurora-bronze"></div>
         </div>
 
-         {/* ── WELCOME SCREEN ── */}
-        {/* At rest: single unclipped fullscreen container (no diagonal line visible) */}
-        {showWelcome && !isTransitioning && renderWelcomeContent("", hasVisited)}
+        {/* ── WELCOME SCREEN ── */}
+        {/* Render welcome screen while showWelcome is true, adding fade-out class during transitions */}
+        {showWelcome && (
+          <div className={`w-full h-full ${isTransitioning ? 'welcome-screen-exit-fade pointer-events-none' : ''}`}>
+            {renderWelcomeContent("", hasVisited)}
+          </div>
+        )}
 
         {/* On click: two slices with @keyframe exit animation (starts from full-screen, splits apart) */}
         {isTransitioning && (
-          <div className="slice-container welcome-exit">
+          <div className="slice-container welcome-exit absolute inset-0 z-50">
             {renderWelcomeContent("slice-top-left")}
             {renderWelcomeContent("slice-bottom-right")}
             <svg className="absolute inset-0 w-full h-full pointer-events-none z-[40]">

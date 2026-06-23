@@ -1705,3 +1705,33 @@ input[type="date"] {
   animation: videoFadeIn 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
+/* Home Page Sections entrance/exit animations */
+.welcome-screen-exit-fade {
+  animation: fadeOutWelcome 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.landing-content-exit {
+  animation: fadeSlideDown 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes fadeOutWelcome {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeSlideDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+
+
