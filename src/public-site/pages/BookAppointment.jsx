@@ -22,6 +22,7 @@ import {
   Award,
   Crown,
   ChevronDown,
+  ArrowRight,
   PenTool,
   MessageSquare,
   Sunrise,
@@ -857,7 +858,7 @@ export default function BookAppointment() {
     const showVideo = !showPhoto && activeHeroVideo;
 
     const heroContent = (
-      <div className={`w-full ${showPhoto ? 'min-h-[48vh] lg:min-h-[50vh]' : 'min-h-[66vh] lg:min-h-[65vh]'} flex flex-col justify-between items-stretch text-left px-6 lg:px-12 pt-8 pb-4 relative lg:overflow-visible overflow-hidden box-border gap-5 transition-all duration-500`}>
+      <div className={`w-full ${showPhoto ? 'h-auto min-h-[58vh] lg:min-h-[60vh]' : 'min-h-[66vh] lg:min-h-[65vh]'} flex flex-col justify-between items-stretch text-left px-6 lg:px-12 pt-8 pb-8 relative lg:overflow-visible overflow-hidden box-border gap-5 transition-all duration-500`}>
         {/* Background Fallback Photo */}
         {showPhoto && (
           <div 
@@ -1240,8 +1241,8 @@ export default function BookAppointment() {
             <div className="landing-section lg:col-span-5">
               {topBarber ? (
                 <div className="landing-barber-month-card">
-                  <AnimatedSection delay={0} from="left">
-                    <div className="landing-bm-medal"><Award size={20} /></div>
+                  <AnimatedSection delay={0} from="left" className="landing-bm-photo-wrapper">
+                    <div className="landing-bm-medal"><Award size={20} fill="#D5B990" strokeWidth={1} /></div>
                     <BarberAvatar url={topBarber.image_url} name={topBarber.name} className="landing-bm-photo" iconSize={34} />
                   </AnimatedSection>
                   <AnimatedSection className="landing-bm-content" delay={120}>
@@ -1267,7 +1268,7 @@ export default function BookAppointment() {
                       onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
                       className="landing-bm-btn"
                     >
-                      Agendar con {topBarber.name.split(' ')[0]} <ChevronRight size={14} />
+                      AGENDAR CON {topBarber.name.split(' ')[0]} <ArrowRight size={14} strokeWidth={2.5} />
                     </button>
                   </AnimatedSection>
                 </div>
