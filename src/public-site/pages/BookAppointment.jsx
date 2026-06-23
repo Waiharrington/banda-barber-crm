@@ -505,6 +505,13 @@ export default function BookAppointment() {
       timeSlotsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 150);
   };
+  const scrollToTop = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
   useEffect(() => {
     if (step !== prevStepRef.current) {
       setExpandedBarber(null);
@@ -1488,7 +1495,7 @@ export default function BookAppointment() {
               {/* Circular back button on the left */}
               <div className="absolute left-0 top-0">
                 <button 
-                  onClick={() => { step > 1 ? setStep(step - 1) : handleReturnToWelcome(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  onClick={() => { step > 1 ? setStep(step - 1) : handleReturnToWelcome(); scrollToTop(); }}
                   className="wizard-back-button"
                   type="button"
                 >
@@ -1770,7 +1777,7 @@ export default function BookAppointment() {
 
                               {/* CTA */}
                               <button
-                                onClick={(e) => { createRipple(e); setSelectedBarber(expandedBarber); setStep(step + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                                onClick={(e) => { createRipple(e); setSelectedBarber(expandedBarber); setStep(step + 1); scrollToTop(); }}
                                 className="w-full relative overflow-hidden rounded-2xl haptic-bounce ripple-container group"
                                 style={{
                                   background: 'linear-gradient(135deg, #d4bc9a 0%, #c4a882 40%, #b8976e 100%)',
@@ -2203,7 +2210,7 @@ export default function BookAppointment() {
                           createRipple(e);
                           if (selectedDate && selectedTime) {
                             setStep(4);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            scrollToTop();
                           }
                         }}
                         disabled={!selectedDate || !selectedTime}
@@ -2642,7 +2649,7 @@ export default function BookAppointment() {
               {step < 5 ? (
                 <button
                   ref={nextBtnRef}
-                  onClick={(e) => { createRipple(e); if (canNext()) { setStep(step + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}
+                  onClick={(e) => { createRipple(e); if (canNext()) { setStep(step + 1); scrollToTop(); } }}
                   disabled={!canNext()}
                   className={`w-full py-4 px-6 rounded-full font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all haptic-bounce ripple-container ${
                     canNext() 
