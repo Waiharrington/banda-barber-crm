@@ -1390,3 +1390,318 @@ textarea:focus-visible {
 input[type="date"] {
   color-scheme: dark;
 }
+
+/* ── MINI-LANDING PAGE STYLES ── */
+.landing-scroll-container {
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  scroll-behavior: smooth;
+  height: 100%;
+  scrollbar-width: none;
+}
+.landing-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.landing-content {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 10px 20px 80px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  box-sizing: border-box;
+}
+
+.landing-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+
+.landing-section-title {
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: var(--champagne);
+  margin-bottom: 6px;
+}
+
+.landing-section-subtitle {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  max-width: 320px;
+  line-height: 1.4;
+}
+
+.landing-services-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.landing-service-card {
+  background: rgba(22, 22, 26, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.landing-service-card:hover {
+  background: rgba(29, 29, 34, 0.65);
+  border-color: rgba(203, 183, 154, 0.15);
+  transform: translateY(-1px);
+}
+
+.landing-service-info {
+  text-align: left;
+  max-width: 75%;
+}
+
+.landing-service-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.landing-service-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+.landing-service-price {
+  font-size: 13.5px;
+  font-weight: 900;
+  color: var(--champagne);
+}
+
+.landing-barber-month-card {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(203, 183, 154, 0.08) 0%, rgba(22, 22, 26, 0.6) 100%);
+  border: 1.5px solid rgba(203, 183, 154, 0.25);
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.landing-barber-badge-glow {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--gold-gradient);
+  color: #000;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 12px rgba(203, 183, 154, 0.4);
+}
+
+.landing-team-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.landing-barber-card {
+  background: rgba(22, 22, 26, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.landing-barber-card:hover {
+  background: rgba(29, 29, 34, 0.6);
+  border-color: rgba(203, 183, 154, 0.15);
+  transform: translateY(-2px);
+}
+
+.landing-podium-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+  padding-top: 10px;
+  height: 190px;
+}
+
+.landing-podium-spot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.landing-podium-column {
+  width: 100%;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  font-family: 'General Sans', sans-serif;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.podium-1st {
+  height: 85px;
+  background: linear-gradient(to top, #A8875D, #CBB79A);
+}
+
+.podium-2nd {
+  height: 65px;
+  background: linear-gradient(to top, #55555d, #909095);
+}
+
+.podium-3rd {
+  height: 48px;
+  background: linear-gradient(to top, #7a4621, #b5744a);
+}
+
+.landing-podium-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+
+.podium-1st-avatar {
+  width: 38px;
+  height: 38px;
+  border-color: var(--champagne);
+  box-shadow: 0 0 12px rgba(203, 183, 154, 0.3);
+}
+
+.landing-podium-name {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--white);
+  max-width: 75px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.landing-podium-visits {
+  font-size: 8px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.landing-scroll-arrow {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--champagne);
+  animation: bounceArrow 2s infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 8px;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+}
+
+@keyframes bounceArrow {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0) translateX(-50%);
+  }
+  40% {
+    transform: translateY(-8px) translateX(-50%);
+  }
+  60% {
+    transform: translateY(-4px) translateX(-50%);
+  }
+}
+
+/* ── 3D PANDA BEAR & WAVING HAND EFFECTS ── */
+.bear-glow-effect {
+  filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.35)) drop-shadow(0 0 10px rgba(203, 183, 154, 0.4));
+}
+
+@keyframes bearFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.animate-bear-float {
+  animation: bearFloat 6s ease-in-out infinite;
+}
+
+@keyframes handWave {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-18deg);
+  }
+}
+
+.animate-hand-wave {
+  animation: handWave 2.2s ease-in-out infinite;
+}
+
+@keyframes videoFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-video-fade-in {
+  animation: videoFadeIn 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+

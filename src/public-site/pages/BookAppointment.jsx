@@ -38,6 +38,10 @@ import bgDesktop from '../../assets/barbershop_desktop.png';
 import bgMobile from '../../assets/barbershop_mobile.png';
 import logo from '../../assets/logo.png';
 import pandaImg from '../../assets/panda_logo_nobg.png';
+import heroVideo from '../../assets/hero_video.mp4';
+import bearBody from '../../assets/oso_saludando.png';
+import bearHand from '../../assets/mano_oso_saludando.png';
+
 
 // Helper to render beverage icons uniformly without using raw system emojis
 const renderBeverageIcon = (beverageName, size = 16, className = "text-[var(--champagne)]") => {
@@ -168,6 +172,23 @@ export default function BookAppointment() {
       return [];
     }
   });
+  const [barberOfMonth, setBarberOfMonth] = useState(null);
+  const [topClients, setTopClients] = useState([]);
+  const [heroHeight, setHeroHeight] = useState(() => Number(localStorage.getItem('hero_height') || 61));
+  const [videoYOffset, setVideoYOffset] = useState(() => Number(localStorage.getItem('hero_y_offset') || 8));
+  const [videoZoom, setVideoZoom] = useState(() => Number(localStorage.getItem('hero_zoom') || 1.0));
+  const [gradientStop, setGradientStop] = useState(() => Number(localStorage.getItem('hero_gradient_stop') || 65));
+  const [showConfigurator, setShowConfigurator] = useState(false);
+  const [configTab, setConfigTab] = useState('video'); // 'video' or 'bear'
+  const [bearScale, setBearScale] = useState(() => Number(localStorage.getItem('bear_scale') || 0.90));
+  const [bearX, setBearX] = useState(() => Number(localStorage.getItem('bear_x') || 4));
+  const [bearY, setBearY] = useState(() => Number(localStorage.getItem('bear_y') || 42));
+  const [handX, setHandX] = useState(() => Number(localStorage.getItem('hand_x') || 16));
+  const [handY, setHandY] = useState(() => Number(localStorage.getItem('hand_y') || 63));
+  const [handScale, setHandScale] = useState(() => Number(localStorage.getItem('hand_scale') || 0.50));
+  const [handRotate, setHandRotate] = useState(() => Number(localStorage.getItem('hand_rotate') || 0));
+
+
 
   const triggerToast = (type, text) => {
     setToast({ type, text });
@@ -389,13 +410,18 @@ export default function BookAppointment() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [servicesData, staffData] = await Promise.all([
+        const [servicesData, staffData, topClientsData, topBarberData] = await Promise.all([
           publicService.getServices(),
-          publicService.getStaff()
+          publicService.getStaff(),
+          publicService.getTopClientsOfMonth().catch(() => []),
+          publicService.getBarberOfMonth().catch(() => null)
         ]);
         setServices(servicesData);
         const filteredBarbers = staffData.filter(s => s.role?.includes('Barbero') || s.role?.includes('Artista') || s.role?.includes('Tatuador'));
         setBarbers(filteredBarbers);
+        setTopClients(topClientsData || []);
+        setBarberOfMonth(topBarberData);
+
 
         // Restore draft booking (e.g. after Google OAuth redirect)
         const draft = localStorage.getItem('panda_draft_booking');
@@ -633,20 +659,28 @@ export default function BookAppointment() {
           if (!loginForm.identifier || !loginForm.password) {
             throw new Error('Por favor completa los campos de inicio de sesión.');
           }
-          const loginResult = await publicService.loginClient({
+          await publicService.loginClient({
             identifier: loginForm.identifier,
             password: loginForm.password
           });
           
           let client = null;
-          if (loginForm.identifier.includes('@')) {
-            client = await publicService.getClientByEmail(loginForm.identifier);
+          const id = loginForm.identifier.trim();
+
+          if (id.includes('@')) {
+            // Try real email first, then pandabarber.app email
+            client = await publicService.getClientByEmail(id);
           } else {
-            client = await publicService.getClientByPhone(loginForm.identifier);
+            // It's a phone number — try by phone
+            client = await publicService.getClientByPhone(id);
+            // If not found by phone, try with fake email format
+            if (!client) {
+              client = await publicService.getClientByEmail(`${id}@pandabarber.app`);
+            }
           }
           
           if (!client) {
-            throw new Error('No se encontró información del cliente.');
+            throw new Error('Tu cuenta fue creada pero el perfil no se encontró. Contacta al negocio.');
           }
           
           activeClient = client;
@@ -685,32 +719,102 @@ export default function BookAppointment() {
 
   const renderWelcomeContent = (sliceClass = "", skipAnimations = false) => {
     const fade = (n) => skipAnimations ? '' : `fade-up-${n}`;
-    return (
-      <div className={`slice-screen ${sliceClass}`}>
-        {/* Background photo inside slice */}
+    const isResting = sliceClass === "";
+
+    // Set variable to reference imported video asset
+    const activeHeroVideo = heroVideo;
+
+    const heroContent = (
+      <div className="w-full min-h-screen flex flex-col justify-between items-center text-center px-6 pt-10 pb-4 relative overflow-hidden box-border gap-6">
+        {/* Background media (video or photo) inside Hero */}
+        {activeHeroVideo ? (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute top-0 left-0 w-full object-cover pointer-events-none z-0 animate-video-fade-in"
+            style={{
+              height: `${heroHeight}%`,
+              objectPosition: `center ${videoYOffset}%`,
+              transform: `scale(${videoZoom})`,
+              filter: 'brightness(0.55) contrast(1.05)',
+              maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
+              WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
+            }}
+          >
+            <source src={activeHeroVideo} type="video/mp4" />
+          </video>
+        ) : (
+          <div 
+            className="absolute top-0 left-0 w-full pointer-events-none z-0 animate-bg-zoom"
+            style={{
+              height: `${heroHeight}%`,
+              backgroundImage: `url(${window.innerWidth > 768 ? bgDesktop : bgMobile})`,
+              backgroundSize: 'cover',
+              backgroundPosition: `center ${videoYOffset}%`,
+              backgroundRepeat: 'no-repeat',
+              transform: `scale(${videoZoom})`,
+              filter: 'brightness(0.70) contrast(1.05)',
+              maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
+              WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
+            }}
+          />
+        )}
+
+        {/* ── 3D PANDA BEAR & WAVING HAND LAYERING ── */}
+        <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center overflow-hidden">
+          <div className="relative w-full h-full max-w-md mx-auto animate-bear-float">
+            {/* Bear Body */}
+            <img 
+              src={bearBody} 
+              alt="Panda Barber 3D" 
+              className="absolute object-contain" 
+              style={{
+                width: `${80 * bearScale}%`,
+                maxWidth: `${280 * bearScale}px`,
+                bottom: `${bearY}%`,
+                right: `${bearX}%`
+              }}
+            />
+            {/* Bear Waving Hand Wrapper (handles X/Y position and Custom Rotation) */}
+            <div 
+              className="absolute flex items-center justify-center"
+              style={{
+                width: `${35 * handScale}%`,
+                maxWidth: `${120 * handScale}px`,
+                bottom: `${handY}%`,
+                right: `${handX}%`,
+                transform: `rotate(${handRotate}deg)`,
+                transformOrigin: '70% 85%',
+              }}
+            >
+              <img 
+                src={bearHand} 
+                alt="Waving Hand" 
+                className="w-full h-full object-contain origin-[70%_85%] animate-hand-wave" 
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Static Legibility gradient overlay (Outside the z-10 bear layer, z-15) */}
         <div 
-          className={`absolute top-0 left-0 w-full pointer-events-none z-0 animate-bg-zoom ${isTransitioning ? 'welcome-exit-bg' : ''}`}
+          className="absolute inset-0 z-15 pointer-events-none"
           style={{
-            height: '45%',
-            backgroundImage: `url(${window.innerWidth > 768 ? bgDesktop : bgMobile})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            filter: 'brightness(0.70) contrast(1.05)',
-            maskImage: 'linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 50%, rgba(0, 0, 0, 0) 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 50%, rgba(0, 0, 0, 0) 100%)',
+            background: 'linear-gradient(to bottom, rgba(7, 7, 10, 0) 0%, rgba(7, 7, 10, 0) 20%, rgba(7, 7, 10, 0.5) 35%, rgba(7, 7, 10, 0.95) 48%, #07070a 55%, #07070a 100%)',
           }}
         />
-        
-        {/* Centered welcome content */}
-        <div className="w-full h-full max-h-full flex flex-col justify-center items-center text-center px-6 py-5 relative z-10 box-border gap-6 md:gap-7">
-          {/* Logo and header */}
-          <div className={`flex flex-col items-center relative z-20 ${fade(1)}`}>
-            <img src={logo} alt="Panda Barber" className="w-24 h-24 object-contain filter brightness-110 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
-          </div>
 
+        {/* Logo and header */}
+        <div className={`flex flex-col items-center relative z-20 ${fade(1)}`}>
+          <img src={logo} alt="Panda Barber" className="w-24 h-24 object-contain filter brightness-110 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
+        </div>
+
+        {/* Bottom content container pushed to the bottom edge */}
+        <div className="w-full max-w-sm flex flex-col items-center gap-3 relative z-20 mt-auto pb-1">
           {/* Hero Welcome content */}
-          <div className="w-full max-w-sm space-y-4 relative z-10">
+          <div className="w-full space-y-4">
             <div className={fade(2)}>
               <span className="text-[12px] font-bold uppercase tracking-[0.3em] text-[#CBB79A] block mb-1">BIENVENIDO A</span>
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-wider text-white leading-none gold-glow-text title-sustained-glow whitespace-nowrap">PANDA BARBER</h1>
@@ -728,39 +832,41 @@ export default function BookAppointment() {
             </p>
 
             {/* Features highlight enclosed in a premium floating bar */}
-            <div className={`w-full bg-black/45 backdrop-blur-md border border-white/5 rounded-2xl p-4.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ${fade(4)} glass-features-bar`}>
+            <div className={`w-full max-w-[310px] mx-auto bg-black/45 backdrop-blur-md border border-white/5 rounded-xl p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ${fade(4)} glass-features-bar`}>
               <div className="grid grid-cols-3 gap-0">
-                <div className="flex flex-col items-center justify-center p-1">
-                  <Star className="text-[#CBB79A] mb-2" size={22} strokeWidth={1.5} />
-                  <span className="text-[10px] font-bold tracking-wider text-white/90 uppercase">Barberos</span>
-                  <span className="text-[10px] font-bold tracking-wider text-white/90 uppercase">Expertos</span>
+                <div className="flex flex-col items-center justify-center p-0.5">
+                  <Star className="text-[#CBB79A] mb-1" size={15} strokeWidth={1.5} />
+                  <span className="text-[8px] font-bold tracking-wider text-white/90 uppercase">Barberos</span>
+                  <span className="text-[8px] font-bold tracking-wider text-white/90 uppercase">Expertos</span>
                 </div>
-                <div className="flex flex-col items-center justify-center p-1 border-x border-white/10">
-                  <svg className="w-5.5 h-5.5 text-[#CBB79A] mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <div className="flex flex-col items-center justify-center p-0.5 border-x border-white/10">
+                  <svg className="w-4 h-4 text-[#CBB79A] mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M7 10V5C7 3.89543 7.89543 3 9 3H15C16.1046 3 17 3.89543 17 5V10" />
                     <path d="M5 10H19C20.1046 10 21 10.8954 21 12V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V12C3 10.8954 3.89543 10 5 10Z" />
                     <path d="M8 19V22M16 19V22" />
                   </svg>
-                  <span className="text-[10px] font-bold tracking-wider text-white/90 uppercase">Experiencia</span>
-                  <span className="text-[10px] font-bold tracking-wider text-white/90 uppercase">Premium</span>
+                  <span className="text-[8px] font-bold tracking-wider text-white/90 uppercase">Experiencia</span>
+                  <span className="text-[8px] font-bold tracking-wider text-white/90 uppercase">Premium</span>
                 </div>
-                <div className="flex flex-col items-center justify-center p-1">
-                  <Award className="text-[#CBB79A] mb-2" size={22} strokeWidth={1.5} />
-                  <span className="text-[10px] font-bold tracking-wider text-white/90 uppercase">Resultados</span>
-                  <span className="text-[10px] font-bold tracking-wider text-white/90 uppercase">Garantizados</span>
+                <div className="flex flex-col items-center justify-center p-0.5">
+                  <Award className="text-[#CBB79A] mb-1" size={15} strokeWidth={1.5} />
+                  <span className="text-[8px] font-bold tracking-wider text-white/90 uppercase">Resultados</span>
+                  <span className="text-[8px] font-bold tracking-wider text-white/90 uppercase">Garantizados</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Buttons drawer */}
-          <div className={`w-full max-w-sm space-y-3.5 relative z-10 ${fade(5)}`}>
+          <div className={`w-full space-y-3 ${fade(5)}`}>
             <button 
               onClick={(e) => { createRipple(e); handleStartBooking(); }}
               className="w-full py-4.5 rounded-xl font-extrabold text-sm uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 btn-premium-shimmer haptic-bounce ripple-container"
               style={{ 
                 background: 'linear-gradient(to bottom, #d2c1aa, #bba789)', 
-                color: '#000'
+                color: '#000',
+                marginLeft: 'auto',
+                marginRight: 'auto'
               }}
             >
               Reservar mi primera visita <span className="text-sm">→</span>
@@ -777,11 +883,502 @@ export default function BookAppointment() {
                 }, 750);
               }}
               className="btn-glass-gold py-3.5 text-xs font-extrabold"
+              style={{ marginLeft: 'auto', marginRight: 'auto' }}
             >
               Ya tengo cuenta
-            </button>
+            </button>            
+          </div>
+
+          {isResting && (
+            <div 
+              className="flex flex-col items-center justify-center pt-2 text-[var(--champagne)] select-none pointer-events-none"
+              style={{
+                animation: 'bounceArrow 2s infinite',
+                fontSize: '8px',
+                fontWeight: 'bold',
+                letterSpacing: '0.15em',
+                opacity: 0.7,
+              }}
+            >
+              <span>VER MÁS</span>
+              <ChevronDown size={12} className="mt-0.5" />
+            </div>
+          )}
+        </div>
+
+        {isResting && (
+          <button
+            type="button"
+            onClick={() => setShowConfigurator(!showConfigurator)}
+            className="absolute top-6 right-6 w-10 h-10 bg-black/60 hover:bg-black/85 border border-white/10 hover:border-[var(--champagne)] rounded-full flex items-center justify-center text-white/70 hover:text-white transition-all cursor-pointer z-[99]"
+            title="Ajustar Video de Fondo"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        )}
+
+        {/* CONFIGURATOR DRAWER */}
+        {showConfigurator && isResting && (
+          <div className="fixed bottom-6 left-6 right-6 md:left-auto md:right-6 md:top-24 md:bottom-auto z-[999] max-w-sm bg-[#0e0e12]/95 border border-white/10 rounded-2xl p-5 shadow-2xl backdrop-blur-md animate-scale-in text-left">
+            <h4 className="text-xs font-black uppercase tracking-wider text-[var(--champagne)] mb-3 flex justify-between items-center">
+              <span>Personalizar Diseño</span>
+              <button 
+                type="button"
+                onClick={() => setShowConfigurator(false)}
+                className="text-white/40 hover:text-white text-[10px] uppercase font-bold cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </h4>
+
+            {/* Tab Swapping Headers */}
+            <div className="flex border-b border-white/10 mb-4 gap-2">
+              <button 
+                type="button"
+                onClick={() => setConfigTab('video')}
+                className={`flex-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-center cursor-pointer transition-all ${
+                  configTab === 'video' 
+                    ? 'text-[var(--champagne)] border-b-2 border-[var(--champagne)]' 
+                    : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                🎬 Video / Fondo
+              </button>
+              <button 
+                type="button"
+                onClick={() => setConfigTab('bear')}
+                className={`flex-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-center cursor-pointer transition-all ${
+                  configTab === 'bear' 
+                    ? 'text-[var(--champagne)] border-b-2 border-[var(--champagne)]' 
+                    : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                🐼 Oso Panda
+              </button>
+            </div>
+            
+            <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1 hide-scrollbar">
+              {configTab === 'video' ? (
+                <>
+                  {/* Height slider */}
+                  <div>
+                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
+                      Altura del Fondo: {heroHeight}%
+                    </label>
+                    <input 
+                      type="range" 
+                      min="30" 
+                      max="100" 
+                      value={heroHeight} 
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setHeroHeight(v);
+                        localStorage.setItem('hero_height', v);
+                      }}
+                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Y Position slider */}
+                  <div>
+                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
+                      Posición Vertical: {videoYOffset}%
+                    </label>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      value={videoYOffset} 
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setVideoYOffset(v);
+                        localStorage.setItem('hero_y_offset', v);
+                      }}
+                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Zoom slider */}
+                  <div>
+                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
+                      Zoom / Escala: {videoZoom.toFixed(2)}x
+                    </label>
+                    <input 
+                      type="range" 
+                      min="1" 
+                      max="2.5" 
+                      step="0.05"
+                      value={videoZoom} 
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setVideoZoom(v);
+                        localStorage.setItem('hero_zoom', v);
+                      }}
+                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Gradient stop slider */}
+                  <div>
+                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
+                      Posición Difuminado: {gradientStop}%
+                    </label>
+                    <input 
+                      type="range" 
+                      min="30" 
+                      max="100" 
+                      value={gradientStop} 
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setGradientStop(v);
+                        localStorage.setItem('hero_gradient_stop', v);
+                      }}
+                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Bear Scale */}
+                  <div>
+                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
+                      Tamaño del Oso: {bearScale.toFixed(2)}x
+                    </label>
+                    <input 
+                      type="range" 
+                      min="0.4" 
+                      max="2.2" 
+                      step="0.05"
+                      value={bearScale} 
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setBearScale(v);
+                        localStorage.setItem('bear_scale', v);
+                      }}
+                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Bear X Position */}
+                  <div>
+                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
+                      Posición X Oso (Horizontal): {bearX}%
+                    </label>
+                    <input 
+                      type="range" 
+                      min="-50" 
+                      max="100" 
+                      value={bearX} 
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setBearX(v);
+                        localStorage.setItem('bear_x', v);
+                      }}
+                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Bear Y Position */}
+                  <div>
+                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
+                      Posición Y Oso (Vertical): {bearY}%
+                    </label>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      value={bearY} 
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setBearY(v);
+                        localStorage.setItem('bear_y', v);
+                      }}
+                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Hand Scale */}
+                  <div>
+                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
+                      Tamaño de la Mano: {handScale.toFixed(2)}x
+                    </label>
+                    <input 
+                      type="range" 
+                      min="0.4" 
+                      max="2.2" 
+                      step="0.05"
+                      value={handScale} 
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setHandScale(v);
+                        localStorage.setItem('hand_scale', v);
+                      }}
+                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Hand X Position */}
+                  <div>
+                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
+                      Posición X Mano (Horizontal): {handX}%
+                    </label>
+                    <input 
+                      type="range" 
+                      min="-50" 
+                      max="100" 
+                      value={handX} 
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setHandX(v);
+                        localStorage.setItem('hand_x', v);
+                      }}
+                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Hand Y Position */}
+                  <div>
+                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
+                      Posición Y Mano (Vertical): {handY}%
+                    </label>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      value={handY} 
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setHandY(v);
+                        localStorage.setItem('hand_y', v);
+                      }}
+                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Hand base angle Rotation */}
+                  <div>
+                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
+                      Rotación de la Mano: {handRotate}°
+                    </label>
+                    <input 
+                      type="range" 
+                      min="-180" 
+                      max="180" 
+                      value={handRotate} 
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setHandRotate(v);
+                        localStorage.setItem('hand_rotate', v);
+                      }}
+                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Reset button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setHeroHeight(61);
+                  setVideoYOffset(8);
+                  setVideoZoom(1.0);
+                  setGradientStop(65);
+                  setBearScale(0.90);
+                  setBearX(4);
+                  setBearY(42);
+                  setHandX(16);
+                  setHandY(63);
+                  setHandScale(0.50);
+                  setHandRotate(0);
+                  localStorage.removeItem('hero_height');
+                  localStorage.removeItem('hero_y_offset');
+                  localStorage.removeItem('hero_zoom');
+                  localStorage.removeItem('hero_gradient_stop');
+                  localStorage.removeItem('bear_scale');
+                  localStorage.removeItem('bear_x');
+                  localStorage.removeItem('bear_y');
+                  localStorage.removeItem('hand_x');
+                  localStorage.removeItem('hand_y');
+                  localStorage.removeItem('hand_scale');
+                  localStorage.removeItem('hand_rotate');
+                }}
+                className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-red-500/30 text-white font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all cursor-pointer text-center mt-2"
+              >
+                Restablecer Valores
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+
+    if (isResting) {
+      const topBarber = barberOfMonth || (barbers.length > 0 ? barbers[0] : null);
+
+      return (
+        <div className="landing-scroll-container">
+          {heroContent}
+
+
+          {/* Additional landing sections */}
+          <div className="landing-content relative z-10 w-full">
+            
+            {/* Section: Services */}
+            <div className="landing-section">
+              <span className="landing-section-title">Nuestros Servicios</span>
+              <span className="landing-section-subtitle">Lo mejor para tu estilo y cuidado personal</span>
+              <div className="landing-services-grid">
+                {services.slice(0, 4).map(service => (
+                  <div key={service.id} className="landing-service-card">
+                    <div className="landing-service-info">
+                      <span className="landing-service-name">{service.name}</span>
+                      <p className="landing-service-desc">{service.duration} min • {service.category}</p>
+                    </div>
+                    <span className="landing-service-price">${service.price}</span>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => handleStartBooking()}
+                className="mt-6 px-8 py-3.5 rounded-xl bg-white/5 border border-white/10 hover:border-[var(--champagne)] hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider cursor-pointer"
+                style={{ margin: '24px auto 0 auto' }}
+              >
+                Ver todos los servicios
+              </button>
+            </div>
+
+            {/* Section: Barber of the Month */}
+            <div className="landing-section">
+              <span className="landing-section-title">Especialista Destacado</span>
+              <span className="landing-section-subtitle">El barbero más valorado por nuestra comunidad</span>
+              
+              {topBarber ? (
+                <div className="landing-barber-month-card">
+                  <span className="landing-barber-badge-glow">Barbero del Mes</span>
+                  <div className="relative mb-4">
+                    <BarberAvatar url={topBarber.image_url} name={topBarber.name} />
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[var(--champagne)] text-black flex items-center justify-center text-xs font-black border-2 border-[#0e0e12]">
+                      ★
+                    </div>
+                  </div>
+                  <h3 className="text-base font-bold text-white mb-1">{topBarber.name}</h3>
+                  <p className="text-xs text-[var(--champagne)] font-semibold uppercase tracking-wider mb-2">{topBarber.specialty || 'Master Barber'}</p>
+                  <p className="text-xs text-white/60 max-w-xs leading-relaxed italic mb-4">"{topBarber.biography || 'Especializado en cortes clásicos y modernos con un estilo y precisión impecables.'}"</p>
+                  
+                  <button
+                    onClick={() => {
+                      setSelectedBarber(topBarber);
+                      handleStartBooking();
+                    }}
+                    className="px-6 py-2.5 rounded-xl bg-[var(--champagne)] text-black hover:bg-[#b8a283] font-bold text-xs uppercase tracking-wider cursor-pointer"
+                    style={{ margin: '0 auto' }}
+                  >
+                    Agendar con {topBarber.name.split(' ')[0]}
+                  </button>
+                </div>
+              ) : (
+                <p className="text-white/40 text-xs">Cargando especialista destacado...</p>
+              )}
+            </div>
+
+            {/* Section: Our Team */}
+            <div className="landing-section">
+              <span className="landing-section-title">Nuestro Equipo</span>
+              <span className="landing-section-subtitle">Profesionales listos para transformar tu estilo</span>
+              <div className="landing-team-grid">
+                {barbers.slice(0, 4).map(barber => (
+                  <div key={barber.id} className="landing-barber-card">
+                    <div className="mb-2">
+                      <BarberAvatar url={barber.image_url} name={barber.name} />
+                    </div>
+                    <span className="text-xs font-bold text-white leading-tight mb-1">{barber.name}</span>
+                    <span className="text-[9px] text-[var(--champagne)] font-semibold uppercase tracking-wider mb-3">{barber.specialty || 'Barber'}</span>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedBarber(barber);
+                        handleStartBooking();
+                      }}
+                      className="px-3.5 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-[var(--champagne)] hover:bg-white/10 text-white font-bold text-[9px] uppercase tracking-wider cursor-pointer"
+                      style={{ margin: '0 auto' }}
+                    >
+                      Reservar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Section: Client of the Month (Leaderboard podium) */}
+            <div className="landing-section">
+              <span className="landing-section-title">Clientes del Mes</span>
+              <span className="landing-section-subtitle">Premio a la fidelidad: nuestros clientes más frecuentes</span>
+              
+              <div className="landing-podium-container">
+                {/* 2nd Place */}
+                <div className="landing-podium-spot">
+                  <div className="landing-podium-avatar">
+                    {topClients[1] ? topClients[1].name.substring(0, 2).toUpperCase() : 'VIP'}
+                  </div>
+                  <span className="landing-podium-name">{topClients[1] ? topClients[1].name : 'Cliente Plata'}</span>
+                  <span className="landing-podium-visits">{topClients[1] ? `${topClients[1].visit_count} visitas` : 'Plata'}</span>
+                  <div className="landing-podium-column podium-2nd">2</div>
+                </div>
+                
+                {/* 1st Place */}
+                <div className="landing-podium-spot">
+                  <div className="landing-podium-avatar podium-1st-avatar">
+                    👑
+                  </div>
+                  <span className="landing-podium-name font-bold text-[var(--champagne)]">
+                    {topClients[0] ? topClients[0].name : 'Cliente Oro'}
+                  </span>
+                  <span className="landing-podium-visits">{topClients[0] ? `${topClients[0].visit_count} visitas` : 'Oro'}</span>
+                  <div className="landing-podium-column podium-1st">1</div>
+                </div>
+
+                {/* 3rd Place */}
+                <div className="landing-podium-spot">
+                  <div className="landing-podium-avatar">
+                    {topClients[2] ? topClients[2].name.substring(0, 2).toUpperCase() : 'VIP'}
+                  </div>
+                  <span className="landing-podium-name">{topClients[2] ? topClients[2].name : 'Cliente Bronce'}</span>
+                  <span className="landing-podium-visits">{topClients[2] ? `${topClients[2].visit_count} visitas` : 'Bronce'}</span>
+                  <div className="landing-podium-column podium-3rd">3</div>
+                </div>
+              </div>
+              
+              <p className="text-[10px] text-white/50 max-w-xs mt-6 leading-relaxed">
+                ¿Quieres aparecer aquí el próximo mes? Agenda tus visitas regularmente y sé parte de nuestro podio VIP.
+              </p>
+            </div>
+
           </div>
         </div>
+      );
+    }
+
+    return (
+      <div className={`slice-screen ${sliceClass}`}>
+        {/* Background photo inside slice */}
+        <div 
+          className={`absolute top-0 left-0 w-full pointer-events-none z-0 animate-bg-zoom ${isTransitioning ? 'welcome-exit-bg' : ''}`}
+          style={{
+            height: '45%',
+            backgroundImage: `url(${window.innerWidth > 768 ? bgDesktop : bgMobile})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            filter: 'brightness(0.70) contrast(1.05)',
+            maskImage: 'linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 50%, rgba(0, 0, 0, 0) 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 50%, rgba(0, 0, 0, 0) 100%)',
+          }}
+        />
+        {heroContent}
       </div>
     );
   };
@@ -798,7 +1395,7 @@ export default function BookAppointment() {
       <PandaLoader visible={loading && !showWelcome} />
       <div 
         ref={scrollContainerRef}
-        className={`relative w-full h-full overflow-x-hidden flex flex-col justify-between items-center bg-center ${showWelcome ? 'overflow-y-hidden text-clip' : 'overflow-y-auto'}`}
+        className="relative w-full h-full overflow-x-hidden flex flex-col justify-between items-center bg-center overflow-y-auto"
         style={{
           height: window.innerWidth > 768 ? 'calc(100vh - 48px)' : '100dvh',
           borderRadius: window.innerWidth > 768 ? '28px' : '0',
@@ -1983,9 +2580,10 @@ export default function BookAppointment() {
                                   <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white cursor-pointer"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer transition-colors duration-200"
+                                    style={{ color: showPassword ? 'var(--champagne)' : 'rgba(255,255,255,0.6)' }}
                                   >
-                                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                   </button>
                                 </div>
                               </div>
@@ -2027,9 +2625,10 @@ export default function BookAppointment() {
                                 <button
                                   type="button"
                                   onClick={() => setShowPassword(!showPassword)}
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white cursor-pointer"
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer transition-colors duration-200"
+                                  style={{ color: showPassword ? 'var(--champagne)' : 'rgba(255,255,255,0.6)' }}
                                 >
-                                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                                 </button>
                               </div>
                             </div>

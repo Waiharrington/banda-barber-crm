@@ -58,21 +58,52 @@ export const publicService = {
 
   // Register new client
   async registerClient({ name, phone, id_card, email, password, birth_date }) {
-    // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: email || `${phone}@pandabarber.app`,
-      password: password,
-      phone: phone,
-      options: {
-        data: { name, id_card }
-      }
-    });
-    if (authError) throw authError;
+    const effectiveEmail = email || `${phone}@pandabarber.app`;
 
-    // Create client record with birth_date using authClient to bypass RLS
-    const { data: clientData, error: clientError } = await authClient
+    // Step 1: Try to create auth user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: effectiveEmail,
+      password: password,
+      options: { data: { name, id_card } }
+    });
+
+    // If user already exists in Auth, sign them in to get their session
+    let userId = authData?.user?.id;
+    if (authError && authError.message?.toLowerCase().includes('already registered')) {
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: effectiveEmail,
+        password: password
+      });
+      if (signInError) throw new Error('Este usuario ya existe. Intenta iniciar sesión.');
+      userId = signInData?.user?.id;
+    } else if (authError) {
+      throw authError;
+    }
+
+    // Step 2: Check if client record already exists (by phone or email)
+    const { data: existing } = await authClient
       .from('clients')
-      .insert([{
+      .select()
+      .or(`phone.eq.${phone},id_card.eq.${id_card}`)
+      .maybeSingle();
+
+    if (existing) {
+      // Client record already exists — return it
+      return { user: { id: userId }, client: existing };
+    }
+
+    // Step 3: Insert new client record using service role (bypasses RLS)
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    const res = await fetch(`${supabaseUrl}/rest/v1/clients`, {
+      method: 'POST',
+      headers: {
+        'apikey': serviceKey,
+        'Authorization': `Bearer ${serviceKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
         name,
         phone,
         id_card,
@@ -80,12 +111,14 @@ export const publicService = {
         birth_date: birth_date || null,
         points: 0,
         status: 'Activo'
-      }])
-      .select()
-      .single();
-    if (clientError) throw clientError;
-
-    return { user: authData.user, client: clientData };
+      })
+    });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody?.message || 'Error al crear el perfil del cliente.');
+    }
+    const [clientData] = await res.json();
+    return { user: { id: userId }, client: clientData };
   },
 
   // Login client (accepts email or phone)
@@ -191,7 +224,7 @@ export const publicService = {
 
   // Check if client exists by email
   async getClientByEmail(email) {
-    const { data, error } = await supabase
+    const { data, error } = await authClient
       .from('clients')
       .select('*')
       .eq('email', email)
@@ -202,11 +235,11 @@ export const publicService = {
 
   // Get client by phone
   async getClientByPhone(phone) {
-    const { data, error } = await supabase
+    const { data, error } = await authClient
       .from('clients')
       .select('*')
       .eq('phone', phone)
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   },
@@ -341,5 +374,46 @@ export const publicService = {
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
+  },
+
+  // Get barber of the month (based on completed appointments total price in last 30 days)
+  async getBarberOfMonth() {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const isoString = thirtyDaysAgo.toISOString();
+
+    const { data: apps, error } = await supabase
+      .from('appointments')
+      .select('staff_id, total_price')
+      .eq('status', 'Completado')
+      .gte('scheduled_at', isoString);
+
+    if (error) throw error;
+
+    const earnings = {};
+    (apps || []).forEach(app => {
+      if (app.staff_id) {
+        earnings[app.staff_id] = (earnings[app.staff_id] || 0) + Number(app.total_price || 0);
+      }
+    });
+
+    const sorted = Object.entries(earnings)
+      .sort((a, b) => b[1] - a[1]);
+
+    if (sorted.length === 0) return null;
+
+    const topBarberId = sorted[0][0];
+    const totalGenerated = sorted[0][1];
+
+    const { data: barberData, error: staffErr } = await supabase
+      .from('staff')
+      .select('*')
+      .eq('id', topBarberId)
+      .single();
+
+    if (staffErr) throw staffErr;
+
+    return { ...barberData, total_generated: totalGenerated };
   }
 };
+
