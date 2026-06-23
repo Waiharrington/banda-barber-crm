@@ -210,6 +210,7 @@ export default function BookAppointment() {
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
   const scrollContainerRef = useRef(null);
+  const teamScrollRef = useRef(null);
   
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   useEffect(() => {
@@ -1286,23 +1287,50 @@ export default function BookAppointment() {
                   Ver todos <ChevronRight size={13} />
                 </button>
               </AnimatedSection>
-              <div className="landing-team-scroll">
-                {barbers.slice(0, 6).map((barber, i) => (
-                  <AnimatedSection key={barber.id} delay={i * 70}>
-                    <div className="landing-barber-card">
-                      <BarberAvatar url={barber.image_url} name={barber.name} className="landing-bc-photo" iconSize={26} />
-                      <span className="landing-bc-name">{barber.name.split(' ')[0]}</span>
-                      <span className="landing-bc-role">{barber.specialty || barber.role?.split('|')[0] || 'Barber'}</span>
-                      <span className="landing-bc-avail"><span className="landing-bc-dot" /> Disponible hoy</span>
-                      <button
-                        onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
-                        className="landing-bc-btn"
-                      >
-                        Reservar
-                      </button>
-                    </div>
-                  </AnimatedSection>
-                ))}
+
+              <div className="landing-team-carousel-wrapper">
+                <button 
+                  onClick={() => {
+                    if (teamScrollRef.current) {
+                      teamScrollRef.current.scrollBy({ left: -180, behavior: 'smooth' });
+                    }
+                  }}
+                  className="landing-carousel-arrow prev"
+                  aria-label="Anterior"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+
+                <div className="landing-team-scroll" ref={teamScrollRef}>
+                  {barbers.slice(0, 6).map((barber, i) => (
+                    <AnimatedSection key={barber.id} delay={i * 70}>
+                      <div className="landing-barber-card">
+                        <BarberAvatar url={barber.image_url} name={barber.name} className="landing-bc-photo" iconSize={36} />
+                        <span className="landing-bc-name">{barber.name.split(' ')[0]}</span>
+                        <span className="landing-bc-role">{barber.specialty || barber.role?.split('|')[0] || 'Barber'}</span>
+                        <span className="landing-bc-avail"><span className="landing-bc-dot" /> Disponible hoy</span>
+                        <button
+                          onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
+                          className="landing-bc-btn"
+                        >
+                          Reservar
+                        </button>
+                      </div>
+                    </AnimatedSection>
+                  ))}
+                </div>
+
+                <button 
+                  onClick={() => {
+                    if (teamScrollRef.current) {
+                      teamScrollRef.current.scrollBy({ left: 180, behavior: 'smooth' });
+                    }
+                  }}
+                  className="landing-carousel-arrow next"
+                  aria-label="Siguiente"
+                >
+                  <ChevronRight size={20} />
+                </button>
               </div>
             </div>
 
@@ -1312,16 +1340,25 @@ export default function BookAppointment() {
                 <AnimatedSection className="landing-vip-left" delay={0} from="left">
                   <div className="landing-vip-badge"><Crown size={22} /></div>
                   <span className="landing-vip-title">Cliente del Mes</span>
-                  <p className="landing-vip-desc">El cliente que más nos visita este mes se lleva el reconocimiento. ¿Serás tú el próximo?</p>
+                  <p className="landing-vip-desc">
+                    El cliente que más nos visita este mes se lleva el reconocimiento.
+                    <span className="landing-vip-callout">¿Serás tú el próximo?</span>
+                  </p>
                 </AnimatedSection>
-                <AnimatedSection className="landing-vip-winner" delay={180} from="right">
-                  <Crown size={28} className="vip-winner-crown" />
-                  <span className="vip-winner-name">
-                    {topClients[0] ? topClients[0].name.split(' ')[0] : '???'}
-                  </span>
-                  <span className="vip-winner-visits">
-                    {topClients[0] ? `${topClients[0].visit_count} visitas este mes` : 'Sin ganador aún'}
-                  </span>
+                <AnimatedSection className="landing-single-podium-zone" delay={180} from="right">
+                  <div className="single-podium-spot">
+                    <Crown size={22} className="vip-crown" />
+                    <div className="single-podium-avatar">
+                      {topClients[0] ? topClients[0].name.split(' ').map(n => n[0]).join('').slice(0,2) : '?'}
+                    </div>
+                    <span className="single-podium-name">
+                      {topClients[0] ? topClients[0].name.split(' ')[0] : '???'}
+                    </span>
+                    <span className="single-podium-visits">
+                      {topClients[0] ? `${topClients[0].visit_count} visitas` : 'Sin visitas'}
+                    </span>
+                    <div className="single-podium-block">1</div>
+                  </div>
                 </AnimatedSection>
               </div>
             </div>

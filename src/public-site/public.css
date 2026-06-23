@@ -1694,6 +1694,59 @@ input[type="date"] {
 }
 
 /* ── Equipo Disponible (horizontal scroll) ── */
+.landing-team-carousel-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.landing-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(10, 10, 12, 0.85);
+  border: 1px solid rgba(203, 183, 154, 0.3);
+  backdrop-filter: blur(8px);
+  color: #cbb79a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+}
+
+.landing-carousel-arrow:hover {
+  background: #cbb79a;
+  color: #0a0a0c;
+  border-color: #cbb79a;
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 0 12px rgba(203, 183, 154, 0.4);
+}
+
+.landing-carousel-arrow:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.landing-carousel-arrow.prev {
+  left: -12px;
+}
+
+.landing-carousel-arrow.next {
+  right: -12px;
+}
+
+/* Hide navigation arrows on small screens with hover support to avoid overlapping touch elements if they aren't needed, or make them slightly offset. Let's keep them visible but slightly translucent by default. */
+.landing-carousel-arrow {
+  opacity: 0.85;
+}
+.landing-carousel-arrow:hover {
+  opacity: 1;
+}
+
 .landing-team-scroll {
   display: flex;
   gap: 12px;
@@ -1709,12 +1762,12 @@ input[type="date"] {
 }
 
 .landing-barber-card {
-  min-width: 138px;
+  min-width: 148px;
   scroll-snap-align: start;
   background: rgba(22, 22, 26, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  padding: 14px;
+  border-radius: 16px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1730,9 +1783,9 @@ input[type="date"] {
 }
 
 .landing-bc-photo {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
   margin-bottom: 10px;
 }
 
@@ -1793,11 +1846,19 @@ input[type="date"] {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: linear-gradient(135deg, rgba(22, 22, 26, 0.7) 0%, rgba(14, 14, 18, 0.7) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: radial-gradient(circle at 82% 50%, rgba(212, 175, 55, 0.12) 0%, rgba(10, 10, 12, 0.95) 75%);
+  border: 1px solid rgba(212, 175, 55, 0.15);
   border-radius: 24px;
   padding: 18px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(212, 175, 55, 0.05);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.landing-vip-card:hover {
+  border-color: rgba(212, 175, 55, 0.35);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5), 0 0 25px rgba(212, 175, 55, 0.1);
 }
 
 .landing-vip-left {
@@ -1835,6 +1896,20 @@ input[type="date"] {
   margin: 6px 0 12px;
 }
 
+.landing-vip-callout {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: linear-gradient(135deg, #FFD66B 0%, #D4AF37 50%, #cbb79a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(255, 214, 107, 0.15));
+  width: max-content;
+}
+
 .landing-vip-btn {
   align-self: flex-start;
   background: rgba(255, 255, 255, 0.05);
@@ -1853,6 +1928,101 @@ input[type="date"] {
 .landing-vip-btn:hover {
   border-color: var(--champagne);
   background: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Podio individual Premium ── */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.6); }
+  100% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
+}
+
+.landing-single-podium-zone {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 130px;
+  height: 150px;
+  margin-left: auto;
+}
+
+.single-podium-spot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  width: 110px;
+  position: relative;
+}
+
+.single-podium-spot .vip-crown {
+  color: #FFD66B;
+  filter: drop-shadow(0 0 8px rgba(255, 214, 107, 0.8));
+  animation: float 2.5s ease-in-out infinite;
+  margin-bottom: 2px;
+  z-index: 2;
+}
+
+.single-podium-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.25) 0%, rgba(15, 15, 20, 0.9) 100%);
+  border: 2px solid #D4AF37;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 900;
+  color: #D4AF37;
+  animation: pulse-glow 3s ease-in-out infinite;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  z-index: 1;
+}
+
+.single-podium-name {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--white);
+  white-space: nowrap;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+.single-podium-visits {
+  font-size: 9px;
+  color: var(--champagne);
+  font-weight: 800;
+  margin-bottom: 8px;
+  text-align: center;
+  opacity: 0.9;
+}
+
+.single-podium-block {
+  width: 100%;
+  height: 52px;
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(135deg, #D4AF37 0%, #AA7C11 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 950;
+  color: #0a0a0c;
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .landing-vip-podium {
