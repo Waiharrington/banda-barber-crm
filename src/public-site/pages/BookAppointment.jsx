@@ -20,6 +20,7 @@ import {
   Info,
   Star,
   Award,
+  Crown,
   ChevronDown,
   PenTool,
   MessageSquare,
@@ -91,6 +92,34 @@ const renderBeverageIcon = (beverageName, size = 16, className = "text-[var(--ch
   return <GlassWater size={size} className={className} />;
 };
 
+// Minimal beard glyph used in the popular-services grid (lucide has no beard icon)
+const BeardIcon = ({ size = 26, className = "landing-service-icon" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M6 5c0 0-.6 7 1.2 10.5C8.7 18.4 10.2 20 12 20s3.3-1.6 4.8-4.5C18.6 12 18 5 18 5" />
+    <path d="M8.5 5.5c0 1.8 1.4 3 3.5 3s3.5-1.2 3.5-3" />
+  </svg>
+);
+
+// Pick an icon for a service based on its name/category to match the popular-services design
+const getServiceIcon = (service) => {
+  const n = (service?.name || '').toLowerCase();
+  const c = (service?.category || '').toLowerCase();
+  if (n.includes('premium') || c.includes('premium')) return <Crown size={26} className="landing-service-icon" />;
+  const hasCorte = n.includes('corte');
+  const hasBarba = n.includes('barba');
+  if (hasCorte && hasBarba) {
+    return (
+      <span style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Scissors size={20} className="landing-service-icon" />
+        <BeardIcon size={20} />
+      </span>
+    );
+  }
+  if (hasBarba) return <BeardIcon size={26} />;
+  if (n.includes('tatu')) return <PenTool size={26} className="landing-service-icon" />;
+  return <Scissors size={26} className="landing-service-icon" />;
+};
+
 // Generate time slots from 9 AM to 10 PM (22:00) in 30-min intervals
 function generateTimeSlots() {
   const slots = [];
@@ -120,27 +149,27 @@ function isTimePast(time24) {
 }
 
 // Custom Barber Avatar component that falls back gracefully if image is missing or fails to load
-function BarberAvatar({ url, name }) {
+function BarberAvatar({ url, name, className = "w-10 h-10 rounded-xl", iconSize = 16 }) {
   const [error, setError] = useState(!url);
-  
+
   useEffect(() => {
     setError(!url);
   }, [url]);
 
   if (error) {
     return (
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 flex-shrink-0">
-        <User size={16} className="text-[#CBB79A]" />
+      <div className={`${className} flex items-center justify-center bg-white/5 border border-white/10 flex-shrink-0`}>
+        <User size={iconSize} className="text-[#CBB79A]" />
       </div>
     );
   }
 
   return (
-    <img 
-      src={url} 
-      alt={name} 
+    <img
+      src={url}
+      alt={name}
       onError={() => setError(true)}
-      className="w-10 h-10 rounded-xl object-cover object-top border border-white/10 flex-shrink-0" 
+      className={`${className} object-cover object-top border border-white/10 flex-shrink-0`}
     />
   );
 }
@@ -212,19 +241,28 @@ export default function BookAppointment() {
   });
   const [barberOfMonth, setBarberOfMonth] = useState(null);
   const [topClients, setTopClients] = useState([]);
-  const [heroHeight, setHeroHeight] = useState(() => Number(localStorage.getItem('hero_height') || 61));
-  const [videoYOffset, setVideoYOffset] = useState(() => Number(localStorage.getItem('hero_y_offset') || 8));
-  const [videoZoom, setVideoZoom] = useState(() => Number(localStorage.getItem('hero_zoom') || 1.0));
-  const [gradientStop, setGradientStop] = useState(() => Number(localStorage.getItem('hero_gradient_stop') || 65));
+  const [reviews, setReviews] = useState([]);
+  // One-time migration: the hero was recomposed (text left / bear right), so the
+  // old bear & hand fine-tuning offsets no longer apply. Clear them once so the
+  // new reference-matched defaults take effect. Video & gradient tuning is kept.
+  if (typeof window !== 'undefined' && localStorage.getItem('hero_cfg_v') !== '8') {
+    ['bear_scale', 'bear_x', 'bear_y', 'hand_x', 'hand_y', 'hand_scale', 'hand_rotate', 'hero_height', 'hero_y_offset', 'hero_zoom', 'hero_gradient_stop'].forEach(k => localStorage.removeItem(k));
+    localStorage.setItem('hero_cfg_v', '8');
+  }
+
+  const [heroHeight, setHeroHeight] = useState(() => Number(localStorage.getItem('hero_height') || 102));
+  const [videoYOffset, setVideoYOffset] = useState(() => Number(localStorage.getItem('hero_y_offset') || 0));
+  const [videoZoom, setVideoZoom] = useState(() => Number(localStorage.getItem('hero_zoom') || 1.02));
+  const [gradientStop, setGradientStop] = useState(() => Number(localStorage.getItem('hero_gradient_stop') || 51));
   const [showConfigurator, setShowConfigurator] = useState(false);
   const [configTab, setConfigTab] = useState('video'); // 'video' or 'bear'
-  const [bearScale, setBearScale] = useState(() => Number(localStorage.getItem('bear_scale') || 0.90));
-  const [bearX, setBearX] = useState(() => Number(localStorage.getItem('bear_x') || 4));
-  const [bearY, setBearY] = useState(() => Number(localStorage.getItem('bear_y') || 42));
-  const [handX, setHandX] = useState(() => Number(localStorage.getItem('hand_x') || 16));
-  const [handY, setHandY] = useState(() => Number(localStorage.getItem('hand_y') || 63));
-  const [handScale, setHandScale] = useState(() => Number(localStorage.getItem('hand_scale') || 0.50));
-  const [handRotate, setHandRotate] = useState(() => Number(localStorage.getItem('hand_rotate') || 0));
+  const [bearScale, setBearScale] = useState(() => Number(localStorage.getItem('bear_scale') || 1.11));
+  const [bearX, setBearX] = useState(() => Number(localStorage.getItem('bear_x') || -14.5));
+  const [bearY, setBearY] = useState(() => Number(localStorage.getItem('bear_y') || 10));
+  const [handX, setHandX] = useState(() => Number(localStorage.getItem('hand_x') || 0));
+  const [handY, setHandY] = useState(() => Number(localStorage.getItem('hand_y') || 49.5));
+  const [handScale, setHandScale] = useState(() => Number(localStorage.getItem('hand_scale') || 0.55));
+  const [handRotate, setHandRotate] = useState(() => Number(localStorage.getItem('hand_rotate') || 21));
 
 
 
@@ -448,17 +486,19 @@ export default function BookAppointment() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [servicesData, staffData, topClientsData, topBarberData] = await Promise.all([
+        const [servicesData, staffData, topClientsData, topBarberData, reviewsData] = await Promise.all([
           publicService.getServices(),
           publicService.getStaff(),
           publicService.getTopClientsOfMonth().catch(() => []),
-          publicService.getBarberOfMonth().catch(() => null)
+          publicService.getBarberOfMonth().catch(() => null),
+          publicService.getStaffReviews().catch(() => [])
         ]);
         setServices(servicesData);
         const filteredBarbers = staffData.filter(s => s.role?.includes('Barbero') || s.role?.includes('Artista') || s.role?.includes('Tatuador'));
         setBarbers(filteredBarbers);
         setTopClients(topClientsData || []);
         setBarberOfMonth(topBarberData);
+        setReviews(reviewsData || []);
 
 
         // Restore draft booking (e.g. after Google OAuth redirect)
@@ -763,7 +803,7 @@ export default function BookAppointment() {
     const activeHeroVideo = heroVideo;
 
     const heroContent = (
-      <div className="w-full min-h-screen flex flex-col justify-between items-center text-center px-6 pt-10 pb-4 relative overflow-hidden box-border gap-6">
+      <div className={`w-full ${isResting ? 'min-h-[66vh]' : 'min-h-screen'} flex flex-col justify-between items-stretch text-left px-6 pt-8 pb-4 relative overflow-hidden box-border gap-5`}>
         {/* Background media (video or photo) inside Hero */}
         {activeHeroVideo ? (
           <video
@@ -800,23 +840,40 @@ export default function BookAppointment() {
           />
         )}
 
+        {/* ── Left-side text legibility gradient (text side only, doesn't touch the bear) ── */}
+        <div className="absolute inset-0 pointer-events-none z-10" style={{
+          background: 'linear-gradient(to right, rgba(5,5,6,0.72) 0%, rgba(5,5,6,0.45) 38%, rgba(5,5,6,0.1) 58%, transparent 75%)',
+        }} />
+
         {/* ── 3D PANDA BEAR & WAVING HAND LAYERING ── */}
-        <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center overflow-hidden">
-          <div className="relative w-full h-full max-w-md mx-auto animate-bear-float">
+        <div className="absolute inset-0 pointer-events-none z-20 flex items-center justify-center overflow-hidden">
+          <div className="relative w-full h-full animate-bear-float">
+            {/* Floor shadow ellipse under the bear's feet */}
+            <div className="absolute" style={{
+              width: `${60 * bearScale}%`,
+              maxWidth: `${210 * bearScale}px`,
+              height: '18px',
+              bottom: `${bearY - 1}%`,
+              right: `${bearX + 8}%`,
+              background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, transparent 70%)',
+              filter: 'blur(6px)',
+              transform: 'scaleY(0.35)',
+            }} />
             {/* Bear Body */}
-            <img 
-              src={bearBody} 
-              alt="Panda Barber 3D" 
-              className="absolute object-contain" 
+            <img
+              src={bearBody}
+              alt="Panda Barber 3D"
+              className="absolute object-contain"
               style={{
                 width: `${80 * bearScale}%`,
                 maxWidth: `${280 * bearScale}px`,
                 bottom: `${bearY}%`,
-                right: `${bearX}%`
+                right: `${bearX}%`,
+                filter: 'drop-shadow(-6px 12px 18px rgba(0,0,0,0.65)) drop-shadow(0px 4px 8px rgba(0,0,0,0.4))',
               }}
             />
             {/* Bear Waving Hand Wrapper (handles X/Y position and Custom Rotation) */}
-            <div 
+            <div
               className="absolute flex items-center justify-center"
               style={{
                 width: `${35 * handScale}%`,
@@ -827,89 +884,56 @@ export default function BookAppointment() {
                 transformOrigin: '70% 85%',
               }}
             >
-              <img 
-                src={bearHand} 
-                alt="Waving Hand" 
-                className="w-full h-full object-contain origin-[70%_85%] animate-hand-wave" 
+              <img
+                src={bearHand}
+                alt="Waving Hand"
+                className="w-full h-full object-contain origin-[70%_85%] animate-hand-wave"
+                style={{ filter: 'drop-shadow(-4px 8px 12px rgba(0,0,0,0.5))' }}
               />
             </div>
           </div>
         </div>
 
-        {/* Static Legibility gradient overlay (Outside the z-10 bear layer, z-15) */}
-        <div 
-          className="absolute inset-0 z-15 pointer-events-none"
-          style={{
-            background: 'linear-gradient(to bottom, rgba(7, 7, 10, 0) 0%, rgba(7, 7, 10, 0) 20%, rgba(7, 7, 10, 0.5) 35%, rgba(7, 7, 10, 0.95) 48%, #07070a 55%, #07070a 100%)',
-          }}
-        />
 
-        {/* Logo and header */}
-        <div className={`flex flex-col items-center relative z-20 ${fade(1)}`}>
-          <img src={logo} alt="Panda Barber" className="w-24 h-24 object-contain filter brightness-110 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
+        {/* Logo top-left */}
+        <div className={`flex flex-col items-start relative z-20 ${fade(1)}`}>
+          <img src={logo} alt="Panda Barber" className="w-20 h-20 object-contain filter brightness-110 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
         </div>
 
         {/* Bottom content container pushed to the bottom edge */}
-        <div className="w-full max-w-sm flex flex-col items-center gap-3 relative z-20 mt-auto pb-1">
-          {/* Hero Welcome content */}
-          <div className="w-full space-y-4">
+        <div className="w-full flex flex-col items-start gap-4 relative z-20 mt-auto pb-1">
+          {/* Hero Welcome content (left-aligned, kept clear of the bear on the right) */}
+          <div className="w-full space-y-4" style={{ maxWidth: '66%' }}>
             <div className={fade(2)}>
-              <span className="text-[12px] font-bold uppercase tracking-[0.3em] text-[#CBB79A] block mb-1">BIENVENIDO A</span>
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-wider text-white leading-none gold-glow-text title-sustained-glow whitespace-nowrap">PANDA BARBER</h1>
+              <span className="text-[12px] font-bold uppercase tracking-[0.3em] text-[#CBB79A] block mb-2">BIENVENIDO A</span>
+              <h1 className="text-4xl sm:text-5xl font-extrabold tracking-wide text-white leading-[0.95] gold-glow-text title-sustained-glow">PANDA BARBER</h1>
             </div>
 
             {/* Division Line with Scissors character */}
-            <div className={`flex items-center justify-center gap-4 my-2 ${fade(3)}`}>
-              <div className="h-[1px] w-16 bg-[#CBB79A]/40"></div>
+            <div className={`flex items-center justify-start gap-4 my-1 ${fade(3)}`}>
+              <div className="h-[1px] w-12 bg-[#CBB79A]/40"></div>
               <Scissors size={14} className="text-[#CBB79A] gold-glow-scissors" />
-              <div className="h-[1px] w-16 bg-[#CBB79A]/40"></div>
+              <div className="h-[1px] w-12 bg-[#CBB79A]/40"></div>
             </div>
 
-            <p className={`text-white/70 text-sm leading-relaxed max-w-xs mx-auto font-medium font-outfit ${fade(3)}`}>
+            <p className={`text-white/70 text-sm leading-relaxed font-medium font-outfit ${fade(3)}`}>
               Precisión en cada detalle. <br/> Distinción en cada estilo.
             </p>
-
-            {/* Features highlight enclosed in a premium floating bar */}
-            <div className={`w-full max-w-[310px] mx-auto bg-black/45 backdrop-blur-md border border-white/5 rounded-xl p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ${fade(4)} glass-features-bar`}>
-              <div className="grid grid-cols-3 gap-0">
-                <div className="flex flex-col items-center justify-center p-0.5">
-                  <Star className="text-[#CBB79A] mb-1" size={15} strokeWidth={1.5} />
-                  <span className="text-[8px] font-bold tracking-wider text-white/90 uppercase">Barberos</span>
-                  <span className="text-[8px] font-bold tracking-wider text-white/90 uppercase">Expertos</span>
-                </div>
-                <div className="flex flex-col items-center justify-center p-0.5 border-x border-white/10">
-                  <svg className="w-4 h-4 text-[#CBB79A] mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M7 10V5C7 3.89543 7.89543 3 9 3H15C16.1046 3 17 3.89543 17 5V10" />
-                    <path d="M5 10H19C20.1046 10 21 10.8954 21 12V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V12C3 10.8954 3.89543 10 5 10Z" />
-                    <path d="M8 19V22M16 19V22" />
-                  </svg>
-                  <span className="text-[8px] font-bold tracking-wider text-white/90 uppercase">Experiencia</span>
-                  <span className="text-[8px] font-bold tracking-wider text-white/90 uppercase">Premium</span>
-                </div>
-                <div className="flex flex-col items-center justify-center p-0.5">
-                  <Award className="text-[#CBB79A] mb-1" size={15} strokeWidth={1.5} />
-                  <span className="text-[8px] font-bold tracking-wider text-white/90 uppercase">Resultados</span>
-                  <span className="text-[8px] font-bold tracking-wider text-white/90 uppercase">Garantizados</span>
-                </div>
-              </div>
-            </div>
           </div>
 
-          {/* Buttons drawer */}
+          {/* Buttons drawer (full width) */}
           <div className={`w-full space-y-3 ${fade(5)}`}>
-            <button 
+            <button
               onClick={(e) => { createRipple(e); handleStartBooking(); }}
               className="w-full py-4.5 rounded-xl font-extrabold text-sm uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 btn-premium-shimmer haptic-bounce ripple-container"
-              style={{ 
-                background: 'linear-gradient(to bottom, #d2c1aa, #bba789)', 
+              style={{
+                background: 'linear-gradient(to bottom, #d2c1aa, #bba789)',
                 color: '#000',
-                marginLeft: 'auto',
-                marginRight: 'auto'
               }}
             >
-              Reservar mi primera visita <span className="text-sm">→</span>
+              <CalendarIcon size={16} /> Reservar mi primera visita <span className="text-sm">→</span>
             </button>
-            
+
             <button
               onClick={() => {
                 setIsTransitioning(true);
@@ -921,341 +945,110 @@ export default function BookAppointment() {
                 }, 750);
               }}
               className="btn-glass-gold py-3.5 text-xs font-extrabold"
-              style={{ marginLeft: 'auto', marginRight: 'auto' }}
             >
-              Ya tengo cuenta
-            </button>            
+              Ya soy cliente
+            </button>
           </div>
-
-          {isResting && (
-            <div 
-              className="flex flex-col items-center justify-center pt-2 text-[var(--champagne)] select-none pointer-events-none"
-              style={{
-                animation: 'bounceArrow 2s infinite',
-                fontSize: '8px',
-                fontWeight: 'bold',
-                letterSpacing: '0.15em',
-                opacity: 0.7,
-              }}
-            >
-              <span>VER MÁS</span>
-              <ChevronDown size={12} className="mt-0.5" />
-            </div>
-          )}
         </div>
 
+        {/* ── HERO CONFIGURATOR (hidden debug tool) ── */}
         {isResting && (
-          <button
-            type="button"
-            onClick={() => setShowConfigurator(!showConfigurator)}
-            className="absolute top-6 right-6 w-10 h-10 bg-black/60 hover:bg-black/85 border border-white/10 hover:border-[var(--champagne)] rounded-full flex items-center justify-center text-white/70 hover:text-white transition-all cursor-pointer z-[99]"
-            title="Ajustar Video de Fondo"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-          </button>
-        )}
+          <>
+            {/* Toggle button — tiny, bottom-left corner */}
+            <button
+              onClick={() => setShowConfigurator(v => !v)}
+              style={{
+                position: 'absolute', bottom: 12, left: 12, zIndex: 50,
+                width: 28, height: 28, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.25)', fontSize: 14,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', backdropFilter: 'blur(6px)',
+              }}
+              title="Configurador"
+            >⚙</button>
 
-        {/* CONFIGURATOR DRAWER */}
-        {showConfigurator && isResting && (
-          <div className="fixed bottom-6 left-6 right-6 md:left-auto md:right-6 md:top-24 md:bottom-auto z-[999] max-w-sm bg-[#0e0e12]/95 border border-white/10 rounded-2xl p-5 shadow-2xl backdrop-blur-md animate-scale-in text-left">
-            <h4 className="text-xs font-black uppercase tracking-wider text-[var(--champagne)] mb-3 flex justify-between items-center">
-              <span>Personalizar Diseño</span>
-              <button 
-                type="button"
-                onClick={() => setShowConfigurator(false)}
-                className="text-white/40 hover:text-white text-[10px] uppercase font-bold cursor-pointer"
-              >
-                Cerrar
-              </button>
-            </h4>
+            {/* Configurator panel */}
+            {showConfigurator && (
+              <div style={{
+                position: 'absolute', bottom: 48, left: 8, zIndex: 60,
+                width: 220, background: 'rgba(14,14,18,0.96)',
+                border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16,
+                padding: '14px 16px', backdropFilter: 'blur(20px)',
+                boxShadow: '0 16px 40px rgba(0,0,0,0.7)',
+              }}>
+                {/* Tabs */}
+                <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                  {['video', 'bear'].map(t => (
+                    <button key={t} onClick={() => setConfigTab(t)} style={{
+                      flex: 1, padding: '5px 0', borderRadius: 8, fontSize: 10,
+                      fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
+                      cursor: 'pointer', border: 'none',
+                      background: configTab === t ? 'rgba(203,183,154,0.2)' : 'rgba(255,255,255,0.04)',
+                      color: configTab === t ? '#CBB79A' : 'rgba(255,255,255,0.35)',
+                    }}>{t === 'video' ? 'Video' : 'Oso'}</button>
+                  ))}
+                </div>
 
-            {/* Tab Swapping Headers */}
-            <div className="flex border-b border-white/10 mb-4 gap-2">
-              <button 
-                type="button"
-                onClick={() => setConfigTab('video')}
-                className={`flex-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-center cursor-pointer transition-all ${
-                  configTab === 'video' 
-                    ? 'text-[var(--champagne)] border-b-2 border-[var(--champagne)]' 
-                    : 'text-white/40 hover:text-white/70'
-                }`}
-              >
-                🎬 Video / Fondo
-              </button>
-              <button 
-                type="button"
-                onClick={() => setConfigTab('bear')}
-                className={`flex-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-center cursor-pointer transition-all ${
-                  configTab === 'bear' 
-                    ? 'text-[var(--champagne)] border-b-2 border-[var(--champagne)]' 
-                    : 'text-white/40 hover:text-white/70'
-                }`}
-              >
-                🐼 Oso Panda
-              </button>
-            </div>
-            
-            <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1 hide-scrollbar">
-              {configTab === 'video' ? (
-                <>
-                  {/* Height slider */}
-                  <div>
-                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
-                      Altura del Fondo: {heroHeight}%
-                    </label>
-                    <input 
-                      type="range" 
-                      min="30" 
-                      max="100" 
-                      value={heroHeight} 
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setHeroHeight(v);
-                        localStorage.setItem('hero_height', v);
-                      }}
-                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
-                    />
+                {configTab === 'video' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {[
+                      { label: 'Altura hero %', val: heroHeight, set: setHeroHeight, min: 30, max: 120, step: 1, key: 'hero_height' },
+                      { label: 'Posición Y video %', val: videoYOffset, set: setVideoYOffset, min: 0, max: 100, step: 1, key: 'hero_y_offset' },
+                      { label: 'Zoom video', val: videoZoom, set: setVideoZoom, min: 0.8, max: 1.6, step: 0.01, key: 'hero_zoom' },
+                      { label: 'Degradado stop %', val: gradientStop, set: setGradientStop, min: 30, max: 100, step: 1, key: 'hero_gradient_stop' },
+                    ].map(({ label, val, set, min, max, step, key }) => (
+                      <div key={key}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>{label}</span>
+                          <span style={{ fontSize: 9, color: '#CBB79A', fontWeight: 800 }}>{val}</span>
+                        </div>
+                        <input type="range" min={min} max={max} step={step} value={val}
+                          onChange={e => { const v = Number(e.target.value); set(v); localStorage.setItem(key, v); }}
+                          style={{ width: '100%', accentColor: '#CBB79A', height: 3 }}
+                        />
+                      </div>
+                    ))}
                   </div>
+                )}
 
-                  {/* Y Position slider */}
-                  <div>
-                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
-                      Posición Vertical: {videoYOffset}%
-                    </label>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="100" 
-                      value={videoYOffset} 
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setVideoYOffset(v);
-                        localStorage.setItem('hero_y_offset', v);
-                      }}
-                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
-                    />
+                {configTab === 'bear' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {[
+                      { label: 'Escala oso', val: bearScale, set: setBearScale, min: 0.3, max: 2.5, step: 0.01, key: 'bear_scale' },
+                      { label: 'Oso X (right %)', val: bearX, set: setBearX, min: -30, max: 80, step: 0.5, key: 'bear_x' },
+                      { label: 'Oso Y (bottom %)', val: bearY, set: setBearY, min: -20, max: 80, step: 0.5, key: 'bear_y' },
+                      { label: 'Escala mano', val: handScale, set: setHandScale, min: 0.1, max: 1.5, step: 0.01, key: 'hand_scale' },
+                      { label: 'Mano X (right %)', val: handX, set: setHandX, min: -30, max: 80, step: 0.5, key: 'hand_x' },
+                      { label: 'Mano Y (bottom %)', val: handY, set: setHandY, min: -20, max: 100, step: 0.5, key: 'hand_y' },
+                      { label: 'Rotación mano °', val: handRotate, set: setHandRotate, min: -180, max: 180, step: 1, key: 'hand_rotate' },
+                    ].map(({ label, val, set, min, max, step, key }) => (
+                      <div key={key}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>{label}</span>
+                          <span style={{ fontSize: 9, color: '#CBB79A', fontWeight: 800 }}>{val}</span>
+                        </div>
+                        <input type="range" min={min} max={max} step={step} value={val}
+                          onChange={e => { const v = Number(e.target.value); set(v); localStorage.setItem(key, v); }}
+                          style={{ width: '100%', accentColor: '#CBB79A', height: 3 }}
+                        />
+                      </div>
+                    ))}
                   </div>
-
-                  {/* Zoom slider */}
-                  <div>
-                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
-                      Zoom / Escala: {videoZoom.toFixed(2)}x
-                    </label>
-                    <input 
-                      type="range" 
-                      min="1" 
-                      max="2.5" 
-                      step="0.05"
-                      value={videoZoom} 
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setVideoZoom(v);
-                        localStorage.setItem('hero_zoom', v);
-                      }}
-                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Gradient stop slider */}
-                  <div>
-                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
-                      Posición Difuminado: {gradientStop}%
-                    </label>
-                    <input 
-                      type="range" 
-                      min="30" 
-                      max="100" 
-                      value={gradientStop} 
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setGradientStop(v);
-                        localStorage.setItem('hero_gradient_stop', v);
-                      }}
-                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Bear Scale */}
-                  <div>
-                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
-                      Tamaño del Oso: {bearScale.toFixed(2)}x
-                    </label>
-                    <input 
-                      type="range" 
-                      min="0.4" 
-                      max="2.2" 
-                      step="0.05"
-                      value={bearScale} 
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setBearScale(v);
-                        localStorage.setItem('bear_scale', v);
-                      }}
-                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Bear X Position */}
-                  <div>
-                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
-                      Posición X Oso (Horizontal): {bearX}%
-                    </label>
-                    <input 
-                      type="range" 
-                      min="-50" 
-                      max="100" 
-                      value={bearX} 
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setBearX(v);
-                        localStorage.setItem('bear_x', v);
-                      }}
-                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Bear Y Position */}
-                  <div>
-                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
-                      Posición Y Oso (Vertical): {bearY}%
-                    </label>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="100" 
-                      value={bearY} 
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setBearY(v);
-                        localStorage.setItem('bear_y', v);
-                      }}
-                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Hand Scale */}
-                  <div>
-                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
-                      Tamaño de la Mano: {handScale.toFixed(2)}x
-                    </label>
-                    <input 
-                      type="range" 
-                      min="0.4" 
-                      max="2.2" 
-                      step="0.05"
-                      value={handScale} 
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setHandScale(v);
-                        localStorage.setItem('hand_scale', v);
-                      }}
-                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Hand X Position */}
-                  <div>
-                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
-                      Posición X Mano (Horizontal): {handX}%
-                    </label>
-                    <input 
-                      type="range" 
-                      min="-50" 
-                      max="100" 
-                      value={handX} 
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setHandX(v);
-                        localStorage.setItem('hand_x', v);
-                      }}
-                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Hand Y Position */}
-                  <div>
-                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
-                      Posición Y Mano (Vertical): {handY}%
-                    </label>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="100" 
-                      value={handY} 
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setHandY(v);
-                        localStorage.setItem('hand_y', v);
-                      }}
-                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Hand base angle Rotation */}
-                  <div>
-                    <label className="text-[10px] font-bold text-white/50 uppercase tracking-wide block mb-1">
-                      Rotación de la Mano: {handRotate}°
-                    </label>
-                    <input 
-                      type="range" 
-                      min="-180" 
-                      max="180" 
-                      value={handRotate} 
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setHandRotate(v);
-                        localStorage.setItem('hand_rotate', v);
-                      }}
-                      className="w-full accent-[var(--champagne)] bg-white/10 h-1.5 rounded-lg cursor-pointer"
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Reset button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setHeroHeight(61);
-                  setVideoYOffset(8);
-                  setVideoZoom(1.0);
-                  setGradientStop(65);
-                  setBearScale(0.90);
-                  setBearX(4);
-                  setBearY(42);
-                  setHandX(16);
-                  setHandY(63);
-                  setHandScale(0.50);
-                  setHandRotate(0);
-                  localStorage.removeItem('hero_height');
-                  localStorage.removeItem('hero_y_offset');
-                  localStorage.removeItem('hero_zoom');
-                  localStorage.removeItem('hero_gradient_stop');
-                  localStorage.removeItem('bear_scale');
-                  localStorage.removeItem('bear_x');
-                  localStorage.removeItem('bear_y');
-                  localStorage.removeItem('hand_x');
-                  localStorage.removeItem('hand_y');
-                  localStorage.removeItem('hand_scale');
-                  localStorage.removeItem('hand_rotate');
-                }}
-                className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-red-500/30 text-white font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all cursor-pointer text-center mt-2"
-              >
-                Restablecer Valores
-              </button>
-            </div>
-          </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     );
 
     if (isResting) {
       const topBarber = barberOfMonth || (barbers.length > 0 ? barbers[0] : null);
+      const featuredReviews = topBarber ? reviews.filter(r => r.staff_id === topBarber.id) : [];
+      const featuredAvg = featuredReviews.length
+        ? (featuredReviews.reduce((acc, r) => acc + (r.rating || 0), 0) / featuredReviews.length).toFixed(1)
+        : null;
 
       return (
         <div className="landing-scroll-container">
@@ -1264,84 +1057,86 @@ export default function BookAppointment() {
           {/* Additional landing sections */}
           <div className={`landing-content relative z-10 w-full ${isTransitioning ? 'landing-content-exit' : ''}`}>
             
-            {/* Section: Services */}
+            {/* Section: Servicios Populares */}
             <AnimatedSection className="landing-section">
-              <span className="landing-section-title">Nuestros Servicios</span>
-              <span className="landing-section-subtitle">Lo mejor para tu estilo y cuidado personal</span>
+              <div className="landing-section-head">
+                <span className="landing-section-head-title">Servicios Populares</span>
+                <button onClick={() => handleStartBooking()} className="landing-see-all">
+                  Ver todos <ChevronRight size={13} />
+                </button>
+              </div>
               <div className="landing-services-grid">
                 {services.slice(0, 4).map(service => (
-                  <div key={service.id} className="landing-service-card">
-                    <div className="landing-service-info">
-                      <span className="landing-service-name">{service.name}</span>
-                      <p className="landing-service-desc">{service.duration} min • {service.category}</p>
-                    </div>
+                  <button
+                    key={service.id}
+                    onClick={() => { setSelectedService(service); handleStartBooking(); }}
+                    className="landing-service-card"
+                  >
+                    {getServiceIcon(service)}
+                    <span className="landing-service-name">{service.name}</span>
+                    <span className="landing-service-meta">{service.duration} min • Desde</span>
                     <span className="landing-service-price">${service.price}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
-              <button
-                onClick={() => handleStartBooking()}
-                className="mt-6 px-8 py-3.5 rounded-xl bg-white/5 border border-white/10 hover:border-[var(--champagne)] hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider cursor-pointer"
-                style={{ margin: '24px auto 0 auto' }}
-              >
-                Ver todos los servicios
-              </button>
             </AnimatedSection>
 
-            {/* Section: Barber of the Month */}
+            {/* Section: Barbero Destacado del Mes */}
             <AnimatedSection className="landing-section">
-              <span className="landing-section-title">Especialista Destacado</span>
-              <span className="landing-section-subtitle">El barbero más valorado por nuestra comunidad</span>
-              
               {topBarber ? (
                 <div className="landing-barber-month-card">
-                  <span className="landing-barber-badge-glow">Barbero del Mes</span>
-                  <div className="relative mb-4">
-                    <BarberAvatar url={topBarber.image_url} name={topBarber.name} />
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[var(--champagne)] text-black flex items-center justify-center text-xs font-black border-2 border-[#0e0e12]">
-                      ★
+                  <div className="landing-bm-medal"><Award size={20} /></div>
+                  <BarberAvatar url={topBarber.image_url} name={topBarber.name} className="landing-bm-photo" iconSize={34} />
+                  <div className="landing-bm-content">
+                    <span className="landing-bm-label"><Crown size={12} /> Barbero Destacado del Mes</span>
+                    <h3 className="landing-bm-name">{topBarber.name.split(' ')[0]}</h3>
+                    <span className="landing-bm-role">{topBarber.specialty || 'Master Barber'}</span>
+                    <div className="landing-bm-rating">
+                      <Star size={13} fill="var(--champagne)" color="var(--champagne)" />
+                      {featuredAvg ? (
+                        <>
+                          <strong>{featuredAvg}</strong>
+                          <span style={{ opacity: 0.35 }}>|</span>
+                          <span style={{ color: 'var(--text-secondary)' }}>
+                            {featuredReviews.length} {featuredReviews.length === 1 ? 'reseña' : 'reseñas'}
+                          </span>
+                        </>
+                      ) : (
+                        <span style={{ color: 'var(--text-secondary)' }}>Top del mes</span>
+                      )}
                     </div>
+                    <p className="landing-bm-quote">"{topBarber.biography || 'Especializado en cortes clásicos y modernos con un estilo y precisión impecables.'}"</p>
+                    <button
+                      onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
+                      className="landing-bm-btn"
+                    >
+                      Agendar con {topBarber.name.split(' ')[0]} <ChevronRight size={14} />
+                    </button>
                   </div>
-                  <h3 className="text-base font-bold text-white mb-1">{topBarber.name}</h3>
-                  <p className="text-xs text-[var(--champagne)] font-semibold uppercase tracking-wider mb-2">{topBarber.specialty || 'Master Barber'}</p>
-                  <p className="text-xs text-white/60 max-w-xs leading-relaxed italic mb-4">"{topBarber.biography || 'Especializado en cortes clásicos y modernos con un estilo y precisión impecables.'}"</p>
-                  
-                  <button
-                    onClick={() => {
-                      setSelectedBarber(topBarber);
-                      handleStartBooking();
-                    }}
-                    className="px-6 py-2.5 rounded-xl bg-[var(--champagne)] text-black hover:bg-[#b8a283] font-bold text-xs uppercase tracking-wider cursor-pointer"
-                    style={{ margin: '0 auto' }}
-                  >
-                    Agendar con {topBarber.name.split(' ')[0]}
-                  </button>
                 </div>
               ) : (
                 <p className="text-white/40 text-xs">Cargando especialista destacado...</p>
               )}
             </AnimatedSection>
 
-            {/* Section: Our Team */}
+            {/* Section: Equipo Disponible */}
             <AnimatedSection className="landing-section">
-              <span className="landing-section-title">Nuestro Equipo</span>
-              <span className="landing-section-subtitle">Profesionales listos para transformar tu estilo</span>
-              <div className="landing-team-grid">
-                {barbers.slice(0, 4).map(barber => (
+              <div className="landing-section-head">
+                <span className="landing-section-head-title">Equipo Disponible</span>
+                <button onClick={() => handleStartBooking()} className="landing-see-all">
+                  Ver todos <ChevronRight size={13} />
+                </button>
+              </div>
+              <div className="landing-team-scroll">
+                {barbers.slice(0, 6).map(barber => (
                   <div key={barber.id} className="landing-barber-card">
-                    <div className="mb-2">
-                      <BarberAvatar url={barber.image_url} name={barber.name} />
-                    </div>
-                    <span className="text-xs font-bold text-white leading-tight mb-1">{barber.name}</span>
-                    <span className="text-[9px] text-[var(--champagne)] font-semibold uppercase tracking-wider mb-3">{barber.specialty || 'Barber'}</span>
-                    
+                    <BarberAvatar url={barber.image_url} name={barber.name} className="landing-bc-photo" iconSize={26} />
+                    <span className="landing-bc-name">{barber.name.split(' ')[0]}</span>
+                    <span className="landing-bc-role">{barber.specialty || barber.role?.split('|')[0] || 'Barber'}</span>
+                    <span className="landing-bc-avail"><span className="landing-bc-dot" /> Disponible hoy</span>
                     <button
-                      onClick={() => {
-                        setSelectedBarber(barber);
-                        handleStartBooking();
-                      }}
-                      className="px-3.5 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-[var(--champagne)] hover:bg-white/10 text-white font-bold text-[9px] uppercase tracking-wider cursor-pointer"
-                      style={{ margin: '0 auto' }}
+                      onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
+                      className="landing-bc-btn"
                     >
                       Reservar
                     </button>
@@ -1350,48 +1145,24 @@ export default function BookAppointment() {
               </div>
             </AnimatedSection>
 
-            {/* Section: Client of the Month (Leaderboard podium) */}
+            {/* Section: Cliente del Mes (basado en quien más visita la barbería en el mes) */}
             <AnimatedSection className="landing-section">
-              <span className="landing-section-title">Clientes del Mes</span>
-              <span className="landing-section-subtitle">Premio a la fidelidad: nuestros clientes más frecuentes</span>
-              
-              <div className="landing-podium-container">
-                {/* 2nd Place */}
-                <div className="landing-podium-spot">
-                  <div className="landing-podium-avatar">
-                    {topClients[1] ? topClients[1].name.substring(0, 2).toUpperCase() : 'VIP'}
-                  </div>
-                  <span className="landing-podium-name">{topClients[1] ? topClients[1].name : 'Cliente Plata'}</span>
-                  <span className="landing-podium-visits">{topClients[1] ? `${topClients[1].visit_count} visitas` : 'Plata'}</span>
-                  <div className="landing-podium-column podium-2nd">2</div>
+              <div className="landing-vip-card">
+                <div className="landing-vip-left">
+                  <div className="landing-vip-badge"><Crown size={22} /></div>
+                  <span className="landing-vip-title">Cliente del Mes</span>
+                  <p className="landing-vip-desc">El cliente que más nos visita este mes se lleva el reconocimiento. ¿Serás tú el próximo?</p>
                 </div>
-                
-                {/* 1st Place */}
-                <div className="landing-podium-spot">
-                  <div className="landing-podium-avatar podium-1st-avatar">
-                    👑
-                  </div>
-                  <span className="landing-podium-name font-bold text-[var(--champagne)]">
-                    {topClients[0] ? topClients[0].name : 'Cliente Oro'}
+                <div className="landing-vip-winner">
+                  <Crown size={28} className="vip-winner-crown" />
+                  <span className="vip-winner-name">
+                    {topClients[0] ? topClients[0].name.split(' ')[0] : '???'}
                   </span>
-                  <span className="landing-podium-visits">{topClients[0] ? `${topClients[0].visit_count} visitas` : 'Oro'}</span>
-                  <div className="landing-podium-column podium-1st">1</div>
-                </div>
-
-                {/* 3rd Place */}
-                <div className="landing-podium-spot">
-                  <div className="landing-podium-avatar">
-                    {topClients[2] ? topClients[2].name.substring(0, 2).toUpperCase() : 'VIP'}
-                  </div>
-                  <span className="landing-podium-name">{topClients[2] ? topClients[2].name : 'Cliente Bronce'}</span>
-                  <span className="landing-podium-visits">{topClients[2] ? `${topClients[2].visit_count} visitas` : 'Bronce'}</span>
-                  <div className="landing-podium-column podium-3rd">3</div>
+                  <span className="vip-winner-visits">
+                    {topClients[0] ? `${topClients[0].visit_count} visitas este mes` : 'Sin ganador aún'}
+                  </span>
                 </div>
               </div>
-              
-              <p className="text-[10px] text-white/50 max-w-xs mt-6 leading-relaxed">
-                ¿Quieres aparecer aquí el próximo mes? Agenda tus visitas regularmente y sé parte de nuestro podio VIP.
-              </p>
             </AnimatedSection>
 
           </div>
@@ -1438,7 +1209,7 @@ export default function BookAppointment() {
           borderRadius: window.innerWidth > 768 ? '28px' : '0',
           border: window.innerWidth > 768 ? '1.5px solid var(--border-color)' : 'none',
           boxShadow: '0 24px 60px rgba(0, 0, 0, 0.8)',
-          backgroundColor: '#07070a',
+          backgroundColor: '#050506',
           scrollbarWidth: 'none'
         }}
       >
