@@ -414,17 +414,22 @@
 /* Step transitions anim */
 .transition-step-container {
   width: 100%;
-  animation: stepFadeEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: stepFadeEnter 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes stepFadeEnter {
   0% {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(40px) scale(0.92);
+    filter: blur(10px);
+  }
+  30% {
+    opacity: 0.45;
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 
@@ -921,11 +926,15 @@
 @keyframes slideDownFade {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(-20px) scaleY(0.85);
+    transform-origin: top;
+    filter: blur(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scaleY(1);
+    transform-origin: top;
+    filter: blur(0);
   }
 }
 
@@ -2311,11 +2320,13 @@ input[type="date"] {
 @keyframes staggerSlideIn {
   0% {
     opacity: 0;
-    transform: translateY(30px) scale(0.96);
+    transform: translateY(45px) scale(0.92);
+    filter: blur(8px);
   }
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 
