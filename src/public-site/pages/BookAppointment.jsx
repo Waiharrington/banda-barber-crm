@@ -211,6 +211,7 @@ export default function BookAppointment() {
   const [barbers, setBarbers] = useState([]);
   const scrollContainerRef = useRef(null);
   const teamScrollRef = useRef(null);
+  const timeSlotsRef = useRef(null);
   
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   useEffect(() => {
@@ -468,9 +469,18 @@ export default function BookAppointment() {
   const handleStartBooking = () => {
     setIsTransitioning(true);
     setHasVisited(true);
+    window.scrollTo(0, 0);
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+    if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+
     setTimeout(() => {
       setShowWelcome(false);
       setIsTransitioning(false);
+      window.scrollTo(0, 0);
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+      if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
     }, 750);
   };
 
@@ -495,6 +505,11 @@ export default function BookAppointment() {
   const scrollToNextButton = () => {
     setTimeout(() => {
       nextBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
+  };
+  const scrollToTimeSlots = () => {
+    setTimeout(() => {
+      timeSlotsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 150);
   };
   useEffect(() => {
@@ -870,7 +885,7 @@ export default function BookAppointment() {
               backgroundSize: 'cover',
               backgroundPosition: `${posterXOffset}% ${posterYOffset}%`,
               transform: `scale(${posterZoom})`,
-              filter: 'brightness(0.55) contrast(1.05)',
+              filter: 'brightness(0.80) contrast(1.05)',
               maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
               WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
             }}
@@ -890,7 +905,7 @@ export default function BookAppointment() {
               height: '100%',
               objectPosition: `center ${videoYOffset}%`,
               transform: `scale(${videoZoom})`,
-              filter: 'brightness(0.55) contrast(1.05)',
+              filter: 'brightness(0.80) contrast(1.05)',
               maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
               WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
             }}
@@ -1288,49 +1303,30 @@ export default function BookAppointment() {
                 </button>
               </AnimatedSection>
 
-              <div className="landing-team-carousel-wrapper">
-                <button 
-                  onClick={() => {
-                    if (teamScrollRef.current) {
-                      teamScrollRef.current.scrollBy({ left: -180, behavior: 'smooth' });
-                    }
-                  }}
-                  className="landing-carousel-arrow prev"
-                  aria-label="Anterior"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-
-                <div className="landing-team-scroll" ref={teamScrollRef}>
-                  {barbers.slice(0, 6).map((barber, i) => (
-                    <AnimatedSection key={barber.id} delay={i * 70}>
-                      <div className="landing-barber-card">
-                        <BarberAvatar url={barber.image_url} name={barber.name} className="landing-bc-photo" iconSize={36} />
-                        <span className="landing-bc-name">{barber.name.split(' ')[0]}</span>
-                        <span className="landing-bc-role">{barber.specialty || barber.role?.split('|')[0] || 'Barber'}</span>
-                        <span className="landing-bc-avail"><span className="landing-bc-dot" /> Disponible hoy</span>
-                        <button
-                          onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
-                          className="landing-bc-btn"
-                        >
-                          Reservar
+              <div className="landing-team-grid">
+                {barbers.slice(0, 6).map((barber, i) => (
+                  <AnimatedSection key={barber.id} delay={i * 70}>
+                    <div 
+                      className="landing-barber-card-v2"
+                      onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
+                    >
+                      <div className="landing-bc-photo-wrapper">
+                        <BarberAvatar url={barber.image_url} name={barber.name} className="landing-bc-photo-flush" iconSize={40} />
+                      </div>
+                      <div className="landing-bc-bottom-bar">
+                        <div className="landing-bc-info-area">
+                          <span className="landing-bc-name-v2">{barber.name}</span>
+                          <span className="landing-bc-role-v2">
+                            {barber.specialty || barber.role?.split('|')[0] || 'Barbero'}
+                          </span>
+                        </div>
+                        <button className="landing-bc-btn-circle" aria-label="Reservar">
+                          +
                         </button>
                       </div>
-                    </AnimatedSection>
-                  ))}
-                </div>
-
-                <button 
-                  onClick={() => {
-                    if (teamScrollRef.current) {
-                      teamScrollRef.current.scrollBy({ left: 180, behavior: 'smooth' });
-                    }
-                  }}
-                  className="landing-carousel-arrow next"
-                  aria-label="Siguiente"
-                >
-                  <ChevronRight size={20} />
-                </button>
+                    </div>
+                  </AnimatedSection>
+                ))}
               </div>
             </div>
 
@@ -2007,6 +2003,7 @@ export default function BookAppointment() {
                                   if (!selectedDate || selectedDate.toDateString() !== date.toDateString()) {
                                     setSelectedDate(date);
                                     setSelectedTime(null);
+                                    scrollToTimeSlots();
                                   }
                                 }
                               }}
@@ -2035,7 +2032,7 @@ export default function BookAppointment() {
                     </div>
                     
                     {/* Time Slots Block */}
-                    <div className="space-y-4">
+                    <div className="space-y-4" ref={timeSlotsRef}>
                       <div className="flex items-center justify-between">
                         <h4 className="text-xs font-bold uppercase tracking-widest text-white/50">
                           {selectedDate ? (
@@ -2080,6 +2077,7 @@ export default function BookAppointment() {
                                 onClick={() => {
                                   if (!isDisabled) {
                                     setSelectedTime(time);
+                                    scrollToNextButton();
                                   }
                                 }}
                                 disabled={isDisabled}
