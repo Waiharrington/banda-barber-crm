@@ -884,8 +884,8 @@ export default function BookAppointment() {
               backgroundImage: `url(${isDesktop ? bgDesktop : posterMobile})`,
               backgroundSize: 'cover',
               backgroundPosition: `${posterXOffset}% ${posterYOffset}%`,
-              transform: `scale(${posterZoom})`,
-              filter: 'brightness(0.80) contrast(1.05)',
+              transform: `scale(${posterZoom + 0.08})`,
+              filter: 'brightness(0.80) contrast(1.05) blur(12px)',
               maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
               WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
             }}
@@ -1378,7 +1378,7 @@ export default function BookAppointment() {
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
-            filter: 'brightness(0.70) contrast(1.05)',
+            filter: 'brightness(0.70) contrast(1.05) blur(10px)',
             maskImage: 'linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 50%, rgba(0, 0, 0, 0) 100%)',
             WebkitMaskImage: 'linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 50%, rgba(0, 0, 0, 0) 100%)',
           }}
@@ -1415,7 +1415,7 @@ export default function BookAppointment() {
         {/* ── WELCOME SCREEN ── */}
         {/* Render welcome screen while showWelcome is true, adding fade-out class during transitions */}
         {showWelcome && (
-          <div className={`w-full h-full welcome-return-fade ${isTransitioning ? 'welcome-screen-exit-fade pointer-events-none' : ''}`}>
+          <div className={`w-full h-full ${isTransitioning ? 'welcome-screen-exit-fade pointer-events-none' : ''}`}>
             {renderWelcomeContent("", hasVisited)}
           </div>
         )}
@@ -1436,9 +1436,20 @@ export default function BookAppointment() {
           </div>
         )}
 
-        {/* On return: quiet fade transition overlay */}
+        {/* On return: slices come back together */}
         {isReturning && (
-          <div className="quiet-fade-overlay" />
+          <div className="slice-container welcome-return">
+            {renderWelcomeContent("slice-return-top-left", true)}
+            {renderWelcomeContent("slice-return-bottom-right", true)}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-[40]">
+              <line x1="100%" y1="0%" x2="0%" y2="100%" className="scissors-cut-line-return" />
+            </svg>
+            <div className="scissors-cutter-icon-return">
+              <div className="scissors-blades origin-[28px_28px]">
+                <Scissors size={42} className="text-[#CBB79A] drop-shadow-[0_0_15px_rgba(203,183,154,0.8)]" />
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ── SUCCESS VIEW SCREEN ── */}
