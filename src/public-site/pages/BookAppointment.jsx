@@ -1414,7 +1414,7 @@ export default function BookAppointment() {
         {/* ── WELCOME SCREEN ── */}
         {/* Render welcome screen while showWelcome is true, adding fade-out class during transitions */}
         {showWelcome && (
-          <div className={`w-full h-full ${isTransitioning ? 'welcome-screen-exit-fade pointer-events-none' : ''}`}>
+          <div className={`w-full h-full welcome-return-fade ${isTransitioning ? 'welcome-screen-exit-fade pointer-events-none' : ''}`}>
             {renderWelcomeContent("", hasVisited)}
           </div>
         )}
@@ -1435,20 +1435,9 @@ export default function BookAppointment() {
           </div>
         )}
 
-        {/* On return: slices come back together */}
+        {/* On return: quiet fade transition overlay */}
         {isReturning && (
-          <div className="slice-container welcome-return">
-            {renderWelcomeContent("slice-return-top-left", true)}
-            {renderWelcomeContent("slice-return-bottom-right", true)}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none z-[40]">
-              <line x1="100%" y1="0%" x2="0%" y2="100%" className="scissors-cut-line-return" />
-            </svg>
-            <div className="scissors-cutter-icon-return">
-              <div className="scissors-blades origin-[28px_28px]">
-                <Scissors size={42} className="text-[#CBB79A] drop-shadow-[0_0_15px_rgba(203,183,154,0.8)]" />
-              </div>
-            </div>
-          </div>
+          <div className="quiet-fade-overlay" />
         )}
 
         {/* ── SUCCESS VIEW SCREEN ── */}
