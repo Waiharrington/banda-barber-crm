@@ -42,6 +42,7 @@ import pandaImg from '../../assets/panda_logo_nobg.png';
 import heroVideo from '../../assets/hero_video.mp4';
 import bearBody from '../../assets/oso_saludando.png';
 import bearHand from '../../assets/mano_oso_saludando.png';
+import posterMobile from '../../assets/fondo_panda_telefoon.png';
 
 // Reusable AnimatedSection component to perform fade-up on scroll reveal
 function AnimatedSection({ children, className = "", delay = 0, from = "bottom" }) {
@@ -174,10 +175,25 @@ function BarberAvatar({ url, name, className = "w-10 h-10 rounded-xl", iconSize 
 
 export default function BookAppointment() {
   const navigate = useNavigate();
+  const videoRef = useRef(null);
   const [showWelcome, setShowWelcome] = useState(() => {
     const saved = localStorage.getItem('bookingState');
     return saved ? JSON.parse(saved).showWelcome : true;
   });
+  const [videoBlocked, setVideoBlocked] = useState(false);
+
+  // Force video playback to bypass some mobile browser restrictions
+  useEffect(() => {
+    if (videoRef.current && showWelcome) {
+      videoRef.current.defaultMuted = true;
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(e => {
+        console.log('Autoplay blocked by browser:', e);
+        setVideoBlocked(true);
+      });
+    }
+  }, [showWelcome]);
+
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
   const [hasVisited, setHasVisited] = useState(() => {
@@ -193,6 +209,13 @@ export default function BookAppointment() {
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
   const scrollContainerRef = useRef(null);
+  
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // Selections
   const [selectedCategory, setSelectedCategory] = useState(() => {
@@ -252,16 +275,46 @@ export default function BookAppointment() {
   const [videoYOffset, setVideoYOffset] = useState(() => Number(localStorage.getItem('hero_y_offset') || 0));
   const [videoZoom, setVideoZoom] = useState(() => Number(localStorage.getItem('hero_zoom') || 1.02));
   const [gradientStop, setGradientStop] = useState(() => Number(localStorage.getItem('hero_gradient_stop') || 51));
+  
+  // Separate controls for the fallback photo (battery saving mode)
+  const [posterHeight, setPosterHeight] = useState(() => Number(localStorage.getItem('poster_height') || 82));
+  const [posterXOffset, setPosterXOffset] = useState(() => Number(localStorage.getItem('poster_x_offset') || 50));
+  const [posterYOffset, setPosterYOffset] = useState(() => Number(localStorage.getItem('poster_y_offset') || 100));
+  const [posterZoom, setPosterZoom] = useState(() => Number(localStorage.getItem('poster_zoom') || 1.03));
   const [showConfigurator, setShowConfigurator] = useState(false);
   const [configTab, setConfigTab] = useState('video'); // 'video' or 'bear'
-  const [bearScale, setBearScale] = useState(() => Number(localStorage.getItem('bear_scale') || 0.98));
-  const [bearX, setBearX] = useState(() => Number(localStorage.getItem('bear_x') || -20));
-  const [bearY, setBearY] = useState(() => Number(localStorage.getItem('bear_y') || 16));
-  const [bearRotate, setBearRotate] = useState(() => Number(localStorage.getItem('bear_rotate') || -7));
-  const [handX, setHandX] = useState(() => Number(localStorage.getItem('hand_x') || -2));
-  const [handY, setHandY] = useState(() => Number(localStorage.getItem('hand_y') || 51.5));
-  const [handScale, setHandScale] = useState(() => Number(localStorage.getItem('hand_scale') || 0.52));
-  const [handRotate, setHandRotate] = useState(() => Number(localStorage.getItem('hand_rotate') || 21));
+  const [dBearCfg, setDBearCfg] = useState(() => ({
+    scale: Number(localStorage.getItem('d_bear_scale') || 0.6),
+    x: Number(localStorage.getItem('d_bear_x') || 10),
+    y: Number(localStorage.getItem('d_bear_y') || -5),
+    rotate: Number(localStorage.getItem('d_bear_rotate') || -7),
+    handScale: Number(localStorage.getItem('d_hand_scale') || 0.3),
+    handX: Number(localStorage.getItem('d_hand_x') || 30),
+    handY: Number(localStorage.getItem('d_hand_y') || 20),
+    handRotate: Number(localStorage.getItem('d_hand_rotate') || 21),
+  }));
+
+  const [mBearCfg, setMBearCfg] = useState(() => ({
+    scale: Number(localStorage.getItem('bear_scale') || 1.1),
+    x: Number(localStorage.getItem('bear_x') || -30),
+    y: Number(localStorage.getItem('bear_y') || -2.5),
+    rotate: Number(localStorage.getItem('bear_rotate') || -9),
+    handScale: Number(localStorage.getItem('hand_scale') || 0.43),
+    handX: Number(localStorage.getItem('hand_x') || 20),
+    handY: Number(localStorage.getItem('hand_y') || 59),
+    handRotate: Number(localStorage.getItem('hand_rotate') || 35),
+  }));
+
+  const activeBearCfg = isDesktop ? dBearCfg : mBearCfg;
+  const updateBearCfg = (key, val, storageKey) => {
+    if (isDesktop) {
+      setDBearCfg(prev => ({ ...prev, [key]: val }));
+      localStorage.setItem('d_' + storageKey, val);
+    } else {
+      setMBearCfg(prev => ({ ...prev, [key]: val }));
+      localStorage.setItem(storageKey, val);
+    }
+  };
 
 
 
@@ -800,19 +853,39 @@ export default function BookAppointment() {
 
     // Set variable to reference imported video asset
     const activeHeroVideo = heroVideo;
+    const showPhoto = videoBlocked || configTab === 'foto' || !activeHeroVideo;
+    const showVideo = !showPhoto && activeHeroVideo;
 
     const heroContent = (
-      <div className="w-full min-h-[66vh] flex flex-col justify-between items-stretch text-left px-6 pt-8 pb-4 relative overflow-hidden box-border gap-5">
-        {/* Background media (video or photo) inside Hero */}
-        {activeHeroVideo ? (
+      <div className={`w-full ${showPhoto ? 'min-h-[48vh] lg:min-h-[50vh]' : 'min-h-[66vh] lg:min-h-[65vh]'} flex flex-col justify-between items-stretch text-left px-6 lg:px-12 pt-8 pb-4 relative lg:overflow-visible overflow-hidden box-border gap-5 transition-all duration-500`}>
+        {/* Background Fallback Photo */}
+        {showPhoto && (
+          <div 
+            className="absolute top-0 left-0 w-full pointer-events-none z-0"
+            style={{
+              height: '100%',
+              backgroundImage: `url(${isDesktop ? bgDesktop : posterMobile})`,
+              backgroundSize: 'cover',
+              backgroundPosition: `${posterXOffset}% ${posterYOffset}%`,
+              transform: `scale(${posterZoom})`,
+              filter: 'brightness(0.55) contrast(1.05)',
+              maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
+              WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
+            }}
+          />
+        )}
+
+        {/* Background Video */}
+        {showVideo && (
           <video
+            ref={videoRef}
             autoPlay
             loop
             muted
             playsInline
-            className="absolute top-0 left-0 w-full object-cover pointer-events-none z-0 animate-video-fade-in"
+            className="absolute top-0 left-0 w-full object-cover pointer-events-none z-1 animate-video-fade-in"
             style={{
-              height: `${heroHeight}%`,
+              height: '100%',
               objectPosition: `center ${videoYOffset}%`,
               transform: `scale(${videoZoom})`,
               filter: 'brightness(0.55) contrast(1.05)',
@@ -822,26 +895,108 @@ export default function BookAppointment() {
           >
             <source src={activeHeroVideo} type="video/mp4" />
           </video>
-        ) : (
-          <div 
-            className="absolute top-0 left-0 w-full pointer-events-none z-0 animate-bg-zoom"
-            style={{
-              height: `${heroHeight}%`,
-              backgroundImage: `url(${window.innerWidth > 768 ? bgDesktop : bgMobile})`,
-              backgroundSize: 'cover',
-              backgroundPosition: `center ${videoYOffset}%`,
-              backgroundRepeat: 'no-repeat',
-              transform: `scale(${videoZoom})`,
-              filter: 'brightness(0.70) contrast(1.05)',
-              maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
-              WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
-            }}
-          />
         )}
 
-        {/* ── Left-side text legibility gradient ── */}
+        {/* ── Spotlight behind bear ── */}
+        <div className={`absolute inset-0 pointer-events-none z-1 ${!isResting ? 'opacity-0' : ''}`} style={{
+          background: `radial-gradient(ellipse 55% 60% at ${100 - activeBearCfg.x}% ${100 - activeBearCfg.y - 20}%, rgba(203,183,154,0.09) 0%, transparent 70%)`,
+        }} />
+
+        {/* ── 3D PANDA BEAR & WAVING HAND LAYERING (Background Layer z-5) ── */}
+        {!isDesktop ? (
+          // GROUPED MOBILE RENDER (Responsive & Locked)
+          <div className={`absolute pointer-events-none z-5 flex items-end justify-end overflow-visible ${!isResting ? 'opacity-0' : ''}`}
+            style={{
+              width: `${80 * activeBearCfg.scale}%`,
+              maxWidth: `${600 * activeBearCfg.scale}px`,
+              bottom: `${activeBearCfg.y}%`,
+              right: `${activeBearCfg.x}%`,
+              transform: `rotate(${activeBearCfg.rotate}deg)`,
+              transformOrigin: 'center bottom',
+            }}
+          >
+            <div className="relative w-full">
+              {/* Bear Body */}
+              <img
+                src={bearBody}
+                alt="Panda Barber 3D"
+                className="w-full h-auto object-contain block"
+                style={{
+                  filter: 'drop-shadow(-6px 12px 18px rgba(0,0,0,0.65)) drop-shadow(0px 4px 8px rgba(0,0,0,0.4))',
+                }}
+              />
+              
+              {/* Bear Waving Hand Wrapper grouped relative to Bear Body */}
+              <div
+                className="absolute flex items-center justify-center"
+                style={{
+                  width: `${(35 * activeBearCfg.handScale) / (80 * activeBearCfg.scale) * 100}%`,
+                  bottom: `${activeBearCfg.handY}%`,
+                  right: `${activeBearCfg.handX}%`,
+                  transform: `rotate(${activeBearCfg.handRotate}deg)`,
+                  transformOrigin: '70% 85%',
+                }}
+              >
+                <img
+                  src={bearHand}
+                  alt="Waving Hand"
+                  className="w-full h-auto object-contain origin-[70%_85%] animate-hand-wave"
+                  style={{ filter: 'drop-shadow(-4px 8px 12px rgba(0,0,0,0.5))' }}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          // UNGROUPED DESKTOP RENDER (Absolute screen positioning)
+          <div className={`absolute inset-0 pointer-events-none z-5 flex items-center justify-center overflow-visible ${!isResting ? 'opacity-0' : ''}`}>
+            <div className="relative w-full h-full">
+              {/* Bear Body */}
+              <img
+                src={bearBody}
+                alt="Panda Barber 3D"
+                className="absolute object-contain lg:object-bottom"
+                style={{
+                  width: `${80 * activeBearCfg.scale}%`,
+                  maxWidth: `${600 * activeBearCfg.scale}px`,
+                  bottom: `${activeBearCfg.y}%`,
+                  right: `${activeBearCfg.x}%`,
+                  transform: `rotate(${activeBearCfg.rotate}deg)`,
+                  transformOrigin: 'center bottom',
+                  filter: 'drop-shadow(-6px 12px 18px rgba(0,0,0,0.65)) drop-shadow(0px 4px 8px rgba(0,0,0,0.4))',
+                }}
+              />
+              {/* Bear Waving Hand Wrapper (ungrouped for manual configurator usage) */}
+              <div
+                className="absolute flex items-center justify-center"
+                style={{
+                  width: `${35 * activeBearCfg.handScale}%`,
+                  maxWidth: `${260 * activeBearCfg.handScale}px`,
+                  bottom: `${activeBearCfg.handY}%`,
+                  right: `${activeBearCfg.handX}%`,
+                  transform: `rotate(${activeBearCfg.handRotate}deg)`,
+                  transformOrigin: '70% 85%',
+                }}
+              >
+                <img
+                  src={bearHand}
+                  alt="Waving Hand"
+                  className="w-full h-auto object-contain origin-[70%_85%] animate-hand-wave"
+                  style={{ filter: 'drop-shadow(-4px 8px 12px rgba(0,0,0,0.5))' }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Left-side text legibility gradient (z-10 overlays Bear) ── */}
         <div className="absolute inset-0 pointer-events-none z-10" style={{
-          background: 'linear-gradient(to right, rgba(5,5,6,0.72) 0%, rgba(5,5,6,0.45) 38%, rgba(5,5,6,0.1) 58%, transparent 75%)',
+          background: 'linear-gradient(to right, rgba(5,5,6,0.95) 0%, rgba(5,5,6,0.5) 38%, rgba(5,5,6,0.1) 68%, transparent 85%)',
+        }} />
+
+        {/* ── Bottom legibility gradient for buttons (z-10 overlays Bear) ── */}
+        <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10" style={{
+          height: '40%',
+          background: 'linear-gradient(to top, rgba(5,5,6,1) 0%, rgba(5,5,6,0.7) 35%, transparent 100%)',
         }} />
 
         {/* ── Cinematic vignette ── */}
@@ -849,64 +1004,8 @@ export default function BookAppointment() {
           background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.72) 100%)',
         }} />
 
-        {/* ── Spotlight behind bear ── */}
-        <div className={`absolute inset-0 pointer-events-none z-11 ${!isResting ? 'opacity-0' : ''}`} style={{
-          background: `radial-gradient(ellipse 55% 60% at ${100 - bearX}% ${100 - bearY - 20}%, rgba(203,183,154,0.09) 0%, transparent 70%)`,
-        }} />
-
         {/* ── Grain/noise texture ── */}
-        <div className="absolute inset-0 pointer-events-none z-10 hero-grain" />
-
-        {/* ── 3D PANDA BEAR & WAVING HAND LAYERING — solo en landing, no en slices de transición ── */}
-        <div className={`absolute inset-0 pointer-events-none z-20 flex items-center justify-center overflow-hidden ${!isResting ? 'opacity-0' : ''}`}>
-          <div className="relative w-full h-full animate-bear-float">
-            {/* Floor shadow ellipse under the bear's feet */}
-            <div className="absolute" style={{
-              width: `${60 * bearScale}%`,
-              maxWidth: `${210 * bearScale}px`,
-              height: '18px',
-              bottom: `${bearY - 1}%`,
-              right: `${bearX + 8}%`,
-              background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, transparent 70%)',
-              filter: 'blur(6px)',
-              transform: 'scaleY(0.35)',
-            }} />
-            {/* Bear Body */}
-            <img
-              src={bearBody}
-              alt="Panda Barber 3D"
-              className="absolute object-contain"
-              style={{
-                width: `${80 * bearScale}%`,
-                maxWidth: `${280 * bearScale}px`,
-                bottom: `${bearY}%`,
-                right: `${bearX}%`,
-                transform: `rotate(${bearRotate}deg)`,
-                transformOrigin: 'center bottom',
-                filter: 'drop-shadow(-6px 12px 18px rgba(0,0,0,0.65)) drop-shadow(0px 4px 8px rgba(0,0,0,0.4))',
-              }}
-            />
-            {/* Bear Waving Hand Wrapper (handles X/Y position and Custom Rotation) */}
-            <div
-              className="absolute flex items-center justify-center"
-              style={{
-                width: `${35 * handScale}%`,
-                maxWidth: `${120 * handScale}px`,
-                bottom: `${handY}%`,
-                right: `${handX}%`,
-                transform: `rotate(${handRotate}deg)`,
-                transformOrigin: '70% 85%',
-              }}
-            >
-              <img
-                src={bearHand}
-                alt="Waving Hand"
-                className="w-full h-full object-contain origin-[70%_85%] animate-hand-wave"
-                style={{ filter: 'drop-shadow(-4px 8px 12px rgba(0,0,0,0.5))' }}
-              />
-            </div>
-          </div>
-        </div>
+        <div className="absolute inset-0 pointer-events-none z-15 hero-grain" />
 
 
         {/* Logo top-left */}
@@ -915,9 +1014,9 @@ export default function BookAppointment() {
         </div>
 
         {/* Bottom content container pushed to the bottom edge */}
-        <div className="w-full flex flex-col items-start gap-4 relative z-20 mt-auto pb-1">
+        <div className="w-full flex flex-col items-start gap-4 lg:gap-8 relative z-20 mt-auto pb-1 lg:pb-12 lg:pl-16">
           {/* Hero Welcome content (left-aligned, kept clear of the bear on the right) */}
-          <div className="w-full space-y-4" style={{ maxWidth: '66%' }}>
+          <div className="w-full space-y-4" style={{ maxWidth: isDesktop ? '100%' : '66%' }}>
             <div className={fade(2)}>
               <span className="text-[12px] font-bold uppercase tracking-[0.3em] text-[#CBB79A] block mb-2">BIENVENIDO A</span>
               <h1 className="text-4xl sm:text-5xl font-extrabold tracking-wide text-white leading-[0.95] gold-glow-text title-sustained-glow">PANDA BARBER</h1>
@@ -935,17 +1034,17 @@ export default function BookAppointment() {
             </p>
           </div>
 
-          {/* Buttons drawer (full width) */}
-          <div className={`w-full space-y-3 ${fade(5)}`}>
+          {/* Buttons drawer (left-aligned, restricted width on mobile so it doesn't cover bear, row on desktop) */}
+          <div className={`hero-buttons-container w-[80%] max-w-[260px] lg:w-auto lg:max-w-none flex flex-col lg:flex-row gap-3 lg:gap-5 ${fade(5)}`}>
             <button
               onClick={(e) => { createRipple(e); handleStartBooking(); }}
-              className="w-full py-4.5 rounded-xl font-extrabold text-sm uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 btn-premium-shimmer haptic-bounce ripple-container"
+              className="btn-primary w-full lg:w-auto py-4 px-6 rounded-xl font-extrabold text-[11px] lg:text-[13px] uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 btn-premium-shimmer haptic-bounce ripple-container"
               style={{
                 background: 'linear-gradient(to bottom, #d2c1aa, #bba789)',
                 color: '#000',
               }}
             >
-              <CalendarIcon size={16} /> Reservar mi primera visita <span className="text-sm">→</span>
+              <CalendarIcon size={16} /> <span className="whitespace-nowrap">Reservar mi visita</span> <span className="text-[14px]">→</span>
             </button>
 
             <button
@@ -958,9 +1057,9 @@ export default function BookAppointment() {
                   setIsTransitioning(false);
                 }, 750);
               }}
-              className="btn-glass-gold py-3.5 text-xs font-extrabold flex items-center justify-center gap-2"
+              className="btn-glass-gold w-full lg:w-auto py-4 px-6 rounded-xl text-[11px] lg:text-[13px] uppercase tracking-widest font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer haptic-bounce"
             >
-              <User size={15} /> Ya soy cliente
+              <User size={15} /> <span className="whitespace-nowrap">Ya soy cliente</span>
             </button>
           </div>
         </div>
@@ -993,16 +1092,42 @@ export default function BookAppointment() {
               }}>
                 {/* Tabs */}
                 <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-                  {['video', 'bear'].map(t => (
+                  {['bear', 'video', 'foto'].map(t => (
                     <button key={t} onClick={() => setConfigTab(t)} style={{
-                      flex: 1, padding: '5px 0', borderRadius: 8, fontSize: 10,
+                      flex: 1, padding: '6px', fontSize: 10, borderRadius: 6,
                       fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
                       cursor: 'pointer', border: 'none',
                       background: configTab === t ? 'rgba(203,183,154,0.2)' : 'rgba(255,255,255,0.04)',
                       color: configTab === t ? '#CBB79A' : 'rgba(255,255,255,0.35)',
-                    }}>{t === 'video' ? 'Video' : 'Oso'}</button>
+                    }}>{t}</button>
                   ))}
                 </div>
+
+                {configTab === 'foto' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {[
+                      { label: 'Altura foto %', val: posterHeight, set: setPosterHeight, min: 30, max: 120, step: 1, key: 'poster_height' },
+                      { label: 'Posición X foto %', val: posterXOffset, set: setPosterXOffset, min: 0, max: 100, step: 1, key: 'poster_x_offset' },
+                      { label: 'Posición Y foto %', val: posterYOffset, set: setPosterYOffset, min: 0, max: 100, step: 1, key: 'poster_y_offset' },
+                      { label: 'Zoom foto', val: posterZoom, set: setPosterZoom, min: 0.8, max: 2.5, step: 0.01, key: 'poster_zoom' },
+                    ].map(({ label, val, set, min, max, step, key }) => (
+                      <div key={key}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                          <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>{label}</span>
+                          <span style={{ fontSize: 9, color: '#CBB79A', fontWeight: 800 }}>{val}</span>
+                        </div>
+                        <input type="range" min={min} max={max} step={step} value={val}
+                          onChange={e => { 
+                            const v = Number(e.target.value); 
+                            set(v); 
+                            localStorage.setItem(key, v.toString());
+                          }} 
+                          style={{ width: '100%', accentColor: '#CBB79A' }} 
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {configTab === 'video' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1018,7 +1143,12 @@ export default function BookAppointment() {
                           <span style={{ fontSize: 9, color: '#CBB79A', fontWeight: 800 }}>{val}</span>
                         </div>
                         <input type="range" min={min} max={max} step={step} value={val}
-                          onChange={e => { const v = Number(e.target.value); set(v); localStorage.setItem(key, v); }}
+                          onChange={e => { 
+                            const v = Number(e.target.value); 
+                            set(v); 
+                            const storageKey = (window.innerWidth > 768 && ['bear_scale', 'bear_x', 'bear_y', 'bear_rotate', 'hand_x', 'hand_y', 'hand_scale', 'hand_rotate'].includes(key)) ? `d_${key}` : key;
+                            localStorage.setItem(storageKey, v); 
+                          }}
                           style={{ width: '100%', accentColor: '#CBB79A', height: 3 }}
                         />
                       </div>
@@ -1029,22 +1159,25 @@ export default function BookAppointment() {
                 {configTab === 'bear' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {[
-                      { label: 'Escala oso', val: bearScale, set: setBearScale, min: 0.3, max: 2.5, step: 0.01, key: 'bear_scale' },
-                      { label: 'Oso X (right %)', val: bearX, set: setBearX, min: -30, max: 80, step: 0.5, key: 'bear_x' },
-                      { label: 'Oso Y (bottom %)', val: bearY, set: setBearY, min: -20, max: 80, step: 0.5, key: 'bear_y' },
-                      { label: 'Rotación oso °', val: bearRotate, set: setBearRotate, min: -180, max: 180, step: 1, key: 'bear_rotate' },
-                      { label: 'Escala mano', val: handScale, set: setHandScale, min: 0.1, max: 1.5, step: 0.01, key: 'hand_scale' },
-                      { label: 'Mano X (right %)', val: handX, set: setHandX, min: -30, max: 80, step: 0.5, key: 'hand_x' },
-                      { label: 'Mano Y (bottom %)', val: handY, set: setHandY, min: -20, max: 100, step: 0.5, key: 'hand_y' },
-                      { label: 'Rotación mano °', val: handRotate, set: setHandRotate, min: -180, max: 180, step: 1, key: 'hand_rotate' },
-                    ].map(({ label, val, set, min, max, step, key }) => (
-                      <div key={key}>
+                      { label: 'Escala oso', val: activeBearCfg.scale, stateKey: 'scale', min: 0.3, max: 2.5, step: 0.01, storageKey: 'bear_scale' },
+                      { label: 'Oso X (right %)', val: activeBearCfg.x, stateKey: 'x', min: -30, max: 80, step: 0.5, storageKey: 'bear_x' },
+                      { label: 'Oso Y (bottom %)', val: activeBearCfg.y, stateKey: 'y', min: -20, max: 80, step: 0.5, storageKey: 'bear_y' },
+                      { label: 'Rotación oso °', val: activeBearCfg.rotate, stateKey: 'rotate', min: -180, max: 180, step: 1, storageKey: 'bear_rotate' },
+                      { label: 'Escala mano', val: activeBearCfg.handScale, stateKey: 'handScale', min: 0.1, max: 1.5, step: 0.01, storageKey: 'hand_scale' },
+                      { label: 'Mano X (right %)', val: activeBearCfg.handX, stateKey: 'handX', min: -30, max: 80, step: 0.5, storageKey: 'hand_x' },
+                      { label: 'Mano Y (bottom %)', val: activeBearCfg.handY, stateKey: 'handY', min: -20, max: 100, step: 0.5, storageKey: 'hand_y' },
+                      { label: 'Rotación mano °', val: activeBearCfg.handRotate, stateKey: 'handRotate', min: -180, max: 180, step: 1, storageKey: 'hand_rotate' },
+                    ].map(({ label, val, stateKey, min, max, step, storageKey }) => (
+                      <div key={stateKey}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
                           <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>{label}</span>
                           <span style={{ fontSize: 9, color: '#CBB79A', fontWeight: 800 }}>{val}</span>
                         </div>
                         <input type="range" min={min} max={max} step={step} value={val}
-                          onChange={e => { const v = Number(e.target.value); set(v); localStorage.setItem(key, v); }}
+                          onChange={e => { 
+                            const v = Number(e.target.value); 
+                            updateBearCfg(stateKey, v, storageKey);
+                          }}
                           style={{ width: '100%', accentColor: '#CBB79A', height: 3 }}
                         />
                       </div>
@@ -1070,10 +1203,10 @@ export default function BookAppointment() {
           {heroContent}
 
           {/* Additional landing sections */}
-          <div className={`landing-content relative z-10 w-full ${isTransitioning ? 'landing-content-exit' : ''}`}>
+          <div className={`landing-content relative z-10 w-full lg:max-w-[1200px] lg:grid lg:grid-cols-12 lg:gap-6 lg:px-8 lg:mx-auto ${isTransitioning ? 'landing-content-exit' : ''}`}>
             
             {/* Section: Servicios Populares */}
-            <div className="landing-section">
+            <div className="landing-section lg:col-span-7">
               <AnimatedSection className="landing-section-head" delay={0}>
                 <span className="landing-section-head-title">Servicios Populares</span>
                 <button onClick={() => handleStartBooking()} className="landing-see-all">
@@ -1104,7 +1237,7 @@ export default function BookAppointment() {
             </div>
 
             {/* Section: Barbero Destacado del Mes */}
-            <div className="landing-section">
+            <div className="landing-section lg:col-span-5">
               {topBarber ? (
                 <div className="landing-barber-month-card">
                   <AnimatedSection delay={0} from="left">
@@ -1144,7 +1277,7 @@ export default function BookAppointment() {
             </div>
 
             {/* Section: Equipo Disponible */}
-            <div className="landing-section">
+            <div className="landing-section lg:col-span-7">
               <AnimatedSection className="landing-section-head" delay={0}>
                 <span className="landing-section-head-title">Equipo Disponible</span>
                 <button onClick={() => handleStartBooking()} className="landing-see-all">
@@ -1171,8 +1304,8 @@ export default function BookAppointment() {
               </div>
             </div>
 
-            {/* Section: Cliente del Mes */}
-            <div className="landing-section">
+            {/* Section: Cliente del Mes / VIP */}
+            <div className="landing-section lg:col-span-5">
               <div className="landing-vip-card">
                 <AnimatedSection className="landing-vip-left" delay={0} from="left">
                   <div className="landing-vip-badge"><Crown size={22} /></div>
@@ -1188,6 +1321,52 @@ export default function BookAppointment() {
                     {topClients[0] ? `${topClients[0].visit_count} visitas este mes` : 'Sin ganador aún'}
                   </span>
                 </AnimatedSection>
+              </div>
+            </div>
+
+            {/* Section: Footer Features (Desktop only or responsive) */}
+            <div className="landing-section lg:col-span-12 mt-6 lg:mt-10 mb-8 hidden lg:block">
+              <div className="grid grid-cols-4 gap-6 pt-8 border-t border-[rgba(203,183,154,0.15)]">
+                {/* Feature 1 */}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-[rgba(203,183,154,0.08)] border border-[rgba(203,183,154,0.2)] flex items-center justify-center text-[var(--champagne)]">
+                    <User size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-white mb-1">Profesionales Expertos</h4>
+                    <p className="text-[10px] text-white/50">Barberos altamente capacitados</p>
+                  </div>
+                </div>
+                {/* Feature 2 */}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-[rgba(203,183,154,0.08)] border border-[rgba(203,183,154,0.2)] flex items-center justify-center text-[var(--champagne)]">
+                    <Award size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-white mb-1">Productos Premium</h4>
+                    <p className="text-[10px] text-white/50">Solo lo mejor para tu cuidado</p>
+                  </div>
+                </div>
+                {/* Feature 3 */}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-[rgba(203,183,154,0.08)] border border-[rgba(203,183,154,0.2)] flex items-center justify-center text-[var(--champagne)]">
+                    <Check size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-white mb-1">Atención Personalizada</h4>
+                    <p className="text-[10px] text-white/50">Tu estilo, nuestra prioridad</p>
+                  </div>
+                </div>
+                {/* Feature 4 */}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-[rgba(203,183,154,0.08)] border border-[rgba(203,183,154,0.2)] flex items-center justify-center text-[var(--champagne)]">
+                    <span className="font-bold">WhatsApp</span>
+                  </div>
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-white mb-1">¿Dudas? Escríbenos</h4>
+                    <p className="text-[10px] text-white/50">Estamos para ayudarte</p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1217,13 +1396,12 @@ export default function BookAppointment() {
     );
   };
 
-  // Base layout wrapper (same as admin login screen with full-screen, frame borders, and parallax styling)
+  // Base layout wrapper
   return (
     <div 
       className="w-screen overflow-hidden flex items-center justify-center bg-[#050506]"
       style={{
-        height: '100dvh',
-        padding: window.innerWidth > 768 ? '24px' : '0'
+        height: '100dvh'
       }}
     >
       <PandaLoader visible={loading && !showWelcome} />
@@ -1231,10 +1409,7 @@ export default function BookAppointment() {
         ref={scrollContainerRef}
         className="relative w-full h-full overflow-x-hidden flex flex-col justify-between items-center bg-center overflow-y-auto"
         style={{
-          height: window.innerWidth > 768 ? 'calc(100vh - 48px)' : '100dvh',
-          borderRadius: window.innerWidth > 768 ? '28px' : '0',
-          border: window.innerWidth > 768 ? '1.5px solid var(--border-color)' : 'none',
-          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.8)',
+          height: '100dvh',
           backgroundColor: '#050506',
           scrollbarWidth: 'none'
         }}
