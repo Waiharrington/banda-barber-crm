@@ -485,19 +485,15 @@ export default function BookAppointment() {
   };
 
   const handleReturnToWelcome = () => {
-    setIsReturning(true);
     setVideoBlocked(false);
     localStorage.removeItem('bookingState');
-    setTimeout(() => {
-      setShowWelcome(true);
-      setIsReturning(false);
-      setStep(1);
-      setSelectedService(null);
-      setSelectedBarber(null);
-      setSelectedDate(null);
-      setSelectedTime(null);
-      setOpenCategory(null);
-    }, 750);
+    setShowWelcome(true);
+    setStep(1);
+    setSelectedService(null);
+    setSelectedBarber(null);
+    setSelectedDate(null);
+    setSelectedTime(null);
+    setOpenCategory(null);
   };
 
   // Step transition - instant (no animation)
