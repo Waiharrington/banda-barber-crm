@@ -17,7 +17,10 @@ import {
   Trash2,
   RefreshCw,
   Edit3,
-  Droplets
+  Droplets,
+  Coffee,
+  Beer,
+  GlassWater
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -29,6 +32,15 @@ import { supabase } from '../lib/supabase';
 import { notificationService } from '../services/notificationService';
 import { useDialog } from '../context/DialogContext';
 import AnimatedModal from './AnimatedModal';
+
+const renderBeverageIcon = (beverageName, size = 16, className = "text-[var(--champagne)]") => {
+  if (!beverageName) return null;
+  const name = beverageName.toLowerCase();
+  if (name.includes('café') || name.includes('cafe')) return <Coffee size={size} className={className} />;
+  if (name.includes('cerveza')) return <Beer size={size} className={className} />;
+  if (name.includes('whiskey')) return <GlassWater size={size} className={className} />;
+  return <GlassWater size={size} className={className} />;
+};
 
 const BarberPanel = ({ isMobile, rates }) => {
   const { user } = useAuth();
@@ -1181,6 +1193,39 @@ const BarberPanel = ({ isMobile, rates }) => {
                           )}
                         </div>
                       </div>
+                      {/* Beverage selection & Notes */}
+                      {(app.beverage_selection || app.notes) && (
+                        <div style={{ 
+                          background: 'rgba(255, 255, 255, 0.03)', 
+                          borderRadius: '16px', 
+                          padding: '12px 16px', 
+                          marginBottom: '16px', 
+                          border: '1px solid rgba(255, 255, 255, 0.06)' 
+                        }}>
+                          {app.beverage_selection && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: app.notes ? '8px' : '0' }}>
+                              <span style={{ fontSize: '14px' }}>
+                                {app.beverage_selection.includes('Café') ? '☕' : 
+                                 app.beverage_selection.includes('Cerveza') ? '🍺' : 
+                                 app.beverage_selection.includes('Whiskey') ? '🥃' : '💧'}
+                              </span>
+                              <div>
+                                <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: '800', display: 'block', lineHeight: '1.2' }}>Bebida Solicitada</span>
+                                <span style={{ fontSize: '12px', color: 'white', fontWeight: '700' }}>{app.beverage_selection}</span>
+                              </div>
+                            </div>
+                          )}
+                          {app.notes && (
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                              <span style={{ fontSize: '14px', marginTop: '2px' }}>📝</span>
+                              <div>
+                                <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: '800', display: 'block', lineHeight: '1.2' }}>Notas del Cliente</span>
+                                <span style={{ fontSize: '12px', color: 'var(--gold-primary)', fontWeight: '700', wordBreak: 'break-word' }}>"{app.notes}"</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Extras and Products List */}
                       {(app.appointment_extras?.length > 0 || app.appointment_products?.length > 0) && (

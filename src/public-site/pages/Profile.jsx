@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Calendar, Gift, Star, LogOut, Clock } from 'lucide-react';
+import { User, Calendar, Gift, Star, LogOut, Clock, Heart, ChevronRight } from 'lucide-react';
 import { publicService } from '../services/publicService';
 import PrizeWheel from '../components/PrizeWheel';
 
@@ -9,9 +9,17 @@ export default function Profile() {
   const [client, setClient] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [points, setPoints] = useState(0);
+  const [allBarbers, setAllBarbers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isTopClient, setIsTopClient] = useState(false);
   const [hasSpun, setHasSpun] = useState(false);
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('favorite_barbers') || '[]');
+    } catch {
+      return [];
+    }
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,15 +35,17 @@ export default function Profile() {
 
   const loadData = async (clientId) => {
     try {
-      const [appts, pts, topClients] = await Promise.all([
+      const [appts, pts, topClients, staffData] = await Promise.all([
         publicService.getClientAppointments(clientId),
         publicService.getClientPoints(clientId),
-        publicService.getTopClientsOfMonth().catch(() => [])
+        publicService.getTopClientsOfMonth().catch(() => []),
+        publicService.getStaff().catch(() => [])
       ]);
       setAppointments(appts);
       setPoints(pts);
       const isTop = (topClients || []).some(c => c.id === clientId);
       setIsTopClient(isTop);
+      setAllBarbers(staffData);
     } catch (e) {
       console.error('Error loading profile data:', e);
     } finally {
@@ -46,6 +56,24 @@ export default function Profile() {
   const handleLogout = () => {
     localStorage.removeItem('panda_public_client');
     localStorage.removeItem('panda_public_session');
+    navigate('/');
+  };
+
+  const removeFavorite = (barberId) => {
+    const updated = favorites.filter(id => id !== barberId);
+    setFavorites(updated);
+    localStorage.setItem('favorite_barbers', JSON.stringify(updated));
+  };
+
+  const handleReserveFav = (barber) => {
+    const bookingState = {
+      selectedCategory: barber.role?.includes('Tatuador') ? 'Tatuajes' : 'Barbería',
+      selectedService: null,
+      selectedBarber: barber,
+      selectedDate: null,
+      selectedTime: null
+    };
+    localStorage.setItem('bookingState', JSON.stringify(bookingState));
     navigate('/');
   };
 
@@ -62,6 +90,8 @@ export default function Profile() {
       </div>
     );
   }
+
+  const favBarbers = allBarbers.filter(b => favorites.includes(b.id));
 
   return (
     <div style={{ minHeight: '100vh', padding: '60px 16px' }}>
@@ -110,6 +140,7 @@ export default function Profile() {
           {[
             { id: 'citas', label: 'Mis Citas', icon: Calendar },
             { id: 'premios', label: 'Premios', icon: Gift },
+            { id: 'favoritos', label: 'Favoritos', icon: Heart },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -131,7 +162,7 @@ export default function Profile() {
                 transition: 'all 0.2s',
               }}
             >
-              <tab.icon size={15} />
+              <tab.icon size={15} fill={activeTab === tab.id && tab.id === 'favoritos' ? '#000' : 'none'} />
               {tab.label}
             </button>
           ))}
@@ -215,6 +246,104 @@ export default function Profile() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Favorites */}
+        {activeTab === 'favoritos' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {favBarbers.length === 0 ? (
+              <div className="glass-card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                <Heart size={40} style={{ color: 'var(--text-muted)', margin: '0 auto 12px', opacity: 0.4 }} />
+                <p style={{ color: 'var(--text-muted)', fontSize: 14, fontWeight: 600 }}>Aún no tienes artistas favoritos</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 4 }}>Agrégalos desde la pantalla de reservas.</p>
+              </div>
+            ) : (
+              favBarbers.map((barber) => {
+                const isTattooist = barber.role?.toLowerCase().includes('tatuador');
+                return (
+                  <div key={barber.id} className="glass-card animate-scale-in" style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                    {/* Avatar */}
+                    <div style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: '16px',
+                      overflow: 'hidden',
+                      backgroundColor: 'rgba(255,255,255,0.03)',
+                      border: '1.5px solid rgba(255,255,255,0.08)',
+                      flexShrink: 0
+                    }}>
+                      {barber.image_url ? (
+                        <img src={barber.image_url} alt={barber.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)' }}>
+                          <User size={20} color="var(--text-muted)" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Barber Details */}
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ fontWeight: 800, fontSize: 15, color: 'white' }}>{barber.name}</h3>
+                      <span style={{
+                        fontSize: 9,
+                        fontWeight: 900,
+                        backgroundColor: isTattooist ? 'rgba(168,85,247,0.12)' : 'rgba(212,188,154,0.12)',
+                        color: isTattooist ? '#c084fc' : 'var(--champagne)',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        display: 'inline-block',
+                        marginTop: 4
+                      }}>
+                        {isTattooist ? 'Tatuador' : 'Barbero'}
+                      </span>
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button 
+                        onClick={() => removeFavorite(barber.id)}
+                        style={{
+                          background: 'rgba(255,255,255,0.03)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          color: '#ff453a',
+                          padding: '10px',
+                          borderRadius: '12px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s'
+                        }}
+                        title="Eliminar de favoritos"
+                      >
+                        <Heart size={16} fill="#ff453a" stroke="#ff453a" />
+                      </button>
+                      
+                      <button 
+                        onClick={() => handleReserveFav(barber)}
+                        className="btn-gold"
+                        style={{
+                          padding: '10px 16px',
+                          borderRadius: '12px',
+                          fontSize: 12,
+                          fontWeight: 800,
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4
+                        }}
+                      >
+                        Reservar <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         )}
       </div>

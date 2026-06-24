@@ -28,7 +28,8 @@ import {
   Plus,
   Cake,
   BarChart2,
-  Star
+  Star,
+  FileText
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import PandaSelect from './PandaSelect';
@@ -94,11 +95,20 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     permissions: rolePresets['Barbero'],
     washing_rate: 0,
     birth_date: '',
-    password: ''
+    password: '',
+    specialty: '',
+    badge: '',
+    biography: ''
   });
 
   // Camera State
   const [showCamera, setShowCamera] = useState(false);
+
+  // Portfolio state
+  const [portfolio, setPortfolio] = useState([]);
+  const [portfolioLoading, setPortfolioLoading] = useState(false);
+  const [portfolioUploading, setPortfolioUploading] = useState(false);
+  const MAX_PORTFOLIO = 5;
 
   // New Role State
   const [isCreatingNewRole, setIsCreatingNewRole] = useState(false);
@@ -144,6 +154,110 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     fetchStaff();
     loadRates();
   }, []);
+
+  // Load portfolio when editing (max 5)
+  const loadPortfolio = async (staffId) => {
+    if (!staffId) return;
+    setPortfolioLoading(true);
+    try {
+      const { data } = await supabase
+        .from('staff_portfolio')
+        .select('*')
+        .eq('staff_id', staffId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      setPortfolio(data || []);
+    } catch (e) {
+      console.error('Portfolio load error:', e);
+    } finally {
+      setPortfolioLoading(false);
+    }
+  };
+
+  // Compress image before uploading
+  const compressImage = (file, maxWidth = 800, quality = 0.7) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        URL.revokeObjectURL(url);
+        canvas.toBlob(
+          (blob) => {
+            const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            resolve(compressedFile);
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+      img.src = url;
+    });
+  };
+
+  const addPortfolioPhoto = async (staffId, file) => {
+    if (!file || !staffId) return;
+    if (portfolio.length >= MAX_PORTFOLIO) {
+      showToast(`Máximo ${MAX_PORTFOLIO} fotos por portafolio.`, 'error');
+      return;
+    }
+    setPortfolioUploading(true);
+    try {
+      showToast('Comprimiendo imagen...');
+      const compressedFile = await compressImage(file, 800, 0.7);
+
+      const path = `${staffId}/${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from('portfolio')
+        .upload(path, compressedFile, { cacheControl: '3600', upsert: false });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('portfolio').getPublicUrl(path);
+      const { data, error: dbError } = await supabase
+        .from('staff_portfolio')
+        .insert([{ staff_id: staffId, image_url: publicUrl, storage_path: path }])
+        .select()
+        .single();
+      if (dbError) throw dbError;
+      setPortfolio(prev => [data, ...prev]);
+      showToast('Foto agregada al portafolio.');
+    } catch (e) {
+      console.error('Portfolio upload error:', e);
+      showToast('Error al subir la foto. Intenta de nuevo.', 'error');
+    } finally {
+      setPortfolioUploading(false);
+    }
+  };
+
+  const removePortfolioPhoto = async (photo) => {
+    try {
+      // Delete from Storage if we have the path
+      if (photo.storage_path) {
+        await supabase.storage.from('portfolio').remove([photo.storage_path]);
+      }
+      await supabase.from('staff_portfolio').delete().eq('id', photo.id);
+      setPortfolio(prev => prev.filter(p => p.id !== photo.id));
+      showToast('Foto eliminada.');
+    } catch (e) {
+      console.error('Portfolio remove error:', e);
+    }
+  };
 
   const loadRates = async () => {
     try {
@@ -196,9 +310,13 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       permissions: perms,
       washing_rate: person.washing_rate || 0,
       birth_date: person.birth_date || '',
-      password: ''
+      password: '',
+      specialty: person.specialty || '',
+      badge: person.badge || '',
+      biography: person.biography || ''
     });
     setEditingId(person.id);
+    loadPortfolio(person.id);
     setIsEditing(true);
     setShowForm(true);
   };
@@ -222,7 +340,10 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         washing_rate: 0,
         roles: ['Barbero'],
         birth_date: '',
-        password: ''
+        password: '',
+        specialty: '',
+        badge: '',
+        biography: ''
       });
       setIsCreatingNewRole(false);
       setNewRoleName('');
@@ -340,7 +461,10 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         username: formData.username || formData.email?.split('@')[0] || '',
         commission_pct: 40,
         washing_rate: formData.washing_rate || 0,
-        birth_date: formData.birth_date || null
+        birth_date: formData.birth_date || null,
+        specialty: formData.specialty || '',
+        badge: formData.badge || '',
+        biography: formData.biography || ''
       };
 
       if (isEditing) {
@@ -709,6 +833,50 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
               )}
             </div>
 
+            {/* Portfolio Section - solo visible al editar */}
+            {isEditing && (
+              <div style={{ marginTop: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px' }}>PORTAFOLIO DE TRABAJOS</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>{portfolio.length}/{MAX_PORTFOLIO}</span>
+                </div>
+                {portfolioLoading ? (
+                  <div style={{ textAlign: 'center', padding: '12px', color: 'var(--text-muted)', fontSize: '12px' }}>Cargando...</div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    {portfolio.map(photo => (
+                      <div key={photo.id} style={{ position: 'relative', width: '72px', height: '72px' }}>
+                        <img src={photo.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }} />
+                        <button
+                          type="button"
+                          onClick={() => removePortfolioPhoto(photo)}
+                          style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', background: '#ff453a', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '900', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}
+                        >×</button>
+                      </div>
+                    ))}
+                    {portfolio.length < MAX_PORTFOLIO && (
+                      <label style={{ width: '72px', height: '72px', borderRadius: '10px', border: '2px dashed rgba(255,255,255,0.15)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: portfolioUploading ? 'not-allowed' : 'pointer', background: 'rgba(255,255,255,0.03)', gap: '4px', opacity: portfolioUploading ? 0.5 : 1 }}>
+                        {portfolioUploading
+                          ? <Loader2 size={20} color="var(--gold-primary)" style={{ animation: 'spin 1s linear infinite' }} />
+                          : <><Plus size={20} color="var(--gold-primary)" /><span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '800' }}>SUBIR</span></>
+                        }
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          disabled={portfolioUploading}
+                          onChange={e => { const f = e.target.files?.[0]; if (f) { addPortfolioPhoto(editingId, f); e.target.value = ''; } }}
+                        />
+                      </label>
+                    )}
+                    {portfolio.length === 0 && !portfolioUploading && (
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '4px' }}>Sube hasta 5 fotos de tus trabajos</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Fields Section */}
             <div style={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Basic Info */}
@@ -883,6 +1051,39 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                 </div>
               </div>
 
+              {/* Specialty & Badge Info */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>¿EN QUÉ SE ESPECIALIZA? (PUESTO / ENFOQUE)</label>
+                  <div style={{ position: 'relative' }}>
+                    <Scissors size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                    <input className="form-input" placeholder="Ej. Especialista en degradados y barba" value={formData.specialty} onChange={e => setFormData({...formData, specialty: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>PALABRA CLAVE DE RECONOCIMIENTO (Ej. TOP, EXPERTO, ESTRELLA)</label>
+                  <div style={{ position: 'relative' }}>
+                    <Star size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                    <input className="form-input" placeholder="Ej. TOP FADE o EXPERTO" value={formData.badge} onChange={e => setFormData({...formData, badge: e.target.value.toUpperCase()})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Biography Info */}
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>SOBRE MÍ (DESCRIPCIÓN DE TU ESTILO O TRAYECTORIA)</label>
+                <div style={{ position: 'relative' }}>
+                  <FileText size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                  <textarea 
+                    className="form-input" 
+                    placeholder="Ej. Especialista en fades y cortes modernos. Me enfoco en resaltar tu estilo y personalidad con cada detalle." 
+                    value={formData.biography} 
+                    onChange={e => setFormData({...formData, biography: e.target.value})} 
+                    style={{ width: '100%', minHeight: '90px', padding: '12px 12px 12px 48px', resize: 'vertical' }} 
+                  />
+                </div>
+              </div>
+
               {/* Login Credentials */}
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px', padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.1)' }}>
                 <div className="form-group">
@@ -902,6 +1103,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       placeholder="Mínimo 6 caracteres" 
                       value={formData.password} 
                       onChange={e => setFormData({...formData, password: e.target.value})} 
+                      autoComplete="new-password"
                       style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} 
                     />
                   </div>
@@ -1237,6 +1439,48 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       )}
                     </div>
 
+                    {/* Portfolio Section */}
+                    <div style={{ width: '100%', marginTop: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px' }}>PORTAFOLIO DE TRABAJOS</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>{portfolio.length}/{MAX_PORTFOLIO}</span>
+                      </div>
+                      {portfolioLoading ? (
+                        <div style={{ textAlign: 'center', padding: '12px', color: 'var(--text-muted)', fontSize: '12px' }}>Cargando...</div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          {portfolio.map(photo => (
+                            <div key={photo.id} style={{ position: 'relative', width: '72px', height: '72px' }}>
+                              <img src={photo.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }} />
+                              <button
+                                type="button"
+                                onClick={() => removePortfolioPhoto(photo)}
+                                style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', background: '#ff453a', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '900', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}
+                              >×</button>
+                            </div>
+                          ))}
+                          {portfolio.length < MAX_PORTFOLIO && (
+                            <label style={{ width: '72px', height: '72px', borderRadius: '10px', border: '2px dashed rgba(255,255,255,0.15)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: portfolioUploading ? 'not-allowed' : 'pointer', background: 'rgba(255,255,255,0.03)', gap: '4px', opacity: portfolioUploading ? 0.5 : 1 }}>
+                              {portfolioUploading
+                                ? <Loader2 size={20} color="var(--gold-primary)" style={{ animation: 'spin 1s linear infinite' }} />
+                                : <><Plus size={20} color="var(--gold-primary)" /><span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '800' }}>SUBIR</span></>
+                              }
+                              <input
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                disabled={portfolioUploading}
+                                onChange={e => { const f = e.target.files?.[0]; if (f) { addPortfolioPhoto(editingId, f); e.target.value = ''; } }}
+                              />
+                            </label>
+                          )}
+                          {portfolio.length === 0 && !portfolioUploading && (
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '4px' }}>Sube hasta 5 fotos de tus trabajos</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     {/* Fields Section */}
                     <div style={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       {/* Basic Info */}
@@ -1411,6 +1655,39 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                         </div>
                       </div>
 
+                      {/* Specialty & Badge Info */}
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+                        <div className="form-group">
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>¿EN QUÉ SE ESPECIALIZA? (PUESTO / ENFOQUE)</label>
+                          <div style={{ position: 'relative' }}>
+                            <Scissors size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                            <input className="form-input" placeholder="Ej. Especialista en degradados y barba" value={formData.specialty} onChange={e => setFormData({...formData, specialty: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                          </div>
+                        </div>
+                        <div className="form-group">
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>PALABRA CLAVE DE RECONOCIMIENTO (Ej. TOP, EXPERTO, ESTRELLA)</label>
+                          <div style={{ position: 'relative' }}>
+                            <Star size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                            <input className="form-input" placeholder="Ej. TOP FADE o EXPERTO" value={formData.badge} onChange={e => setFormData({...formData, badge: e.target.value.toUpperCase()})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Biography Info */}
+                      <div className="form-group" style={{ marginTop: '16px', marginBottom: '16px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>SOBRE MÍ (DESCRIPCIÓN DE TU ESTILO O TRAYECTORIA)</label>
+                        <div style={{ position: 'relative' }}>
+                          <FileText size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                          <textarea 
+                            className="form-input" 
+                            placeholder="Ej. Especialista en fades y cortes modernos. Me enfoco en resaltar tu estilo y personalidad con cada detalle." 
+                            value={formData.biography} 
+                            onChange={e => setFormData({...formData, biography: e.target.value})} 
+                            style={{ width: '100%', minHeight: '90px', padding: '12px 12px 12px 48px', resize: 'vertical' }} 
+                          />
+                        </div>
+                      </div>
+
                       {/* Login Credentials */}
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px', padding: '20px', backgroundColor: 'rgba(255, 255, 255,0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255,0.1)' }}>
                         <div className="form-group">
@@ -1430,6 +1707,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                               placeholder="Vacío para no cambiar" 
                               value={formData.password} 
                               onChange={e => setFormData({...formData, password: e.target.value})} 
+                              autoComplete="new-password"
                               style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(255, 255, 255,0.2)' }} 
                             />
                           </div>

@@ -6,7 +6,7 @@ import { notificationService } from './notificationService';
 // Static data (inventory, clients, staff, services, extras) caches 45s.
 // Operational data (appointments) caches 15s since it changes more often.
 const _cache = {};
-const STAFF_PUBLIC_SELECT = 'id, auth_user_id, email, name, role, commission_pct, active, created_at, image_url, phone, address, username, tools, washing_rate, birth_date, skipped_count';
+const STAFF_PUBLIC_SELECT = 'id, auth_user_id, email, name, role, commission_pct, active, created_at, image_url, phone, address, username, tools, washing_rate, birth_date, skipped_count, specialty, badge, biography';
 
 function _cacheGet(key) {
   const entry = _cache[key];
@@ -1512,7 +1512,7 @@ export const dataService = {
 
     const { data: txs, error } = await supabase
       .from('transactions')
-      .select('client_id, amount, status, type, created_at')
+      .select('metadata, amount, status, type, created_at')
       .eq('status', 'PAID')
       .eq('type', 'income')
       .gte('created_at', isoString);
@@ -1521,8 +1521,9 @@ export const dataService = {
 
     const counts = {};
     _asArray(txs).forEach(tx => {
-      if (tx.client_id) {
-        counts[tx.client_id] = (counts[tx.client_id] || 0) + 1;
+      const clientId = tx.metadata?.client_id;
+      if (clientId) {
+        counts[clientId] = (counts[clientId] || 0) + 1;
       }
     });
 

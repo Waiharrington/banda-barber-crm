@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Phone, CreditCard, Mail, Lock, Eye, EyeOff, Calendar } from 'lucide-react';
 import { publicService } from '../services/publicService';
+import PandaDatePicker from '../../components/PandaDatePicker';
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -93,15 +94,30 @@ export default function Register() {
                   {field.label}
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <field.icon size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                  <input
-                    type={field.type}
-                    value={form[field.key]}
-                    onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
-                    className="input-field"
-                    placeholder={field.placeholder}
-                    required={field.required}
-                  />
+                  {field.type === 'date' ? (
+                    <div style={{ position: 'relative' }}>
+                      <PandaDatePicker
+                        value={form[field.key]}
+                        onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                        placeholder={field.placeholder}
+                        className="input-field"
+                        style={{ paddingLeft: '44px', width: '100%', boxSizing: 'border-box' }}
+                      />
+                      <field.icon size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', zIndex: 10, pointerEvents: 'none' }} />
+                    </div>
+                  ) : (
+                    <>
+                      <field.icon size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                      <input
+                        type={field.type}
+                        value={form[field.key]}
+                        onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                        className="input-field"
+                        placeholder={field.placeholder}
+                        required={field.required}
+                      />
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -125,7 +141,7 @@ export default function Register() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                  style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: showPassword ? 'var(--gold-primary)' : 'rgba(255,255,255,0.6)', cursor: 'pointer', transition: 'color 0.2s' }}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
