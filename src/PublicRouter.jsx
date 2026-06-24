@@ -24,7 +24,7 @@ export default function PublicRouter() {
               <Routes>
                 <Route path="/admin.html" element={<Home />} />  {/* legacy redirect */}
                 <Route element={<PublicLayout />}>
-                  <Route path="/" element={<Home />} />
+                  <Route path="/" element={<BookAppointment />} />
                   <Route path="/agendar" element={<BookAppointment />} />
                   <Route path="/servicios" element={<Services />} />
                   <Route path="/registro" element={<Register />} />
@@ -33,7 +33,7 @@ export default function PublicRouter() {
                   <Route path="/restablecer-contraseña" element={<ResetPassword />} />
                   <Route path="/completar-registro" element={<CompleteRegistration />} />
                   <Route path="/perfil" element={<Profile />} />
-                  <Route path="*" element={<Home />} />
+                  <Route path="*" element={<BookAppointment />} />
                 </Route>
               </Routes>
             </ModalProvider>
