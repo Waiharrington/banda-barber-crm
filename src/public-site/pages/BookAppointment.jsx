@@ -441,7 +441,6 @@ export default function BookAppointment() {
 
       let activeClient = null;
 
-    try {
       if (!isLoggedIn) {
         if (authTab === 'register') {
           // Validate required fields

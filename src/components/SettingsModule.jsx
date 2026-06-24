@@ -246,7 +246,7 @@ const SettingsModule = ({ isMobile, clients, onRefresh }) => {
         </div>
       </div>
 
-      {activeTab === 'coupons' ? (
+      {activeTab === 'coupons' && (
         <>
           {/* Cupones Header */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
@@ -462,9 +462,11 @@ const SettingsModule = ({ isMobile, clients, onRefresh }) => {
             </div>
           </div>
         </div>
+        )}
+      </>
       )}
-        </>
-      ) : (
+
+      {activeTab === 'roulette' && (
         <div className="animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto' }}>
           <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
             <h3 style={{ marginBottom: '16px', fontSize: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>

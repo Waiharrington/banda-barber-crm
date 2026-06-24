@@ -1,4 +1,9 @@
 @echo off
-echo Iniciando servidor de desarrollo...
-npm run dev
-pause
+title PandaBarber - Dev Server
+echo.
+echo  ========================================
+echo       🐼 PandaBarber - Iniciando...
+echo  ========================================
+echo.
+cd /d "%~dp0"
+call npm run dev
