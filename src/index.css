@@ -1407,7 +1407,7 @@ input[type="submit"]:active {
     position: absolute;
     left: 0;
     top: 0;
-    width: 80mm; /* Ancho estándar de impresora térmica */
+    width: 80mm; /* Ancho estandar de impresora termica */
     margin: 0;
     padding: 0;
     font-family: 'Courier New', Courier, monospace; /* Fuente de ticket */

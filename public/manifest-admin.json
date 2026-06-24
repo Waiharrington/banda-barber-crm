@@ -1,0 +1,20 @@
+{
+  "short_name": "Panda Admin",
+  "name": "Panda Barber - Panel Admin",
+  "description": "Panel de administración y punto de venta para Panda Barber Studio",
+  "icons": [
+    {
+      "src": "/pwa-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/admin",
+  "scope": "/admin",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#07070a",
+  "background_color": "#07070a",
+  "categories": ["business", "productivity"]
+}

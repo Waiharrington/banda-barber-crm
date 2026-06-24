@@ -1,6 +1,7 @@
 {
-  "short_name": "CRM Panda",
-  "name": "CRM Panda",
+  "short_name": "Panda Barber",
+  "name": "Panda Barber Studio - Reservas",
+  "description": "Reserva tu cita en Panda Barber Studio. Barbería y tatuajes premium en Maracaibo.",
   "icons": [
     {
       "src": "/pwa-icon.png",
@@ -10,7 +11,10 @@
     }
   ],
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "theme_color": "#121212",
-  "background_color": "#121212"
+  "background_color": "#121212",
+  "categories": ["lifestyle", "health"]
 }
