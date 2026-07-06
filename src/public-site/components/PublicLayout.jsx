@@ -25,144 +25,80 @@ export default function PublicLayout() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Bar */}
-      <div style={{
-        background: 'var(--gold-gradient)',
-        color: '#000',
-        fontSize: '13px',
-        fontWeight: 600,
-        padding: '8px 16px',
-      }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Phone size={13} /> +58 412-1234567
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <MapPin size={13} /> CC Ciudad Jardín, Local 74
-            </span>
+      {/* Navbar - Floating Hamburger Menu */}
+      <nav 
+        className="fixed top-0 w-full z-50 pointer-events-none"
+      >
+        {/* We use padding-top: 32px to align the hamburger icon properly with the content instead of sticking to the top */}
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+          
+          {/* Menu Button - Always visible */}
+          <div className="pointer-events-none">
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              style={{ background: 'rgba(7, 7, 10, 0.8)', backdropFilter: 'blur(10px)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', padding: '10px', borderRadius: '10px' }}
+              className="pointer-events-auto flex items-center justify-center shadow-lg hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+            >
+              {menuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
-          <span style={{ fontWeight: 700 }}>Lun-Sáb: 9AM - 8PM</span>
-        </div>
-      </div>
-
-      {/* Navbar */}
-      <nav style={{
-        background: 'rgba(7, 7, 10, 0.95)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid var(--border-color)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-      }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <div style={{
-              width: 38,
-              height: 38,
-              background: 'var(--gold-gradient)',
-              borderRadius: 10,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Scissors size={18} color="#000" />
-            </div>
-            <div>
-              <div className="text-gold" style={{ fontSize: 18, lineHeight: 1 }}>Panda Barber</div>
-              <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: 2, fontWeight: 700 }}>STUDIO</div>
-            </div>
-          </Link>
-
-          {/* Desktop Nav */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                  color: isActive(link.path) ? 'var(--champagne)' : 'var(--text-secondary)',
-                  transition: 'color 0.2s',
-                }}
-              >
-                {link.label}
-              </Link>
-            ))}
-            {isLoggedIn ? (
-              <>
-                <Link to="/perfil" className="btn-outline" style={{ padding: '8px 18px', fontSize: 13, borderRadius: 'var(--radius-pill)' }}>
-                  Mi Perfil
-                </Link>
-                <Link to="/agendar" className="btn-gold" style={{ padding: '8px 20px', fontSize: 13, borderRadius: 'var(--radius-pill)' }}>
-                  Reservar Ahora
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="btn-outline" style={{ padding: '8px 18px', fontSize: 13, borderRadius: 'var(--radius-pill)' }}>
-                  Iniciar Sesión
-                </Link>
-                <Link to="/registro" className="btn-gold" style={{ padding: '8px 20px', fontSize: 13, borderRadius: 'var(--radius-pill)' }}>
-                  Registrarse
-                </Link>
-              </>
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            style={{ display: 'none', background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}
-            className="mobile-menu-btn"
-          >
-            {menuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Menu Dropdown - Always visible when open */}
         {menuOpen && (
-          <div style={{
-            padding: '16px',
-            borderTop: '1px solid var(--border-color)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}>
+          <div 
+            className="pointer-events-auto"
+            style={{
+              background: 'rgba(7, 7, 10, 0.98)',
+              backdropFilter: 'blur(20px)',
+              borderBottom: '1px solid var(--border-color)',
+              padding: '24px 16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+              boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+              position: 'absolute',
+              top: '80px',
+              right: '16px',
+              width: '280px',
+              borderRadius: '16px',
+              border: '1px solid var(--border-color)'
+            }}>
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
                 onClick={() => setMenuOpen(false)}
                 style={{
-                  padding: '12px 0',
-                  fontSize: 15,
+                  padding: '12px 16px',
+                  fontSize: 16,
                   fontWeight: 600,
                   textDecoration: 'none',
+                  borderRadius: '8px',
+                  background: isActive(link.path) ? 'rgba(203, 183, 154, 0.1)' : 'transparent',
                   color: isActive(link.path) ? 'var(--champagne)' : 'var(--text-secondary)',
+                  transition: 'all 0.2s'
                 }}
               >
                 {link.label}
               </Link>
             ))}
-            <div style={{ display: 'flex', gap: 10, paddingTop: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
               {isLoggedIn ? (
                 <>
-                  <Link to="/perfil" onClick={() => setMenuOpen(false)} className="btn-outline" style={{ flex: 1, padding: '10px 0', fontSize: 13, textAlign: 'center' }}>
+                  <Link to="/perfil" onClick={() => setMenuOpen(false)} className="btn-outline" style={{ padding: '12px 0', fontSize: 14, textAlign: 'center', borderRadius: 'var(--radius-pill)' }}>
                     Mi Perfil
                   </Link>
-                  <Link to="/agendar" onClick={() => setMenuOpen(false)} className="btn-gold" style={{ flex: 1, padding: '10px 0', fontSize: 13, textAlign: 'center' }}>
+                  <Link to="/agendar" onClick={() => setMenuOpen(false)} className="btn-gold" style={{ padding: '12px 0', fontSize: 14, textAlign: 'center', borderRadius: 'var(--radius-pill)' }}>
                     Reservar
                   </Link>
                 </>
               ) : (
                 <>
-                  <Link to="/login" onClick={() => setMenuOpen(false)} className="btn-outline" style={{ flex: 1, padding: '10px 0', fontSize: 13, textAlign: 'center' }}>
+                  <Link to="/login" onClick={() => setMenuOpen(false)} className="btn-outline" style={{ padding: '12px 0', fontSize: 14, textAlign: 'center', borderRadius: 'var(--radius-pill)' }}>
                     Iniciar Sesión
                   </Link>
-                  <Link to="/registro" onClick={() => setMenuOpen(false)} className="btn-gold" style={{ flex: 1, padding: '10px 0', fontSize: 13, textAlign: 'center' }}>
+                  <Link to="/registro" onClick={() => setMenuOpen(false)} className="btn-gold" style={{ padding: '12px 0', fontSize: 14, textAlign: 'center', borderRadius: 'var(--radius-pill)' }}>
                     Registrarse
                   </Link>
                 </>

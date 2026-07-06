@@ -381,6 +381,7 @@ export default function BookAppointment() {
   
   // Auth state at step 6
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loggedInClient, setLoggedInClient] = useState(null);
   const [authTab, setAuthTab] = useState('register'); // 'register' or 'login'
   const [showPassword, setShowPassword] = useState(false);
   const [authForm, setAuthForm] = useState({
@@ -548,6 +549,11 @@ export default function BookAppointment() {
     const clientData = localStorage.getItem('panda_public_client');
     if (clientData) {
       setIsLoggedIn(true);
+      try {
+        setLoggedInClient(JSON.parse(clientData));
+      } catch (e) {
+        console.error("Error parsing clientData", e);
+      }
     }
   }, []);
 
@@ -1331,33 +1337,35 @@ export default function BookAppointment() {
             </div>
 
             {/* Section: Cliente del Mes / VIP */}
-            <div className="landing-section lg:col-span-5">
-              <div className="landing-vip-card">
-                <AnimatedSection className="landing-vip-left" delay={0} from="left">
-                  <div className="landing-vip-badge"><Crown size={22} /></div>
-                  <span className="landing-vip-title">Cliente del Mes</span>
-                  <p className="landing-vip-desc">
-                    El cliente que más nos visita este mes se lleva el reconocimiento.
-                    <span className="landing-vip-callout">¿Serás tú el próximo?</span>
-                  </p>
-                </AnimatedSection>
-                <AnimatedSection className="landing-single-podium-zone" delay={180} from="right">
-                  <div className="single-podium-spot">
-                    <Crown size={22} className="vip-crown" />
-                    <div className="single-podium-avatar">
-                      {topClients[0] ? topClients[0].name.split(' ').map(n => n[0]).join('').slice(0,2) : '?'}
+            {loggedInClient && topClients[0] && topClients[0].id === loggedInClient.id && (
+              <div className="landing-section lg:col-span-5">
+                <div className="landing-vip-card">
+                  <AnimatedSection className="landing-vip-left" delay={0} from="left">
+                    <div className="landing-vip-badge"><Crown size={22} /></div>
+                    <span className="landing-vip-title">¡Felicidades! Eres el Cliente del Mes</span>
+                    <p className="landing-vip-desc">
+                      Has sido nuestro cliente más fiel este mes.
+                      <span className="landing-vip-callout">¡Gracias por tu preferencia! Disfruta tu posición VIP.</span>
+                    </p>
+                  </AnimatedSection>
+                  <AnimatedSection className="landing-single-podium-zone" delay={180} from="right">
+                    <div className="single-podium-spot">
+                      <Crown size={22} className="vip-crown" />
+                      <div className="single-podium-avatar">
+                        {topClients[0] ? topClients[0].name.split(' ').map(n => n[0]).join('').slice(0,2) : '?'}
+                      </div>
+                      <span className="single-podium-name">
+                        {topClients[0] ? topClients[0].name.split(' ')[0] : '???'}
+                      </span>
+                      <span className="single-podium-visits">
+                        {topClients[0] ? `${topClients[0].visit_count} visitas` : 'Sin visitas'}
+                      </span>
+                      <div className="single-podium-block">1</div>
                     </div>
-                    <span className="single-podium-name">
-                      {topClients[0] ? topClients[0].name.split(' ')[0] : '???'}
-                    </span>
-                    <span className="single-podium-visits">
-                      {topClients[0] ? `${topClients[0].visit_count} visitas` : 'Sin visitas'}
-                    </span>
-                    <div className="single-podium-block">1</div>
-                  </div>
-                </AnimatedSection>
+                  </AnimatedSection>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Section: Footer Features (Desktop only or responsive) */}
 
