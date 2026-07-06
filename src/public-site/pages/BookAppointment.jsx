@@ -785,6 +785,12 @@ export default function BookAppointment() {
     setAuthError('');
     setSubmitting(true);
     
+    if (!selectedTime || !selectedDate || !selectedBarber || !selectedService) {
+      setAuthError('Por favor selecciona servicio, barbero y fecha antes de confirmar.');
+      setSubmitting(false);
+      return;
+    }
+    
     let activeClient = null;
 
     try {
@@ -1830,7 +1836,7 @@ export default function BookAppointment() {
                           const availText = availTexts[bIdx % availTexts.length];
                           const isSelected = selectedBarber?.id === barber.id;
                           return (
-                            <button
+                            <div
                               key={barber.id}
                               onClick={async () => {
                                 setExpandedBarber(barber);
@@ -1914,7 +1920,7 @@ export default function BookAppointment() {
                                   )}
                                 </div>
                               </div>
-                            </button>
+                            </div>
                           );
                         })}
                       </div>

@@ -298,18 +298,17 @@ export const publicService = {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const isoString = thirtyDaysAgo.toISOString();
 
-    const { data: txs, error } = await supabase
-      .from('transactions')
-      .select('metadata, amount, status, type, created_at')
-      .eq('status', 'PAID')
-      .eq('type', 'income')
+    const { data: apps, error } = await supabase
+      .from('appointments')
+      .select('client_id, status, created_at')
+      .in('status', ['Pagado', 'COMPLETED', 'Completado'])
       .gte('created_at', isoString);
 
     if (error) throw error;
 
     const counts = {};
-    (txs || []).forEach(tx => {
-      const clientId = tx.metadata?.client_id;
+    (apps || []).forEach(app => {
+      const clientId = app.client_id;
       if (clientId) {
         counts[clientId] = (counts[clientId] || 0) + 1;
       }
