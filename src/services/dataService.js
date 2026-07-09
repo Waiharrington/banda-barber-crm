@@ -204,7 +204,8 @@ export const dataService = {
     const cached = _cacheGet('staff');
     if (cached) return cached;
 
-    const { data, error } = await supabase
+    const client = authClient || supabase;
+    const { data, error } = await client
       .from('staff')
       .select(STAFF_PUBLIC_SELECT)
       .order('name');
@@ -215,7 +216,11 @@ export const dataService = {
   },
 
   async getStaffByAuthUserId(authUserId) {
-    const { data, error } = await supabase
+    // Use authClient (service role) to bypass RLS on the staff table.
+    // This is safe because it's an internal CRM auth lookup and the user
+    // has already passed Supabase authentication.
+    const client = authClient || supabase;
+    const { data, error } = await client
       .from('staff')
       .select(STAFF_PUBLIC_SELECT)
       .eq('auth_user_id', authUserId)
