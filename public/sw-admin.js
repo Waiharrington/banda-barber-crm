@@ -56,13 +56,17 @@ self.addEventListener('fetch', event => {
   // SPA navigation fallback for admin routes
   if (event.request.mode === 'navigate' && url.pathname.startsWith(ADMIN_BASE)) {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match('/admin.html'))
+      fetch(event.request).catch(async () => {
+        return (await caches.match('/admin.html')) || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+      })
     );
     return;
   }
 
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request).catch(async () => {
+      return (await caches.match(event.request)) || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+    })
   );
 });
 

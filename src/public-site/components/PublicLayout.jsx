@@ -1,16 +1,39 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Menu, X, Scissors, Phone, MapPin } from 'lucide-react';
+import { publicService } from '../services/publicService';
 
 export default function PublicLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const client = localStorage.getItem('panda_public_client');
     setIsLoggedIn(!!client);
   }, [location]);
+
+  useEffect(() => {
+    const { data: authListener } = publicService.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        try {
+          const client = await publicService.getClientByUserId(session.user.id);
+          if (!client) {
+            navigate('/completar-registro');
+          } else {
+            localStorage.setItem('panda_public_client', JSON.stringify(client));
+            setIsLoggedIn(true);
+          }
+        } catch (e) {
+          console.error('Error fetching client after login:', e);
+        }
+      }
+    });
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, [navigate]);
 
   const navLinks = [
     { path: '/', label: 'Inicio' },

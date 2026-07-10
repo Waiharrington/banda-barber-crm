@@ -12,6 +12,11 @@ export const publicService = {
     return data || [];
   },
 
+  // Listen to auth state changes
+  onAuthStateChange(callback) {
+    return supabase.auth.onAuthStateChange(callback);
+  },
+
   // Get active staff (barbers)
   async getStaff() {
     const { data, error } = await supabase
@@ -101,7 +106,9 @@ export const publicService = {
         'apikey': serviceKey,
         'Authorization': `Bearer ${serviceKey}`,
         'Content-Type': 'application/json',
-        'Prefer': 'return=representation'
+        'Prefer': 'return=representation',
+        'Accept-Profile': 'pandabarber',
+        'Content-Profile': 'pandabarber'
       },
       body: JSON.stringify({
         name,
@@ -137,7 +144,7 @@ export const publicService = {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + '/#/completar-registro'
+        redirectTo: window.location.origin
       }
     });
     if (error) throw error;

@@ -183,7 +183,7 @@ const BarberPanel = ({ isMobile, rates }) => {
         .channel(`barber-realtime-${selectedBarber.id}`)
         .on('postgres_changes', { 
           event: '*', 
-          schema: 'public', 
+          schema: 'pandabarber', 
           table: 'appointments' 
         }, (payload) => {
           const isAssistant = selectedBarber.role?.toLowerCase().includes('asistente');
