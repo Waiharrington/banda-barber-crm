@@ -1,4 +1,5 @@
-import { supabase, authClient } from '../lib/supabase';
+import { supabase as anonClient, authClient } from '../lib/supabase';
+const supabase = authClient || anonClient;
 import { notificationService } from './notificationService';
 
 // ─── Smart In-Memory Cache ────────────────────────────────────────────────────
@@ -64,7 +65,7 @@ function _normalizeStaff(member) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const dataService = {
-  supabase,
+  supabase: anonClient,
   // Clients
   async getClients() {
     const cached = _cacheGet('clients');
@@ -1664,28 +1665,27 @@ export const dataService = {
       console.error('Reset error:', error);
       throw error;
     }
+  },
+
+  // ==========================================
+  // SYSTEM SETTINGS
+  // ==========================================
+
+  async getSystemSettings() {
+    try {
+      const { data, error } = await supabase.from('system_settings').select('*');
+      if (error) throw error;
+      const settingsObj = {};
+      if (data) { data.forEach(item => { settingsObj[item.key] = item.value; }); }
+      return settingsObj;
+    } catch (error) { console.error('Error fetching system settings:', error); return {}; }
+  },
+
+  async updateSystemSetting(key, value) {
+    try {
+      const { data, error } = await supabase.from('system_settings').upsert({ key, value, updated_at: new Date().toISOString() }).select();
+      if (error) throw error;
+      return data;
+    } catch (error) { console.error('Error updating setting:', error); throw error; }
   }
-};
-
-
-// ==========================================
-// SYSTEM SETTINGS
-// ==========================================
-
-export const getSystemSettings = async () => {
-  try {
-    const { data, error } = await supabase.from('system_settings').select('*');
-    if (error) throw error;
-    const settingsObj = {};
-    if (data) { data.forEach(item => { settingsObj[item.key] = item.value; }); }
-    return settingsObj;
-  } catch (error) { console.error('Error fetching system settings:', error); return {}; }
-};
-
-export const updateSystemSetting = async (key, value) => {
-  try {
-    const { data, error } = await supabase.from('system_settings').upsert({ key, value, updated_at: new Date().toISOString() }).select();
-    if (error) throw error;
-    return data;
-  } catch (error) { console.error('Error updating setting:', error); throw error; }
 };
