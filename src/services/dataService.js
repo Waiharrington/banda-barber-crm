@@ -876,22 +876,33 @@ export const dataService = {
   },
 
   // Inventory
-  async getInventory() {
-    const cached = _cacheGet('inventory');
+  async getInventory(type = 'barbershop', staffId = null) {
+    const cacheKey = `inventory_${type}_${staffId || 'all'}`;
+    const cached = _cacheGet(cacheKey);
     if (cached) return cached;
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('inventory')
       .select('*')
+      .eq('inventory_type', type)
       .order('name');
+    
+    if (type === 'personal' && staffId) {
+      query = query.eq('owner_staff_id', staffId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     const result = _asArray(data);
-    _cacheSet('inventory', result, 45000);
+    _cacheSet(cacheKey, result, 45000);
     return result;
   },
 
   async addInventoryItem(item) {
     _cacheInvalidate('inventory');
+    // Ensure default type if not provided
+    if (!item.inventory_type) item.inventory_type = 'barbershop';
+    
     const { data, error } = await supabase
       .from('inventory')
       .insert([item])
@@ -1624,6 +1635,83 @@ export const dataService = {
       .single();
     if (error) throw error;
     return data;
+  },
+
+  async getDailyEarningsForStaff(staffId) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const startOfToday = `${todayStr}T00:00:00.000Z`;
+    const endOfToday = `${todayStr}T23:59:59.999Z`;
+
+    const { data: staffMember, error: staffErr } = await supabase
+      .from('staff')
+      .select('role')
+      .eq('id', staffId)
+      .single();
+    if (staffErr) throw staffErr;
+
+    const roleLower = staffMember.role?.toLowerCase() || '';
+    const isAssistant = roleLower.includes('asistente') || roleLower.includes('lavado') || roleLower.includes('operaciones');
+    const isBarber = !isAssistant && (roleLower.includes('barbero') || roleLower.includes('barber') || roleLower.includes('socio') || roleLower.includes('estilista') || roleLower.includes('lider'));
+
+    const { data: txs, error: txsErr } = await supabase
+      .from('transactions')
+      .select('*')
+      .gte('created_at', startOfToday)
+      .lte('created_at', endOfToday);
+    if (txsErr) throw txsErr;
+
+    const serviceTransactions = txs.filter(t => t.type === 'income' && t.metadata?.staffInvolved?.some(x => String(x.staffId) === String(staffId)));
+    const valesTransactions = txs.filter(t => t.type === 'expense' && t.category === 'Vales Barberos' && String(t.metadata?.staffId) === String(staffId));
+    const payrollTransactions = txs.filter(t => t.type === 'expense' && t.category === 'Pago Nómina' && String(t.metadata?.staffId) === String(staffId));
+
+    const earnedBs = serviceTransactions.reduce((sum, t) => {
+      const s = t.metadata?.staffInvolved?.find(x => String(x.staffId) === String(staffId));
+      return sum + (s ? (s.commissionBs || 0) + (s.productCommissionBs || 0) : 0);
+    }, 0);
+
+    const propinasBs = serviceTransactions.reduce((sum, t) => {
+      const s = t.metadata?.staffInvolved?.find(x => String(x.staffId) === String(staffId));
+      return sum + (s ? (s.tipBs || 0) : 0);
+    }, 0);
+
+    const valesBs = valesTransactions.reduce((sum, t) => sum + (t.metadata?.amountBs || 0), 0);
+    const paidBs = payrollTransactions.reduce((sum, t) => sum + (t.metadata?.amountBs || 0) + (t.metadata?.deductionBs || 0), 0);
+
+    let rate = 40.00;
+    try {
+      const rates = await this.getExchangeRates();
+      if (rates && rates.bcv) rate = rates.bcv;
+    } catch (e) {
+      console.error('Error fetching rates inside getDailyEarningsForStaff:', e);
+    }
+
+    let grossIncomeBs = 0;
+    let lavadosCount = 0;
+    let lavadoDeductionBs = 0;
+    let netIncomeBs = 0;
+
+    if (isBarber) {
+      grossIncomeBs = serviceTransactions.reduce((sum, t) => sum + ((t.amount || 0) * (t.exchange_rate || rate)), 0);
+      lavadosCount = serviceTransactions.filter(t => t.metadata?.didWash).length;
+      lavadoDeductionBs = lavadosCount * 1.00 * rate;
+      netIncomeBs = earnedBs - lavadoDeductionBs;
+    } else {
+      netIncomeBs = earnedBs;
+    }
+
+    const balanceBs = netIncomeBs + propinasBs - valesBs - paidBs;
+
+    return {
+      earnedBs,
+      propinasBs,
+      valesBs,
+      paidBs,
+      lavadosCount,
+      lavadoDeductionBs,
+      netIncomeBs,
+      balanceBs,
+      rate
+    };
   },
 
 

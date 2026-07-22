@@ -98,11 +98,13 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     password: '',
     specialty: '',
     badge: '',
-    biography: ''
+    biography: '',
+    payroll_frequency: 'weekly'
   });
 
   // Camera State
   const [showCamera, setShowCamera] = useState(false);
+  const [dailyPaymentModal, setDailyPaymentModal] = useState({ isOpen: false, staffId: null, staffName: null, earnings: null, paymentMethod: 'Efectivo ($)' });
 
   // Portfolio state
   const [portfolio, setPortfolio] = useState([]);
@@ -313,7 +315,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       password: '',
       specialty: person.specialty || '',
       badge: person.badge || '',
-      biography: person.biography || ''
+      biography: person.biography || '',
+      payroll_frequency: person.payroll_frequency || 'weekly'
     });
     setEditingId(person.id);
     loadPortfolio(person.id);
@@ -464,7 +467,8 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         birth_date: formData.birth_date || null,
         specialty: formData.specialty || '',
         badge: formData.badge || '',
-        biography: formData.biography || ''
+        biography: formData.biography || '',
+        payroll_frequency: formData.payroll_frequency || 'weekly'
       };
 
       if (isEditing) {
@@ -592,8 +596,73 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   const handleCheckOut = async (staffId) => {
     try {
       setLoading(true);
+      const member = staff.find(s => s.id === staffId);
+      if (member && member.payroll_frequency === 'daily') {
+        const earnings = await dataService.getDailyEarningsForStaff(staffId);
+        setDailyPaymentModal({
+          isOpen: true,
+          staffId,
+          staffName: member.name,
+          earnings,
+          paymentMethod: 'Efectivo ($)'
+        });
+      } else {
+        await dataService.checkOutBarber(staffId);
+        showToast('Salida registrada con éxito');
+        await fetchStaff();
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('Error al registrar salida o cargar ganancias', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmDailyPayment = async () => {
+    try {
+      setLoading(true);
+      const { staffId, staffName, earnings, paymentMethod } = dailyPaymentModal;
+      
+      if (earnings.balanceBs > 0) {
+        const amountUsd = earnings.balanceBs / earnings.rate;
+        const newTx = {
+          description: `Pago Nómina Diaria: ${staffName} (Cierre Asistencia) [${paymentMethod}]`,
+          amount: amountUsd,
+          type: 'expense',
+          category: 'Pago Nómina',
+          currency: 'EUR',
+          exchange_rate: earnings.rate,
+          metadata: {
+            staffId: staffId,
+            amountBs: earnings.balanceBs,
+            deductionBs: 0,
+            isAbono: false,
+            paymentMethod: paymentMethod,
+            type: 'daily_checkout'
+          }
+        };
+        await dataService.addTransaction(newTx);
+      }
+
       await dataService.checkOutBarber(staffId);
-      showToast('Salida registrada con éxito');
+      showToast('Salida y pago diario registrados');
+      setDailyPaymentModal({ isOpen: false, staffId: null, staffName: null, earnings: null, paymentMethod: 'Efectivo ($)' });
+      await fetchStaff();
+    } catch (e) {
+      console.error(e);
+      showToast('Error al procesar pago o salida', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkipDailyPayment = async () => {
+    try {
+      setLoading(true);
+      await dataService.checkOutBarber(dailyPaymentModal.staffId);
+      showToast('Salida registrada (pago pendiente)');
+      setDailyPaymentModal({ isOpen: false, staffId: null, staffName: null, earnings: null, paymentMethod: 'Efectivo ($)' });
       await fetchStaff();
     } catch (e) {
       console.error(e);
@@ -880,7 +949,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
             {/* Fields Section */}
             <div style={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Basic Info */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: '16px' }}>
                 <div className="form-group">
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>NOMBRE COMPLETO</label>
                   <div style={{ position: 'relative' }}>
@@ -951,6 +1020,19 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                       </div>
                     </div>
                   )}
+                </div>
+
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>FRECUENCIA DE PAGO</label>
+                  <PandaSelect 
+                    options={[
+                      { value: 'weekly', label: 'Semanal (Sábados)' },
+                      { value: 'daily', label: 'Diario (Al marcar salida)' }
+                    ]}
+                    value={formData.payroll_frequency || 'weekly'}
+                    onChange={(val) => setFormData({ ...formData, payroll_frequency: val })}
+                    placeholder="Selecciona la frecuencia..."
+                  />
                 </div>
 
                 {formData.roles.includes('Asistente de Lavado') && (
@@ -2004,6 +2086,169 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         onDeleteRole={handleDeleteCustomRole}
         availableModules={availableModules}
       />
+
+      <AnimatedModal isOpen={dailyPaymentModal.isOpen}>
+        {(overlayClass, cardClass) => (
+          <div className={overlayClass} style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(20px)'
+          }}>
+            <div className={cardClass} style={{
+              width: '100%',
+              maxWidth: '480px',
+              backgroundColor: '#0a0a0c',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '28px',
+              padding: '32px',
+              boxShadow: '0 24px 80px rgba(0,0,0,0.8)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '24px',
+              color: 'white',
+              margin: 'auto'
+            }}>
+              <div>
+                <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '8px' }}>Cierre y Pago de Asistencia 💵</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
+                  Resumen de ganancias diarias para <strong>{dailyPaymentModal.staffName}</strong>.
+                </p>
+              </div>
+
+              {dailyPaymentModal.earnings && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: 'rgba(255, 255, 255, 0.02)', padding: '20px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Comisiones acumuladas:</span>
+                    <span style={{ fontWeight: '700' }}>{dailyPaymentModal.earnings.earnedBs.toLocaleString('es-VE')} Bs</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Propinas del día:</span>
+                    <span style={{ fontWeight: '700', color: '#32d74b' }}>+{dailyPaymentModal.earnings.propinasBs.toLocaleString('es-VE')} Bs</span>
+                  </div>
+                  {dailyPaymentModal.earnings.lavadoDeductionBs > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Deducción por lavados ({dailyPaymentModal.earnings.lavadosCount}):</span>
+                      <span style={{ fontWeight: '700', color: '#ff453a' }}>-{dailyPaymentModal.earnings.lavadoDeductionBs.toLocaleString('es-VE')} Bs</span>
+                    </div>
+                  )}
+                  {dailyPaymentModal.earnings.valesBs > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Vales/Adelantos hoy:</span>
+                      <span style={{ fontWeight: '700', color: '#ff453a' }}>-{dailyPaymentModal.earnings.valesBs.toLocaleString('es-VE')} Bs</span>
+                    </div>
+                  )}
+                  {dailyPaymentModal.earnings.paidBs > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Nómina pagada hoy:</span>
+                      <span style={{ fontWeight: '700', color: '#ff453a' }}>-{dailyPaymentModal.earnings.paidBs.toLocaleString('es-VE')} Bs</span>
+                    </div>
+                  )}
+                  <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '14px', fontWeight: '800' }}>Monto neto a pagar:</span>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+                        {dailyPaymentModal.earnings.balanceBs.toLocaleString('es-VE')} Bs
+                      </span>
+                      <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        ≈ ${(dailyPaymentModal.earnings.balanceBs / dailyPaymentModal.earnings.rate).toFixed(2)} USD (Tasa: {dailyPaymentModal.earnings.rate})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {dailyPaymentModal.earnings && dailyPaymentModal.earnings.balanceBs > 0 && (
+                <div className="form-group">
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>MÉTODO DE PAGO</label>
+                  <PandaSelect 
+                    options={[
+                      { value: 'Efectivo ($)', label: 'Efectivo ($)' },
+                      { value: 'Efectivo (Bs)', label: 'Efectivo (Bs)' },
+                      { value: 'Pago Móvil', label: 'Pago Móvil' },
+                      { value: 'Zelle', label: 'Zelle' },
+                      { value: 'Zinli', label: 'Zinli' },
+                      { value: 'Binance', label: 'Binance / USDT' },
+                      { value: 'Transferencia', label: 'Transferencia (Bs)' }
+                    ]}
+                    value={dailyPaymentModal.paymentMethod}
+                    onChange={(val) => setDailyPaymentModal(prev => ({ ...prev, paymentMethod: val }))}
+                  />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
+                {dailyPaymentModal.earnings && dailyPaymentModal.earnings.balanceBs > 0 ? (
+                  <button 
+                    onClick={handleConfirmDailyPayment}
+                    style={{
+                      padding: '14px',
+                      borderRadius: '14px',
+                      backgroundColor: 'var(--gold-primary)',
+                      color: 'black',
+                      border: 'none',
+                      fontWeight: '800',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    Registrar Pago y Salida
+                  </button>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '12px', color: '#32d74b', fontSize: '13px', fontWeight: '700', backgroundColor: 'rgba(50, 215, 75, 0.05)', borderRadius: '12px', border: '1px solid rgba(50, 215, 75, 0.1)' }}>
+                    No hay saldo pendiente por pagar hoy 🎉
+                  </div>
+                )}
+                
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    onClick={handleSkipDailyPayment}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      borderRadius: '12px',
+                      backgroundColor: 'rgba(255,255,255,0.03)',
+                      color: 'white',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      fontWeight: '700',
+                      fontSize: '13px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Solo Salida (Pagar luego)
+                  </button>
+                  <button 
+                    onClick={() => setDailyPaymentModal({ isOpen: false, staffId: null, staffName: null, earnings: null, paymentMethod: 'Efectivo ($)' })}
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      borderRadius: '12px',
+                      backgroundColor: 'transparent',
+                      color: 'var(--text-muted)',
+                      border: 'none',
+                      fontWeight: '700',
+                      fontSize: '13px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatedModal>
     </div>
   );
 };

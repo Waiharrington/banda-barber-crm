@@ -518,6 +518,75 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   const totalExpense = operationalTransactions.reduce((acc, t) => t.type === 'expense' ? acc + t.amount : acc, 0);
   const balance = totalIncome - totalExpense;
 
+  const accountBalances = useMemo(() => {
+    const balances = {
+      cash_usd: 0,
+      zelle: 0,
+      binance: 0,
+      zinli: 0,
+      pago_movil: 0,
+      cash_bs: 0,
+      transferencia: 0
+    };
+
+    operationalTransactions.forEach(t => {
+      const isIncome = t.type === 'income';
+      const isExpense = t.type === 'expense';
+      const meta = t.metadata || {};
+
+      if (isIncome) {
+        if (meta.mixed_payment) {
+          const usdMethod = (meta.method_usd || 'Efectivo').toLowerCase();
+          const bsMethod = (meta.method_bs || 'Pago Móvil').toLowerCase();
+          const usdVal = Number(meta.cash_usd || 0);
+          const bsVal = Number(meta.transfer_bs || 0);
+
+          if (usdMethod.includes('zelle')) balances.zelle += usdVal;
+          else if (usdMethod.includes('binance') || usdMethod.includes('usdt')) balances.binance += usdVal;
+          else if (usdMethod.includes('zinli')) balances.zinli += usdVal;
+          else balances.cash_usd += usdVal;
+
+          if (bsMethod.includes('pago') || bsMethod.includes('móvil') || bsMethod.includes('movil')) balances.pago_movil += bsVal;
+          else if (bsMethod.includes('efectivo')) balances.cash_bs += bsVal;
+          else balances.transferencia += bsVal;
+        } else {
+          if (meta.method_usd) {
+            const usdMethod = meta.method_usd.toLowerCase();
+            const usdVal = Number(t.amount || 0);
+
+            if (usdMethod.includes('zelle')) balances.zelle += usdVal;
+            else if (usdMethod.includes('binance') || usdMethod.includes('usdt')) balances.binance += usdVal;
+            else if (usdMethod.includes('zinli')) balances.zinli += usdVal;
+            else balances.cash_usd += usdVal;
+          } else {
+            const bsMethod = (meta.method_bs || 'Pago Móvil').toLowerCase();
+            const rate = Number(t.exchange_rate || rates?.usd || 550);
+            const bsVal = Number(meta.transfer_bs || (t.amount || 0) * rate);
+
+            if (bsMethod.includes('pago') || bsMethod.includes('móvil') || bsMethod.includes('movil')) balances.pago_movil += bsVal;
+            else if (bsMethod.includes('efectivo')) balances.cash_bs += bsVal;
+            else balances.transferencia += bsVal;
+          }
+        }
+      } else if (isExpense) {
+        const method = (meta.paymentMethod || 'Efectivo ($)').toLowerCase();
+        const usdVal = Number(t.amount || 0);
+        const rate = Number(t.exchange_rate || rates?.usd || 550);
+        const bsVal = Number(meta.amountBs || usdVal * rate);
+
+        if (method.includes('zelle')) balances.zelle -= usdVal;
+        else if (method.includes('binance') || method.includes('usdt')) balances.binance -= usdVal;
+        else if (method.includes('zinli')) balances.zinli -= usdVal;
+        else if (method.includes('efectivo ($)') || method === 'efectivo' || method.includes('$')) balances.cash_usd -= usdVal;
+        else if (method.includes('pago') || method.includes('móvil') || method.includes('movil')) balances.pago_movil -= bsVal;
+        else if (method.includes('efectivo (bs)') || method.includes('efectivo (ves)')) balances.cash_bs -= bsVal;
+        else balances.transferencia -= bsVal;
+      }
+    });
+
+    return balances;
+  }, [operationalTransactions, rates]);
+
   const todayOperationalTransactions = useMemo(() => {
     const today = new Date();
     return operationalTransactions.filter(t => new Date(t.created_at).toDateString() === today.toDateString());
@@ -763,6 +832,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   }), [staff, weeklyTransactions, operationalTransactions, dateFilterStart, dateFilterEnd, rates, assistantConfig])
     .filter(s => s.balanceBs !== 0 || s.earnedBs > 0 || s.paidBs > 0 || s.valesBs > 0);
 
+  const payrollHistory = useMemo(() => {
+    return operationalTransactions
+      .filter(t => t.category === 'Pago Nómina')
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }, [operationalTransactions]);
+
   const pandaGrossIncomeBs = processedPayroll.reduce((sum, s) => sum + (s.isBarber ? s.grossIncomeBs : 0), 0);
   const totalStaffNetIncomeBs = processedPayroll.reduce((sum, s) => sum + s.netIncomeBs, 0);
   const pandaNetProfitBs = Math.max(0, pandaGrossIncomeBs - totalStaffNetIncomeBs);
@@ -968,6 +1043,56 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           <div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: '600' }}>EGRESOS (HOY)</div>
             <div style={{ fontSize: '24px', fontWeight: '800' }}>${formatCurrency(todayExpense, '')}</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Balances de Cuentas / Billeteras */}
+      <section className="glass-card animate-slide-up" style={{
+        marginBottom: '40px',
+        padding: '24px',
+        borderRadius: '24px',
+        border: '1.5px solid rgba(255, 255, 255, 0.08)'
+      }}>
+        <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '16px', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Wallet size={20} color="var(--gold-primary)" /> Balances de Cuentas / Billeteras
+        </h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '16px'
+        }}>
+          <div style={{ padding: '16px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '800' }}>EFECTIVO (USD) 💵</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: 'white', marginTop: '6px' }}>${formatCurrency(accountBalances.cash_usd, '')}</div>
+          </div>
+          <div style={{ padding: '16px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '800' }}>ZELLE (USD) 🏦</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: 'white', marginTop: '6px' }}>${formatCurrency(accountBalances.zelle, '')}</div>
+          </div>
+          <div style={{ padding: '16px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '800' }}>ZINLI (USD) 📱</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: 'white', marginTop: '6px' }}>${formatCurrency(accountBalances.zinli, '')}</div>
+          </div>
+          <div style={{ padding: '16px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '800' }}>BINANCE / USDT 🪙</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: 'white', marginTop: '6px' }}>${formatCurrency(accountBalances.binance, '')}</div>
+          </div>
+
+          <div style={{ padding: '16px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '800' }}>PAGO MÓVIL (BS) 📲</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)', marginTop: '6px' }}>{accountBalances.pago_movil.toLocaleString('es-VE')} Bs</div>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ ${(accountBalances.pago_movil / (rates?.usd || 550)).toFixed(2)} USD</span>
+          </div>
+          <div style={{ padding: '16px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '800' }}>EFECTIVO (BS) 💸</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)', marginTop: '6px' }}>{accountBalances.cash_bs.toLocaleString('es-VE')} Bs</div>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ ${(accountBalances.cash_bs / (rates?.usd || 550)).toFixed(2)} USD</span>
+          </div>
+          <div style={{ padding: '16px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '800' }}>TRANSFERENCIA (BS) 🏛️</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)', marginTop: '6px' }}>{accountBalances.transferencia.toLocaleString('es-VE')} Bs</div>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ ${(accountBalances.transferencia / (rates?.usd || 550)).toFixed(2)} USD</span>
           </div>
         </div>
       </section>
@@ -1938,6 +2063,61 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Historial de Nómina */}
+            <div className="glass-card animate-slide-up" style={{ marginTop: '40px', padding: '24px', borderRadius: '24px', border: '1.5px solid rgba(255, 255, 255, 0.08)' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '16px', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <WalletCards size={20} color="var(--gold-primary)" /> Historial de Pagos de Nómina
+              </h3>
+              
+              {payrollHistory.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>No hay pagos registrados.</div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-secondary)', fontSize: '12px' }}>
+                        <th style={{ padding: '12px 16px' }}>FECHA</th>
+                        <th style={{ padding: '12px 16px' }}>COLABORADOR</th>
+                        <th style={{ padding: '12px 16px' }}>DESCRIPCIÓN</th>
+                        <th style={{ padding: '12px 16px' }}>MÉTODO</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'right' }}>MONTO (VES)</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'right' }}>MONTO (USD)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {payrollHistory.map(tx => {
+                        const date = new Date(tx.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                        const staffId = tx.metadata?.staffId;
+                        const staffMember = staff.find(s => s.id === staffId);
+                        const staffName = staffMember ? staffMember.name : (tx.description.split(':')?.[1]?.split('(')?.[0]?.trim() || 'Colaborador');
+                        const method = tx.metadata?.paymentMethod || 'Efectivo';
+                        const amountBs = tx.metadata?.amountBs || (tx.amount * (tx.exchange_rate || rates?.usd || 550));
+                        
+                        return (
+                          <tr key={tx.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '13px', color: 'white' }}>
+                            <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{date}</td>
+                            <td style={{ padding: '12px 16px', fontWeight: '700' }}>{staffName}</td>
+                            <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{tx.description}</td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{ backgroundColor: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: '800' }}>
+                                {method}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '700', color: '#ff453a' }}>
+                              -{amountBs.toLocaleString('es-VE')} Bs
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '800', color: '#ff453a' }}>
+                              -${formatCurrency(tx.amount, '')}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
       )}
