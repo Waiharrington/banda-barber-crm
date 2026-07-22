@@ -1637,6 +1637,71 @@ export const dataService = {
     return data;
   },
 
+  async getStaffTransactions(staffId, startDate = null, endDate = null) {
+    let query = supabase
+      .from('transactions')
+      .select('id, client_id, created_at, amount, exchange_rate, currency, description, metadata')
+      .eq('type', 'income')
+      .contains('metadata', { staffInvolved: [{ staffId: String(staffId) }] });
+    if (startDate) query = query.gte('created_at', startDate);
+    if (endDate) query = query.lte('created_at', endDate);
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .limit(1000);
+    if (error) throw error;
+    const transactions = _asArray(data);
+    const appointmentIds = Array.from(new Set(transactions.flatMap(transaction => [
+      transaction.metadata?.appointment_id,
+      ..._asArray(transaction.metadata?.appointmentIds)
+    ]).filter(Boolean)));
+    const clientIds = Array.from(new Set(transactions.map(transaction =>
+      transaction.client_id || transaction.metadata?.client_id || transaction.metadata?.clientId
+    ).filter(Boolean)));
+
+    const [appointmentsResult, clientsResult] = await Promise.all([
+      appointmentIds.length > 0
+        ? supabase
+            .from('appointments')
+            .select(`
+              id, client_id, staff_id, total_price, scheduled_at, completed_at,
+              clients(id, name, phone, id_card),
+              services(id, name, price),
+              staff(id, name),
+              appointment_extras(id, price, service_extras(id, name)),
+              appointment_products(id, quantity, price, inventory(id, name))
+            `)
+            .in('id', appointmentIds)
+        : Promise.resolve({ data: [], error: null }),
+      clientIds.length > 0
+        ? supabase.from('clients').select('id, name, phone, id_card').in('id', clientIds)
+        : Promise.resolve({ data: [], error: null })
+    ]);
+    if (appointmentsResult.error) throw appointmentsResult.error;
+    if (clientsResult.error) throw clientsResult.error;
+
+    const appointmentsById = new Map(_asArray(appointmentsResult.data).map(appointment => [String(appointment.id), appointment]));
+    const clientsById = new Map(_asArray(clientsResult.data).map(client => [String(client.id), client]));
+
+    return transactions.map(transaction => {
+      const transactionAppointmentIds = [
+        transaction.metadata?.appointment_id,
+        ..._asArray(transaction.metadata?.appointmentIds)
+      ].filter(Boolean);
+      const appointments = transactionAppointmentIds
+        .map(id => appointmentsById.get(String(id)))
+        .filter(Boolean);
+      const clientId = transaction.client_id || transaction.metadata?.client_id || transaction.metadata?.clientId;
+      const client = appointments.find(appointment => appointment.clients)?.clients
+        || clientsById.get(String(clientId))
+        || null;
+      return {
+        ...transaction,
+        client,
+        appointments
+      };
+    });
+  },
+
   async getDailyEarningsForStaff(staffId) {
     const todayStr = new Date().toISOString().split('T')[0];
     const startOfToday = `${todayStr}T00:00:00.000Z`;

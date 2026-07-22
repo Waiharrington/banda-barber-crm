@@ -20,7 +20,9 @@ import {
   Droplets,
   Coffee,
   Beer,
-  GlassWater
+  GlassWater,
+  LayoutDashboard,
+  ReceiptText
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -32,6 +34,7 @@ import { supabase } from '../lib/supabase';
 import { notificationService } from '../services/notificationService';
 import { useDialog } from '../context/DialogContext';
 import AnimatedModal from './AnimatedModal';
+import StaffTransactionHistory from './StaffTransactionHistory';
 
 const renderBeverageIcon = (beverageName, size = 16, className = "text-[var(--champagne)]") => {
   if (!beverageName) return null;
@@ -68,6 +71,7 @@ const BarberPanel = ({ isMobile, rates }) => {
   const [assistantQueue, setAssistantQueue] = useState([]);
   const [loadingAssistantQueue, setLoadingAssistantQueue] = useState(false);
   const [selectedCompletedApp, setSelectedCompletedApp] = useState(null);
+  const [activeView, setActiveView] = useState('work');
 
 
   const handleUpdateExtraPrice = async (extraId, newPrice) => {
@@ -114,6 +118,7 @@ const BarberPanel = ({ isMobile, rates }) => {
         const me = staff.find(s => s.id === user.id);
         if (me) {
           setSelectedBarber(me);
+          setActiveView('work');
           window.dispatchEvent(new CustomEvent('panda_active_barber_changed', { detail: me }));
         }
       }
@@ -697,8 +702,8 @@ const BarberPanel = ({ isMobile, rates }) => {
   };
 
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '550px', margin: '0 auto', paddingBottom: '100px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+    <div className="animate-fade-in" style={{ maxWidth: isMobile ? '550px' : 'none', margin: '0 auto', paddingBottom: '100px' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: isAssistant ? 'linear-gradient(135deg, #007aff, #00d2ff)' : 'var(--gold-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -739,7 +744,39 @@ const BarberPanel = ({ isMobile, rates }) => {
         </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr', gap: '32px' }}>
+      <nav style={{ display: 'flex', gap: '7px', padding: '4px', marginBottom: '24px', width: 'fit-content', maxWidth: '100%', borderRadius: '13px', background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        {[
+          { id: 'work', label: isAssistant ? 'Panel de lavado' : 'Mi silla', icon: <LayoutDashboard size={15} /> },
+          { id: 'history', label: 'Mi historial', icon: <ReceiptText size={15} /> }
+        ].map(view => (
+          <button
+            key={view.id}
+            onClick={() => setActiveView(view.id)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '7px',
+              padding: '9px 15px',
+              borderRadius: '10px',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: '850',
+              color: activeView === view.id ? '#080808' : 'var(--text-secondary)',
+              background: activeView === view.id ? 'var(--gold-primary)' : 'transparent'
+            }}
+          >
+            {view.icon} {view.label}
+          </button>
+        ))}
+      </nav>
+
+      {activeView === 'work' ? (
+        <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: '3fr 2fr', gap: '32px', alignItems: 'start' }}>
+          
+          {/* LEFT COL: silla activa */}
+          <div>
         
         {/* Active Services List */}
         {isAssistant ? (
@@ -1410,6 +1447,7 @@ const BarberPanel = ({ isMobile, rates }) => {
             </div>
           </section>
         )}
+          </div>
 
         {/* Add Modal */}
         <AnimatedModal isOpen={showAddModal}>
@@ -1492,6 +1530,8 @@ const BarberPanel = ({ isMobile, rates }) => {
           )}
         </AnimatedModal>
 
+        {/* RIGHT COL: Stats y Trabajos del día */}
+        <div>
         <section style={{ 
           display: 'grid', 
           gridTemplateColumns: isMobile ? '1fr 1fr' : (isAssistant ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)'), 
@@ -1707,8 +1747,12 @@ const BarberPanel = ({ isMobile, rates }) => {
             </div>
           )}
         </section>
+        </div>
 
       </div>
+      ) : (
+        <StaffTransactionHistory staffMember={selectedBarber} rates={rates} isMobile={isMobile} />
+      )}
 
       {/* Detail Modal for Completed Service */}
       <AnimatedModal isOpen={!!selectedCompletedApp}>
