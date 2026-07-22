@@ -6,6 +6,7 @@ import { Camera, X, Check, RefreshCw, Upload, Image as ImageIcon } from 'lucide-
  * Diseñado para permitir ambas opciones desde el primer momento, con reencuadre interactivo (drag-to-crop).
  */
 const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
+  const cleanCardClass = cardClass ? cardClass.replace('global-modal-card', '') : '';
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -276,7 +277,7 @@ const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
       </div>
 
       {/* Main Viewport */}
-      <div className={cardClass || 'animate-scale-in'} style={{ 
+      <div className={cleanCardClass || 'animate-scale-in'} style={{ 
         position: 'relative', 
         width: '100%', 
         maxWidth: '400px',
