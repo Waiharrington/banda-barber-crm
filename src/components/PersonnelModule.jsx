@@ -1566,7 +1566,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                     {/* Fields Section */}
                     <div style={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       {/* Basic Info */}
-                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: '16px' }}>
                         <div className="form-group">
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>NOMBRE COMPLETO</label>
                           <div style={{ position: 'relative' }}>
@@ -1637,6 +1637,19 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                               </div>
                             </div>
                           )}
+                        </div>
+
+                        <div className="form-group">
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>FRECUENCIA DE PAGO</label>
+                          <PandaSelect 
+                            options={[
+                              { value: 'weekly', label: 'Semanal (Sábados)' },
+                              { value: 'daily', label: 'Diario (Al marcar salida)' }
+                            ]}
+                            value={formData.payroll_frequency || 'weekly'}
+                            onChange={(val) => setFormData({ ...formData, payroll_frequency: val })}
+                            placeholder="Selecciona la frecuencia..."
+                          />
                         </div>
 
                         {formData.roles.includes('Asistente de Lavado') && (
