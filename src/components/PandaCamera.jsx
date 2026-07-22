@@ -287,7 +287,8 @@ const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass }) => {
         overflow: 'hidden', 
         borderRadius: '40px', 
         border: '1.5px solid rgba(255, 255, 255,0.3)',
-        boxShadow: '0 40px 100px rgba(0,0,0,0.9)' 
+        boxShadow: '0 40px 100px rgba(0,0,0,0.9)',
+        margin: 'auto'
       }}>
         {!capturedImage ? (
           <>
