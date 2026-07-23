@@ -22,12 +22,15 @@ export default function Home() {
     const loadData = async () => {
       try {
         const [servicesData, staffData, reviewsData] = await Promise.all([
-          publicService.getServices(),
-          publicService.getStaff(),
+          publicService.getServices().catch(() => []),
+          publicService.getStaff().catch(() => []),
           publicService.getStaffReviews().catch(() => [])
         ]);
         setServices(servicesData.slice(0, 4));
-        setBarbers(staffData.filter(s => s.role?.includes('Barbero')).slice(0, 3));
+        setBarbers(staffData.filter(s => {
+          const r = (s.role || '').toLowerCase();
+          return r.includes('barber') || r.includes('barba') || r.includes('artista') || r.includes('tatu');
+        }).slice(0, 3));
         setReviews(reviewsData || []);
       } catch (e) {
         console.error('Error loading data:', e);

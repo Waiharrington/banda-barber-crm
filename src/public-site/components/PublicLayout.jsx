@@ -1,7 +1,8 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Menu, X, Scissors, Phone, MapPin } from 'lucide-react';
+import { Menu, X, Scissors, Phone, MapPin, Calendar, User } from 'lucide-react';
 import { publicService } from '../services/publicService';
+import logo from '../../assets/logo_full.png';
 
 export default function PublicLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -46,11 +47,61 @@ export default function PublicLayout() {
 
   const isActive = (path) => location.pathname === path;
 
+  // Helper to scroll to section
+  const handleScrollTo = (id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Navbar - Floating Hamburger Menu */}
+      {/* Desktop Header */}
+      <header className="hidden lg:flex fixed top-0 w-full z-50 bg-[rgba(7,7,10,0.8)] backdrop-blur-md border-b border-[rgba(203,183,154,0.1)] transition-all duration-300">
+        <div className="w-full max-w-[1200px] mx-auto px-6 py-4 flex items-center justify-between">
+          {/* Logo */}
+          <a href="/" className="flex items-center no-underline">
+            <img src={logo} alt="Panda Barber Studio" className="h-[48px] object-contain" style={{ filter: 'brightness(1.15)' }} />
+          </a>
+          
+           {/* Navigation Links */}
+          <div className="flex items-center gap-8 nav-links-desktop">
+            <a href="/" className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline">Inicio</a>
+            <a href="#servicios" className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline">Servicios</a>
+            <a href="#equipo" className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline">Equipo</a>
+            <a href="#experiencia" className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline">Experiencia</a>
+            <a href="#ubicacion" className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline">Ubicación</a>
+          </div>
+ 
+          {/* Action Buttons */}
+          <div className="flex items-center gap-4 header-actions-desktop">
+            {isLoggedIn ? (
+              <>
+                <Link to="/perfil" className="btn-outline flex items-center gap-2" style={{ padding: '8px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', tracking: '0.15em', borderRadius: '100px' }}>
+                  <User size={13} /> Mi Perfil
+                </Link>
+                <Link to="/agendar" className="btn-gold flex items-center gap-2" style={{ padding: '8px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', tracking: '0.15em', borderRadius: '100px' }}>
+                  <Calendar size={13} /> Reservar
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="btn-outline flex items-center gap-2" style={{ padding: '8px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', tracking: '0.15em', borderRadius: '100px' }}>
+                  <User size={13} /> Iniciar Sesión
+                </Link>
+                <Link to="/registro" className="btn-gold flex items-center gap-2" style={{ padding: '8px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', tracking: '0.15em', borderRadius: '100px' }}>
+                  <Calendar size={13} /> Reservar mi visita
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Navbar - Floating Hamburger Menu (Mobile Only) */}
       <nav 
-        className="fixed top-0 w-full z-50 pointer-events-none"
+        className="fixed top-0 w-full z-50 pointer-events-none lg:hidden"
       >
         {/* We use padding-top: 32px to align the hamburger icon properly with the content instead of sticking to the top */}
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -136,66 +187,7 @@ export default function PublicLayout() {
         <Outlet />
       </main>
 
-      {/* Footer */}
-      <footer style={{
-        borderTop: '1px solid var(--border-color)',
-        padding: '48px 16px',
-        background: 'rgba(7, 7, 10, 0.8)',
-      }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 40 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <div style={{ width: 30, height: 30, background: 'var(--gold-gradient)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Scissors size={14} color="#000" />
-                </div>
-                <span className="text-gold" style={{ fontSize: 16 }}>Panda Barber Studio</span>
-              </div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
-                Tu estilo, nuestra pasión. Barbería y tatuajes en Maracaibo.
-              </p>
-            </div>
-            <div>
-              <h3 style={{ color: 'var(--champagne)', fontWeight: 700, marginBottom: 12, fontSize: 15 }}>Horarios</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 4 }}>Lunes a Sábado: 9AM - 8PM</p>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Domingo: Cerrado</p>
-            </div>
-            <div>
-              <h3 style={{ color: 'var(--champagne)', fontWeight: 700, marginBottom: 12, fontSize: 15 }}>Contacto</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 4 }}>📍 CC Ciudad Jardín, Local 74</p>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 12 }}>📞 +58 412-1234567</p>
-              <a
-                href="https://wa.me/584121234567"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'inline-block',
-                  background: '#25D366',
-                  color: '#fff',
-                  padding: '8px 20px',
-                  borderRadius: 'var(--radius-pill)',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  textDecoration: 'none',
-                  transition: 'filter 0.2s',
-                }}
-              >
-                WhatsApp
-              </a>
-            </div>
-          </div>
-          <div style={{
-            borderTop: '1px solid var(--border-color)',
-            marginTop: 32,
-            paddingTop: 24,
-            textAlign: 'center',
-            color: 'var(--text-muted)',
-            fontSize: 12,
-          }}>
-            © 2025 Panda Barber Studio. Todos los derechos reservados.
-          </div>
-        </div>
-      </footer>
+
     </div>
   );
 }

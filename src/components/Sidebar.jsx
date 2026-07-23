@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
-import { 
+import { createPortal } from 'react-dom';
+import {
   BarChart3, 
   Users, 
   Scissors, 
@@ -22,6 +23,22 @@ import logo from '../assets/logo.png';
 import sidebarLogo from '../assets/sidebar_logo.png';
 import { useAuth } from '../context/AuthContext';
 import { useModal } from '../context/ModalContext';
+
+// Tooltip de íconos del sidebar: se porta al body con posición fija calculada
+// a partir del botón, para que el overflow del sidebar no lo corte.
+const SidebarTooltip = ({ targetRef, label, danger }) => {
+  if (!targetRef.current) return null;
+  const rect = targetRef.current.getBoundingClientRect();
+  return createPortal(
+    <div
+      className={`sidebar-tooltip-fixed${danger ? ' sidebar-tooltip-danger' : ''}`}
+      style={{ top: rect.top + rect.height / 2, left: rect.right + 12 }}
+    >
+      {label}
+    </div>,
+    document.body
+  );
+};
 
 const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsCollapsed, activeRateType, onToggleRateType }) => {
   const { user, logout } = useAuth();
@@ -70,6 +87,10 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
 
   const itemRefs = useRef([]);
   const [hoveredTab, setHoveredTab] = useState(null);
+  const [isLogoutHovered, setIsLogoutHovered] = useState(false);
+  const [isToggleHovered, setIsToggleHovered] = useState(false);
+  const toggleBtnRef = useRef(null);
+  const logoutBtnRef = useRef(null);
   const [indicatorStyle, setIndicatorStyle] = useState({
     transform: 'translateY(0px)',
     height: '0px',
@@ -124,14 +145,15 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
 
       {!isMobile && (
         <div className="logo-container" style={{ marginBottom: isCollapsed ? '12px' : '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', position: 'relative', zIndex: 2 }}>
-          <button 
+          <button
+            ref={toggleBtnRef}
             onClick={() => setIsCollapsed(!isCollapsed)}
-            style={{ 
-              position: isCollapsed ? 'static' : 'absolute', 
-              right: isCollapsed ? 'auto' : '0', 
-              top: '0', 
-              background: 'transparent', 
-              border: 'none', 
+            style={{
+              position: isCollapsed ? 'relative' : 'absolute',
+              right: isCollapsed ? 'auto' : '0',
+              top: '0',
+              background: 'transparent',
+              border: 'none',
               color: 'rgba(255,255,255,0.25)',
               cursor: 'pointer',
               marginBottom: isCollapsed ? '10px' : '0',
@@ -139,11 +161,14 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
               padding: '4px',
               borderRadius: '6px',
             }}
-            onMouseEnter={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.25)'}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--champagne)'; setIsToggleHovered(true); }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.25)'; setIsToggleHovered(false); }}
           >
             {isCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
           </button>
+          {isToggleHovered && (
+            <SidebarTooltip targetRef={toggleBtnRef} label={isCollapsed ? 'Expandir menú' : 'Minimizar menú'} />
+          )}
 
           {!isCollapsed && (
             <img
@@ -182,9 +207,10 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
         {menuItems.map((item, index) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
+          const isHovered = hoveredTab === item.id;
           return (
             <button
-              key={item.id} 
+              key={item.id}
               ref={el => itemRefs.current[index] = el}
               onClick={() => setActiveTab(item.id)}
               onMouseEnter={() => setHoveredTab(item.id)}
@@ -199,18 +225,17 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
                 justifyContent: isCollapsed ? 'center' : 'flex-start',
                 position: 'relative', zIndex: 1,
               }}
-              title={isCollapsed ? item.label : undefined}
             >
-              <div style={{ 
-                color: isActive ? 'var(--champagne)' : 'rgba(200,200,200,0.32)',
+              <div style={{
+                color: isActive ? 'var(--champagne)' : isHovered ? 'rgba(203,183,154,0.75)' : 'rgba(203,183,154,0.4)',
                 display: 'flex', alignItems: 'center',
-                filter: isActive ? 'drop-shadow(0 0 7px rgba(203,183,154,0.65))' : 'none',
+                filter: isActive ? 'drop-shadow(0 0 7px rgba(203,183,154,0.65))' : isHovered ? 'drop-shadow(0 0 5px rgba(203,183,154,0.35))' : 'none',
                 transition: 'all 0.25s ease',
               }}>
                 <Icon size={17} strokeWidth={isActive ? 2.2 : 1.7} />
               </div>
               {!isCollapsed && (
-                <span style={{ 
+                <span style={{
                   fontSize: '13.5px',
                   letterSpacing: isActive ? '-0.2px' : '0',
                   color: isActive ? '#f8f8f8' : 'rgba(200,200,200,0.42)',
@@ -226,6 +251,18 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
           );
         })}
       </nav>
+
+      {isCollapsed && hoveredTab && (() => {
+        const hoveredIndex = menuItems.findIndex(item => item.id === hoveredTab);
+        const hoveredItem = menuItems[hoveredIndex];
+        if (!hoveredItem || !itemRefs.current[hoveredIndex]) return null;
+        return (
+          <SidebarTooltip
+            targetRef={{ current: itemRefs.current[hoveredIndex] }}
+            label={hoveredItem.label}
+          />
+        );
+      })()}
 
       {!isMobile && (
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', zIndex: 2 }}>
@@ -291,22 +328,11 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
             </div>
           )}
 
-          <button 
+          <button
+            ref={logoutBtnRef}
             onClick={logout}
-            title={isCollapsed ? 'Cerrar Sesión' : undefined}
-            style={{ 
-              width: '100%', display: 'flex', alignItems: 'center', 
-              justifyContent: isCollapsed ? 'center' : 'flex-start', 
-              gap: '8px', padding: isCollapsed ? '8px 0' : '8px 10px', 
-              background: 'rgba(255, 69, 58, 0.04)', 
-              border: '1px solid rgba(255, 69, 58, 0.12)', 
-              borderRadius: '9px', 
-              color: 'rgba(255, 80, 68, 0.7)', 
-              cursor: 'pointer', fontSize: '12px', fontWeight: '600',
-              letterSpacing: '0.1px',
-              transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
             onMouseEnter={e => {
+              setIsLogoutHovered(true);
               e.currentTarget.style.background = 'rgba(255, 69, 58, 0.1)';
               e.currentTarget.style.border = '1px solid rgba(255, 69, 58, 0.35)';
               e.currentTarget.style.boxShadow = '0 0 16px rgba(255, 69, 58, 0.15)';
@@ -314,15 +340,32 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
               e.currentTarget.style.transform = 'translateY(-1px)';
             }}
             onMouseLeave={e => {
+              setIsLogoutHovered(false);
               e.currentTarget.style.background = 'rgba(255, 69, 58, 0.04)';
               e.currentTarget.style.border = '1px solid rgba(255, 69, 58, 0.12)';
               e.currentTarget.style.boxShadow = 'none';
               e.currentTarget.style.color = 'rgba(255, 80, 68, 0.7)';
               e.currentTarget.style.transform = 'translateY(0)';
             }}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center',
+              justifyContent: isCollapsed ? 'center' : 'flex-start',
+              gap: '8px', padding: isCollapsed ? '8px 0' : '8px 10px',
+              background: 'rgba(255, 69, 58, 0.04)',
+              border: '1px solid rgba(255, 69, 58, 0.12)',
+              borderRadius: '9px',
+              color: 'rgba(255, 80, 68, 0.7)',
+              cursor: 'pointer', fontSize: '12px', fontWeight: '600',
+              letterSpacing: '0.1px',
+              transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+              position: 'relative',
+            }}
           >
             <LogOut size={isCollapsed ? 15 : 13} /> {!isCollapsed && "Cerrar Sesión"}
           </button>
+          {isCollapsed && isLogoutHovered && (
+            <SidebarTooltip targetRef={logoutBtnRef} label="Cerrar Sesión" danger />
+          )}
         </div>
       )}    </div>
   );

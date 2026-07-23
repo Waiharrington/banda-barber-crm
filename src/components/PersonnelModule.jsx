@@ -1560,7 +1560,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                 }}>
                   <div style={{ position: 'relative', width: '100%', height: isMobile ? '150px' : '180px', flexShrink: 0, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.03)' }}>
                     {person.image_url ? (
-                      <img src={person.image_url} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={person.image_url} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
                     ) : (
                       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(255,199,0,0.18), rgba(255,199,0,0.03))' }}>
                         <span style={{ fontSize: isMobile ? '36px' : '44px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.5 }}>

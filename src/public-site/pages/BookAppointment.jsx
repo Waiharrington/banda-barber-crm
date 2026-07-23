@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -15,6 +15,7 @@ import {
   CreditCard, 
   Mail, 
   Lock, 
+  MapPin, 
   Eye, 
   EyeOff, 
   Info,
@@ -29,7 +30,9 @@ import {
   Sun,
   Moon,
   Beer,
-  GlassWater
+  GlassWater,
+  Gamepad2,
+  X
 } from 'lucide-react';
 import { publicService } from '../services/publicService';
 import PandaLoader from '../../components/PandaLoader';
@@ -44,6 +47,14 @@ import heroVideo from '../../assets/hero_video.mp4';
 import bearBody from '../../assets/oso_saludando.png';
 import bearHand from '../../assets/mano_oso_saludando.png';
 import posterMobile from '../../assets/fondo_panda_telefoon.png';
+import goldChair from '../../assets/gold_chair.png';
+import barberiaCover from '../../assets/barberia_cover.jpg';
+import tatuajesCover from '../../assets/tatuajes_cover.png';
+import experienciaPandaCover from '../../assets/experiencia_panda_cover.png';
+import heroSlide1 from '../../assets/hero1.png';
+import heroSlide2 from '../../assets/hero2.png';
+import heroSlide3 from '../../assets/hero3.png';
+import heroSlide4 from '../../assets/hero4.png';
 
 // Reusable AnimatedSection component to perform fade-up on scroll reveal
 function AnimatedSection({ children, className = "", delay = 0, from = "bottom" }) {
@@ -177,6 +188,7 @@ function BarberAvatar({ url, name, className = "w-10 h-10 rounded-xl", iconSize 
 export default function BookAppointment() {
   const navigate = useNavigate();
   const videoRef = useRef(null);
+  const modalVideoRef = useRef(null);
   const [showWelcome, setShowWelcome] = useState(() => {
     const saved = localStorage.getItem('bookingState');
     return saved ? JSON.parse(saved).showWelcome : true;
@@ -195,6 +207,11 @@ export default function BookAppointment() {
     }
   }, [showWelcome]);
 
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [showExperienceModal, setShowExperienceModal] = useState(false);
+  const [artistFilter, setArtistFilter] = useState('todos');
+
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
   const [hasVisited, setHasVisited] = useState(() => {
@@ -209,16 +226,130 @@ export default function BookAppointment() {
   const [stepKey, setStepKey] = useState(0);
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
+  const [barberStartIndex, setBarberStartIndex] = useState(0);
   const scrollContainerRef = useRef(null);
   const teamScrollRef = useRef(null);
   const timeSlotsRef = useRef(null);
-  
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
+  // Programmatically trigger play on modal video to bypass autoplay policies
+  useEffect(() => {
+    if (showExperienceModal && modalVideoRef.current) {
+      modalVideoRef.current.defaultMuted = true;
+      modalVideoRef.current.muted = true;
+      modalVideoRef.current.play().catch(err => {
+        console.log('Modal video play blocked:', err);
+      });
+    }
+  }, [showExperienceModal]);
+
+  const heroSlides = [heroSlide1, heroSlide2, heroSlide3, heroSlide4];
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    if (!showWelcome) return;
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % 4);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [showWelcome]);
+
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Scroll reveal observer system
+  useEffect(() => {
+    if (!showWelcome) return;
+    
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px 0px -8% 0px',
+      threshold: 0.05
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-revealed');
+        } else {
+          entry.target.classList.remove('is-revealed');
+        }
+      });
+    }, observerOptions);
+
+    const timer = setTimeout(() => {
+      const elements = document.querySelectorAll('.reveal-item');
+      elements.forEach(el => observer.observe(el));
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      const elements = document.querySelectorAll('.reveal-item');
+      elements.forEach(el => observer.unobserve(el));
+    };
+  }, [showWelcome]);
+
+  useEffect(() => {
+    if (showWelcome) {
+      document.body.classList.remove('in-booking-flow');
+    } else {
+      document.body.classList.add('in-booking-flow');
+    }
+    return () => {
+      document.body.classList.remove('in-booking-flow');
+    };
+  }, [showWelcome]);
+
+  useEffect(() => {
+    if (isScrolled && showWelcome) {
+      document.body.classList.add('is-scrolled');
+    } else {
+      document.body.classList.remove('is-scrolled');
+    }
+    return () => {
+      document.body.classList.remove('is-scrolled');
+    };
+  }, [isScrolled, showWelcome]);
+
+  useEffect(() => {
+    if (!showWelcome) {
+      setIsScrolled(false);
+      return;
+    }
+
+    let observer;
+    const initObserver = () => {
+      const sentinel = document.getElementById('hero-sentinel');
+      if (!sentinel) return;
+
+      observer = new IntersectionObserver((entries) => {
+        const [entry] = entries;
+        setIsScrolled(!entry.isIntersecting);
+      }, {
+        threshold: 0
+      });
+
+      observer.observe(sentinel);
+    };
+
+    const timer = setTimeout(initObserver, 100);
+
+    return () => {
+      clearTimeout(timer);
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [showWelcome]);
+
+  const handleScrollTo = (id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
   
   // Selections
   const [selectedCategory, setSelectedCategory] = useState(() => {
@@ -266,6 +397,14 @@ export default function BookAppointment() {
   const [barberOfMonth, setBarberOfMonth] = useState(null);
   const [topClients, setTopClients] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [topBarberPortfolio, setTopBarberPortfolio] = useState([]);
+
+  useEffect(() => {
+    const topBarber = barbers.find(b => b.name.toLowerCase().includes('abraham')) || barberOfMonth || (barbers.length > 0 ? barbers[0] : null);
+    if (topBarber?.id) {
+      publicService.getStaffPortfolio(topBarber.id).then(setTopBarberPortfolio).catch(() => []);
+    }
+  }, [barberOfMonth, barbers]);
   // One-time migration: the hero was recomposed (text left / bear right), so the
   // old bear & hand fine-tuning offsets no longer apply. Clear them once so the
   // new reference-matched defaults take effect. Video & gradient tuning is kept.
@@ -451,6 +590,7 @@ export default function BookAppointment() {
     return () => clearTimeout(timer);
   }, [step]);
 
+
   // Ripple effect handler
   const createRipple = (e) => {
     const btn = e.currentTarget;
@@ -564,16 +704,48 @@ export default function BookAppointment() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        const fallbackBarbers = [
+          { id: 'fb-1', name: 'Ángel Serrano', role: 'Barbero', image_url: '', active: true },
+          { id: 'fb-2', name: 'Abraham Díaz', role: 'Master Barber', image_url: '', active: true },
+          { id: 'fb-3', name: 'Alejandro Ramírez', role: 'Barbero', image_url: '', active: true },
+          { id: 'fb-4', name: 'Jeff Carrero', role: 'Barbero', image_url: '', active: true },
+          { id: 'fb-5', name: 'José Cordero', role: 'Barbero', image_url: '', active: true },
+          { id: 'fb-6', name: 'Marko Cardozo', role: 'Tatuador', image_url: '', active: true }
+        ];
+
+        const fallbackServices = [
+          { id: 'fs-1', name: 'Corte de Cabello', price: 15, duration: 30, category: 'Corte' },
+          { id: 'fs-2', name: 'Arreglo de Barba', price: 10, duration: 20, category: 'Barba' },
+          { id: 'fs-3', name: 'Tatuaje Personalizado', price: 80, duration: 60, category: 'Tatuajes' }
+        ];
+
         const [servicesData, staffData, topClientsData, topBarberData, reviewsData] = await Promise.all([
-          publicService.getServices(),
-          publicService.getStaff(),
+          publicService.getServices().catch((err) => {
+            console.warn("Failed to fetch services, using fallback:", err);
+            return fallbackServices;
+          }),
+          publicService.getStaff().catch((err) => {
+            console.warn("Failed to fetch staff, using fallback:", err);
+            return fallbackBarbers;
+          }),
           publicService.getTopClientsOfMonth().catch(() => []),
           publicService.getBarberOfMonth().catch(() => null),
           publicService.getStaffReviews().catch(() => [])
         ]);
         setServices(servicesData);
-        const filteredBarbers = staffData.filter(s => s.role?.includes('Barbero') || s.role?.includes('Artista') || s.role?.includes('Tatuador'));
-        setBarbers(filteredBarbers);
+        
+        const filteredBarbers = staffData.filter(s => {
+          const r = (s.role?.split('|')[0] || '').toLowerCase().trim();
+          return r.includes('barber') || r.includes('barba') || r.includes('corte') || r.includes('artista') || r.includes('tatu') || r.includes('ink') || r.includes('style');
+        });
+
+        // Ángel es el dueño de la barbería: siempre debe aparecer primero en la vitrina del cliente
+        const sortedBarbers = [...filteredBarbers].sort((a, b) => {
+          if (a.name === 'Ángel Serrano') return -1;
+          if (b.name === 'Ángel Serrano') return 1;
+          return 0;
+        });
+        setBarbers(sortedBarbers);
         setTopClients(topClientsData || []);
         setBarberOfMonth(topBarberData);
         setReviews(reviewsData || []);
@@ -885,26 +1057,31 @@ export default function BookAppointment() {
 
     // Set variable to reference imported video asset
     const activeHeroVideo = heroVideo;
-    const showPhoto = videoBlocked || configTab === 'foto' || !activeHeroVideo;
-    const showVideo = !showPhoto && activeHeroVideo;
+    const showPhoto = true;
+    const showVideo = false;
 
     const heroContent = (
-      <div className={`w-full ${showPhoto ? 'h-auto min-h-[58vh] lg:min-h-[60vh]' : 'min-h-[66vh] lg:min-h-[65vh]'} flex flex-col justify-between items-stretch text-left px-6 lg:px-12 pt-8 pb-8 relative lg:overflow-visible overflow-hidden box-border gap-5 transition-all duration-500`}>
-        {/* Background Fallback Photo */}
+      <div className={`w-full ${showPhoto ? 'h-auto min-h-[58vh] lg:min-h-[100vh]' : 'min-h-[66vh] lg:min-h-[100vh]'} flex flex-col justify-between items-stretch text-left px-6 lg:px-16 pt-8 lg:pt-32 pb-8 lg:pb-12 relative lg:overflow-visible overflow-hidden box-border gap-5 transition-all duration-500`} id="inicio">
+        {/* Sentinel element to track scroll positioning */}
+        <div id="hero-sentinel" className="absolute top-0 left-0 w-1 h-1 pointer-events-none opacity-0" />
+        {/* Background Slideshow (Fades and Ken Burns Zoom) */}
         {showPhoto && (
-          <div 
-            className="absolute top-0 left-0 w-full pointer-events-none z-0"
-            style={{
-              height: '100%',
-              backgroundImage: `url(${isDesktop ? bgDesktop : posterMobile})`,
-              backgroundSize: 'cover',
-              backgroundPosition: `${posterXOffset}% ${posterYOffset}%`,
-              transform: `scale(${posterZoom + 0.08})`,
-              filter: 'brightness(0.80) contrast(1.05) blur(12px)',
-              maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
-              WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
-            }}
-          />
+          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden w-full h-full">
+            {heroSlides.map((slide, index) => (
+              <div 
+                key={index}
+                className={`absolute inset-0 hero-slide opacity-0 z-1 ${index === currentSlide ? 'hero-slide-active z-2' : ''}`}
+                style={{
+                  backgroundImage: `url(${slide})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: index === 0 ? '90% 40%' : 'center 40%',
+                  filter: 'brightness(0.70) contrast(1.05)',
+                  maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop}%, rgba(0, 0, 0, 0) ${gradientStop + 25}%)`,
+                  WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop}%, rgba(0, 0, 0, 0) ${gradientStop + 25}%)`,
+                }}
+              />
+            ))}
+          </div>
         )}
 
         {/* Background Video */}
@@ -929,10 +1106,13 @@ export default function BookAppointment() {
           </video>
         )}
 
-        {/* ── Spotlight behind bear ── */}
-        <div className={`absolute inset-0 pointer-events-none z-1 ${!isResting ? 'opacity-0' : ''}`} style={{
-          background: `radial-gradient(ellipse 55% 60% at ${100 - activeBearCfg.x}% ${100 - activeBearCfg.y - 20}%, rgba(203,183,154,0.09) 0%, transparent 70%)`,
-        }} />
+        {/* ── Animated Ambient Spotlights (Auroras) ── */}
+        {isDesktop && (
+          <>
+            <div className="absolute inset-0 pointer-events-none z-1 aurora-gold" />
+            <div className="absolute inset-0 pointer-events-none z-1 aurora-bronze" />
+          </>
+        )}
 
         {/* ── 3D PANDA BEAR & WAVING HAND LAYERING (Background Layer z-5) ── */}
         {!isDesktop ? (
@@ -979,45 +1159,8 @@ export default function BookAppointment() {
             </div>
           </div>
         ) : (
-          // UNGROUPED DESKTOP RENDER (Absolute screen positioning)
-          <div className={`absolute inset-0 pointer-events-none z-5 flex items-center justify-center overflow-visible ${!isResting ? 'opacity-0' : ''}`}>
-            <div className="relative w-full h-full">
-              {/* Bear Body */}
-              <img
-                src={bearBody}
-                alt="Panda Barber 3D"
-                className="absolute object-contain lg:object-bottom"
-                style={{
-                  width: `${80 * activeBearCfg.scale}%`,
-                  maxWidth: `${600 * activeBearCfg.scale}px`,
-                  bottom: `${activeBearCfg.y}%`,
-                  right: `${activeBearCfg.x}%`,
-                  transform: `rotate(${activeBearCfg.rotate}deg)`,
-                  transformOrigin: 'center bottom',
-                  filter: 'drop-shadow(-6px 12px 18px rgba(0,0,0,0.65)) drop-shadow(0px 4px 8px rgba(0,0,0,0.4))',
-                }}
-              />
-              {/* Bear Waving Hand Wrapper (ungrouped for manual configurator usage) */}
-              <div
-                className="absolute flex items-center justify-center"
-                style={{
-                  width: `${35 * activeBearCfg.handScale}%`,
-                  maxWidth: `${260 * activeBearCfg.handScale}px`,
-                  bottom: `${activeBearCfg.handY}%`,
-                  right: `${activeBearCfg.handX}%`,
-                  transform: `rotate(${activeBearCfg.handRotate}deg)`,
-                  transformOrigin: '70% 85%',
-                }}
-              >
-                <img
-                  src={bearHand}
-                  alt="Waving Hand"
-                  className="w-full h-auto object-contain origin-[70%_85%] animate-hand-wave"
-                  style={{ filter: 'drop-shadow(-4px 8px 12px rgba(0,0,0,0.5))' }}
-                />
-              </div>
-            </div>
-          </div>
+          // Hide bear on desktop as per new reference layout
+          null
         )}
 
         {/* ── Left-side text legibility gradient (z-10 overlays Bear) ── */}
@@ -1040,43 +1183,48 @@ export default function BookAppointment() {
         <div className="absolute inset-0 pointer-events-none z-15 hero-grain" />
 
 
-        {/* Logo top-left */}
-        <div className={`flex flex-col items-start relative z-20 ${fade(1)}`}>
+        {/* Logo top-left (mobile only, since desktop has fixed header logo) */}
+        <div className={`flex flex-col items-start relative z-20 ${fade(1)} lg:hidden`}>
           <img src={logo} alt="Panda Barber" className="w-20 h-20 object-contain filter brightness-110 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
         </div>
 
-        {/* Bottom content container pushed to the bottom edge */}
-        <div className="w-full flex flex-col items-start gap-4 lg:gap-8 relative z-20 mt-auto pb-1 lg:pb-12 lg:pl-16">
-          {/* Hero Welcome content (left-aligned, kept clear of the bear on the right) */}
-          <div className="w-full space-y-4" style={{ maxWidth: isDesktop ? '100%' : '66%' }}>
-            <div className={fade(2)}>
-              <span className="text-[12px] font-bold uppercase tracking-[0.3em] text-[#CBB79A] block mb-2">BIENVENIDO A</span>
-              <h1 className="text-4xl sm:text-5xl font-extrabold tracking-wide text-white leading-[0.95] gold-glow-text title-sustained-glow">PANDA BARBER</h1>
+        {/* Centered content container positioned vertically centered relative to full-screen photo backgrounds */}
+        <div className="w-full max-w-[1200px] mx-auto flex flex-col justify-center items-start gap-6 lg:gap-8 relative z-20 my-auto px-6 lg:px-16 text-left">
+          
+          {/* Trust/Reputation Badge */}
+          <div className="flex items-center gap-2 reveal-item delay-100">
+            <span className="text-[11px] lg:text-[12px] text-[#CBB79A] font-bold tracking-widest flex items-center gap-1">
+              ★ ★ ★ ★ ★
+            </span>
+            <span className="text-[10px] lg:text-[11px] text-white/50 font-medium uppercase tracking-[0.2em] border-l border-white/10 pl-2">
+              +1,200 visitas agendadas con éxito
+            </span>
+          </div>
+
+          {/* Hero Welcome content */}
+          <div className="w-full flex flex-col gap-4 lg:gap-5" style={{ maxWidth: isDesktop ? '650px' : '100%' }}>
+            <div className="reveal-item delay-200">
+              <span className="text-[11px] lg:text-[13px] font-black uppercase tracking-[0.35em] text-[#CBB79A] block mb-2">BIENVENIDO A</span>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white leading-[1.05] mb-1 font-sans">PANDA BARBER</h1>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-[#CBB79A] leading-[1.05] mb-4 font-sans">STUDIO</h1>
             </div>
 
-            {/* Division Line with Scissors character */}
-            <div className={`flex items-center justify-start gap-4 my-1 ${fade(3)}`}>
-              <div className="h-[1px] w-12 bg-[#CBB79A]/40"></div>
-              <Scissors size={14} className="text-[#CBB79A] gold-glow-scissors" />
-              <div className="h-[1px] w-12 bg-[#CBB79A]/40"></div>
-            </div>
-
-            <p className={`text-white/70 text-sm leading-relaxed font-medium font-outfit ${fade(3)}`}>
-              Precisión en cada detalle. <br/> Distinción en cada estilo.
+            <p className="text-white text-lg sm:text-xl lg:text-[22px] font-extrabold leading-snug font-sans tracking-wide reveal-item delay-300">
+              Tu estilo comienza con el profesional correcto.
+            </p>
+            <p className="text-white/70 text-sm sm:text-base lg:text-[15px] leading-relaxed font-normal font-sans max-w-[500px] reveal-item delay-400">
+              Barbería y tatuajes en un espacio creado para cuidar cada detalle de tu{'\u00A0'}imagen.
             </p>
           </div>
 
-          {/* Buttons drawer (left-aligned, restricted width on mobile so it doesn't cover bear, row on desktop) */}
-          <div className={`hero-buttons-container w-[80%] max-w-[260px] lg:w-auto lg:max-w-none flex flex-col lg:flex-row gap-3 lg:gap-5 ${fade(5)}`}>
+          {/* Buttons drawer */}
+          <div className="w-full flex flex-col sm:flex-row gap-4 lg:gap-5 reveal-item delay-500">
             <button
               onClick={(e) => { createRipple(e); handleStartBooking(); }}
-              className="btn-primary w-full lg:w-auto py-4 px-6 rounded-xl font-extrabold text-[11px] lg:text-[13px] uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 btn-premium-shimmer haptic-bounce ripple-container"
-              style={{
-                background: 'linear-gradient(to bottom, #d2c1aa, #bba789)',
-                color: '#000',
-              }}
+              className="btn-gold w-full sm:w-auto py-4 px-8 rounded-xl font-extrabold text-[12px] lg:text-[13px] uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2"
+              style={{ borderRadius: '10px' }}
             >
-              <CalendarIcon size={16} /> <span className="whitespace-nowrap">Reservar mi visita</span> <span className="text-[14px]">→</span>
+              <CalendarIcon size={16} /> <span>Reservar mi visita</span> <span>→</span>
             </button>
 
             <button
@@ -1089,12 +1237,32 @@ export default function BookAppointment() {
                   setIsTransitioning(false);
                 }, 750);
               }}
-              className="btn-glass-gold w-full lg:w-auto py-4 px-6 rounded-xl text-[11px] lg:text-[13px] uppercase tracking-widest font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer haptic-bounce"
+              className="btn-outline w-full sm:w-auto py-4 px-8 rounded-xl text-[12px] lg:text-[13px] uppercase tracking-widest font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer"
+              style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.15)', color: '#fff' }}
             >
-              <User size={15} /> <span className="whitespace-nowrap">Ya soy cliente</span>
+              <User size={15} /> <span>Ya soy cliente</span>
             </button>
           </div>
+
+          {/* Live Availability Indicator */}
+          <div className="flex items-center gap-2 mt-2 reveal-item delay-600">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-[10px] lg:text-[11px] text-white/50 tracking-wider font-semibold uppercase">
+              Abierto hoy hasta las 8:00 PM
+            </span>
+          </div>
+
         </div>
+
+        {/* Centered Scroll Indicator (Desktop Only) */}
+        {isDesktop && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center w-10 h-10 rounded-full border border-white/10 bg-black/40 backdrop-blur-md text-white hover:border-[#CBB79A] hover:text-[#CBB79A] transition-all cursor-pointer z-20 animate-bounce">
+            <ChevronDown size={18} />
+          </div>
+        )}
 
         {/* ── HERO CONFIGURATOR (hidden debug tool) ── */}
         {isResting && (
@@ -1225,165 +1393,540 @@ export default function BookAppointment() {
 
     if (isResting) {
       const marco = barbers.find(b => b.name.toLowerCase().includes('marco'));
-      const topBarber = marco || barberOfMonth || (barbers.length > 0 ? barbers[0] : null);
+      const topBarber = barbers.find(b => b.name.toLowerCase().includes('abraham')) || barberOfMonth || (barbers.length > 0 ? barbers[0] : null);
       const featuredReviews = topBarber ? reviews.filter(r => r.staff_id === topBarber.id) : [];
       const featuredAvg = featuredReviews.length
         ? (featuredReviews.reduce((acc, r) => acc + (r.rating || 0), 0) / featuredReviews.length).toFixed(1)
         : null;
 
       return (
-        <div className="landing-scroll-container">
+        <div className="landing-scroll-container w-full bg-[#050506]" style={{ paddingBottom: '0px' }}>
           {heroContent}
 
-          {/* Additional landing sections */}
-          <div className={`landing-content relative z-10 w-full lg:max-w-[1200px] lg:grid lg:grid-cols-12 lg:gap-6 lg:px-8 lg:mx-auto ${isTransitioning ? 'landing-content-exit' : ''}`}>
+          {/* Stats Bar */}
+          <div className="w-full bg-[#07070a] border-y border-[rgba(203,183,154,0.1)] py-8 px-6 lg:px-16 relative z-20">
+            <div className="max-w-[1200px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 items-center justify-items-center">
+              {/* Stat 1 */}
+              <div className="flex items-center gap-4 w-full md:justify-center md:border-r md:border-white/5 px-4 reveal-item delay-100">
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A]">
+                  <Check size={20} />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight">LEGACY</span>
+                  <span className="text-xs text-white/50 font-medium">+8 años marcando la calle</span>
+                </div>
+              </div>
+              {/* Stat 2 */}
+              <div className="flex items-center gap-4 w-full md:justify-center md:border-r md:border-white/5 px-4 reveal-item delay-200">
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A]">
+                  <MapPin size={20} />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight">EL TEMPLO</span>
+                  <span className="text-xs text-white/50 font-medium">tu espacio, tu vibra</span>
+                </div>
+              </div>
+              {/* Stat 3 */}
+              <div className="flex items-center gap-4 w-full md:justify-center md:border-r md:border-white/5 px-4 reveal-item delay-300">
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A]">
+                  <Scissors size={20} />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight">ART & INK</span>
+                  <span className="text-xs text-white/50 font-medium">tinta y navaja de autor</span>
+                </div>
+              </div>
+              {/* Stat 4 */}
+              <div className="flex items-center gap-4 w-full md:justify-center px-4 reveal-item delay-400">
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A]">
+                  <User size={20} />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight">CULTURA</span>
+                  <span className="text-xs text-white/50 font-medium">+15k de pura familia</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Vertical Flow Sections Container */}
+          <div className="w-full max-w-[1200px] mx-auto px-6 py-16 space-y-24 relative z-10">
             
-            {/* Section: Servicios Populares */}
-            <div className="landing-section lg:col-span-7">
-              <AnimatedSection className="landing-section-head" delay={0}>
-                <span className="landing-section-head-title">Servicios Populares</span>
-                <button onClick={() => handleStartBooking()} className="landing-see-all">
-                  Ver todos <ChevronRight size={13} />
-                </button>
-              </AnimatedSection>
-              <div className="landing-services-scroll">
-                {services.slice(0, 4).map((service, i) => (
-                  <AnimatedSection key={service.id} delay={i * 70} className="landing-service-snap">
-                    <button
-                      onClick={() => { setSelectedService(service); handleStartBooking(); }}
-                      className="landing-service-card"
-                    >
-                      <span className="landing-service-num">0{i + 1}</span>
-                      {i === 0 && <span className="landing-service-badge">Popular</span>}
-                      <div className="landing-service-icon-area">
-                        {getServiceIcon(service)}
-                      </div>
-                      <div className="landing-service-info">
-                        <span className="landing-service-name">{service.name}</span>
-                        <span className="landing-service-meta">{service.duration} min</span>
-                      </div>
-                      <div className="landing-service-price">${service.price}</div>
-                    </button>
-                  </AnimatedSection>
-                ))}
+            {/* SECTION: ELIGE TU SERVICIO */}
+            <div className="w-full text-center" id="servicios">
+              <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2 reveal-item">NUESTRAS EXPERIENCIAS</span>
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight mb-12 uppercase font-sans reveal-item delay-100">ELIGE TU SERVICIO</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+                {/* Card 1: Barbería */}
+                <div 
+                  className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-100"
+                  onClick={() => document.getElementById('servicios')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center transition-all duration-700 brightness-[0.6] group-hover:brightness-[0.88] group-hover:scale-110 z-0" 
+                    style={{ backgroundImage: `url(${barberiaCover})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-1" />
+                  
+                  <div className="relative z-10 flex flex-col items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-[#CBB79A] flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110">
+                      <Scissors size={20} className="text-black" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-extrabold text-white mb-2 uppercase tracking-wide">BARBERÍA</h3>
+                      <p className="text-white/60 text-xs leading-relaxed mb-4">Cortes modernos, clásicos, fades, arreglo de barba y más.</p>
+                      <span className="text-[#CBB79A] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
+                        EXPLORAR SERVICIOS <span className="text-[14px]">→</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: Tatuajes */}
+                <div 
+                  className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-200"
+                  onClick={() => document.getElementById('equipo')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center transition-all duration-700 brightness-[0.6] group-hover:brightness-[0.88] group-hover:scale-110 z-0" 
+                    style={{ backgroundImage: `url(${tatuajesCover})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-1" />
+                  
+                  <div className="relative z-10 flex flex-col items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-[#CBB79A] flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110">
+                      <PenTool size={20} className="text-black" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-extrabold text-white mb-2 uppercase tracking-wide">TATUAJES</h3>
+                      <p className="text-white/60 text-xs leading-relaxed mb-4">Diseños personalizados y estilo único.</p>
+                      <span className="text-[#CBB79A] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
+                        CONOCER ARTISTAS <span className="text-[14px]">→</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 3: Experiencia Panda */}
+                <div 
+                  className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-300"
+                  onClick={() => setShowExperienceModal(true)}
+                >
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center transition-all duration-700 brightness-[0.6] group-hover:brightness-[0.88] group-hover:scale-110 z-0" 
+                    style={{ backgroundImage: `url(${experienciaPandaCover})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-1" />
+                  
+                  <div className="relative z-10 flex flex-col items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-[#CBB79A] flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-110">
+                      <Sparkles size={20} className="text-black" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-extrabold text-white mb-2 uppercase tracking-wide">EXPERIENCIA PANDA</h3>
+                      <p className="text-white/60 text-xs leading-relaxed mb-4">Ambiente exclusivo, atención premium y los mejores productos.</p>
+                      <span className="text-[#CBB79A] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
+                        DESCUBRIR MÁS <span className="text-[14px]">→</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Section: Barbero Destacado del Mes */}
-            <div className="landing-section lg:col-span-5">
-              {topBarber ? (
-                <div className="landing-barber-month-card">
-                  <AnimatedSection delay={0} from="left" className="landing-bm-photo-wrapper">
-                    <div className="landing-bm-medal"><Award size={20} fill="#D5B990" strokeWidth={1} /></div>
-                    <BarberAvatar url={topBarber.image_url} name={topBarber.name} className="landing-bm-photo" iconSize={34} />
-                  </AnimatedSection>
-                  <AnimatedSection className="landing-bm-content" delay={120}>
-                    <span className="landing-bm-label"><Crown size={12} /> Barbero Destacado del Mes</span>
-                    <h3 className="landing-bm-name">{topBarber.name.split(' ')[0]}</h3>
-                    <span className="landing-bm-role">{topBarber.specialty || 'Master Barber'}</span>
-                    <div className="landing-bm-rating">
-                      <Star size={13} fill="var(--champagne)" color="var(--champagne)" />
-                      {featuredAvg ? (
-                        <>
-                          <strong>{featuredAvg}</strong>
-                          <span style={{ opacity: 0.35 }}>|</span>
-                          <span style={{ color: 'var(--text-secondary)' }}>
-                            {featuredReviews.length} {featuredReviews.length === 1 ? 'reseña' : 'reseñas'}
-                          </span>
-                        </>
-                      ) : (
-                        <span style={{ color: 'var(--text-secondary)' }}>Top del mes</span>
-                      )}
+            {/* SECTION: NUESTROS ARTISTAS */}
+            <div className="w-full text-left relative" id="equipo">
+              <div className="w-full flex flex-col items-center mb-12 reveal-item">
+                <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CONOCE AL EQUIPO</span>
+                <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans">NUESTROS ARTISTAS</h2>
+              </div>
+
+              <div className="relative px-6 reveal-item delay-200">
+                {/* Left navigation arrow */}
+                <button 
+                  onClick={() => setBarberStartIndex(prev => Math.max(0, prev - 1))}
+                  className="absolute left-[-20px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-[#CBB79A]/40 bg-black/40 text-[#CBB79A] flex items-center justify-center hover:bg-[#CBB79A] hover:text-black transition-all cursor-pointer z-30"
+                  style={{ opacity: barberStartIndex === 0 ? 0.35 : 1, pointerEvents: barberStartIndex === 0 ? 'none' : 'auto' }}
+                  aria-label="Previous"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+
+                {/* Right navigation arrow */}
+                <button 
+                  onClick={() => setBarberStartIndex(prev => Math.min(Math.max(0, barbers.length - 5), prev + 1))}
+                  className="absolute right-[-20px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#CBB79A] text-black flex items-center justify-center hover:bg-[#CBB79A]/80 transition-all cursor-pointer z-30"
+                  style={{ opacity: barberStartIndex + 5 >= barbers.length ? 0.35 : 1, pointerEvents: barberStartIndex + 5 >= barbers.length ? 'none' : 'auto' }}
+                  aria-label="Next"
+                >
+                  <ChevronRight size={16} />
+                </button>
+
+                <div className="overflow-hidden w-full">
+                  <div 
+                    className="flex transition-transform duration-500 ease-in-out"
+                    style={{ transform: `translateX(-${barberStartIndex * 20}%)` }}
+                  >
+                    {barbers.map((barber) => {
+                      const isAngel = barber.name === 'Ángel Serrano';
+                      const isMarko = barber.name === 'Marko Cardozo';
+                      const isAbraham = barber.name === 'Abraham Díaz';
+                      const isAlejandro = barber.name === 'Alejandro Ramírez';
+                      const isJose = barber.name === 'José Cordero';
+                      
+                      const availabilityText = (isAngel || isMarko) ? 'Disponible mañana' : 'Disponible hoy';
+                      const availabilityColor = (isAngel || isMarko) ? 'text-white/40' : 'text-emerald-400';
+                      const dotColor = (isAngel || isMarko) ? 'bg-white/30' : 'bg-emerald-400';
+                      
+                      const displayName = isAbraham ? 'Abraham Diaz' :
+                                        isAlejandro ? 'Alejandro Ramirez' :
+                                        barber.name;
+
+                      const specialtyText = isAbraham ? 'MASTER BARBER' :
+                                            isAlejandro ? 'BARBERO' :
+                                            isAngel ? 'BARBERO' :
+                                            isJose ? 'BARBERO' :
+                                            isMarko ? 'TATUADOR' :
+                                            'BARBERO';
+
+                      const tagsText = isAbraham ? 'Fade • Barba • Clásicos' :
+                                       isAlejandro ? 'Corte • Barba • Diseños' :
+                                       isAngel ? 'Fade • Corte • Barba' :
+                                       isJose ? 'Corte • Barba • Clásicos' :
+                                       isMarko ? 'Realismo • Black & Grey' :
+                                       'Corte • Barba';
+                      
+                      return (
+                        <div key={barber.id} className="w-1/5 shrink-0 px-3">
+                          <div className="bg-[#111115]/50 border border-white/5 rounded-2xl p-5 flex flex-col items-center text-center relative group hover:border-[rgba(203,183,154,0.3)] transition-all duration-300">
+                            <div className="w-full aspect-[4/5] rounded-xl overflow-hidden mb-4 relative bg-[#1c1c24] border border-white/5">
+                              <BarberAvatar url={barber.image_url} name={barber.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" iconSize={40} />
+                            </div>
+                            <h4 className="text-base font-extrabold text-white mb-0.5 tracking-wide">{displayName}</h4>
+                            <span className="text-[10px] font-bold text-[#CBB79A] tracking-wider uppercase mb-3">{specialtyText}</span>
+                            
+                            {/* Specialties detail */}
+                            <p className="text-[11px] text-white/50 mb-4 truncate w-full">
+                              {tagsText}
+                            </p>
+
+                            {/* Availability status */}
+                            <div className={`flex items-center gap-1.5 mb-5 text-[11px] ${availabilityColor} font-medium`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${!(isAngel || isMarko) ? 'animate-pulse' : ''}`}></span>
+                              <span>{availabilityText}</span>
+                            </div>
+                            
+                            <button 
+                              onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
+                              className="btn-outline w-full py-2.5 rounded-xl text-[11px] uppercase tracking-wider font-extrabold transition-all cursor-pointer"
+                            >
+                              VER PERFIL
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Centered CTA below carousel */}
+              <div className="flex justify-center mt-10 reveal-item delay-300">
+                <button 
+                  onClick={() => handleStartBooking()} 
+                  className="btn-outline py-3 px-8 rounded-full text-[11px] uppercase tracking-widest font-extrabold flex items-center gap-2 transition-all cursor-pointer"
+                >
+                  VER TODO EL EQUIPO <span className="text-[14px]">→</span>
+                </button>
+              </div>
+            </div>
+
+            {/* SECTION: BARBERO DESTACADO DEL MES */}
+            {topBarber && (
+              <div className="w-full bg-[#111115]/50 border border-white/5 rounded-3xl p-6 lg:p-10 relative overflow-hidden text-left flex flex-col md:flex-row gap-8 items-stretch">
+                {/* Left Column: Portrait */}
+                <div className="w-full md:w-[35%] min-h-[300px] rounded-2xl overflow-hidden relative bg-[#1c1c24] border border-white/5">
+                  <BarberAvatar url={topBarber.image_url} name={topBarber.name} className="absolute inset-0 w-full h-full object-cover" iconSize={60} />
+                </div>
+
+                {/* Right Column: Info */}
+                <div className="flex-1 flex flex-col justify-between relative">
+                  {/* Portfolio thumbnails top-right (desktop only) */}
+                  {isDesktop && (
+                    <div className="absolute top-0 right-0 grid grid-cols-3 gap-1.5 w-32">
+                      {topBarberPortfolio.slice(0, 6).map((img, idx) => (
+                        <div key={img.id || idx} className="aspect-square bg-white/5 border border-white/10 rounded-lg overflow-hidden">
+                          <img src={img.image_url} alt="Work" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                      {/* Placeholder grids if no portfolio loaded */}
+                      {topBarberPortfolio.length === 0 && Array.from({ length: 6 }).map((_, idx) => (
+                        <div key={idx} className="aspect-square bg-white/5 border border-white/10 rounded-lg overflow-hidden flex items-center justify-center">
+                          <Scissors size={10} className="text-white/20" />
+                        </div>
+                      ))}
                     </div>
-                    <p className="landing-bm-quote">"{topBarber.biography || 'Especializado en cortes clásicos y modernos con un estilo y precisión impecables.'}"</p>
+                  )}
+
+                  <div>
+                    {/* Subtitle */}
+                    <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#CBB79A] flex items-center gap-1.5 mb-3">
+                      👑 BARBERO DESTACADO DEL MES
+                    </span>
+                    
+                    {/* Name & Badges */}
+                    <div className="flex items-center gap-3 mb-6 flex-wrap">
+                      <h3 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans">
+                        {topBarber.name}
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider bg-white/5 border border-white/10 text-white/70 uppercase">
+                          MASTER BARBER
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider bg-[#CBB79A]/10 border border-[#CBB79A]/20 text-[#CBB79A] uppercase">
+                          TOP DEL MES
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Biography Quote */}
+                    <p className="text-white/80 text-sm italic font-medium leading-relaxed max-w-[70%] border-l-2 border-[#CBB79A]/30 pl-4 mb-8">
+                      "{topBarber.biography || 'Especializado en cortes clásicos y modernos con un estilo y precisión impecables.'}"
+                    </p>
+
+                    {/* Mini Stats Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-[80%] mb-8">
+                      <div className="flex items-center gap-2.5">
+                        <Check size={16} className="text-[#CBB79A]" />
+                        <div className="flex flex-col text-left">
+                          <span className="text-xs font-bold text-white leading-tight">+8 años</span>
+                          <span className="text-[10px] text-white/40">de experiencia</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Star size={16} className="text-[#CBB79A]" />
+                        <div className="flex flex-col text-left">
+                          <span className="text-xs font-bold text-white leading-tight">500+</span>
+                          <span className="text-[10px] text-white/40">clientes felices</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Scissors size={16} className="text-[#CBB79A]" />
+                        <div className="flex flex-col text-left">
+                          <span className="text-xs font-bold text-white leading-tight">Especialista</span>
+                          <span className="text-[10px] text-white/40">en fades</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Info size={16} className="text-[#CBB79A]" />
+                        <div className="flex flex-col text-left">
+                          <span className="text-xs font-bold text-white leading-tight">Asesoría</span>
+                          <span className="text-[10px] text-white/40">de imagen</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex flex-col sm:flex-row items-center gap-4 mt-auto">
                     <button
                       onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
-                      className="landing-bm-btn"
+                      className="btn-gold w-full sm:w-auto py-3 px-8 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2"
+                      style={{ borderRadius: '10px' }}
                     >
-                      AGENDAR CON {topBarber.name.split(' ')[0]} <ArrowRight size={14} strokeWidth={2.5} />
+                      AGENDAR CON {topBarber.name.split(' ')[0]} <ArrowRight size={14} />
                     </button>
-                  </AnimatedSection>
-                </div>
-              ) : (
-                <p className="text-white/40 text-xs">Cargando especialista destacado...</p>
-              )}
-            </div>
-
-            {/* Section: Equipo Disponible */}
-            <div className="landing-section lg:col-span-7">
-              <AnimatedSection className="landing-section-head" delay={0}>
-                <span className="landing-section-head-title">Equipo Disponible</span>
-                <button onClick={() => handleStartBooking()} className="landing-see-all">
-                  Ver todos <ChevronRight size={13} />
-                </button>
-              </AnimatedSection>
-
-              <div className="landing-team-grid">
-                {barbers.slice(0, 6).map((barber, i) => (
-                  <AnimatedSection key={barber.id} delay={i * 70}>
-                    <div 
-                      className="landing-barber-card-v2"
-                      onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
+                    <button
+                      onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
+                      className="btn-outline w-full sm:w-auto py-3 px-8 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2"
+                      style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
                     >
-                      <div className="landing-bc-photo-wrapper">
-                        <BarberAvatar url={barber.image_url} name={barber.name} className="landing-bc-photo-flush" iconSize={40} />
-                      </div>
-                      <div className="landing-bc-bottom-bar">
-                        <div className="landing-bc-info-area">
-                          <span className="landing-bc-name-v2">{barber.name}</span>
-                          <span className="landing-bc-role-v2">
-                            {barber.specialty || barber.role?.split('|')[0] || 'Barbero'}
-                          </span>
-                        </div>
-                        <button className="landing-bc-btn-circle" aria-label="Reservar">
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  </AnimatedSection>
-                ))}
-              </div>
-            </div>
-
-            {/* Section: Cliente del Mes / VIP */}
-            {loggedInClient && topClients[0] && topClients[0].id === loggedInClient.id && (
-              <div className="landing-section lg:col-span-5">
-                <div className="landing-vip-card">
-                  <AnimatedSection className="landing-vip-left" delay={0} from="left">
-                    <div className="landing-vip-badge"><Crown size={22} /></div>
-                    <span className="landing-vip-title">¡Felicidades! Eres el Cliente del Mes</span>
-                    <p className="landing-vip-desc">
-                      Has sido nuestro cliente más fiel este mes.
-                      <span className="landing-vip-callout">¡Gracias por tu preferencia! Disfruta tu posición VIP.</span>
-                    </p>
-                  </AnimatedSection>
-                  <AnimatedSection className="landing-single-podium-zone" delay={180} from="right">
-                    <div className="single-podium-spot">
-                      <Crown size={22} className="vip-crown" />
-                      <div className="single-podium-avatar">
-                        {topClients[0] ? topClients[0].name.split(' ').map(n => n[0]).join('').slice(0,2) : '?'}
-                      </div>
-                      <span className="single-podium-name">
-                        {topClients[0] ? topClients[0].name.split(' ')[0] : '???'}
-                      </span>
-                      <span className="single-podium-visits">
-                        {topClients[0] ? `${topClients[0].visit_count} visitas` : 'Sin visitas'}
-                      </span>
-                      <div className="single-podium-block">1</div>
-                    </div>
-                  </AnimatedSection>
+                      VER SU PERFIL
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Section: Footer Features (Desktop only or responsive) */}
+              {/* SECTION: ¿POR QUÉ ELEGIR PANDA BARBER? / NUESTRAS SEDES */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start" id="ubicacion">
+                {/* Left column: Why Choose Us */}
+                <div className="lg:col-span-5 text-left">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">¿POR QUÉ ELEGIR</span>
+                  <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-8">PANDA BARBER?</h2>
+                  
+                  <div className="space-y-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A] shrink-0">
+                        <User size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-white mb-1 uppercase tracking-wider">Profesionales capacitados</h4>
+                        <p className="text-white/50 text-xs leading-relaxed">Artistas expertos en las últimas técnicas y tendencias de corte y diseño.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A] shrink-0">
+                        <Award size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-white mb-1 uppercase tracking-wider">Productos de calidad</h4>
+                        <p className="text-white/50 text-xs leading-relaxed">Usamos productos premium para tu cuidado capilar, facial y corporal.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A] shrink-0">
+                        <CalendarIcon size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-white mb-1 uppercase tracking-wider">Reserva fácil y rápida</h4>
+                        <p className="text-white/50 text-xs leading-relaxed">Agenda tus citas en segundos desde cualquier dispositivo y a cualquier hora.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A] shrink-0">
+                        <Scissors size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-white mb-1 uppercase tracking-wider">Ambiente exclusivo</h4>
+                        <p className="text-white/50 text-xs leading-relaxed">Un espacio diseñado para tu total comodidad, relax y disfrute.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right column: Locations */}
+                <div className="lg:col-span-7 text-left">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">NUESTRA SEDE</span>
+                  <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-8">NUESTRA UBICACIÓN</h2>
+
+                  <div className="w-full">
+                    {/* Sede única */}
+                    <div className="bg-[#111115]/50 border border-white/5 rounded-2xl p-6 flex flex-col justify-between h-[360px] group hover:border-[rgba(203,183,154,0.2)] transition-all">
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <MapPin size={18} className="text-[#CBB79A]" />
+                          <h4 className="text-base font-extrabold text-white uppercase tracking-wide">SEDE ÚNICA</h4>
+                        </div>
+                        <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider mb-4">Maracay, Venezuela</p>
+                        
+                        <p className="text-white/70 text-xs leading-relaxed mb-4">
+                          📍 Centro comercial ciudad jardín local #74 PB, Maracay 2102, Aragua, Venezuela
+                        </p>
+                        <p className="text-white/50 text-[11px] leading-relaxed mb-1">
+                          🕒 Lun - Sáb: 9:00am - 8:00pm
+                        </p>
+                        <p className="text-white/50 text-[11px] leading-relaxed mb-4">
+                          Dom: Cerrado
+                        </p>
+                        <p className="text-[#CBB79A] text-xs font-bold">
+                          📞 +58 412 123 4567
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 mt-6">
+                        <button className="btn-outline py-2.5 rounded-xl text-[11px] uppercase tracking-wider font-extrabold transition-all cursor-pointer">
+                          VER EN MAPA
+                        </button>
+                        <button onClick={() => handleStartBooking()} className="btn-gold py-2.5 rounded-xl text-[11px] uppercase tracking-wider font-extrabold transition-all cursor-pointer">
+                          RESERVAR
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
 
+              {/* SECTION: FOOTER (PANDA BARBER STUDIO) */}
+              <footer className="w-full pt-12 border-t border-white/5 text-left grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8">
+                {/* Column 1: Logo & text */}
+                <div className="md:col-span-1">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <img src={logo} alt="Panda Barber Logo" className="w-8 h-8 object-contain" />
+                    <div className="flex flex-col text-left">
+                      <span className="font-extrabold text-[13px] tracking-[0.12em] text-white leading-none">PANDA BARBER</span>
+                      <span className="text-[9px] tracking-[0.3em] text-[#CBB79A] uppercase font-semibold">STUDIO</span>
+                    </div>
+                  </div>
+                  <p className="text-white/50 text-[11px] leading-relaxed mb-6">
+                    Barbería y tatuajes de alta calidad. Profesionales apasionados por el estilo y la excelencia.
+                  </p>
+                  <p className="text-[10px] text-white/30">
+                    © 2026 Panda Barber Studio. <br /> Todos los derechos reservados.
+                  </p>
+                </div>
+
+                {/* Column 2: Navigation */}
+                <div>
+                  <h5 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Navegación</h5>
+                  <ul className="space-y-2 text-[11px] font-bold text-white/50 list-none">
+                    <li><Link to="/" onClick={() => handleScrollTo('inicio')} className="hover:text-[#CBB79A] transition-colors no-underline">Inicio</Link></li>
+                    <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Servicios</a></li>
+                    <li><a href="#equipo" className="hover:text-[#CBB79A] transition-colors no-underline">Equipo</a></li>
+                    <li><a href="#experiencia" className="hover:text-[#CBB79A] transition-colors no-underline">Experiencia</a></li>
+                    <li><a href="#ubicacion" className="hover:text-[#CBB79A] transition-colors no-underline">Ubicación</a></li>
+                  </ul>
+                </div>
+
+                {/* Column 3: Services */}
+                <div>
+                  <h5 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Servicios</h5>
+                  <ul className="space-y-2 text-[11px] font-bold text-white/50 list-none">
+                    <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Cortes</a></li>
+                    <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Barba</a></li>
+                    <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Tatuajes</a></li>
+                    <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Paquetes</a></li>
+                    <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Productos</a></li>
+                  </ul>
+                </div>
+
+                {/* Column 4: Contact */}
+                <div>
+                  <h5 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Contacto</h5>
+                  <ul className="space-y-2.5 text-[11px] font-bold text-white/50 list-none">
+                    <li>📞 +58 412 555 1234</li>
+                    <li className="truncate">✉ info@pandabarber.studio</li>
+                    <li>📍 Maracay, Venezuela</li>
+                    {/* Social icons */}
+                    <li className="flex items-center gap-3 pt-2">
+                      <a href="#" className="text-white/40 hover:text-[#CBB79A] transition-colors" aria-label="Instagram">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                        </svg>
+                      </a>
+                      <a href="#" className="text-white/40 hover:text-[#CBB79A] transition-colors" aria-label="Facebook">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                        </svg>
+                      </a>
+                      <a href="#" className="text-white/40 hover:text-[#CBB79A] transition-colors" aria-label="Twitter">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+                        </svg>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Column 5: Hours */}
+                <div>
+                  <h5 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Horarios</h5>
+                  <ul className="space-y-2 text-[11px] font-bold text-white/50 list-none">
+                    <li>Lun - Sáb: 9:00am - 8:00pm</li>
+                    <li>Dom: 10:00am - 6:00pm</li>
+                  </ul>
+                </div>
+              </footer>
+
+            </div>
           </div>
-        </div>
-      );
-    }
-
+        );
+      }
+    
     return (
       <div className={`slice-screen ${sliceClass}`}>
         {/* Background photo inside slice */}
@@ -1414,6 +1957,10 @@ export default function BookAppointment() {
       <PandaLoader visible={loading && !showWelcome} />
       <div 
         ref={scrollContainerRef}
+        onScroll={(e) => {
+          const scrollTop = e.currentTarget.scrollTop;
+          setIsScrolled(scrollTop > 80);
+        }}
         className="relative w-full h-full overflow-x-hidden flex flex-col justify-between items-center bg-center overflow-y-auto"
         style={{
           height: '100dvh',
@@ -1430,9 +1977,20 @@ export default function BookAppointment() {
         {/* ── WELCOME SCREEN ── */}
         {/* Render welcome screen while showWelcome is true, adding fade-out class during transitions */}
         {showWelcome && (
-          <div className={`w-full h-full welcome-return-fade ${isTransitioning ? 'welcome-screen-exit-fade pointer-events-none' : ''}`}>
-            {renderWelcomeContent("", hasVisited)}
-          </div>
+          <>
+            <div className={`w-full h-full welcome-return-fade ${isTransitioning ? 'welcome-screen-exit-fade pointer-events-none' : ''}`}>
+              {renderWelcomeContent("", hasVisited)}
+            </div>
+            {selectedService && !isTransitioning && (
+              <button 
+                onClick={() => setShowWelcome(false)}
+                className="fixed bottom-6 right-6 z-[100] bg-[#CBB79A] text-black font-extrabold px-6 py-3.5 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center gap-2 cursor-pointer text-xs tracking-widest uppercase border border-black/10 animate-pulse"
+                style={{ boxShadow: '0 10px 25px -5px rgba(203,183,154,0.4), 0 8px 10px -6px rgba(203,183,154,0.4)' }}
+              >
+                <span>Volver a la reserva</span> <span className="text-[14px]">→</span>
+              </button>
+            )}
+          </>
         )}
 
         {/* On click: two slices with @keyframe exit animation (starts from full-screen, splits apart) */}
@@ -1504,7 +2062,7 @@ export default function BookAppointment() {
 
         {/* ── INTERACTIVE WIZARD FLOW SCREEN (STEPS 1-6) ── */}
         {(!showWelcome || isTransitioning) && !success && (
-          <div className={`w-full max-w-xl mx-auto px-4 pb-24 flex flex-col flex-1 relative z-10 ${step === 2 && expandedBarber ? 'pt-0' : 'pt-6'}`}>
+          <div className={`w-full max-w-xl mx-auto px-4 pb-24 flex flex-col flex-1 relative z-10 lg:pt-28 pt-24 ${step === 2 && expandedBarber ? 'pt-0' : ''}`}>
             
             {/* Wizard Header: PASO X DE 6 with title/subtitle and back button */}
             {!(step === 2 && expandedBarber) && (
@@ -2848,6 +3406,102 @@ export default function BookAppointment() {
           <span className="opacity-95 leading-none pr-1">{toast.text}</span>
         </div>
       )}
+
+      {/* ── APPLE UX STYLE PANDA EXPERIENCE MODAL ── */}
+      <div 
+        className={`fixed inset-0 z-[999999] flex items-center justify-center p-4 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          showExperienceModal 
+            ? 'opacity-100 pointer-events-auto backdrop-blur-xl bg-black/70' 
+            : 'opacity-0 pointer-events-none backdrop-blur-none bg-transparent'
+        }`}
+      >
+        <div 
+          className={`relative w-full max-w-xl bg-[#0d0d11]/85 border border-white/[0.08] rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] p-6 md:p-8 flex flex-col gap-6 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
+            showExperienceModal 
+              ? 'opacity-100 scale-100 translate-y-0' 
+              : 'opacity-0 scale-95 translate-y-4'
+          }`}
+        >
+          
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#CBB79A]">
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <h3 className="text-lg md:text-xl font-black text-white tracking-tight uppercase">EXPERIENCIA PANDA</h3>
+                <p className="text-white/40 text-[10px] md:text-xs font-bold tracking-wider uppercase">Cultura, estilo y hospitalidad de autor</p>
+              </div>
+            </div>
+            
+            {/* Close Button - Apple Style Circular Dismiss */}
+            <button 
+              onClick={() => setShowExperienceModal(false)}
+              className="text-white/40 hover:text-white transition-colors w-8 h-8 rounded-full bg-white/[0.05] border border-white/[0.08] flex items-center justify-center cursor-pointer"
+            >
+              <X size={14} />
+            </button>
+          </div>
+
+          {/* Video banner inside modal */}
+          <div className="w-full h-44 md:h-56 rounded-2xl overflow-hidden relative border border-white/[0.05] bg-black">
+            <video
+              ref={modalVideoRef}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+              style={{ filter: 'brightness(0.85)', objectPosition: 'center top' }}
+            >
+              <source src={heroVideo} type="video/mp4" />
+            </video>
+          </div>
+
+          {/* Description details */}
+          <div className="space-y-4 text-white/70 text-xs md:text-sm leading-relaxed">
+            <p>
+              En <strong className="text-[#CBB79A] font-semibold">Panda Barber Studio</strong> redefinimos la experiencia clásica de barbería. Fusionamos el arte del corte urbano y la tinta en un club social exclusivo diseñado para tu comodidad y relax.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex gap-3 items-start">
+                <div className="p-2 rounded-xl bg-white/[0.04] text-[#CBB79A] mt-0.5 border border-white/[0.05]">
+                  <Coffee size={15} />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-white font-extrabold text-[11px] uppercase tracking-wider">Panda Cafe & Bar</h4>
+                  <p className="text-white/50 text-[10px] leading-normal">Café de especialidad, bebidas premium y cerveza fría de cortesía en cada sesión.</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex gap-3 items-start">
+                <div className="p-2 rounded-xl bg-white/[0.04] text-[#CBB79A] mt-0.5 border border-white/[0.05]">
+                  <Gamepad2 size={15} />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-white font-extrabold text-[11px] uppercase tracking-wider">Espacio Retro Arcade</h4>
+                  <p className="text-white/50 text-[10px] leading-normal">Consolas arcade clásicas libres para divertirte mientras esperas tu turno.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CTA action inside modal */}
+          <div className="flex justify-end gap-3 border-t border-white/[0.06] pt-4 mt-2">
+            <button 
+              onClick={() => {
+                setShowExperienceModal(false);
+                handleStartBooking();
+              }}
+              className="btn-gold px-5 py-2.5 rounded-full text-[10px] uppercase tracking-widest font-extrabold flex items-center gap-1 cursor-pointer"
+            >
+              Reservar visita <span className="text-[12px]">→</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

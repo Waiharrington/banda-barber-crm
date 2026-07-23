@@ -1375,6 +1375,35 @@ input[type="submit"]:active {
   50% { opacity: 0.7; box-shadow: 0 0 10px var(--champagne), 0 0 22px rgba(203,183,154,0.5); }
 }
 
+/* Collapsed sidebar: tooltip label revealed on hover, styled with brand colors */
+@keyframes sidebarTooltipIn {
+  from { opacity: 0; transform: translateY(-50%) translateX(-6px); }
+  to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+.sidebar-tooltip-fixed {
+  position: fixed;
+  transform: translateY(-50%);
+  background: #100e0a;
+  border: 1px solid rgba(203, 183, 154, 0.45);
+  color: var(--champagne);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  padding: 7px 16px;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+  pointer-events: none;
+  z-index: 99999;
+  animation: sidebarTooltipIn 0.16s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.sidebar-tooltip-danger {
+  color: #ff8a80;
+  border-color: rgba(255, 69, 58, 0.45);
+}
+
 /* Full-screen modals overrides */
 @media (min-width: 768px) {
   .global-modal-overlay {
