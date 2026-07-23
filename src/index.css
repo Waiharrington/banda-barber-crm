@@ -175,6 +175,55 @@ html, body {
   scale: 0.98;
 }
 
+/* Tap/press micro-interaction for custom inline-styled buttons that don't use .btn-gold/.action-btn */
+.tap-scale {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease, opacity 0.15s ease;
+}
+.tap-scale:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+.tap-scale:active:not(:disabled) {
+  transform: scale(0.92);
+}
+.tap-scale:disabled {
+  opacity: 0.6;
+}
+
+.menu-row-hover:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Small popovers/dropdowns (info tooltips, photo-source menu) */
+@keyframes popoverPop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.92); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.popover-pop {
+  animation: popoverPop 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: top right;
+}
+
+/* Team module: give every interactive element inside a subtle press/hover micro-interaction,
+   without touching each of the dozens of inline-styled buttons individually. */
+.team-module-animated button:not(.btn-gold):not(.action-btn):not(.tap-scale):not(:disabled) {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease, opacity 0.15s ease;
+}
+.team-module-animated button:not(.btn-gold):not(.action-btn):not(.tap-scale):not(:disabled):active {
+  transform: scale(0.94);
+}
+.team-module-animated button:not(.btn-gold):not(.action-btn):not(.tap-scale):not(:disabled):hover {
+  filter: brightness(1.1);
+}
+.team-module-animated input,
+.team-module-animated select {
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.team-module-animated input:focus,
+.team-module-animated select:focus {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 0 3px rgba(255, 199, 0, 0.12);
+}
+
 /* Advanced Animations */
 .animate-fade-in {
   animation: fadeInOnly 0.4s ease-out both;
@@ -504,6 +553,10 @@ input:focus, select:focus, textarea:focus {
   color: var(--gold-primary);
   background: rgba(255, 255, 255, 0.08);
   transform: rotate(5deg) scale(1.1);
+}
+
+.action-btn:active {
+  transform: scale(0.9);
 }
 
 /* --- Panda Experience Additions --- */

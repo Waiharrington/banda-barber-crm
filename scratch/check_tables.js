@@ -4,10 +4,12 @@ dotenv.config();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  db: { schema: 'pandabarber' }
+});
 
 async function check() {
-  const tables = ['clients', 'staff', 'services', 'turn_queue', 'coupons'];
+  const tables = ['clients', 'staff', 'services', 'turn_queue', 'coupons', 'attendance_log'];
   for (const table of tables) {
     const { data, error } = await supabase.from(table).select('*').limit(1);
     if (error) {

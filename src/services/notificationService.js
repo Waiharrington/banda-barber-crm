@@ -4,25 +4,29 @@ class NotificationService {
   constructor() {
     this.notificationsKey = 'panda_notifications_list';
     this.swRegistered = false;
-    this.initServiceWorker();
+    if ('serviceWorker' in navigator) {
+      if (document.readyState === 'complete') {
+        this.initServiceWorker();
+      } else {
+        window.addEventListener('load', () => this.initServiceWorker());
+      }
+    }
   }
 
   // Inicializar Service Worker
   async initServiceWorker() {
-    if ('serviceWorker' in navigator) {
-      try {
-        const registration = await navigator.serviceWorker.register('/sw.js');
-        console.log('Service Worker registrado con éxito:', registration.scope);
-        this.swRegistered = true;
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      console.log('Service Worker registrado con éxito:', registration.scope);
+      this.swRegistered = true;
 
-        window.addEventListener('online', () => {
-          if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({ action: 'sync' });
-          }
-        });
-      } catch (error) {
-        console.error('Fallo al registrar el Service Worker:', error);
-      }
+      window.addEventListener('online', () => {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({ action: 'sync' });
+        }
+      });
+    } catch (error) {
+      console.error('Fallo al registrar el Service Worker:', error);
     }
   }
 

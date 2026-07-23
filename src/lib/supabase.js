@@ -11,6 +11,7 @@ const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
 export const authClient = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey, {
   auth: {
+    storageKey: 'sb-authclient-auth-token',
     persistSession: false,
     autoRefreshToken: false,
     detectSessionInUrl: false

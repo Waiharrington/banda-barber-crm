@@ -1369,13 +1369,35 @@ export const dataService = {
     return _asArray(data);
   },
 
+  // Historial de asistencia (para racha de puntualidad y calendario por persona)
+  async getRecentAttendanceLogs(daysBack = 90) {
+    const since = new Date();
+    since.setDate(since.getDate() - daysBack);
+    const { data, error } = await supabase
+      .from('attendance_log')
+      .select('*')
+      .gte('check_in', since.toISOString())
+      .order('check_in', { ascending: false });
+    if (error) throw error;
+    return _asArray(data);
+  },
+
   async checkInBarber(staffId) {
-    const { data: existing, error: err } = await supabase
+    const { data: existingRows, error: err } = await supabase
       .from('turn_queue')
       .select('*')
       .eq('staff_id', staffId)
-      .maybeSingle();
+      .order('position', { ascending: true });
     if (err) throw err;
+
+    // Autolimpieza: si por una condición de carrera (doble clic) quedaron varias
+    // filas para el mismo barbero, nos quedamos con la más antigua y borramos el resto.
+    const existing = existingRows?.[0] || null;
+    if (existingRows && existingRows.length > 1) {
+      const staleIds = existingRows.slice(1).map(r => r.id);
+      await supabase.from('turn_queue').delete().in('id', staleIds);
+    }
+
     if (existing) {
       if (existing.status !== 'AVAILABLE') {
         const { data, error } = await supabase
@@ -1385,6 +1407,7 @@ export const dataService = {
           .select()
           .single();
         if (error) throw error;
+        await supabase.from('attendance_log').insert([{ staff_id: staffId }]);
         return data;
       }
       return existing;
@@ -1404,6 +1427,7 @@ export const dataService = {
       .select()
       .single();
     if (error) throw error;
+    await supabase.from('attendance_log').insert([{ staff_id: staffId }]);
     return data;
   },
 
@@ -1518,6 +1542,27 @@ export const dataService = {
           .from('turn_queue')
           .update({ position: newPos })
           .eq('id', queue[i].id);
+      }
+    }
+
+    // Cierra el registro de asistencia abierto. Si fue un "deshacer" casi inmediato
+    // (menos de 60s desde la llegada), borramos el registro en vez de dejar una
+    // entrada de historial de 0 minutos.
+    const { data: openLog } = await supabase
+      .from('attendance_log')
+      .select('*')
+      .eq('staff_id', staffId)
+      .is('check_out', null)
+      .order('check_in', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (openLog) {
+      const secondsSinceCheckIn = (Date.now() - new Date(openLog.check_in).getTime()) / 1000;
+      if (secondsSinceCheckIn < 60) {
+        await supabase.from('attendance_log').delete().eq('id', openLog.id);
+      } else {
+        await supabase.from('attendance_log').update({ check_out: new Date().toISOString() }).eq('id', openLog.id);
       }
     }
   },

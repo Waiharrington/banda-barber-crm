@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNotifs } from '../context/NotificationContext';
 import { supabase } from '../lib/supabase';
@@ -29,7 +29,18 @@ import {
   Cake,
   BarChart2,
   Star,
-  FileText
+  FileText,
+  Upload,
+  Search,
+  Maximize2,
+  Undo2,
+  Flame,
+  Clock,
+  LayoutGrid,
+  Table,
+  TrendingUp,
+  TrendingDown,
+  Info
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import PandaSelect from './PandaSelect';
@@ -58,6 +69,136 @@ const availableModules = [
   { id: 'history', label: 'Historial' },
 ];
 
+// Pequeño menú que aparece junto al avatar para elegir cámara o galería,
+// sin tener que abrir el modal completo de PandaCamera solo para preguntar.
+const PhotoSourceMenu = ({ onCamera, onGallery, onClose }) => (
+  <>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 998 }} />
+    <div className="popover-pop" style={{
+      position: 'absolute',
+      top: '128px',
+      left: 0,
+      width: '190px',
+      backgroundColor: '#161618',
+      border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: '14px',
+      boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+      overflow: 'hidden',
+      zIndex: 999
+    }}>
+      <button
+        type="button"
+        onClick={onCamera}
+        className="tap-scale menu-row-hover"
+        style={{ width: '100%', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', color: 'white', fontSize: '13px', fontWeight: '700', cursor: 'pointer', textAlign: 'left' }}
+      >
+        <Camera size={16} color="var(--gold-primary)" /> Tomar foto
+      </button>
+      <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+      <button
+        type="button"
+        onClick={onGallery}
+        className="tap-scale menu-row-hover"
+        style={{ width: '100%', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', color: 'white', fontSize: '13px', fontWeight: '700', cursor: 'pointer', textAlign: 'left' }}
+      >
+        <Upload size={16} color="var(--gold-primary)" /> Subir de galería
+      </button>
+    </div>
+  </>
+);
+
+// Modal de historial de asistencia: racha + mapa de los últimos 35 días + últimas sesiones
+const AttendanceHistoryModal = ({ member, dates, logs, streak, onClose, overlayClass, cardClass }) => {
+  const days = [];
+  const cursor = new Date();
+  for (let i = 34; i >= 0; i--) {
+    const d = new Date(cursor);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    days.push({ key, date: d, present: dates.has(key) });
+  }
+
+  const recentSessions = logs
+    .filter(l => l.staff_id === member.id)
+    .slice(0, 15);
+
+  const formatDuration = (checkIn, checkOut) => {
+    if (!checkOut) return 'En curso';
+    const mins = Math.round((new Date(checkOut) - new Date(checkIn)) / 60000);
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
+
+  return (
+    <div onClick={onClose} className={overlayClass} style={{ position: 'fixed', inset: 0, zIndex: 30000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div onClick={e => e.stopPropagation()} className={`glass-card ${cardClass}`} style={{ width: '100%', maxWidth: '440px', maxHeight: '85vh', overflowY: 'auto', padding: '28px', borderRadius: '28px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ width: '56px', height: '56px', borderRadius: '16px', overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+              {member.image_url ? (
+                <img src={member.image_url} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.6 }}>{member.name.substring(0, 1).toUpperCase()}</span>
+              )}
+            </div>
+            <div>
+              <h3 style={{ fontSize: '17px', fontWeight: '800', color: 'white', margin: 0 }}>{member.name}</h3>
+              <p style={{ fontSize: '12px', color: 'var(--gold-primary)', fontWeight: '700', marginTop: '2px' }}>{member.role?.split('|')[0]}</p>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', color: 'white', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        {streak >= 2 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 16px', borderRadius: '16px', background: 'rgba(255, 149, 0, 0.08)', border: '1px solid rgba(255, 149, 0, 0.25)', marginBottom: '20px' }}>
+            <Flame size={22} color="#ff9500" fill="#ff9500" />
+            <span style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>Racha de {streak} días seguidos asistiendo</span>
+          </div>
+        )}
+
+        <p style={{ fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '10px' }}>ÚLTIMOS 35 DÍAS</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '24px' }}>
+          {days.map(d => (
+            <div
+              key={d.key}
+              title={d.date.toLocaleDateString([], { day: '2-digit', month: 'short' })}
+              style={{
+                width: '18px',
+                height: '18px',
+                borderRadius: '5px',
+                background: d.present ? '#32d74b' : 'rgba(255,255,255,0.06)',
+                border: d.present ? 'none' : '1px solid rgba(255,255,255,0.08)'
+              }}
+            />
+          ))}
+        </div>
+
+        <p style={{ fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '10px' }}>SESIONES RECIENTES</p>
+        {recentSessions.length === 0 ? (
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Todavía no hay historial registrado.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {recentSessions.map(log => (
+              <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Clock size={13} color="var(--text-muted)" />
+                  <span style={{ fontSize: '12px', color: 'white', fontWeight: '600' }}>
+                    {new Date(log.check_in).toLocaleDateString([], { day: '2-digit', month: 'short' })} · {new Date(log.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>{formatDuration(log.check_in, log.check_out)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const rolePresets = {
   'Admin': availableModules.map(m => m.id),
   'Barbero': ['my-profile', 'scheduling', 'barber', 'clients', 'history'],
@@ -74,9 +215,20 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('management'); // 'management' | 'attendance'
+  const [personnelView, setPersonnelView] = useState('cards'); // 'cards' | 'table' — vista de Gestión de Personal
   const [turnQueue, setTurnQueue] = useState([]);
   const [reportsData, setReportsData] = useState({});
   const [loadingReports, setLoadingReports] = useState(false);
+  const [openMetricInfo, setOpenMetricInfo] = useState(null); // key del tile con el popover de contexto abierto (click, persiste hasta tocar de nuevo)
+  const [hoveredMetricInfo, setHoveredMetricInfo] = useState(null); // key del tile en hover (desktop, temporal)
+  const [staffSearch, setStaffSearch] = useState(''); // buscador global del equipo (Personal, Asistencia y Reportes)
+  const [kioskMode, setKioskMode] = useState(false);
+  const [attendanceLogs, setAttendanceLogs] = useState([]); // historial (últimos 90 días) para racha y calendario
+  const [historyModalMember, setHistoryModalMember] = useState(null); // miembro con el modal de historial abierto
+  const [displayedHistoryMember, setDisplayedHistoryMember] = useState(null); // conserva los datos durante la animación de salida
+  useEffect(() => { if (historyModalMember) setDisplayedHistoryMember(historyModalMember); }, [historyModalMember]);
+  const [justCheckedIn, setJustCheckedIn] = useState(null); // { id, name } — para el aviso de "deshacer"
+  const justCheckedInTimerRef = useRef(null);
 
   // Form & Editing State
   const [showForm, setShowForm] = useState(false);
@@ -104,6 +256,20 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
   // Camera State
   const [showCamera, setShowCamera] = useState(false);
+  const [photoAction, setPhotoAction] = useState(null); // 'camera' | 'gallery'
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
+  // Cambia en cada apertura para forzar una instancia nueva de PandaCamera (ver key más abajo).
+  // Si el usuario cierra sin elegir foto y el navegador no avisa (el evento "cancel" del selector
+  // de archivos no es confiable en todos los navegadores), el componente puede quedar "abierto"
+  // pero invisible; sin este key, la próxima apertura no haría nada porque showCamera ya era true.
+  const [cameraKey, setCameraKey] = useState(0);
+
+  const openPhotoAction = (action) => {
+    setPhotoAction(action);
+    setPhotoMenuOpen(false);
+    setShowCamera(true);
+    setCameraKey(k => k + 1);
+  };
   const [dailyPaymentModal, setDailyPaymentModal] = useState({ isOpen: false, staffId: null, staffName: null, earnings: null, paymentMethod: 'Efectivo ($)' });
 
   // Portfolio state
@@ -129,6 +295,10 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   };
 
   // Sync custom roles with roles found in staff members
+  useEffect(() => {
+    return () => clearTimeout(justCheckedInTimerRef.current);
+  }, []);
+
   useEffect(() => {
     if (staff.length > 0) {
       const foundRoles = {};
@@ -276,12 +446,14 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   const fetchStaff = async () => {
     try {
       setLoading(true);
-      const [data, queue] = await Promise.all([
+      const [data, queue, logs] = await Promise.all([
         dataService.getStaff(),
-        dataService.getTurnQueue().catch(() => [])
+        dataService.getTurnQueue().catch(() => []),
+        dataService.getRecentAttendanceLogs(90).catch(() => [])
       ]);
       setStaff(data);
       setTurnQueue(queue || []);
+      setAttendanceLogs(logs || []);
     } catch (error) {
       console.error('Error fetching staff:', error);
       showToast('Error al cargar personal.', 'error');
@@ -579,12 +751,17 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     }
   };
 
-  const handleCheckIn = async (staffId) => {
+  const handleCheckIn = async (staffId, staffName) => {
     try {
       setLoading(true);
       await dataService.checkInBarber(staffId);
       showToast('Llegada registrada con éxito');
       await fetchStaff();
+
+      // Mostramos un aviso de "deshacer" por 5s, por si fue un toque accidental
+      clearTimeout(justCheckedInTimerRef.current);
+      setJustCheckedIn({ id: staffId, name: staffName });
+      justCheckedInTimerRef.current = setTimeout(() => setJustCheckedIn(null), 5000);
     } catch (e) {
       console.error(e);
       showToast('Error al registrar llegada', 'error');
@@ -617,6 +794,53 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Deshace una llegada recién registrada por error (sin pasar por el flujo de pago de salida)
+  const undoCheckIn = async (staffId) => {
+    try {
+      clearTimeout(justCheckedInTimerRef.current);
+      setJustCheckedIn(null);
+      setLoading(true);
+      await dataService.checkOutBarber(staffId);
+      showToast('Llegada deshecha');
+      await fetchStaff();
+    } catch (e) {
+      console.error(e);
+      showToast('Error al deshacer la llegada', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Días (YYYY-MM-DD) en los que un miembro registró al menos una llegada
+  const getAttendanceDates = (staffId) => {
+    const dates = new Set();
+    attendanceLogs.forEach(log => {
+      if (log.staff_id === staffId) {
+        dates.add(new Date(log.check_in).toISOString().split('T')[0]);
+      }
+    });
+    return dates;
+  };
+
+  // Racha de días consecutivos asistiendo, contando hacia atrás desde hoy
+  // (o desde ayer si hoy aún no tiene registro, para no "romper" la racha antes de que llegue)
+  const getAttendanceStreak = (staffId) => {
+    const dates = getAttendanceDates(staffId);
+    if (dates.size === 0) return 0;
+
+    const cursor = new Date();
+    if (!dates.has(cursor.toISOString().split('T')[0])) {
+      cursor.setDate(cursor.getDate() - 1);
+    }
+
+    let streak = 0;
+    while (dates.has(cursor.toISOString().split('T')[0])) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
   };
 
   const handleConfirmDailyPayment = async () => {
@@ -730,11 +954,13 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   }, [activeTab, staff, turnQueue]);
 
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
+    <div className="animate-fade-in team-module-animated" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
       <div style={{
         display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: isMobile ? '18px' : '0',
         marginBottom: '30px'
       }}>
         <div>
@@ -742,17 +968,49 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
           <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Gestión de talento y desempeño.</p>
         </div>
         {activeTab === 'management' && (
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{
+              display: 'flex',
+              backgroundColor: 'rgba(255,255,255,0.03)',
+              borderRadius: '12px',
+              padding: '4px',
+              border: '1px solid rgba(255,255,255,0.05)'
+            }}>
+              <button
+                onClick={() => setPersonnelView('cards')}
+                style={{
+                  padding: '8px 12px', borderRadius: '8px', border: 'none',
+                  backgroundColor: personnelView === 'cards' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  color: personnelView === 'cards' ? 'var(--gold-primary)' : 'var(--text-muted)',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                  fontSize: '12px', fontWeight: '700'
+                }}
+              >
+                <LayoutGrid size={16} /> {!isMobile && 'Tarjetas'}
+              </button>
+              <button
+                onClick={() => setPersonnelView('table')}
+                style={{
+                  padding: '8px 12px', borderRadius: '8px', border: 'none',
+                  backgroundColor: personnelView === 'table' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  color: personnelView === 'table' ? 'var(--gold-primary)' : 'var(--text-muted)',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                  fontSize: '12px', fontWeight: '700'
+                }}
+              >
+                <Table size={16} /> {!isMobile && 'Tabla'}
+              </button>
+            </div>
             {!isMobile && (
-              <button 
-                className="btn-gold" 
+              <button
+                className="btn-gold"
                 onClick={() => setIsRoleModalOpen(true)}
                 style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}
               >
                 <Shield size={18} style={{ marginRight: '8px' }} /> Roles
               </button>
             )}
-            <button className="btn-gold" onClick={() => {
+            <button className="btn-gold" style={isMobile ? { width: '100%', justifyContent: 'center' } : undefined} onClick={() => {
               if (showForm) {
                 handleCloseForm();
               } else {
@@ -788,65 +1046,97 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         padding: '6px',
         borderRadius: '16px',
         border: '1px solid rgba(255, 255, 255, 0.05)',
-        width: 'fit-content'
+        width: isMobile ? '100%' : 'fit-content',
+        maxWidth: '100%',
+        overflowX: isMobile ? 'auto' : 'visible',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none',
+        boxSizing: 'border-box'
       }}>
         <button
           onClick={() => { setActiveTab('management'); handleCloseForm(); }}
           style={{
-            padding: '10px 20px',
+            padding: isMobile ? '9px 14px' : '10px 20px',
             borderRadius: '12px',
             border: 'none',
+            flexShrink: 0,
             background: activeTab === 'management' ? 'var(--gold-primary)' : 'transparent',
             color: activeTab === 'management' ? 'black' : 'white',
             fontWeight: '800',
-            fontSize: '13px',
+            fontSize: isMobile ? '11.5px' : '13px',
             cursor: 'pointer',
             transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: isMobile ? '6px' : '8px',
+            whiteSpace: 'nowrap'
           }}
         >
-          <User size={16} /> Gestión de Personal
+          <User size={isMobile ? 14 : 16} /> {isMobile ? 'Personal' : 'Gestión de Personal'}
         </button>
         <button
           onClick={() => { setActiveTab('attendance'); handleCloseForm(); }}
           style={{
-            padding: '10px 20px',
+            padding: isMobile ? '9px 14px' : '10px 20px',
             borderRadius: '12px',
             border: 'none',
+            flexShrink: 0,
             background: activeTab === 'attendance' ? 'var(--gold-primary)' : 'transparent',
             color: activeTab === 'attendance' ? 'black' : 'white',
             fontWeight: '800',
-            fontSize: '13px',
+            fontSize: isMobile ? '11.5px' : '13px',
             cursor: 'pointer',
             transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: isMobile ? '6px' : '8px',
+            whiteSpace: 'nowrap'
           }}
         >
-          <Check size={16} /> Control de Asistencia
+          <Check size={isMobile ? 14 : 16} /> {isMobile ? 'Asistencia' : 'Control de Asistencia'}
         </button>
         <button
           onClick={() => { setActiveTab('reports'); handleCloseForm(); }}
           style={{
-            padding: '10px 20px',
+            padding: isMobile ? '9px 14px' : '10px 20px',
             borderRadius: '12px',
             border: 'none',
+            flexShrink: 0,
             background: activeTab === 'reports' ? 'var(--gold-primary)' : 'transparent',
             color: activeTab === 'reports' ? 'black' : 'white',
             fontWeight: '800',
-            fontSize: '13px',
+            fontSize: isMobile ? '11.5px' : '13px',
             cursor: 'pointer',
             transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: isMobile ? '6px' : '8px',
+            whiteSpace: 'nowrap'
           }}
         >
-          <BarChart2 size={16} /> Reportes de Desempeño
+          <BarChart2 size={isMobile ? 14 : 16} /> {isMobile ? 'Reportes' : 'Reportes de Desempeño'}
         </button>
+      </div>
+
+      <div style={{ position: 'relative', marginBottom: '24px', maxWidth: isMobile ? '100%' : '360px' }}>
+        <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+        <input
+          type="text"
+          value={staffSearch}
+          onChange={e => setStaffSearch(e.target.value)}
+          placeholder="Buscar en todo el equipo por nombre..."
+          style={{
+            width: '100%',
+            padding: '10px 14px 10px 40px',
+            borderRadius: '12px',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            color: 'white',
+            fontSize: '13px',
+            outline: 'none',
+            boxSizing: 'border-box'
+          }}
+        />
       </div>
 
       {activeTab === 'management' && (
@@ -867,13 +1157,13 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px' }}>
             {/* Photo Section */}
             <div style={{ position: 'relative', width: '120px' }}>
-              <div 
-                onClick={() => setShowCamera(true)}
-                style={{ 
-                  width: '120px', 
-                  height: '120px', 
-                  backgroundColor: 'rgba(255,255,255,0.05)', 
-                  borderRadius: '24px', 
+              <div
+                onClick={() => setPhotoMenuOpen(v => !v)}
+                style={{
+                  width: '120px',
+                  height: '120px',
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  borderRadius: '24px',
                   border: '2px dashed var(--border-color)',
                   display: 'flex',
                   alignItems: 'center',
@@ -892,8 +1182,15 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                   </div>
                 )}
               </div>
+              {photoMenuOpen && (
+                <PhotoSourceMenu
+                  onCamera={() => openPhotoAction('camera')}
+                  onGallery={() => openPhotoAction('gallery')}
+                  onClose={() => setPhotoMenuOpen(false)}
+                />
+              )}
               {formData.image_url && (
-                <button 
+                <button
                   onClick={(e) => { e.stopPropagation(); setFormData({ ...formData, image_url: '' }); }}
                   style={{ position: 'absolute', top: '-10px', right: '-10px', backgroundColor: '#ff453a', border: 'none', borderRadius: '50%', color: 'white', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 10 }}
                 >
@@ -1201,7 +1498,10 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         </div>
       )}
 
-      {loading ? (
+      {(() => {
+        const filteredStaff = staff.filter(person => person.name.toLowerCase().includes(staffSearch.trim().toLowerCase()));
+        return (
+      loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
           <Loader2 className="animate-spin" size={48} color="var(--gold-primary)" />
         </div>
@@ -1211,34 +1511,109 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
           <h3 style={{ fontSize: '20px', color: 'var(--text-primary)' }}>El equipo está esperando</h3>
           <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>Comienza agregando a los miembros que harán brillar tu marca.</p>
         </div>
+      ) : filteredStaff.length === 0 ? (
+        <div className="glass-card" style={{ textAlign: 'center', padding: '40px', borderRadius: '20px' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No hay nadie con ese nombre.</p>
+        </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: isMobile ? '1fr auto' : '80px 1.5fr 1fr 1.5fr 1.2fr 140px', 
-            gap: '20px', 
-            padding: '0 24px',
-            color: 'var(--text-muted)',
-            fontSize: '11px',
-            fontWeight: '900',
-            letterSpacing: '1px',
-            textTransform: 'uppercase'
-          }}>
-            {!isMobile && (
-              <>
-                <div>MIEMBRO</div>
-                <div>NOMBRE / ROL</div>
-                <div>TELÉFONO</div>
-                <div>DIRECCIÓN</div>
-                <div>ACCESO</div>
-                <div style={{ textAlign: 'right' }}>ACCIONES</div>
-              </>
-            )}
-          </div>
- 
-          {staff.map(person => (
+        <div style={
+          personnelView === 'cards'
+            ? { display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fill, minmax(240px, 1fr))', gap: isMobile ? '12px' : '20px' }
+            : { display: 'flex', flexDirection: 'column', gap: '16px' }
+        }>
+          {personnelView === 'table' && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr auto' : '80px 1.5fr 1fr 1.5fr 1.2fr 140px',
+              gap: '20px',
+              padding: '0 24px',
+              color: 'var(--text-muted)',
+              fontSize: '11px',
+              fontWeight: '900',
+              letterSpacing: '1px',
+              textTransform: 'uppercase'
+            }}>
+              {!isMobile && (
+                <>
+                  <div>MIEMBRO</div>
+                  <div>NOMBRE / ROL</div>
+                  <div>TELÉFONO</div>
+                  <div>DIRECCIÓN</div>
+                  <div>ACCESO</div>
+                  <div style={{ textAlign: 'right' }}>ACCIONES</div>
+                </>
+              )}
+            </div>
+          )}
+
+          {filteredStaff.map(person => (
             <React.Fragment key={person.id}>
-              {isMobile ? (
+              {personnelView === 'cards' ? (
+                <div className="glass-card animate-slide-up" style={{
+                  position: 'relative',
+                  padding: 0,
+                  overflow: 'hidden',
+                  borderRadius: isMobile ? '18px' : '22px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  border: '1px solid rgba(255,255,255,0.06)'
+                }}>
+                  <div style={{ position: 'relative', width: '100%', height: isMobile ? '150px' : '180px', flexShrink: 0, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                    {person.image_url ? (
+                      <img src={person.image_url} alt={person.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(255,199,0,0.18), rgba(255,199,0,0.03))' }}>
+                        <span style={{ fontSize: isMobile ? '36px' : '44px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.5 }}>
+                          {person.name.substring(0, 1).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 34%, rgba(0,0,0,0.05) 65%, transparent 100%)' }} />
+                    {person.role?.split('|')[0]?.includes(', ') && (
+                      <span style={{
+                        position: 'absolute', top: isMobile ? '8px' : '12px', right: isMobile ? '8px' : '12px',
+                        padding: '3px 8px', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+                        color: 'white', borderRadius: '6px', fontSize: '9px', fontWeight: '800',
+                        border: '1px solid rgba(255,255,255,0.2)'
+                      }}>
+                        MULTI-ROL
+                      </span>
+                    )}
+                    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: isMobile ? '10px' : '14px' }}>
+                      <h4 style={{ fontSize: isMobile ? '13.5px' : '16px', fontWeight: '900', color: 'white', margin: 0, textShadow: '0 1px 4px rgba(0,0,0,0.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {person.name}
+                      </h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--gold-primary)', fontSize: isMobile ? '10.5px' : '12px', fontWeight: '700', marginTop: '2px' }}>
+                        {getRoleIcon(person.role?.split('|')[0]?.split(', ')[0])}
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{person.role?.split('|')[0]}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: isMobile ? '10px' : '14px', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: isMobile ? '10.5px' : '12px', color: person.phone ? 'var(--text-secondary)' : 'var(--text-muted)' }}>
+                      <Phone size={12} color={person.phone ? 'var(--gold-primary)' : 'rgba(255,255,255,0.2)'} style={{ flexShrink: 0 }} />
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{person.phone || 'Sin teléfono'}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: isMobile ? '10.5px' : '12px', color: person.email ? '#32d74b' : '#ff453a' }}>
+                      {person.email ? <Mail size={12} style={{ flexShrink: 0 }} /> : <Lock size={12} style={{ flexShrink: 0 }} />}
+                      <span style={{ fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{person.email || 'Sin email de acceso'}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '6px', marginTop: 'auto', paddingTop: '8px' }}>
+                      <button className="action-btn" onClick={() => setProfileModalData(person)} title="Ver Perfil" style={{ flex: 1, color: 'var(--gold-primary)', backgroundColor: 'rgba(255, 255, 255,0.1)', height: '32px', borderRadius: '8px' }}>
+                        <User size={14} />
+                      </button>
+                      <button className="action-btn" onClick={() => handleEditClick(person)} title="Editar Miembro" style={{ flex: 1, height: '32px', borderRadius: '8px' }}>
+                        <Edit2 size={14} />
+                      </button>
+                      <button className="action-btn" onClick={() => handleDeleteStaff(person.id, person.name)} style={{ flex: 1, color: '#ff453a', backgroundColor: 'rgba(255,69,58,0.05)', height: '32px', borderRadius: '8px' }} title="Dar de baja">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : isMobile ? (
                 <div className="glass-card animate-slide-up" style={{ 
                   padding: '16px', 
                   borderRadius: '20px',
@@ -1459,13 +1834,14 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
               {/* Inline Edit Form directly under the card being edited */}
               {(showForm || isFormExiting) && isEditing && editingId === person.id && (
-                <div className={`glass-card ${isFormExiting ? 'animate-slide-down-fade' : 'animate-slide-up'}`} style={{ 
+                <div className={`glass-card ${isFormExiting ? 'animate-slide-down-fade' : 'animate-slide-up'}`} style={{
+                  gridColumn: personnelView === 'cards' ? '1 / -1' : undefined,
                   marginTop: '-8px',
-                  marginBottom: '24px', 
-                  marginLeft: isMobile ? '0' : '20px',
-                  padding: '32px', 
-                  borderRadius: '28px', 
-                  position: 'relative', 
+                  marginBottom: '24px',
+                  marginLeft: (isMobile || personnelView === 'cards') ? '0' : '20px',
+                  padding: '32px',
+                  borderRadius: '28px',
+                  position: 'relative',
                   zIndex: 998,
                   overflow: 'visible',
                   border: '1px solid rgba(255, 255, 255,0.3)',
@@ -1486,13 +1862,13 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px' }}>
                     {/* Photo Section */}
                     <div style={{ position: 'relative', width: '120px' }}>
-                      <div 
-                        onClick={() => setShowCamera(true)}
-                        style={{ 
-                          width: '120px', 
-                          height: '120px', 
-                          backgroundColor: 'rgba(255,255,255,0.05)', 
-                          borderRadius: '24px', 
+                      <div
+                        onClick={() => setPhotoMenuOpen(v => !v)}
+                        style={{
+                          width: '120px',
+                          height: '120px',
+                          backgroundColor: 'rgba(255,255,255,0.05)',
+                          borderRadius: '24px',
                           border: '2px dashed var(--border-color)',
                           display: 'flex',
                           alignItems: 'center',
@@ -1511,8 +1887,15 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                           </div>
                         )}
                       </div>
+                      {photoMenuOpen && (
+                        <PhotoSourceMenu
+                          onCamera={() => openPhotoAction('camera')}
+                          onGallery={() => openPhotoAction('gallery')}
+                          onClose={() => setPhotoMenuOpen(false)}
+                        />
+                      )}
                       {formData.image_url && (
-                        <button 
+                        <button
                           onClick={(e) => { e.stopPropagation(); setFormData({ ...formData, image_url: '' }); }}
                           style={{ position: 'absolute', top: '-10px', right: '-10px', backgroundColor: '#ff453a', border: 'none', borderRadius: '50%', color: 'white', width: '28px', height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 10 }}
                         >
@@ -1820,140 +2203,368 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
             </React.Fragment>
           ))}
         </div>
-      )}
+      )
+        );
+      })()}
         </>
       )}
 
-      {activeTab === 'attendance' && (
-        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div className="glass-card" style={{ padding: '24px', borderRadius: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '8px', color: 'white' }}>Barbería Hoy</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
-              Registra la llegada de los barberos y asistentes para que aparezcan en la recepción. El orden de llegada determina el orden en la cola de turnos.
-            </p>
-          </div>
+      {activeTab === 'attendance' && (() => {
+        const eligibleStaff = staff.filter(member => {
+          const roleName = (member.role?.split('|')[0] || 'Barbero').toLowerCase();
+          return !roleName.includes('admin') &&
+                 !roleName.includes('recepcionista') &&
+                 !roleName.includes('caja');
+        });
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-            {staff
-              .filter(member => {
-                const roleName = (member.role?.split('|')[0] || 'Barbero').toLowerCase();
-                return !roleName.includes('admin') && 
-                       !roleName.includes('recepcionista') && 
-                       !roleName.includes('caja');
-              })
-              .map(member => {
-                const queueEntry = turnQueue.find(q => q.staff_id === member.id);
-                const isCheckedIn = queueEntry && queueEntry.status !== 'ABSENT';
-                const queueIndex = turnQueue.filter(q => q.status !== 'ABSENT').findIndex(q => q.staff_id === member.id);
+        // turnQueue ya viene ordenado por 'position' (orden real de llegada/turno)
+        const checkedInOrder = turnQueue.filter(q => q.status !== 'ABSENT');
 
-                return (
-                  <div 
-                    key={member.id} 
-                    className="glass-card" 
-                    style={{ 
-                      padding: '24px', 
-                      borderRadius: '24px', 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      alignItems: 'center', 
-                      gap: '16px',
-                      border: isCheckedIn ? '1px solid rgba(50, 215, 75, 0.3)' : '1px solid rgba(255,255,255,0.05)',
-                      background: isCheckedIn ? 'rgba(50, 215, 75, 0.02)' : 'rgba(255,255,255,0.01)',
-                      transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+        const withStatus = eligibleStaff.map(member => {
+          const queueEntry = turnQueue.find(q => q.staff_id === member.id);
+          const isCheckedIn = !!(queueEntry && queueEntry.status !== 'ABSENT');
+          const queueIndex = checkedInOrder.findIndex(q => q.staff_id === member.id);
+          return { member, queueEntry, isCheckedIn, queueIndex };
+        });
+
+        const search = staffSearch.trim().toLowerCase();
+        const filtered = search
+          ? withStatus.filter(({ member }) => member.name.toLowerCase().includes(search))
+          : withStatus;
+
+        const sorted = [...filtered].sort((a, b) => {
+          if (a.isCheckedIn && !b.isCheckedIn) return -1;
+          if (!a.isCheckedIn && b.isCheckedIn) return 1;
+          if (a.isCheckedIn && b.isCheckedIn) return a.queueIndex - b.queueIndex;
+          return a.member.name.localeCompare(b.member.name);
+        });
+
+        const checkedInCount = checkedInOrder.length;
+        const totalCount = eligibleStaff.length;
+
+        // Agrupa por categoría de rol, conservando el orden de llegada real dentro de cada grupo
+        const getCategory = (roleName) => {
+          const r = (roleName || '').toLowerCase();
+          if (r.includes('tatuador')) return 'Tatuadores';
+          if (r.includes('barbero')) return 'Barberos';
+          if (r.includes('barista')) return 'Barista';
+          return 'Asistentes';
+        };
+        const categoryOrder = ['Barberos', 'Tatuadores', 'Barista', 'Asistentes'];
+        const grouped = categoryOrder
+          .map(category => ({
+            category,
+            items: sorted.filter(entry => getCategory(entry.member.role?.split('|')[0]) === category)
+          }))
+          .filter(g => g.items.length > 0);
+
+        const renderCard = ({ member, queueEntry, isCheckedIn, queueIndex }, big) => {
+          const streak = getAttendanceStreak(member.id);
+          const compact = isMobile && !big;
+          const photoHeight = big ? '260px' : compact ? '150px' : '210px';
+          return (
+          <div
+            key={member.id}
+            className="glass-card animate-slide-up"
+            style={{
+              position: 'relative',
+              padding: 0,
+              overflow: 'hidden',
+              borderRadius: big ? '28px' : compact ? '18px' : '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              border: isCheckedIn ? '1px solid rgba(50, 215, 75, 0.35)' : '1px solid rgba(255,255,255,0.06)',
+              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+          >
+            <div
+              onClick={() => setHistoryModalMember(member)}
+              title="Ver historial de asistencia"
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: photoHeight,
+                flexShrink: 0,
+                overflow: 'hidden',
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                cursor: 'pointer'
+              }}
+            >
+              {member.image_url ? (
+                <img src={member.image_url} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{
+                  width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'linear-gradient(135deg, rgba(255,199,0,0.18), rgba(255,199,0,0.03))'
+                }}>
+                  <span style={{ fontSize: big ? '64px' : compact ? '36px' : '48px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.5 }}>
+                    {member.name.substring(0, 1).toUpperCase()}
+                  </span>
+                </div>
+              )}
+
+              {/* Degradado inferior para legibilidad del texto superpuesto */}
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 32%, rgba(0,0,0,0.05) 65%, transparent 100%)'
+              }} />
+
+              {isCheckedIn && (
+                <div style={{
+                  position: 'absolute',
+                  top: big ? '14px' : compact ? '8px' : '12px',
+                  left: big ? '14px' : compact ? '8px' : '12px',
+                  width: big ? '32px' : compact ? '20px' : '26px',
+                  height: big ? '32px' : compact ? '20px' : '26px',
+                  borderRadius: '50%',
+                  background: 'var(--gold-gradient)',
+                  color: 'black',
+                  fontWeight: '900',
+                  fontSize: big ? '14px' : compact ? '10px' : '11px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
+                }}>
+                  {queueIndex + 1}
+                </div>
+              )}
+
+              <div style={{
+                position: 'absolute',
+                top: big ? '14px' : compact ? '8px' : '12px',
+                right: big ? '14px' : compact ? '8px' : '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-end',
+                gap: '6px'
+              }}>
+                <div style={{
+                  width: big ? '30px' : compact ? '20px' : '24px',
+                  height: big ? '30px' : compact ? '20px' : '24px',
+                  borderRadius: '50%',
+                  background: 'rgba(0,0,0,0.5)',
+                  backdropFilter: 'blur(4px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
+                }}>
+                  <Clock size={big ? 14 : compact ? 10 : 12} color="var(--gold-primary)" />
+                </div>
+                {streak >= 2 && (
+                  <div
+                    title={`Racha de ${streak} días seguidos asistiendo`}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '3px',
+                      padding: big ? '5px 10px' : compact ? '2px 6px' : '3px 8px',
+                      borderRadius: '20px',
+                      background: 'rgba(255, 149, 0, 0.2)',
+                      backdropFilter: 'blur(4px)',
+                      border: '1px solid rgba(255, 149, 0, 0.4)'
                     }}
                   >
-                    <div style={{ 
-                      width: '80px', 
-                      height: '80px', 
-                      borderRadius: '20px', 
-                      overflow: 'hidden',
-                      border: '2px solid ' + (isCheckedIn ? '#32d74b' : 'rgba(255,255,255,0.1)'),
-                      backgroundColor: 'rgba(255,255,255,0.02)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      {member.image_url ? (
-                        <img src={member.image_url} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <span style={{ fontSize: '28px', fontWeight: '900', color: 'var(--gold-primary)', opacity: 0.6 }}>
-                          {member.name.substring(0, 1).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-
-                    <div style={{ textAlign: 'center' }}>
-                      <h4 style={{ fontSize: '16px', fontWeight: '800', color: 'white', margin: 0 }}>{member.name}</h4>
-                      <p style={{ fontSize: '12px', color: 'var(--gold-primary)', fontWeight: '700', marginTop: '4px' }}>
-                        {member.role?.split('|')[0]}
-                      </p>
-                    </div>
-
-                    <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.05)' }} />
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                      <div>
-                        {isCheckedIn ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <span style={{ fontSize: '12px', color: '#32d74b', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#32d74b' }} />
-                              En barbería {queueEntry?.updated_at ? `(${new Date(queueEntry.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })})` : ''}
-                            </span>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--text-muted)' }} />
-                            Ausente
-                          </span>
-                        )}
-                      </div>
-
-                      {isCheckedIn ? (
-                        <button
-                          onClick={() => handleCheckOut(member.id)}
-                          style={{
-                            padding: '8px 14px',
-                            borderRadius: '10px',
-                            background: 'rgba(255, 69, 58, 0.1)',
-                            border: 'none',
-                            color: '#ff453a',
-                            fontWeight: '800',
-                            fontSize: '11px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 69, 58, 0.2)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255, 69, 58, 0.1)'}
-                        >
-                          Registrar Salida
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleCheckIn(member.id)}
-                          style={{
-                            padding: '8px 14px',
-                            borderRadius: '10px',
-                            background: 'var(--gold-primary)',
-                            border: 'none',
-                            color: 'black',
-                            fontWeight: '900',
-                            fontSize: '11px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-                          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                        >
-                          Registrar Llegada
-                        </button>
-                      )}
-                    </div>
+                    <Flame size={big ? 14 : compact ? 10 : 11} color="#ff9500" fill="#ff9500" />
+                    <span style={{ fontSize: big ? '12px' : compact ? '9px' : '10px', fontWeight: '900', color: '#ff9500' }}>{streak}</span>
                   </div>
-                );
-              })}
+                )}
+              </div>
+
+              {/* Nombre / rol / estado superpuestos sobre el degradado */}
+              <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: big ? '18px' : compact ? '10px' : '14px' }}>
+                <h4 style={{
+                  fontSize: big ? '22px' : compact ? '13.5px' : '17px', fontWeight: '900', color: 'white', margin: 0,
+                  textShadow: '0 1px 4px rgba(0,0,0,0.6)'
+                }}>
+                  {member.name}
+                </h4>
+                <p style={{ fontSize: big ? '14px' : compact ? '10px' : '12px', color: 'var(--gold-primary)', fontWeight: '700', marginTop: '2px' }}>
+                  {member.role?.split('|')[0]}
+                </p>
+                <div style={{ marginTop: big ? '8px' : '6px' }}>
+                  {isCheckedIn ? (
+                    <span style={{ fontSize: big ? '13px' : compact ? '10px' : '11.5px', color: '#32d74b', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#32d74b', flexShrink: 0 }} />
+                      {compact ? 'En barbería' : `En barbería ${queueEntry?.updated_at ? `(${new Date(queueEntry.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })})` : ''}`}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: big ? '13px' : compact ? '10px' : '11.5px', color: 'rgba(255,255,255,0.55)', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.4)' }} />
+                      Ausente
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ padding: big ? '16px' : compact ? '10px' : '14px' }}>
+              {isCheckedIn ? (
+                <button
+                  onClick={() => handleCheckOut(member.id)}
+                  style={{
+                    width: '100%',
+                    padding: big ? '12px 20px' : compact ? '8px 10px' : '9px 14px',
+                    borderRadius: '10px',
+                    background: 'rgba(255, 69, 58, 0.1)',
+                    border: 'none',
+                    color: '#ff453a',
+                    fontWeight: '800',
+                    fontSize: big ? '13px' : compact ? '10.5px' : '11.5px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255, 69, 58, 0.2)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255, 69, 58, 0.1)'}
+                >
+                  Registrar Salida
+                </button>
+              ) : (
+                <button
+                  disabled={loading}
+                  onClick={() => handleCheckIn(member.id, member.name)}
+                  style={{
+                    width: '100%',
+                    padding: big ? '12px 20px' : compact ? '8px 10px' : '9px 14px',
+                    borderRadius: '10px',
+                    background: 'var(--gold-primary)',
+                    border: 'none',
+                    color: 'black',
+                    fontWeight: '900',
+                    fontSize: big ? '13px' : compact ? '10.5px' : '11.5px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.6 : 1,
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = '0.9'; }}
+                  onMouseLeave={e => { if (!loading) e.currentTarget.style.opacity = '1'; }}
+                >
+                  Registrar Llegada
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+          );
+        };
+
+        const renderGroupedGrid = (gridTemplateColumns, gap, big) => (
+          <>
+            {grouped.map(g => (
+              <div key={g.category} style={{ marginBottom: big ? '32px' : '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                  <span style={{ fontSize: big ? '13px' : '11px', fontWeight: '900', color: 'var(--text-muted)', letterSpacing: '1px' }}>
+                    {g.category.toUpperCase()}
+                  </span>
+                  <span style={{ fontSize: big ? '12px' : '10px', fontWeight: '700', color: 'var(--text-muted)', opacity: 0.6 }}>
+                    ({g.items.length})
+                  </span>
+                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns, gap }}>
+                  {g.items.map(entry => renderCard(entry, big))}
+                </div>
+              </div>
+            ))}
+          </>
+        );
+
+        const searchBar = (
+          <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+            <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              value={staffSearch}
+              onChange={e => setStaffSearch(e.target.value)}
+              placeholder="Buscar por nombre..."
+              style={{
+                width: '100%',
+                padding: '10px 14px 10px 40px',
+                borderRadius: '12px',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: 'white',
+                fontSize: '13px',
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+        );
+
+        return (
+          <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="glass-card" style={{ padding: '24px', borderRadius: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexWrap: 'wrap' }}>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '8px', color: 'white' }}>Barbería Hoy</h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
+                    Registra la llegada de los barberos y asistentes para que aparezcan en la recepción. El orden de llegada determina el orden en la cola de turnos.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setKioskMode(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontWeight: '700', fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}
+                >
+                  <Maximize2 size={14} /> Modo Kiosko
+                </button>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#32d74b' }} />
+                <span style={{ fontSize: '13px', fontWeight: '800', color: 'white' }}>{checkedInCount} de {totalCount} en barbería</span>
+              </div>
+            </div>
+
+            {justCheckedIn && (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+                padding: '12px 18px', borderRadius: '14px',
+                background: 'rgba(50,215,75,0.08)', border: '1px solid rgba(50,215,75,0.25)'
+              }}>
+                <span style={{ fontSize: '13px', color: 'white', fontWeight: '600' }}>
+                  Registraste la llegada de <strong>{justCheckedIn.name}</strong>
+                </span>
+                <button
+                  onClick={() => undoCheckIn(justCheckedIn.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: '#32d74b', fontWeight: '800', fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}
+                >
+                  <Undo2 size={14} /> Deshacer
+                </button>
+              </div>
+            )}
+
+            {sorted.length === 0 ? (
+              <div className="glass-card" style={{ textAlign: 'center', padding: '40px', borderRadius: '20px' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No hay nadie con ese nombre.</p>
+              </div>
+            ) : (
+              renderGroupedGrid(isMobile ? '1fr 1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', isMobile ? '12px' : '20px', false)
+            )}
+
+            <AnimatedModal isOpen={kioskMode}>
+              {(overlayClass) => (
+                <div className={overlayClass} style={{ position: 'fixed', inset: 0, zIndex: 20000, background: '#050506', overflowY: 'auto', padding: isMobile ? '24px 16px' : '48px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap', maxWidth: '1400px', margin: '0 auto 32px' }}>
+                    <div>
+                      <h2 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '800', color: 'white' }}>Barbería Hoy</h2>
+                      <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>{checkedInCount} de {totalCount} en barbería</p>
+                    </div>
+                    <button
+                      onClick={() => setKioskMode(false)}
+                      className="tap-scale"
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px 22px', borderRadius: '14px', background: 'var(--gold-primary)', border: 'none', color: 'black', fontWeight: '900', fontSize: '14px', cursor: 'pointer' }}
+                    >
+                      <X size={18} /> Salir
+                    </button>
+                  </div>
+                  <div style={{ maxWidth: '1400px', margin: '0 auto 24px' }}>{searchBar}</div>
+                  <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+                    {renderGroupedGrid(isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))', '24px', true)}
+                  </div>
+                </div>
+              )}
+            </AnimatedModal>
+          </div>
+        );
+      })()}
 
       {activeTab === 'reports' && (
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -1968,28 +2579,114 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
             <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
               <Loader2 className="animate-spin" size={32} color="var(--gold-primary)" />
             </div>
-          ) : (
+          ) : (() => {
+            const reportStaff = staff.filter(member => {
+              const roleName = (member.role?.split('|')[0] || 'Barbero').toLowerCase();
+              return !roleName.includes('admin') &&
+                     !roleName.includes('recepcionista') &&
+                     !roleName.includes('caja');
+            });
+
+            const durationValues = reportStaff.map(m => reportsData[m.id]?.avgDuration).filter(v => !!v);
+            const teamAvgDuration = durationValues.length ? durationValues.reduce((a, b) => a + b, 0) / durationValues.length : null;
+
+            const visibleReportStaff = reportStaff.filter(m => m.name.toLowerCase().includes(staffSearch.trim().toLowerCase()));
+
+            const statusColors = {
+              good: { color: '#32d74b', bg: 'rgba(50,215,75,0.06)', border: 'rgba(50,215,75,0.2)' },
+              bad: { color: '#ff453a', bg: 'rgba(255,69,58,0.06)', border: 'rgba(255,69,58,0.2)' },
+              neutral: { color: 'white', bg: 'rgba(255,255,255,0.02)', border: 'rgba(255,255,255,0.03)' }
+            };
+
+            const getDurationStatus = (val) => {
+              if (!teamAvgDuration || !val) return 'neutral';
+              if (val <= teamAvgDuration * 0.92) return 'good';
+              if (val >= teamAvgDuration * 1.15) return 'bad';
+              return 'neutral';
+            };
+            const getRatingStatus = (val) => {
+              if (val === 'N/A') return 'neutral';
+              const n = Number(val);
+              if (n >= 4.5) return 'good';
+              if (n < 3.5) return 'bad';
+              return 'neutral';
+            };
+
+            const MetricTile = ({ icon, label, value, caption, status, tileKey, info }) => {
+              const sc = statusColors[status] || statusColors.neutral;
+              const isInfoVisible = openMetricInfo === tileKey || hoveredMetricInfo === tileKey;
+              return (
+                <div style={{ position: 'relative', background: sc.bg, padding: '12px', borderRadius: '14px', border: `1px solid ${sc.border}`, zIndex: isInfoVisible ? 20 : 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                    <span style={{ fontSize: '11px', color: status === 'neutral' ? '#8e8e93' : sc.color, fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+                      {icon} {label}
+                    </span>
+                    {info && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setOpenMetricInfo(openMetricInfo === tileKey ? null : tileKey); }}
+                        onMouseEnter={() => setHoveredMetricInfo(tileKey)}
+                        onMouseLeave={() => setHoveredMetricInfo(prev => prev === tileKey ? null : prev)}
+                        className="tap-scale"
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                          width: '26px', height: '26px', margin: '-6px -6px -6px 0',
+                          background: isInfoVisible ? 'rgba(255,255,255,0.12)' : 'transparent',
+                          border: 'none', borderRadius: '50%',
+                          color: isInfoVisible ? sc.color : 'var(--text-muted)', cursor: 'pointer',
+                          transition: 'transform 0.15s ease, background 0.15s ease, color 0.15s ease'
+                        }}
+                      >
+                        <Info size={15} />
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '18px', fontWeight: '900', color: status === 'neutral' ? 'white' : sc.color, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {value}
+                  </div>
+                  {caption && (
+                    <span style={{ fontSize: '10px', color: sc.color, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: '700', opacity: status === 'neutral' ? 0.6 : 1 }}>
+                      {status === 'good' && <TrendingDown size={11} />}
+                      {status === 'bad' && <TrendingUp size={11} />}
+                      {caption}
+                    </span>
+                  )}
+                  {isInfoVisible && (
+                    <div
+                      className="popover-pop"
+                      onMouseEnter={() => setHoveredMetricInfo(tileKey)}
+                      onMouseLeave={() => setHoveredMetricInfo(prev => prev === tileKey ? null : prev)}
+                      style={{
+                        position: 'absolute', top: '30px', right: '0', width: '190px', zIndex: 30,
+                        background: '#1c1c1e', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px',
+                        padding: '10px 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.6)'
+                      }}
+                    >
+                      <div style={{ position: 'absolute', top: '-5px', right: '9px', width: '9px', height: '9px', background: '#1c1c1e', borderLeft: '1px solid rgba(255,255,255,0.15)', borderTop: '1px solid rgba(255,255,255,0.15)', transform: 'rotate(45deg)' }} />
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', lineHeight: 1.4 }}>{info}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            };
+
+            return (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-              {staff
-                .filter(member => {
-                  const roleName = (member.role?.split('|')[0] || 'Barbero').toLowerCase();
-                  return !roleName.includes('admin') && 
-                         !roleName.includes('recepcionista') && 
-                         !roleName.includes('caja');
-                })
+              {visibleReportStaff
                 .map(member => {
                   const stats = reportsData[member.id] || { avgDuration: 35, totalHours: '0.0', avgRating: 'N/A', reviewsCount: 0 };
                   const skipped = member.skipped_count || 0;
+                  const durationStatus = getDurationStatus(stats.avgDuration);
+                  const ratingStatus = getRatingStatus(stats.avgRating);
 
                   return (
-                    <div 
-                      key={member.id} 
-                      className="glass-card" 
-                      style={{ 
-                        padding: '24px', 
-                        borderRadius: '24px', 
-                        display: 'flex', 
-                        flexDirection: 'column', 
+                    <div
+                      key={member.id}
+                      className="glass-card animate-slide-up"
+                      style={{
+                        padding: '24px',
+                        borderRadius: '24px',
+                        display: 'flex',
+                        flexDirection: 'column',
                         gap: '20px',
                         border: '1px solid rgba(255,255,255,0.05)',
                         background: 'rgba(255,255,255,0.01)'
@@ -2029,53 +2726,75 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
                       {/* Metrics Grid */}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                          <span style={{ fontSize: '11px', color: '#8e8e93', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>⏱️ Demora Prom.</span>
-                          <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', marginTop: '4px' }}>{stats.avgDuration} min</div>
-                        </div>
+                        <MetricTile
+                          icon="⏱️" label="Demora" status={durationStatus}
+                          tileKey={`${member.id}-duration`}
+                          info="Tiempo promedio que tarda en atender a cada cliente, de principio a fin del servicio."
+                          value={`${stats.avgDuration} min`}
+                          caption={
+                            !teamAvgDuration ? null :
+                            durationStatus === 'good' ? 'más rápido que el equipo' :
+                            durationStatus === 'bad' ? 'más lento que el equipo' :
+                            '≈ promedio del equipo'
+                          }
+                        />
 
-                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                          <span style={{ fontSize: '11px', color: '#8e8e93', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>📅 Horas en Tienda</span>
-                          <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', marginTop: '4px' }}>{stats.totalHours} hrs</div>
-                        </div>
+                        <MetricTile
+                          icon="📅" label="Horas" status="neutral"
+                          tileKey={`${member.id}-hours`}
+                          info="Total de horas que estuvo en la barbería en el período mostrado, sumando citas y tiempo registrado en barbería."
+                          value={`${stats.totalHours} hrs`}
+                        />
 
-                        <div style={{ 
-                          background: skipped > 0 ? 'rgba(255,69,58,0.05)' : 'rgba(255,255,255,0.02)', 
-                          padding: '12px', 
-                          borderRadius: '14px', 
-                          border: skipped > 0 ? '1px solid rgba(255,69,58,0.15)' : '1px solid rgba(255,255,255,0.03)' 
-                        }}>
-                          <span style={{ fontSize: '11px', color: skipped > 0 ? '#ff453a' : 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>🚷 Turnos Saltados</span>
-                          <div style={{ fontSize: '18px', fontWeight: '900', color: skipped > 0 ? '#ff453a' : 'white', marginTop: '4px' }}>
-                            {skipped} {skipped === 1 ? 'cliente' : 'clientes'}
-                          </div>
-                        </div>
+                        <MetricTile
+                          icon="🚷" label="Saltados" status={skipped > 0 ? 'bad' : 'neutral'}
+                          tileKey={`${member.id}-skipped`}
+                          info="Clientes que se fueron sin ser atendidos por este barbero (turnos saltados o no honrados)."
+                          value={`${skipped} ${skipped === 1 ? 'cliente' : 'clientes'}`}
+                          caption={skipped > 0 ? 'clientes perdidos' : null}
+                        />
 
-                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>⭐ Reseña Promedio</span>
-                          <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            {stats.avgRating} {stats.avgRating !== 'N/A' && <Star size={16} fill="var(--gold-primary)" color="var(--gold-primary)" />}
-                          </div>
-                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
-                            ({stats.reviewsCount} {stats.reviewsCount === 1 ? 'reseña' : 'reseñas'})
-                          </span>
-                        </div>
+                        <MetricTile
+                          icon="⭐" label="Reseña" status={ratingStatus}
+                          tileKey={`${member.id}-rating`}
+                          info="Promedio de calificación (de 1 a 5 estrellas) que los clientes dejaron en sus reseñas para este barbero."
+                          value={<>{stats.avgRating} {stats.avgRating !== 'N/A' && <Star size={16} fill="currentColor" />}</>}
+                          caption={stats.avgRating === 'N/A' ? 'sin reseñas todavía' : `${stats.reviewsCount} ${stats.reviewsCount === 1 ? 'reseña' : 'reseñas'}`}
+                        />
                       </div>
                     </div>
                   );
                 })}
             </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
+      <AnimatedModal isOpen={!!historyModalMember}>
+        {(overlayClass, cardClass) => displayedHistoryMember && (
+          <AttendanceHistoryModal
+            member={displayedHistoryMember}
+            dates={getAttendanceDates(displayedHistoryMember.id)}
+            logs={attendanceLogs}
+            streak={getAttendanceStreak(displayedHistoryMember.id)}
+            onClose={() => setHistoryModalMember(null)}
+            overlayClass={overlayClass}
+            cardClass={cardClass}
+          />
+        )}
+      </AnimatedModal>
+
       <AnimatedModal isOpen={showCamera}>
         {(overlayClass, cardClass) => (
-          <PandaCamera 
-            onClose={() => setShowCamera(false)}
+          <PandaCamera
+            key={cameraKey}
+            initialAction={photoAction}
+            onClose={() => { setShowCamera(false); setPhotoAction(null); }}
             onCapture={(image) => {
               setFormData({ ...formData, image_url: image });
               setShowCamera(false);
+              setPhotoAction(null);
             }}
             overlayClass={overlayClass}
             cardClass={cardClass}

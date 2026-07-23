@@ -517,6 +517,9 @@ export default function BookAppointment() {
     if (step !== prevStepRef.current) {
       setExpandedBarber(null);
       prevStepRef.current = step;
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
     }
   }, [step]);
 

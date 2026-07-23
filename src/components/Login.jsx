@@ -214,6 +214,22 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
     }
   };
 
+  // Atajo solo para desarrollo: doble clic en el logo entra directo con la cuenta de administrador
+  const handleLogoDoubleClick = async () => {
+    if (!import.meta.env.DEV) return;
+    const devEmail = 'administrador@pandabarber.com';
+    const devPassword = 'Panda2024!';
+    setEmail(devEmail);
+    setPassword(devPassword);
+    setError('');
+    setIsExiting(true);
+    const result = await login(devEmail, devPassword);
+    if (!result.success) {
+      setIsExiting(false);
+      setError(result.message);
+    }
+  };
+
   return (
     <div className="l-root">
       <style>{`
@@ -341,8 +357,10 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           flex-direction: column;
           justify-content: space-between;
           height: 100%;
-          padding: 30px 40px;
+          max-height: 100%;
+          padding: clamp(14px, 2.8vh, 30px) 40px;
           box-sizing: border-box;
+          overflow: hidden;
         }
 
         /* ── LEFT SIDE ── */
@@ -354,8 +372,9 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           align-items: flex-start; /* Alineado a la izquierda */
           height: 100%;
           max-width: 600px;
-          gap: 36px;
+          gap: clamp(12px, 4vh, 36px);
           padding-left: 0; /* Let inner container handle the outer padding */
+          min-height: 0;
         }
         .l-tagline {
           display: flex;
@@ -366,24 +385,24 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           max-width: 580px;
         }
         .l-logo {
-          width: 195px; /* Más imponente e identificable */
-          margin: 0 0 32px -28px; /* Alinear logo a la izquierda ajustado al tamaño */
+          width: clamp(120px, min(14vw, 20vh), 195px); /* Más imponente e identificable, comprime en pantallas bajas */
+          margin: 0 0 clamp(10px, 3vh, 32px) -28px; /* Alinear logo a la izquierda ajustado al tamaño */
           display: block;
           filter: drop-shadow(0 8px 16px rgba(0,0,0,0.95)) drop-shadow(0 2px 4px rgba(0,0,0,0.85));
         }
         .l-heading {
-          font-size: clamp(32px, 3.2vw, 42px);
+          font-size: clamp(22px, min(3.2vw, 5.5vh), 42px);
           font-weight: 800;
           line-height: 1.15;
           color: #fff;
           letter-spacing: -0.5px;
-          margin-bottom: 20px;
+          margin-bottom: clamp(8px, 2.5vh, 20px);
           text-align: left; /* Título alineado a la izquierda */
           width: 100%;
         }
         .l-heading span { color: inherit; }
         .l-desc {
-          font-size: 13.5px;
+          font-size: clamp(11px, 1.8vh, 13.5px);
           color: rgba(255, 255, 255, 0.85); /* Mucho más contraste y luminosidad */
           font-weight: 500; /* Añade cuerpo al texto */
           line-height: 1.6;
@@ -431,32 +450,33 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
 
         /* ── RIGHT CARD ── */
         .l-card {
-          flex-shrink: 0;
+          flex-shrink: 1;
+          min-height: 0;
           width: 410px;
           background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
           border: 1px solid var(--border-color);
           border-radius: 24px;
-          padding: 48px 36px 40px 36px; /* Más espacio arriba y a los lados */
+          padding: clamp(24px, 5vh, 48px) 36px clamp(20px, 4vh, 40px) 36px; /* Más espacio arriba y a los lados, se comprime en pantallas bajas */
           box-shadow: 0 50px 100px rgba(0, 0, 0, 0.95), inset 0 1px 0px rgba(255,255,255,0.10);
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: clamp(10px, 1.8vh, 16px);
         }
         .l-card-title {
-          font-size: 21px;
+          font-size: clamp(16px, 2.3vh, 21px);
           font-weight: 800;
           color: #fff;
           text-align: center;
-          margin-top: 6px; /* Baja el título un poco para alejarlo del borde superior */
-          margin-bottom: 6px;
+          margin-top: clamp(2px, 0.8vh, 6px); /* Baja el título un poco para alejarlo del borde superior */
+          margin-bottom: clamp(2px, 0.8vh, 6px);
           letter-spacing: 0.5px;
         }
         .l-card-title span { color: var(--champagne); text-shadow: 0 0 10px rgba(203, 183, 154, 0.35); }
         .l-card-sub {
-          font-size: 13.5px;
+          font-size: clamp(11px, 1.6vh, 13.5px);
           color: rgba(255,255,255,0.40);
           text-align: center;
-          margin-bottom: 28px; /* Reducido de 44px para balancear el espacio central */
+          margin-bottom: clamp(14px, 3.2vh, 28px); /* Reducido de 44px para balancear el espacio central */
         }
 
         /* ── INPUTS ── */
@@ -1048,6 +1068,48 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
             font-size: 9.5px;
           }
         }
+
+        /* ── PANTALLAS GRANDES (Full HD 1920x1080 en adelante) ── */
+        /* Todos los valores verticales usan clamp() con vh para que se ajusten
+           siempre a la altura disponible y jamás requieran scroll interno. */
+        @media (min-width: 1600px) {
+          .l-inner {
+            max-width: 1680px;
+          }
+          .l-card {
+            width: 520px;
+            padding: clamp(24px, 6vh, 64px) 52px clamp(20px, 5.5vh, 56px) 52px;
+            gap: clamp(10px, 2.2vh, 22px);
+            border-radius: 28px;
+          }
+          .l-card-title {
+            font-size: clamp(18px, 2.8vh, 30px);
+          }
+          .l-card-sub {
+            font-size: clamp(12px, 2vh, 16.5px);
+            margin-bottom: clamp(16px, 4vh, 36px);
+          }
+          .panda-field-group label {
+            font-size: clamp(12px, 1.6vh, 15px);
+          }
+          .panda-input-field {
+            font-size: clamp(14px, 2vh, 17px);
+            padding: clamp(12px, 2.2vh, 19px) 52px clamp(12px, 2.2vh, 19px) 22px;
+            border-radius: 12px;
+          }
+          .panda-input-wrapper svg {
+            width: clamp(16px, 2vh, 19px);
+            height: clamp(16px, 2vh, 19px);
+          }
+          .panda-submit-btn {
+            height: clamp(46px, 7.5vh, 60px);
+            font-size: clamp(13px, 2vh, 17px);
+            border-radius: 14px;
+          }
+          form {
+            gap: clamp(10px, 2vh, 20px) !important;
+          }
+        }
         .l-mob-header { display: none; }
         .l-mob-secure { display: none; }
         .l-mob-features { display: none; }
@@ -1246,9 +1308,10 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           {/* ── LEFT ── */}
           <div className={`l-left l-animate-left ${isExiting ? 'l-exit-left' : ''}`}>
             <div className="l-tagline">
-              <img src={logo} alt="Panda Barber Studio" className="l-logo" style={{
+              <img src={logo} alt="Panda Barber Studio" className="l-logo" onDoubleClick={handleLogoDoubleClick} style={{
                 filter: 'drop-shadow(0 12px 24px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 30px rgba(203, 183, 154, 0.35))',
-                animation: 'l-fade-in-right 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+                animation: 'l-fade-in-right 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                cursor: import.meta.env.DEV ? 'pointer' : 'default'
               }} />
               <h1 className="l-heading">
                 {BRAND_CONFIG.headingFirstPart}<br />
@@ -1264,7 +1327,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
 
           {/* ── MOBILE HEADER (Only shown on mobile) ── */}
           <div className="l-mob-header">
-            <img src={logo} alt="Panda Barber Studio" className="l-logo-mob" />
+            <img src={logo} alt="Panda Barber Studio" className="l-logo-mob" onDoubleClick={handleLogoDoubleClick} />
             <h2 className="l-mob-title">¡BIENVENIDO A <span>PANDA!</span></h2>
             <p className="l-mob-sub">Ingresa tus credenciales para continuar</p>
           </div>
@@ -1297,7 +1360,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
                 .panda-field-group {
                   display: flex;
                   flex-direction: column;
-                  gap: 6px;
+                  gap: clamp(4px, 0.8vh, 6px);
                   position: relative;
                 }
                 .panda-field-group label {
@@ -1318,12 +1381,12 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
                 }
                 .panda-input-field {
                   width: 100%;
-                  padding: 14px 44px 14px 16px;
+                  padding: clamp(10px, 1.6vh, 14px) 44px clamp(10px, 1.6vh, 14px) 16px;
                   background: #111112;
                   border: 1px solid var(--border-color);
                   border-radius: 10px;
                   color: #ffffff;
-                  font-size: 14.5px;
+                  font-size: clamp(13px, 1.7vh, 14.5px);
                   outline: none;
                   box-sizing: border-box;
                   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1421,11 +1484,11 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
                 }
                 .panda-submit-btn {
                   width: 100%;
-                  height: 48px;
+                  height: clamp(42px, 6.5vh, 48px);
                   border-radius: 12px;
                   border: none;
                   cursor: pointer;
-                  font-size: 14px;
+                  font-size: clamp(12.5px, 1.7vh, 14px);
                   font-weight: 700;
                   letter-spacing: 1.2px;
                   text-transform: none !important;
@@ -1474,7 +1537,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
                 }
               `}</style>
 
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.6vh, 14px)' }}>
                 <div className="panda-field-group">
                   <label className="desktop-only-label">Correo electrónico</label>
                   <label className="mobile-only-label">Correo electrónico</label>
@@ -1586,9 +1649,10 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
               -webkit-backdrop-filter: blur(25px);
               border: 1px solid var(--border-color);
               border-radius: 18px;
-              padding: 20px 40px;
+              padding: clamp(10px, 2vh, 20px) 40px;
               box-sizing: border-box;
-              margin-top: 15px;
+              margin-top: clamp(8px, 1.6vh, 15px);
+              flex-shrink: 0;
               box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
               animation: l-slide-in-up 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
               transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1612,8 +1676,8 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
               color: var(--champagne);
               background: rgba(203, 183, 154, 0.05);
               border-radius: 10px;
-              width: 44px;
-              height: 44px;
+              width: clamp(32px, 4.5vh, 44px);
+              height: clamp(32px, 4.5vh, 44px);
               border: 1px solid rgba(203, 183, 154, 0.2);
               flex-shrink: 0;
               transition: all 0.3s ease;
@@ -1630,14 +1694,14 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
               gap: 3px;
             }
             .panda-feat-title {
-              font-size: 14.5px;
+              font-size: clamp(11px, 1.5vh, 14.5px);
               font-weight: 700;
               color: #ffffff;
               margin: 0;
               text-align: left;
             }
             .panda-feat-desc {
-              font-size: 12.5px;
+              font-size: clamp(9.5px, 1.2vh, 12.5px);
               color: rgba(255, 255, 255, 0.45);
               margin: 0;
               text-align: left;
@@ -1646,11 +1710,18 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
             }
             .panda-divider {
               width: 1px;
-              height: 40px;
+              height: clamp(28px, 4vh, 40px);
               background: rgba(255, 255, 255, 0.08);
             }
             
             @media (max-width: 768px), (orientation: portrait) {
+              .panda-bottom-features-bar {
+                display: none !important;
+              }
+            }
+            /* Ventanas de escritorio con muy poca altura: se prioriza la tarjeta de login
+               y se oculta la franja decorativa para garantizar que nunca haya scroll */
+            @media (min-width: 769px) and (max-height: 560px) and (orientation: landscape) {
               .panda-bottom-features-bar {
                 display: none !important;
               }

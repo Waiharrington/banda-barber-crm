@@ -235,6 +235,7 @@ function App() {
     const handleNavigation = (e) => {
       handleTabChange(e.detail);
     };
+    handleResize(); // Sincroniza de inmediato con el ancho real, por si cambió desde el montaje inicial
     window.addEventListener('resize', handleResize);
     window.addEventListener('panda_navigate', handleNavigation);
     
