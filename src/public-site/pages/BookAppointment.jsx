@@ -3637,10 +3637,9 @@ export default function BookAppointment() {
             </div>
 
             {/* Footer Navigation Buttons — hidden when barber profile is expanded or when in Step 3 (which has its own button) */}
-            <div className={`mt-8 pb-10 ${(step === 2 && expandedBarber) || step === 3 ? 'hidden' : ''}`}>
+            <div ref={nextBtnRef} className={`mt-8 pb-10 ${(step === 2 && expandedBarber) || step === 3 ? 'hidden' : ''}`}>
               {step < 5 ? (
                 <button
-                  ref={nextBtnRef}
                   onClick={(e) => { 
                     createRipple(e); 
                     if (canNext()) { 
