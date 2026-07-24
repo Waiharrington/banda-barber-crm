@@ -340,6 +340,7 @@ export default function BookAppointment() {
   const scrollContainerRef = useRef(null);
   const teamScrollRef = useRef(null);
   const timeSlotsRef = useRef(null);
+  const bookingSummaryRef = useRef(null);
 
   // Programmatically trigger play on modal video to bypass autoplay policies
   useEffect(() => {
@@ -872,6 +873,11 @@ export default function BookAppointment() {
     setTimeout(() => {
       timeSlotsRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
     }, 50);
+  };
+  const scrollToBookingSummary = () => {
+    setTimeout(() => {
+      bookingSummaryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 80);
   };
   const scrollToTop = () => {
     if (scrollContainerRef.current) {
@@ -2563,6 +2569,8 @@ export default function BookAppointment() {
         className="relative w-full h-full overflow-x-hidden flex flex-col justify-between items-center bg-center overflow-y-auto"
         style={{
           height: '100dvh',
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehaviorY: 'contain',
           backgroundColor: '#050506',
           backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px), 
                             radial-gradient(circle at 50% 0%, rgba(203, 183, 154, 0.12) 0%, transparent 65%), 
@@ -3405,11 +3413,18 @@ export default function BookAppointment() {
                           Selecciona un día en el calendario para ver las horas disponibles.
                         </div>
                       ) : loadingSlots ? (
-                        <div className="text-center py-12 text-white/30 text-sm">
-                          Cargando disponibilidad...
+                        <div className="space-y-2.5">
+                          <div className="text-center text-white/30 text-[11px] uppercase tracking-widest font-bold">
+                            Cargando disponibilidad...
+                          </div>
+                          <div className="grid grid-cols-4 gap-2.5">
+                            {Array.from({ length: allTimeSlots.length || 16 }).map((_, i) => (
+                              <div key={i} className="h-[46px] rounded-xl border border-white/5 slot-skeleton" />
+                            ))}
+                          </div>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-4 gap-2.5">
+                        <div className="grid grid-cols-4 gap-2.5 animate-fade-in">
                           {visibleSlots.map(({ time, label, isPast, isOccupied }) => {
                             const isSelected = selectedTime === time;
                             const isDisabled = isPast || isOccupied;
@@ -3421,7 +3436,7 @@ export default function BookAppointment() {
                                 onClick={() => {
                                   if (!isDisabled) {
                                     setSelectedTime(time);
-                                    scrollToNextButton();
+                                    scrollToBookingSummary();
                                   }
                                 }}
                                 disabled={isDisabled}
@@ -3446,7 +3461,7 @@ export default function BookAppointment() {
                     
                     {/* TU SELECCIÓN Card — Premium */}
                     {selectedDate && selectedTime && (
-                      <div className="relative rounded-3xl overflow-hidden animate-fade-in" style={{
+                      <div ref={bookingSummaryRef} className="relative rounded-3xl overflow-hidden animate-fade-in" style={{
                         background: 'linear-gradient(135deg, rgba(203,183,154,0.08) 0%, rgba(13,13,17,0.95) 50%, rgba(203,183,154,0.04) 100%)',
                         border: '1px solid rgba(203,183,154,0.25)',
                         boxShadow: '0 0 40px rgba(203,183,154,0.08), inset 0 1px 0 rgba(203,183,154,0.12)'
