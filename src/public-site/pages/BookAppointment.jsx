@@ -2136,14 +2136,22 @@ export default function BookAppointment() {
                         <span className="text-white/70">Maracay, Venezuela</span>
                       </li>
                       <li className="flex items-center gap-2.5">
-                        <Instagram size={14} className="text-[#CBB79A]" />
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#CBB79A]">
+                          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                        </svg>
                         <a href="https://www.instagram.com/pandabarberestudio/" target="_blank" rel="noopener noreferrer" className="hover:text-[#CBB79A] transition-colors text-[#CBB79A]/85">@pandabarberestudio</a>
                       </li>
                       
                       {/* Social icons */}
                       <li className="flex items-center gap-3.5 pt-1.5">
                         <a href="https://www.instagram.com/pandabarberestudio/" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-[#CBB79A] transition-colors" aria-label="Instagram">
-                          <Instagram size={16} />
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                          </svg>
                         </a>
                         <a href="#" className="text-white/40 hover:text-[#CBB79A] transition-colors" aria-label="Facebook">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
