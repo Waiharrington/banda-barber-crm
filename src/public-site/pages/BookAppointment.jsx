@@ -1247,7 +1247,7 @@ export default function BookAppointment() {
             <p className="text-white text-lg sm:text-xl lg:text-[22px] font-extrabold leading-snug font-sans tracking-wide reveal-item delay-300">
               Tu estilo comienza con el profesional correcto.
             </p>
-            <p className="text-white/70 text-sm sm:text-base lg:text-[15px] leading-relaxed font-normal font-sans max-w-[500px] reveal-item delay-400">
+            <p className="text-white/85 text-base sm:text-lg lg:text-[17px] leading-relaxed font-normal font-sans max-w-[580px] reveal-item delay-400">
               Barbería y tatuajes en un espacio creado para cuidar cada detalle de tu{'\u00A0'}imagen.
             </p>
           </div>
@@ -1448,7 +1448,7 @@ export default function BookAppointment() {
                 </div>
                 <div className="flex flex-col text-left">
                   <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight">LEGACY</span>
-                  <span className="text-xs text-white/50 font-medium">+8 años marcando la calle</span>
+                  <span className="text-sm text-white/50 font-semibold">+8 años marcando la calle</span>
                 </div>
               </div>
               {/* Stat 2 */}
@@ -1458,7 +1458,7 @@ export default function BookAppointment() {
                 </div>
                 <div className="flex flex-col text-left">
                   <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight">EL TEMPLO</span>
-                  <span className="text-xs text-white/50 font-medium">tu espacio, tu vibra</span>
+                  <span className="text-sm text-white/50 font-semibold">tu espacio, tu vibra</span>
                 </div>
               </div>
               {/* Stat 3 */}
@@ -1468,7 +1468,7 @@ export default function BookAppointment() {
                 </div>
                 <div className="flex flex-col text-left">
                   <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight">ART & INK</span>
-                  <span className="text-xs text-white/50 font-medium">tinta y navaja de autor</span>
+                  <span className="text-sm text-white/50 font-semibold">tinta y navaja de autor</span>
                 </div>
               </div>
               {/* Stat 4 */}
@@ -1478,7 +1478,7 @@ export default function BookAppointment() {
                 </div>
                 <div className="flex flex-col text-left">
                   <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight">CULTURA</span>
-                  <span className="text-xs text-white/50 font-medium">+15k de pura familia</span>
+                  <span className="text-sm text-white/50 font-semibold">+15k de pura familia</span>
                 </div>
               </div>
             </div>
@@ -1516,8 +1516,8 @@ export default function BookAppointment() {
                     </div>
                     <div>
                       <h3 className="text-xl font-extrabold text-white mb-2 uppercase tracking-wide">BARBERÍA</h3>
-                      <p className="text-white/60 text-xs leading-relaxed mb-4">Cortes modernos, clásicos, fades, arreglo de barba y más.</p>
-                      <span className="text-[#CBB79A] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
+                      <p className="text-white/70 text-sm leading-relaxed mb-4">Cortes modernos, clásicos, fades, arreglo de barba y más.</p>
+                      <span className="text-[#CBB79A] text-sm font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
                         EXPLORAR SERVICIOS <span className="text-[14px]">→</span>
                       </span>
                     </div>
@@ -1545,8 +1545,8 @@ export default function BookAppointment() {
                     </div>
                     <div>
                       <h3 className="text-xl font-extrabold text-white mb-2 uppercase tracking-wide">TATUAJES</h3>
-                      <p className="text-white/60 text-xs leading-relaxed mb-4">Diseños personalizados y estilo único.</p>
-                      <span className="text-[#CBB79A] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
+                      <p className="text-white/70 text-sm leading-relaxed mb-4">Diseños personalizados y estilo único.</p>
+                      <span className="text-[#CBB79A] text-sm font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
                         CONOCER ARTISTAS <span className="text-[14px]">→</span>
                       </span>
                     </div>
@@ -1570,8 +1570,8 @@ export default function BookAppointment() {
                     </div>
                     <div>
                       <h3 className="text-xl font-extrabold text-white mb-2 uppercase tracking-wide">PANDA KIDS</h3>
-                      <p className="text-white/60 text-xs leading-relaxed mb-4">Cortes especiales para los más pequeños. Paciencia, cuidado y diversión garantizados.</p>
-                      <span className="text-[#CBB79A] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
+                      <p className="text-white/70 text-sm leading-relaxed mb-4">Cortes especiales para los más pequeños. Paciencia, cuidado y diversión garantizados.</p>
+                      <span className="text-[#CBB79A] text-sm font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
                         VER SERVICIOS KIDS <span className="text-[14px]">→</span>
                       </span>
                     </div>
@@ -1595,8 +1595,8 @@ export default function BookAppointment() {
                     </div>
                     <div>
                       <h3 className="text-xl font-extrabold text-white mb-2 uppercase tracking-wide">EXPERIENCIA PANDA</h3>
-                      <p className="text-white/60 text-xs leading-relaxed mb-4">Ambiente exclusivo, atención premium y los mejores productos.</p>
-                      <span className="text-[#CBB79A] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
+                      <p className="text-white/70 text-sm leading-relaxed mb-4">Ambiente exclusivo, atención premium y los mejores productos.</p>
+                      <span className="text-[#CBB79A] text-sm font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
                         DESCUBRIR MÁS <span className="text-[14px]">→</span>
                       </span>
                     </div>
@@ -1687,15 +1687,15 @@ export default function BookAppointment() {
                               <BarberAvatar url={barber.image_url} name={barber.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" iconSize={40} />
                             </div>
                             <h4 className="text-base font-extrabold text-white mb-0.5 tracking-wide">{displayName}</h4>
-                            <span className="text-[10px] font-bold text-[#CBB79A] tracking-wider uppercase mb-3">{specialtyText}</span>
-                            <p className="text-[11px] text-white/50 mb-4 truncate w-full">{tagsText}</p>
-                            <div className={`flex items-center gap-1.5 mb-5 text-[11px] ${availabilityColor} font-medium`}>
+                            <span className="text-[11px] font-bold text-[#CBB79A] tracking-wider uppercase mb-3">{specialtyText}</span>
+                            <p className="text-[12px] lg:text-[13px] text-white/60 mb-4 truncate w-full">{tagsText}</p>
+                            <div className={`flex items-center gap-1.5 mb-5 text-[12px] ${availabilityColor} font-bold`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${!(isAngel || isMarko) ? 'animate-pulse' : ''}`}></span>
                               <span>{availabilityText}</span>
                             </div>
                             <button 
                               onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
-                              className="w-full py-2.5 rounded-xl border border-white/10 hover:border-[#CBB79A] hover:bg-[#CBB79A] hover:text-black text-white text-[10px] uppercase tracking-wider font-extrabold transition-all duration-300 cursor-pointer"
+                              className="w-full py-2.5 rounded-xl border border-white/10 hover:border-[#CBB79A] hover:bg-[#CBB79A] hover:text-black text-white text-[11px] uppercase tracking-wider font-extrabold transition-all duration-300 cursor-pointer"
                             >
                               Reservar
                             </button>
@@ -1735,7 +1735,7 @@ export default function BookAppointment() {
                       CORTES QUE HACEN<br />
                       <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-[#CBB79A]">FELICES A LOS MÁS PEQUEÑOS</span>
                     </h2>
-                    <p className="text-white/60 text-sm leading-relaxed">
+                    <p className="text-white/80 text-[15px] leading-relaxed">
                       En Panda Barber los niños son parte de nuestra familia. Nuestros barberos saben exactamente cómo crear una experiencia divertida, cómoda y especial para ellos.
                     </p>
                   </div>
@@ -1753,8 +1753,8 @@ export default function BookAppointment() {
                           {feat.icon}
                         </div>
                         <div>
-                          <p className="text-white text-[11px] font-bold leading-tight mb-0.5">{feat.title}</p>
-                          <p className="text-white/40 text-[10px] leading-tight">{feat.desc}</p>
+                          <p className="text-white text-[13px] font-bold leading-tight mb-0.5">{feat.title}</p>
+                          <p className="text-white/50 text-[11px] lg:text-[12px] leading-relaxed">{feat.desc}</p>
                         </div>
                       </div>
                     ))}
@@ -1762,24 +1762,24 @@ export default function BookAppointment() {
 
                   {/* Testimonial */}
                   <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-4 relative">
-                    <p className="text-white/60 text-xs italic leading-relaxed">
+                    <p className="text-white/85 text-sm italic leading-relaxed">
                       "Me gustó mucho el corte, el señor fue muy amable y me trató súper bien. ¡Quiero volver pronto!"
                     </p>
-                    <p className="text-[#CBB79A] text-[9px] font-bold uppercase tracking-wider mt-2">— Cliente Panda Kids ⭐⭐⭐⭐⭐</p>
+                    <p className="text-[#CBB79A] text-[11px] font-bold uppercase tracking-wider mt-2">— Cliente Panda Kids ⭐⭐⭐⭐⭐</p>
                   </div>
 
                   {/* CTA */}
                   <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={() => handleStartBooking()}
-                      className="btn-gold py-3 px-7 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 whitespace-nowrap"
+                      className="btn-gold py-3 px-7 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2 whitespace-nowrap"
                       style={{ borderRadius: '10px' }}
                     >
                       <Heart size={13} fill="black" /> RESERVAR PARA MI HIJO
                     </button>
                     <button
                       onClick={() => document.getElementById('equipo')?.scrollIntoView({ behavior: 'smooth' })}
-                      className="btn-outline py-3 px-7 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2"
+                      className="btn-outline py-3 px-7 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2"
                       style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
                     >
                       VER EL EQUIPO
@@ -1816,18 +1816,18 @@ export default function BookAppointment() {
 
                       {/* Badges */}
                       <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-extrabold tracking-widest text-white/50 uppercase">
+                        <span className="text-[10px] font-extrabold tracking-widest text-white/50 uppercase">
                           MASTER BARBER
                         </span>
                         <span className="text-white/20">•</span>
-                        <span className="text-[9px] font-extrabold tracking-widest text-[#CBB79A] uppercase">
+                        <span className="text-[10px] font-extrabold tracking-widest text-[#CBB79A] uppercase">
                           TOP DEL MES
                         </span>
                       </div>
                     </div>
 
                     {/* Biography Quote */}
-                    <p className="text-white/60 text-sm leading-relaxed italic border-l-2 border-[#CBB79A]/30 pl-4">
+                    <p className="text-white/80 text-[15px] leading-relaxed italic border-l-2 border-[#CBB79A]/30 pl-4">
                       "{topBarber.biography || 'Especializado en cortes clásicos y modernos con un estilo y precisión impecables.'}"
                     </p>
 
@@ -1838,8 +1838,8 @@ export default function BookAppointment() {
                           <Check size={14} className="text-[#CBB79A]" />
                         </div>
                         <div className="flex flex-col text-left">
-                          <span className="text-xs font-bold text-white leading-tight">+8 años</span>
-                          <span className="text-[10px] text-white/40">de experiencia</span>
+                          <span className="text-sm font-extrabold text-white leading-tight">+8 años</span>
+                          <span className="text-[11px] lg:text-[12px] text-white/50">de experiencia</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2.5">
@@ -1847,8 +1847,8 @@ export default function BookAppointment() {
                           <Star size={14} className="text-[#CBB79A]" />
                         </div>
                         <div className="flex flex-col text-left">
-                          <span className="text-xs font-bold text-white leading-tight">500+</span>
-                          <span className="text-[10px] text-white/40">clientes felices</span>
+                          <span className="text-sm font-extrabold text-white leading-tight">500+</span>
+                          <span className="text-[11px] lg:text-[12px] text-white/50">clientes felices</span>
                         </div>
                       </div>
                     </div>
@@ -1857,14 +1857,14 @@ export default function BookAppointment() {
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                       <button
                         onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
-                        className="btn-gold py-3 px-8 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 whitespace-nowrap"
+                        className="btn-gold py-3 px-8 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2 whitespace-nowrap"
                         style={{ borderRadius: '10px' }}
                       >
                         RESERVAR CITA <ArrowRight size={14} />
                       </button>
                       <button
                         onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
-                        className="btn-outline py-3 px-8 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2"
+                        className="btn-outline py-3 px-8 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2"
                         style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
                       >
                         <User size={13} /> VER SU PERFIL
@@ -1916,7 +1916,7 @@ export default function BookAppointment() {
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CULTURA, ESTILO Y HOSPITALIDAD</span>
                     <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">EXPERIENCIA PANDA</h2>
-                    <p className="text-white/60 text-sm leading-relaxed">
+                    <p className="text-white/80 text-[15px] leading-relaxed">
                       En <strong className="text-[#CBB79A] font-semibold">Panda Barber Studio</strong> redefinimos la experiencia clásica de barbería. Fusionamos el arte del corte urbano y la tinta en un club social exclusivo diseñado para tu comodidad y relax.
                     </p>
                   </div>
@@ -1927,8 +1927,8 @@ export default function BookAppointment() {
                         <Coffee size={16} />
                       </div>
                       <div className="space-y-1">
-                        <h4 className="text-white font-extrabold text-[12px] uppercase tracking-wider">Panda Cafe & Bar</h4>
-                        <p className="text-white/40 text-[11px] leading-normal">Café de especialidad, bebidas premium y cerveza fría de cortesía en cada sesión.</p>
+                        <h4 className="text-white font-extrabold text-[13px] uppercase tracking-wider">Panda Cafe & Bar</h4>
+                        <p className="text-white/50 text-[12px] leading-relaxed">Café de especialidad, bebidas premium y cerveza fría de cortesía en cada sesión.</p>
                       </div>
                     </div>
 
@@ -1937,8 +1937,8 @@ export default function BookAppointment() {
                         <Gamepad2 size={16} />
                       </div>
                       <div className="space-y-1">
-                        <h4 className="text-white font-extrabold text-[12px] uppercase tracking-wider">Espacio Retro Arcade</h4>
-                        <p className="text-white/40 text-[11px] leading-normal">Consolas arcade clásicas libres para divertirte mientras esperas tu turno.</p>
+                        <h4 className="text-white font-extrabold text-[13px] uppercase tracking-wider">Espacio Retro Arcade</h4>
+                        <p className="text-white/50 text-[12px] leading-relaxed">Consolas arcade clásicas libres para divertirte mientras esperas tu turno.</p>
                       </div>
                     </div>
                   </div>
@@ -1946,7 +1946,7 @@ export default function BookAppointment() {
                   <div className="pt-2">
                     <button 
                       onClick={() => handleStartBooking()}
-                      className="btn-gold px-7 py-3 rounded-xl text-[11px] uppercase tracking-wider font-extrabold flex items-center justify-center gap-2"
+                      className="btn-gold px-7 py-3 rounded-xl text-[12px] uppercase tracking-wider font-extrabold flex items-center justify-center gap-2"
                       style={{ borderRadius: '10px' }}
                     >
                       Reservar visita <ArrowRight size={14} />
@@ -1980,7 +1980,7 @@ export default function BookAppointment() {
                       </div>
                       <div>
                         <h4 className="text-sm font-extrabold text-white mb-1 uppercase tracking-wider">{item.title}</h4>
-                        <p className="text-white/40 text-[11px] leading-relaxed">{item.desc}</p>
+                        <p className="text-white/50 text-[12px] lg:text-[13px] leading-relaxed">{item.desc}</p>
                       </div>
                     </div>
                   ))}
@@ -2009,10 +2009,10 @@ export default function BookAppointment() {
                         </div>
                         <div>
                           <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">SEDE ÚNICA</h4>
-                          <span className="text-[9px] text-[#CBB79A] font-bold uppercase tracking-wider">Maracay, Venezuela</span>
+                          <span className="text-[10px] text-[#CBB79A] font-bold uppercase tracking-wider">Maracay, Venezuela</span>
                         </div>
                       </div>
-                      <span className="bg-white/5 border border-white/10 px-2.5 py-1 rounded text-[9px] font-bold text-white/50 uppercase">
+                      <span className="bg-white/5 border border-white/10 px-2.5 py-1 rounded text-[10px] font-bold text-white/50 uppercase">
                         ABIERTO
                       </span>
                     </div>
@@ -2021,7 +2021,7 @@ export default function BookAppointment() {
                     <div className="space-y-4">
                       <div className="flex items-start gap-3">
                         <MapPin size={16} className="text-[#CBB79A] shrink-0 mt-0.5" />
-                        <p className="text-white/70 text-xs leading-relaxed">
+                        <p className="text-white/80 text-[13px] sm:text-[14px] leading-relaxed">
                           Centro comercial ciudad jardín local #74 PB, Maracay 2102, Aragua, Venezuela
                         </p>
                       </div>
@@ -2030,15 +2030,15 @@ export default function BookAppointment() {
                         <div className="flex items-start gap-3">
                           <Clock size={16} className="text-[#CBB79A] shrink-0 mt-0.5" />
                           <div className="text-left">
-                            <p className="text-white/70 text-xs font-bold leading-tight">Lun - Sáb</p>
-                            <p className="text-white/40 text-[10px] mt-0.5">9:00am - 8:00pm</p>
+                            <p className="text-white/85 text-[13px] font-extrabold leading-tight">Lun - Sáb</p>
+                            <p className="text-white/50 text-[11px] lg:text-[12px] mt-0.5">9:00am - 8:00pm</p>
                           </div>
                         </div>
                         <div className="flex items-start gap-3">
                           <Clock size={16} className="text-white/20 shrink-0 mt-0.5" />
                           <div className="text-left">
-                            <p className="text-white/30 text-xs font-bold leading-tight">Domingos</p>
-                            <p className="text-white/20 text-[10px] mt-0.5">Cerrado</p>
+                            <p className="text-white/40 text-[13px] font-extrabold leading-tight">Domingos</p>
+                            <p className="text-white/30 text-[11px] lg:text-[12px] mt-0.5">Cerrado</p>
                           </div>
                         </div>
                       </div>
@@ -2053,7 +2053,7 @@ export default function BookAppointment() {
                         <a
                           href="tel:+584242259724"
                           onClick={e => e.stopPropagation()}
-                          className="text-white/70 text-xs font-extrabold hover:text-[#CBB79A] transition-colors"
+                          className="text-white/85 text-sm font-extrabold hover:text-[#CBB79A] transition-colors"
                         >
                           +58 424-2259724
                         </a>
@@ -2063,7 +2063,7 @@ export default function BookAppointment() {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={e => { e.stopPropagation(); window.open('https://www.instagram.com/pandabarberestudio/', '_blank'); }}
-                        className="flex items-center gap-1.5 text-white/40 hover:text-[#CBB79A] transition-colors cursor-pointer"
+                        className="flex items-center gap-1.5 text-white/50 hover:text-[#CBB79A] transition-colors cursor-pointer"
                         aria-label="Instagram"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -2071,13 +2071,13 @@ export default function BookAppointment() {
                           <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                           <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
                         </svg>
-                        <span className="text-[10px] font-bold">@pandabarberestudio</span>
+                        <span className="text-[11px] font-bold">@pandabarberestudio</span>
                       </a>
                     </div>
 
                     <button
                       onClick={e => { e.stopPropagation(); window.open('https://google.com/maps/place/Panda+Barber+Estudio/data=!4m2!3m1!1s0x0:0x219ca2f89dc85e8a?sa=X&ved=1t:2428&ictx=111', '_blank'); }}
-                      className="btn-gold py-2.5 px-6 rounded-xl text-[10px] uppercase tracking-wider font-extrabold flex items-center gap-1.5 cursor-pointer"
+                      className="btn-gold py-2.5 px-6 rounded-xl text-[11px] uppercase tracking-wider font-extrabold flex items-center gap-1.5 cursor-pointer"
                       style={{ borderRadius: '10px' }}
                     >
                       <Compass size={13} /> VER EN GOOGLE MAPS
