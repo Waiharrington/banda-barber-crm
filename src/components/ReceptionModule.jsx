@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Users, 
@@ -64,6 +64,86 @@ const ReceptionModule = ({ isMobile, rates }) => {
     status: 'En Silla' // Default flow: receive and sit
   });
 
+  const [recommendationInfo, setRecommendationInfo] = useState(null);
+  const selectedClientRef = useRef(selectedClient);
+
+  useEffect(() => {
+    selectedClientRef.current = selectedClient;
+  }, [selectedClient]);
+
+  useEffect(() => {
+    if (rates?.usd || rates?.euro) {
+      setExchangeRate(rates.usd || rates.euro);
+    }
+  }, [rates]);
+
+  const selectRecommendedBarber = (client, currentStaffList, activeAppts, shouldPreselect = true) => {
+    if (!client) {
+      setRecommendationInfo(null);
+      return;
+    }
+
+    const freqBarberId = client.frequent_barber_id;
+    const freqStaff = currentStaffList.find(s => s.id === freqBarberId);
+
+    if (freqStaff) {
+      const isBusy = activeAppts.some(a => a.staff_id === freqBarberId);
+      setRecommendationInfo({
+        type: 'frequent',
+        staffId: freqBarberId,
+        name: freqStaff.name,
+        isBusy
+      });
+      if (shouldPreselect) {
+        setFormData(prev => ({ ...prev, staffId: freqBarberId }));
+      }
+    } else {
+      // Fallback to FIFO: first available (non-busy) barber in the queue
+      const firstAvailable = currentStaffList.find(s => !activeAppts.some(a => a.staff_id === s.id));
+      if (firstAvailable) {
+        setRecommendationInfo({
+          type: 'fifo',
+          staffId: firstAvailable.id,
+          name: firstAvailable.name,
+          isBusy: false
+        });
+        if (shouldPreselect) {
+          setFormData(prev => ({ ...prev, staffId: firstAvailable.id }));
+        }
+      } else {
+        // Fallback to first in queue if all are busy
+        const firstInQueue = currentStaffList[0];
+        if (firstInQueue) {
+          setRecommendationInfo({
+            type: 'fifo',
+            staffId: firstInQueue.id,
+            name: firstInQueue.name,
+            isBusy: true
+          });
+          if (shouldPreselect) {
+            setFormData(prev => ({ ...prev, staffId: firstInQueue.id }));
+          }
+        } else {
+          setRecommendationInfo(null);
+        }
+      }
+    }
+  };
+
+  const handleSkipTurn = async (staffId) => {
+    try {
+      setLoading(true);
+      await dataService.skipTurn(staffId);
+      showToast("Turno pasado al final de la fila");
+      await loadData();
+    } catch (e) {
+      console.error(e);
+      showToast("Error al pasar turno", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
     // Auto-refresh every minute to update countdowns
@@ -73,7 +153,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
 
   const loadData = async () => {
     try {
-      const [c, s, st, active, ext, inv, allApps, ratesData] = await Promise.all([
+      const [c, s, st, active, ext, inv, allApps, ratesData, queueData] = await Promise.all([
         dataService.getClients(),
         dataService.getServices(),
         dataService.getStaff(),
@@ -81,16 +161,33 @@ const ReceptionModule = ({ isMobile, rates }) => {
         dataService.getExtras(),
         dataService.getInventory(),
         dataService.getAppointmentsByState(['Agendado']),
-        dataService.getExchangeRates()
+        dataService.getExchangeRates(),
+        dataService.getTurnQueue().catch(() => [])
       ]);
       setClients(c);
       setServices(s);
-      setStaff(st.filter(member => {
+
+      const queue = queueData || [];
+      const checkedInStaffIds = queue
+        .filter(q => q.status !== 'ABSENT')
+        .map(q => q.staff_id);
+
+      const filteredStaff = st.filter(member => {
         const roleName = (member.role?.split('|')[0] || 'Barbero').toLowerCase();
         return !roleName.includes('admin') && 
                !roleName.includes('recepcionista') && 
-               !roleName.includes('caja');
-      }));
+               !roleName.includes('caja') &&
+               checkedInStaffIds.includes(member.id);
+      });
+
+      // Sort by position in queue (arrival order)
+      filteredStaff.sort((a, b) => {
+        const entryA = queue.find(q => q.staff_id === a.id);
+        const entryB = queue.find(q => q.staff_id === b.id);
+        return (entryA?.position || 0) - (entryB?.position || 0);
+      });
+
+      setStaff(filteredStaff);
       setActiveAppointments(active);
       setAllExtras(ext || []);
       setInventory(inv.filter(i => 
@@ -101,9 +198,11 @@ const ReceptionModule = ({ isMobile, rates }) => {
       const today = new Date().toISOString().split('T')[0];
       setUpcomingAppointments(allApps.filter(a => a.scheduled_at?.startsWith(today) || a.created_at?.startsWith(today)));
 
-      if (ratesData) {
-        const activeType = localStorage.getItem('panda_active_rate') || 'usdt';
-        setExchangeRate(activeType === 'bcv' ? (ratesData.bcv || 36.5) : (ratesData.usdt || 43.2));
+      const activeRate = rates?.usd || rates?.euro || (ratesData ? (ratesData.euro || ratesData.bcv) : 841.84);
+      setExchangeRate(activeRate);
+
+      if (selectedClientRef.current) {
+        selectRecommendedBarber(selectedClientRef.current, filteredStaff, active, false);
       }
     } catch (err) {
       console.error(err);
@@ -144,6 +243,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
     setIdSearch('');
     setSearchResults([]);
     showToast(`Cliente identificado: ${client.name}`);
+    selectRecommendedBarber(client, staff, activeAppointments, true);
   };
 
   const handleSearchInput = (val) => {
@@ -400,7 +500,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
                       <span style={{ opacity: 0.6, fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)' }}>CÉDULA:</span> V-{selectedClient.id_card}
                     </div>
                   </div>
-                  <button onClick={() => setSelectedClient(null)} style={{ background: 'none', border: 'none', color: '#ff453a', fontWeight: '800', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#ff6b64'} onMouseLeave={e => e.currentTarget.style.color = '#ff453a'}>Cambiar</button>
+                  <button onClick={() => { setSelectedClient(null); setRecommendationInfo(null); setFormData(prev => ({ ...prev, staffId: '' })); }} style={{ background: 'none', border: 'none', color: '#ff453a', fontWeight: '800', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#ff6b64'} onMouseLeave={e => e.currentTarget.style.color = '#ff453a'}>Cambiar</button>
                 </div>
               </div>
             ) : (
@@ -512,7 +612,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
                           <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{(s.price * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
-                          <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: '600' }}>Ref: ${s.price}</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: '600' }}>Ref: €{s.price}</span>
                         </div>
                         <button onClick={() => toggleService(s.id)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '14px', marginLeft: '4px' }}>&times;</button>
                       </div>
@@ -524,7 +624,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         {editingExtraPriceId === e.id ? (
                           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                            <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>$</span>
+                            <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>€</span>
                             <input 
                               type="number"
                               autoFocus
@@ -545,7 +645,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
                               <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{((e.customPrice ?? e.price) * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: '600' }}>Ref: ${e.customPrice ?? e.price}</span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: '600' }}>Ref: €{e.customPrice ?? e.price}</span>
                                 <Edit3 size={8} color="var(--text-muted)" />
                               </div>
                             </div>
@@ -561,7 +661,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
                       <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
                           <span style={{ color: 'var(--gold-primary)', fontWeight: '800' }}>{(p.price * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
-                          <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: '600' }}>Ref: ${p.price}</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: '600' }}>Ref: €{p.price}</span>
                         </div>
                         <button onClick={() => toggleProduct(p)} style={{ background: 'none', border: 'none', color: '#ff453a', cursor: 'pointer', fontSize: '14px', marginLeft: '4px' }}>&times;</button>
                       </div>
@@ -580,6 +680,53 @@ const ReceptionModule = ({ isMobile, rates }) => {
             )}
 
             <div>
+              {recommendationInfo && (
+                <div 
+                  className="animate-fade-in" 
+                  style={{ 
+                    padding: '14px 18px', 
+                    borderRadius: '16px', 
+                    background: recommendationInfo.isBusy 
+                      ? 'rgba(255, 159, 10, 0.08)' 
+                      : 'rgba(50, 215, 75, 0.08)',
+                    border: recommendationInfo.isBusy
+                      ? '1px solid rgba(255, 159, 10, 0.3)'
+                      : '1px solid rgba(50, 215, 75, 0.3)',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px' }}>
+                      {recommendationInfo.isBusy ? '⚠️' : '✨'}
+                    </span>
+                    <span style={{ fontSize: '10px', fontWeight: '800', color: recommendationInfo.isBusy ? '#ff9f0a' : '#32d74b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {recommendationInfo.type === 'frequent' 
+                        ? 'Recomendación (Cliente Recurrente)' 
+                        : 'Recomendación (Siguiente en Fila)'}
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'white', fontWeight: '750', lineHeight: '1.4' }}>
+                    {recommendationInfo.type === 'frequent' ? (
+                      recommendationInfo.isBusy ? (
+                        <span>
+                          Su barbero frecuente <strong>{recommendationInfo.name}</strong> está ocupado. Puedes <strong>agendar para después</strong> si el cliente desea esperar, o seleccionar a otro de la fila.
+                        </span>
+                      ) : (
+                        <span>
+                          Se ha sugerido automáticamente a su barbero frecuente <strong>{recommendationInfo.name}</strong>.
+                        </span>
+                      )
+                    ) : (
+                      <span>
+                        Se sugiere el barbero que sigue en la fila por orden de llegada: <strong>{recommendationInfo.name}</strong>.
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
               <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px' }}>BARBEROS Y ASISTENTES DISPONIBLES</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '12px' }}>
                 {staff.map((s, idx) => {
@@ -595,72 +742,119 @@ const ReceptionModule = ({ isMobile, rates }) => {
                   }
 
                   return (
-                    <button
+                    <div 
                       key={s.id}
-                      onClick={() => {
-                        if (formData.staffId === s.id) {
-                          setFormData({...formData, staffId: ''});
-                        } else {
-                          setFormData({...formData, staffId: s.id});
-                        }
-                      }}
-                      className="reception-animate-item"
                       style={{
-                        padding: '16px 8px',
-                        borderRadius: '20px',
-                        border: formData.staffId === s.id ? '2px solid var(--gold-primary)' : isBusy ? '1px solid rgba(255,69,58,0.3)' : '1px solid var(--border-color)',
-                        backgroundColor: formData.staffId === s.id ? 'rgba(255, 255, 255,0.1)' : isBusy ? 'rgba(255,69,58,0.05)' : 'rgba(255,255,255,0.02)',
-                        color: formData.staffId === s.id ? 'var(--gold-primary)' : 'white',
-                        cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
-                        alignItems: 'center',
                         gap: '6px',
-                        transition: 'all 0.3s',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        animationDelay: `${120 + idx * 50}ms`
+                        alignItems: 'stretch'
                       }}
                     >
-                      {isBusy && (
+                      <button
+                        onClick={() => {
+                          if (formData.staffId === s.id) {
+                            setFormData({...formData, staffId: ''});
+                          } else {
+                            setFormData({...formData, staffId: s.id});
+                          }
+                        }}
+                        className="reception-animate-item"
+                        style={{
+                          width: '100%',
+                          padding: '16px 8px',
+                          borderRadius: '20px',
+                          border: formData.staffId === s.id ? '2px solid var(--gold-primary)' : isBusy ? '1px solid rgba(255,69,58,0.3)' : '1px solid var(--border-color)',
+                          backgroundColor: formData.staffId === s.id ? 'rgba(255, 255, 255,0.1)' : isBusy ? 'rgba(255,69,58,0.05)' : 'rgba(255,255,255,0.02)',
+                          color: formData.staffId === s.id ? 'var(--gold-primary)' : 'white',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.3s',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          animationDelay: `${120 + idx * 50}ms`
+                        }}
+                      >
+                        {/* Queue Position Badge */}
                         <div style={{ 
                           position: 'absolute', 
                           top: 0, 
-                          right: 0, 
-                          backgroundColor: '#ff453a', 
-                          color: 'white', 
-                          fontSize: '8px', 
+                          left: 0, 
+                          backgroundColor: 'rgba(255,255,255,0.1)', 
+                          color: 'var(--gold-primary)', 
+                          fontSize: '9px', 
                           padding: '2px 6px', 
                           fontWeight: '900',
-                          borderBottomLeftRadius: '8px'
+                          borderBottomRightRadius: '8px'
                         }}>
-                          OCUPADO
+                          {idx + 1}º
                         </div>
-                      )}
-                      
-                      <div className={`staff-avatar-wrapper ${isBusy ? 'status-busy' : 'status-available'}`} style={{
-                        backgroundColor: isBusy ? 'rgba(255,69,58,0.1)' : 'rgba(255,255,255,0.05)', 
-                        color: isBusy ? '#ff453a' : 'inherit',
-                        overflow: 'hidden'
-                      }}>
-                        {s.image_url ? (
-                          <img src={s.image_url} alt={s.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <Users size={18} />
-                        )}
-                      </div>
-                      
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: '11px', fontWeight: '800' }}>{s.name.split(' ')[0]}</div>
-                        {isBusy ? (
-                          <div style={{ fontSize: '9px', color: '#ff453a', fontWeight: '700', marginTop: '2px' }}>
-                            {timeLeft > 0 ? `Libre: ${timeLeft}m` : 'Por terminar'}
+
+                        {isBusy && (
+                          <div style={{ 
+                            position: 'absolute', 
+                            top: 0, 
+                            right: 0, 
+                            backgroundColor: '#ff453a', 
+                            color: 'white', 
+                            fontSize: '8px', 
+                            padding: '2px 6px', 
+                            fontWeight: '900',
+                            borderBottomLeftRadius: '8px'
+                          }}>
+                            OCUPADO
                           </div>
-                        ) : (
-                          <div style={{ fontSize: '9px', color: '#32d74b', fontWeight: '700', marginTop: '2px' }}>Disponible</div>
                         )}
-                      </div>
-                    </button>
+                        
+                        <div className={`staff-avatar-wrapper ${isBusy ? 'status-busy' : 'status-available'}`} style={{
+                          backgroundColor: isBusy ? 'rgba(255,69,58,0.1)' : 'rgba(255,255,255,0.05)', 
+                          color: isBusy ? '#ff453a' : 'inherit',
+                          overflow: 'hidden'
+                        }}>
+                          {s.image_url ? (
+                            <img src={s.image_url} alt={s.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <Users size={18} />
+                          )}
+                        </div>
+                        
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '11px', fontWeight: '800' }}>{s.name.split(' ')[0]}</div>
+                          {isBusy ? (
+                            <div style={{ fontSize: '9px', color: '#ff453a', fontWeight: '700', marginTop: '2px' }}>
+                              {timeLeft > 0 ? `Libre: ${timeLeft}m` : 'Por terminar'}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: '9px', color: '#32d74b', fontWeight: '700', marginTop: '2px' }}>Disponible</div>
+                          )}
+                        </div>
+                      </button>
+
+                      {!isBusy && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleSkipTurn(s.id); }}
+                          style={{
+                            padding: '4px 6px',
+                            borderRadius: '8px',
+                            backgroundColor: 'rgba(255,255,255,0.04)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            color: 'var(--text-secondary)',
+                            fontSize: '9px',
+                            fontWeight: '800',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            textAlign: 'center'
+                          }}
+                          onMouseEnter={(ev) => ev.currentTarget.style.backgroundColor = 'rgba(255,159,10,0.1)'}
+                          onMouseLeave={(ev) => ev.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'}
+                        >
+                          Pasar Turno
+                        </button>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -1315,7 +1509,7 @@ const SelectionModal = ({ isOpen, onClose, title, icon, items, selectedItems, on
                       <div style={{ fontSize: '14px', fontWeight: '750', color: isSelected ? 'var(--gold-primary)' : 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: '10px' }}>
                         <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--gold-primary)' }}>{(item.price * exchangeRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
-                        <div style={{ fontSize: '11px', color: isSelected ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.55)', fontWeight: '700' }}>Ref: ${item.price}</div>
+                        <div style={{ fontSize: '11px', color: isSelected ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.55)', fontWeight: '700' }}>Ref: €{item.price}</div>
                       </div>
                     </div>
                     {item.included_items && item.included_items.length > 0 && (

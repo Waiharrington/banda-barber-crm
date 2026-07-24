@@ -39,7 +39,7 @@ import { useAuth } from '../context/AuthContext';
 import { ModalShield } from '../context/ModalContext';
 import AnimatedModal from './AnimatedModal';
 
-const SchedulingModule = ({ isMobile, rates }) => {
+const SchedulingModule = ({ isMobile, rates, openAddModal, onCloseAddModal }) => {
   const { user } = useAuth();
   const { showToast } = useNotifs();
   const [appointments, setAppointments] = useState([]);
@@ -52,6 +52,12 @@ const SchedulingModule = ({ isMobile, rates }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+
+  useEffect(() => {
+    if (openAddModal) {
+      setShowAddModal(true);
+    }
+  }, [openAddModal]);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [dialog, setDialog] = useState({ isOpen: false, appointmentId: null });
   const [editingApp, setEditingApp] = useState(null);
@@ -1437,7 +1443,7 @@ const SchedulingModule = ({ isMobile, rates }) => {
                       </div>
                     </div>
                     <button 
-                      onClick={() => setShowAddModal(false)} 
+                      onClick={() => { setShowAddModal(false); if (onCloseAddModal) onCloseAddModal(); }} 
                       style={{ background: 'rgba(255,255,255,0.04)', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,69,58,0.15)'; e.currentTarget.style.color = '#ff453a'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
@@ -1564,7 +1570,9 @@ const SchedulingModule = ({ isMobile, rates }) => {
                     <div>
                       <label style={{ display: 'block', marginBottom: '8px', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>EXTRAS</label>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                        {allExtras.map(ex => {
+                        {allExtras
+                          .filter(ex => ex.name && !ex.name.toUpperCase().includes('ROULETTE_PRIZE') && !ex.name.toUpperCase().includes('CORTE GRATIS'))
+                          .map(ex => {
                           const isSelected = newApp.extras.includes(ex.id);
                           return (
                             <button 

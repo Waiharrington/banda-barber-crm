@@ -66,28 +66,28 @@ export const useNotifications = () => {
   }, []);
 
   const triggerRocket = useCallback(() => {
-    // 1. Create Rocket
+    // 1. Create Floating Panda Launcher
     const container = document.createElement('div');
     container.className = 'rocket-container';
     container.innerHTML = `
-      <div class="rocket-body">
-        🚀
-        <div class="rocket-trail"></div>
+      <div class="rocket-body" style="font-size: 56px; filter: drop-shadow(0 0 20px rgba(197, 168, 128, 0.9));">
+        🐼
+        <div class="rocket-trail" style="background: linear-gradient(to bottom, var(--gold-primary), transparent); box-shadow: 0 0 20px var(--gold-primary);"></div>
       </div>
     `;
     document.body.appendChild(container);
 
-    // 2. Spawn Smoke/Fire Particles
+    // 2. Spawn Gold Sparkle Particles
     const spawnSmoke = () => {
-      for(let i=0; i<15; i++) {
+      for(let i=0; i<16; i++) {
         setTimeout(() => {
           const s = document.createElement('div');
           s.className = 'rocket-smoke';
-          s.style.left = (50 + (Math.random() * 10 - 5)) + '%';
-          s.style.backgroundColor = i % 2 === 0 ? 'var(--gold-primary)' : '#ff4500';
+          s.style.left = (50 + (Math.random() * 12 - 6)) + '%';
+          s.style.backgroundColor = i % 2 === 0 ? 'var(--gold-primary, #c5a880)' : '#ffd700';
           document.body.appendChild(s);
           setTimeout(() => s.remove(), 1500);
-        }, i * 50);
+        }, i * 45);
       }
     };
     

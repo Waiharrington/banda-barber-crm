@@ -75,6 +75,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
     phone: '', 
     id_card: '',
     birth_date: '',
+    origin: '',
     hair_type: 'Normal', 
     scalp_type: 'Normal' 
   });
@@ -108,7 +109,10 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
   };
 
   const handleAddClient = async () => {
-    if (!newClient.name) return;
+    if (!newClient.name || !newClient.origin) {
+      showToast('Completa el nombre y el origen del cliente.', 'error');
+      return;
+    }
     try {
       setCreating(true);
       await dataService.addClient(newClient);
@@ -117,6 +121,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
         phone: '', 
         id_card: '',
         birth_date: '',
+        origin: '',
         hair_type: 'Normal', 
         scalp_type: 'Normal' 
       });
@@ -280,6 +285,21 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>Cumpleaños</label>
                   <input type="date" className="form-input" value={newClient.birth_date} onChange={(e) => setNewClient({...newClient, birth_date: e.target.value})} style={{ width: '100%' }} />
                 </div>
+                <PandaSelect
+                  label="Origen del Cliente"
+                  value={newClient.origin}
+                  onChange={(val) => setNewClient({ ...newClient, origin: val })}
+                  placeholder="Seleccionar origen"
+                  options={[
+                    { label: 'Instagram', value: 'Instagram' },
+                    { label: 'Referido por otra persona', value: 'Referido' },
+                    { label: 'Google / Google Maps', value: 'Google' },
+                    { label: 'TikTok', value: 'TikTok' },
+                    { label: 'Facebook', value: 'Facebook' },
+                    { label: 'Pasó por el local', value: 'Presencial' },
+                    { label: 'Otro', value: 'Otro' }
+                  ]}
+                />
                 <PandaSelect 
                   label="Tipo de Cabello"
                   value={newClient.hair_type}

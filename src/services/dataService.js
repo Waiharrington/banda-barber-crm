@@ -73,17 +73,35 @@ export const dataService = {
 
     const { data, error } = await supabase
       .from('clients')
-      .select('*, appointments(status, total_price)')
+      .select('*, appointments(status, total_price, staff_id)')
       .order('name');
 
     if (error) throw error;
 
     const result = _asArray(data).map(client => {
       const validApps = _asArray(client.appointments).filter(a => ['Completado', 'En Silla', 'Por Pagar'].includes(a.status));
+      
+      // Calculate frequent barber
+      const barberCounts = {};
+      validApps.forEach(a => {
+        if (a.staff_id) {
+          barberCounts[a.staff_id] = (barberCounts[a.staff_id] || 0) + 1;
+        }
+      });
+      let frequentBarberId = null;
+      let maxCount = 0;
+      Object.entries(barberCounts).forEach(([id, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
+          frequentBarberId = id;
+        }
+      });
+
       return {
         ...client,
         total_visits: validApps.length,
-        total_spent: validApps.reduce((acc, a) => acc + (Number(a.total_price) || 0), 0)
+        total_spent: validApps.reduce((acc, a) => acc + (Number(a.total_price) || 0), 0),
+        frequent_barber_id: frequentBarberId
       };
     });
     _cacheSet('clients', result, 45000);
@@ -107,7 +125,8 @@ export const dataService = {
   async addClient(client) {
     _cacheInvalidate('clients');
     const allowedColumns = [
-      'name', 'phone', 'id_card', 'email', 'status', 'points', 'last_visit', 'work_gallery'
+      'name', 'phone', 'id_card', 'email', 'birth_date', 'hair_type', 'scalp_type',
+      'origin', 'status', 'points', 'last_visit', 'work_gallery'
     ];
     const filtered = {};
     allowedColumns.forEach(col => {
@@ -994,15 +1013,22 @@ export const dataService = {
   },
 
   async getTodayAppointments() {
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    return this.getAppointmentsInRange(start.toISOString(), end.toISOString());
+  },
+
+  async getAppointmentsInRange(startDate, endDate) {
     const { data, error } = await supabase.from('appointments').select(`
       *, 
       clients(id, name, phone), 
       services(name, price),
-      staff(name)
+      staff(id, name, image_url)
     `)
-      .gte('created_at', today)
-      .order('created_at', { ascending: true });
+      .gte('scheduled_at', startDate)
+      .lt('scheduled_at', endDate)
+      .order('scheduled_at', { ascending: true });
 
     if (error) throw error;
     return _asArray(data).map(_normalizeAppointment);
@@ -1468,7 +1494,7 @@ export const dataService = {
       updates.push({ id: queue[i].id, staff_id: queue[i].staff_id, position: currentPos, status: queue[i].status });
       currentPos++;
     }
-    updates.push({ id: skippedItem.id, staff_id: skippedItem.staff_id, position: maxPos, status: 'ABSENT' });
+    updates.push({ id: skippedItem.id, staff_id: skippedItem.staff_id, position: maxPos, status: 'AVAILABLE' });
 
     for (let i = 0; i < updates.length; i++) {
       await supabase.from('turn_queue').update({ position: -updates[i].position }).eq('id', updates[i].id);
