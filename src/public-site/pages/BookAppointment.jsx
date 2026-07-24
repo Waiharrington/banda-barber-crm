@@ -2094,6 +2094,75 @@ export default function BookAppointment() {
               </div>
             </div>
 
+            {/* SECTION: INSTAGRAM FEED & CTA */}
+            <div className="w-full text-center space-y-8 pt-8 reveal-item">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">SÍGUENOS EN REDES</span>
+                <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-3">INSTAGRAM FEED</h2>
+                <a 
+                  href="https://www.instagram.com/pandabarberestudio/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-white/60 hover:text-[#CBB79A] text-sm font-bold transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                  </svg>
+                  @pandabarberestudio
+                </a>
+              </div>
+
+              {/* Grid of 5 Posts */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                {[
+                  { img: heroSlide1, likes: '184', comments: '12' },
+                  { img: heroSlide2, likes: '243', comments: '18' },
+                  { img: heroSlide3, likes: '196', comments: '14' },
+                  { img: tatuajesCover, likes: '312', comments: '27' },
+                  { img: heroSlide4, likes: '289', comments: '21' }
+                ].map((post, idx) => (
+                  <a
+                    key={idx}
+                    href="https://www.instagram.com/pandabarberestudio/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative aspect-square rounded-2xl overflow-hidden border border-white/5 bg-[#1c1c24] cursor-pointer"
+                  >
+                    <img 
+                      src={post.img} 
+                      alt="Instagram Post" 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                    />
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 text-white text-sm font-bold z-10">
+                      <span className="flex items-center gap-1.5">❤️ {post.likes}</span>
+                      <span className="flex items-center gap-1.5">💬 {post.comments}</span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+
+              {/* Follow Button */}
+              <div className="pt-2">
+                <a
+                  href="https://www.instagram.com/pandabarberestudio/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-gold py-3.5 px-8 rounded-xl text-[11px] uppercase tracking-wider font-extrabold flex items-center gap-2 inline-flex cursor-pointer"
+                  style={{ borderRadius: '10px' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                  </svg>
+                  SEGUIR EN INSTAGRAM
+                </a>
+              </div>
+            </div>
+
 
               {/* SECTION: FOOTER (PANDA BARBER STUDIO) */}
               <footer className="w-full pt-16 border-t border-white/[0.05] text-left">
