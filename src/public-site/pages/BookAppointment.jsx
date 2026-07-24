@@ -1225,7 +1225,7 @@ export default function BookAppointment() {
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-[#CBB79A] leading-[1.05] mb-4 font-sans">STUDIO</h1>
             </div>
 
-            <p className="text-white text-lg sm:text-xl lg:text-[22px] font-extrabold leading-snug font-sans tracking-wide reveal-item delay-300">
+            <p className="text-white text-base sm:text-xl lg:text-[22px] font-extrabold leading-snug font-sans tracking-wide reveal-item delay-300">
               Tu estilo comienza con el profesional correcto.
             </p>
             <p className="text-white/85 text-base sm:text-lg lg:text-[17px] leading-relaxed font-normal font-sans max-w-[580px] reveal-item delay-400">
