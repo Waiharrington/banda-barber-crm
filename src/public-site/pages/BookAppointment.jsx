@@ -1605,8 +1605,9 @@ export default function BookAppointment() {
                       <div 
                         className="flex transition-transform duration-500 ease-in-out"
                         style={{ transform: `translateX(-${barberStartIndex * 20}%)` }}
+                        key={artistFilter}
                       >
-                        {displayedBarbers.map((barber) => {
+                        {displayedBarbers.map((barber, idx) => {
                       const isAngel = barber.name === 'Ángel Serrano';
                       const isMarko = barber.name === 'Marko Cardozo';
                       const isAbraham = barber.name === 'Abraham Díaz';
@@ -1636,7 +1637,11 @@ export default function BookAppointment() {
                                        'Corte • Barba';
                       
                       return (
-                        <div key={barber.id} className="w-1/5 shrink-0 px-3">
+                        <div 
+                          key={barber.id} 
+                          className="w-1/5 shrink-0 px-3 animate-[premiumFadeUp_0.6s_cubic-bezier(0.16,1,0.3,1)_both]"
+                          style={{ animationDelay: `${idx * 60}ms` }}
+                        >
                           <div className="bg-[#111115]/50 border border-white/5 rounded-2xl p-5 flex flex-col items-center text-center relative group hover:border-[rgba(203,183,154,0.3)] transition-all duration-300">
                             <div className="w-full aspect-[4/5] rounded-xl overflow-hidden mb-4 relative bg-[#1c1c24] border border-white/5">
                               <BarberAvatar url={barber.image_url} name={barber.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" iconSize={40} />
