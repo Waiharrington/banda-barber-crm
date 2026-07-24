@@ -1616,28 +1616,37 @@ export default function BookAppointment() {
                 NUESTRO <span className="text-[#CBB79A]">EQUIPO</span>
               </h2>
               
-              {/* Category Filter Tabs (Apple Style Typography) */}
-              <div className="flex items-center justify-center gap-6 mb-8 text-[10px] font-black uppercase tracking-[0.2em]">
+              {/* Category Filter Pills (Apple Style Capsule Buttons) */}
+              <div className="flex items-center justify-center gap-3 mb-10">
                 <button 
                   onClick={() => { setArtistFilter('todos'); setBarberStartIndex(0); }}
-                  className={`pb-1.5 transition-all relative cursor-pointer ${artistFilter === 'todos' ? 'text-[#CBB79A]' : 'text-white/40 hover:text-white/80'}`}
+                  className={`px-6 py-2.5 rounded-full text-xs lg:text-sm uppercase tracking-widest font-black transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
+                    artistFilter === 'todos' 
+                      ? 'bg-[#CBB79A] text-black shadow-lg shadow-[#CBB79A]/20' 
+                      : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#CBB79A]/50'
+                  }`}
                 >
-                  <span>Todos</span>
-                  {artistFilter === 'todos' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#CBB79A] rounded-full animate-fade-in" />}
+                  Todos
                 </button>
                 <button 
                   onClick={() => { setArtistFilter('barberos'); setBarberStartIndex(0); }}
-                  className={`pb-1.5 transition-all relative cursor-pointer ${artistFilter === 'barberos' ? 'text-[#CBB79A]' : 'text-white/40 hover:text-white/80'}`}
+                  className={`px-6 py-2.5 rounded-full text-xs lg:text-sm uppercase tracking-widest font-black transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
+                    artistFilter === 'barberos' 
+                      ? 'bg-[#CBB79A] text-black shadow-lg shadow-[#CBB79A]/20' 
+                      : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#CBB79A]/50'
+                  }`}
                 >
-                  <span>Barberos</span>
-                  {artistFilter === 'barberos' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#CBB79A] rounded-full animate-fade-in" />}
+                  Barberos
                 </button>
                 <button 
                   onClick={() => { setArtistFilter('tatuadores'); setBarberStartIndex(0); }}
-                  className={`pb-1.5 transition-all relative cursor-pointer ${artistFilter === 'tatuadores' ? 'text-[#CBB79A]' : 'text-white/40 hover:text-white/80'}`}
+                  className={`px-6 py-2.5 rounded-full text-xs lg:text-sm uppercase tracking-widest font-black transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
+                    artistFilter === 'tatuadores' 
+                      ? 'bg-[#CBB79A] text-black shadow-lg shadow-[#CBB79A]/20' 
+                      : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#CBB79A]/50'
+                  }`}
                 >
-                  <span>Tatuadores</span>
-                  {artistFilter === 'tatuadores' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#CBB79A] rounded-full animate-fade-in" />}
+                  Tatuadores
                 </button>
               </div>
 
