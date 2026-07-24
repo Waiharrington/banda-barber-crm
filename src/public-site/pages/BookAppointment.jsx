@@ -1485,14 +1485,16 @@ export default function BookAppointment() {
           </div>
 
           {/* Vertical Flow Sections Container */}
-          <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-8 py-16 space-y-24 relative z-10">
+          <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-8 py-16 space-y-20 relative z-10">
             
             {/* SECTION: ELIGE TU SERVICIO */}
             <div className="w-full text-center" id="servicios">
-              <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2 reveal-item">NUESTRAS EXPERIENCIAS</span>
-              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight mb-12 uppercase font-sans reveal-item delay-100">ELIGE TU SERVICIO</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">EXPERIENCIA EXCLUSIVA</span>
+              <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-12">
+                ELIGE TU SERVICIO
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto">
                 {/* Card 1: Barbería */}
                 <div 
                   className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-100"
@@ -1603,79 +1605,67 @@ export default function BookAppointment() {
               </div>
             </div>
 
-            {/* SECTION: NUESTROS ARTISTAS */}
-            <div className="w-full text-left relative" id="equipo">
-              <div className="w-full flex flex-col items-center mb-8 reveal-item">
-                <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CONOCE AL EQUIPO</span>
-                <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-6">NUESTROS ARTISTAS</h2>
-                
-                {/* Apple-style Filter Selector */}
-                <div className="inline-flex p-1 bg-white/[0.03] border border-white/[0.08] rounded-full backdrop-blur-md">
-                  {[
-                    { id: 'todos', label: 'Todos' },
-                    { id: 'barberos', label: 'Barberos' },
-                    { id: 'tatuadores', label: 'Tatuadores' }
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => {
-                        setArtistFilter(tab.id);
-                        setBarberStartIndex(0);
-                      }}
-                      className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
-                        artistFilter === tab.id
-                          ? 'bg-[#CBB79A] text-black shadow-lg shadow-[#CBB79A]/20 scale-105'
-                          : 'text-white/60 hover:text-white hover:bg-white/[0.02]'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
+            {/* SECTION: NUESTROS ARTISTAS / EL EQUIPO */}
+            <div className="w-full text-center reveal-item" id="equipo">
+              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">EL EQUIPO</span>
+              <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">
+                NUESTROS ARTISTAS
+              </h2>
+              
+              {/* Category Filter Pills */}
+              <div className="flex items-center justify-center gap-2 mb-8">
+                <button 
+                  onClick={() => { setArtistFilter('todos'); setBarberStartIndex(0); }}
+                  className={`px-5 py-2 rounded-xl text-[10px] uppercase tracking-wider font-extrabold transition-all duration-300 ${artistFilter === 'todos' ? 'bg-[#CBB79A] text-black' : 'bg-white/5 text-white/60 border border-white/5 hover:bg-white/10'}`}
+                >
+                  Todos
+                </button>
+                <button 
+                  onClick={() => { setArtistFilter('barberos'); setBarberStartIndex(0); }}
+                  className={`px-5 py-2 rounded-xl text-[10px] uppercase tracking-wider font-extrabold transition-all duration-300 ${artistFilter === 'barberos' ? 'bg-[#CBB79A] text-black' : 'bg-white/5 text-white/60 border border-white/5 hover:bg-white/10'}`}
+                >
+                  Barberos
+                </button>
+                <button 
+                  onClick={() => { setArtistFilter('tatuadores'); setBarberStartIndex(0); }}
+                  className={`px-5 py-2 rounded-xl text-[10px] uppercase tracking-wider font-extrabold transition-all duration-300 ${artistFilter === 'tatuadores' ? 'bg-[#CBB79A] text-black' : 'bg-white/5 text-white/60 border border-white/5 hover:bg-white/10'}`}
+                >
+                  Tatuadores
+                </button>
               </div>
 
-              {(() => {
-                const displayedBarbers = barbers.filter(barber => {
-                  if (artistFilter === 'todos') return true;
-                  const r = (barber.role?.split('|')[0] || '').toLowerCase().trim();
-                  if (artistFilter === 'barberos') {
-                    return r.includes('barber') || r.includes('corte') || r.includes('barba');
-                  }
-                  if (artistFilter === 'tatuadores') {
-                    return r.includes('tatu') || r.includes('ink') || r.includes('artista');
-                  }
-                  return true;
-                });
+              {/* Slider Component */}
+              <div className="relative w-full px-12 group/slider">
+                {/* Nav buttons */}
+                <button 
+                  onClick={() => setBarberStartIndex(prev => Math.max(0, prev - 1))}
+                  disabled={barberStartIndex === 0}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/80 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-[#CBB79A]/50 transition-all disabled:opacity-0 disabled:pointer-events-none z-10 cursor-pointer shadow-lg"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                
+                <button 
+                  onClick={() => setBarberStartIndex(prev => Math.min(Math.max(0, barbers.length - 5), prev + 1))}
+                  disabled={barberStartIndex >= barbers.length - 5}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/80 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-[#CBB79A]/50 transition-all disabled:opacity-0 disabled:pointer-events-none z-10 cursor-pointer shadow-lg"
+                >
+                  <ChevronRight size={20} />
+                </button>
 
-                return (
-                  <div className="relative px-6 reveal-item delay-200">
-                    {/* Left navigation arrow */}
-                    <button 
-                      onClick={() => setBarberStartIndex(prev => Math.max(0, prev - 1))}
-                      className="absolute left-[-20px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-[#CBB79A]/40 bg-black/40 text-[#CBB79A] flex items-center justify-center hover:bg-[#CBB79A] hover:text-black transition-all cursor-pointer z-30"
-                      style={{ opacity: barberStartIndex === 0 ? 0.35 : 1, pointerEvents: barberStartIndex === 0 ? 'none' : 'auto' }}
-                      aria-label="Previous"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-
-                    {/* Right navigation arrow */}
-                    <button 
-                      onClick={() => setBarberStartIndex(prev => Math.min(Math.max(0, displayedBarbers.length - 5), prev + 1))}
-                      className="absolute right-[-20px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#CBB79A] text-black flex items-center justify-center hover:bg-[#CBB79A]/80 transition-all cursor-pointer z-30"
-                      style={{ opacity: barberStartIndex + 5 >= displayedBarbers.length ? 0.35 : 1, pointerEvents: barberStartIndex + 5 >= displayedBarbers.length ? 'none' : 'auto' }}
-                      aria-label="Next"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-
-                    <div className="overflow-hidden w-full">
-                      <div 
-                        className="flex transition-transform duration-500 ease-in-out"
-                        style={{ transform: `translateX(-${barberStartIndex * 20}%)` }}
-                        key={artistFilter}
-                      >
-                        {displayedBarbers.map((barber, idx) => {
+                <div className="overflow-hidden w-full">
+                  <div 
+                    className="flex transition-transform duration-500 ease-in-out"
+                    style={{ transform: `translateX(-${barberStartIndex * 20}%)` }}
+                    key={artistFilter}
+                  >
+                    {barbers.filter(barber => {
+                      if (artistFilter === 'todos') return true;
+                      const r = (barber.role?.split('|')[0] || '').toLowerCase().trim();
+                      if (artistFilter === 'barberos') return r.includes('barber') || r.includes('corte') || r.includes('barba');
+                      if (artistFilter === 'tatuadores') return r.includes('tatu') || r.includes('ink') || r.includes('artista');
+                      return true;
+                    }).map((barber, idx) => {
                       const isAngel = barber.name === 'Ángel Serrano';
                       const isMarko = barber.name === 'Marko Cardozo';
                       const isAbraham = barber.name === 'Abraham Díaz';
@@ -1686,159 +1676,114 @@ export default function BookAppointment() {
                       const availabilityColor = (isAngel || isMarko) ? 'text-white/40' : 'text-emerald-400';
                       const dotColor = (isAngel || isMarko) ? 'bg-white/30' : 'bg-emerald-400';
                       
-                      const displayName = isAbraham ? 'Abraham Diaz' :
-                                        isAlejandro ? 'Alejandro Ramirez' :
-                                        barber.name;
-
-                      const specialtyText = isAbraham ? 'MASTER BARBER' :
-                                            isAlejandro ? 'BARBERO' :
-                                            isAngel ? 'BARBERO' :
-                                            isJose ? 'BARBERO' :
-                                            isMarko ? 'TATUADOR' :
-                                            'BARBERO';
-
-                      const tagsText = isAbraham ? 'Fade • Barba • Clásicos' :
-                                       isAlejandro ? 'Corte • Barba • Diseños' :
-                                       isAngel ? 'Fade • Corte • Barba' :
-                                       isJose ? 'Corte • Barba • Clásicos' :
-                                       isMarko ? 'Realismo • Black & Grey' :
-                                       'Corte • Barba';
+                      const displayName = isAbraham ? 'Abraham Diaz' : isAlejandro ? 'Alejandro Ramirez' : barber.name;
+                      const specialtyText = isAbraham ? 'MASTER BARBER' : isAlejandro ? 'BARBERO' : isAngel ? 'BARBERO' : isJose ? 'BARBERO' : isMarko ? 'TATUADOR' : 'BARBERO';
+                      const tagsText = isAbraham ? 'Fade • Barba • Clásicos' : isAlejandro ? 'Corte • Barba • Diseños' : isAngel ? 'Fade • Corte • Barba' : isJose ? 'Corte • Barba • Clásicos' : isMarko ? 'Realismo • Black & Grey' : 'Corte • Barba';
                       
                       return (
-                        <div 
-                          key={barber.id} 
-                          className="w-1/5 shrink-0 px-3 animate-[premiumFadeUp_0.6s_cubic-bezier(0.16,1,0.3,1)_both]"
-                          style={{ animationDelay: `${idx * 60}ms` }}
-                        >
+                        <div key={barber.id} className="w-1/5 shrink-0 px-3 animate-[premiumFadeUp_0.6s_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: `${idx * 60}ms` }}>
                           <div className="bg-[#111115]/50 border border-white/5 rounded-2xl p-5 flex flex-col items-center text-center relative group hover:border-[rgba(203,183,154,0.3)] transition-all duration-300">
                             <div className="w-full aspect-[4/5] rounded-xl overflow-hidden mb-4 relative bg-[#1c1c24] border border-white/5">
                               <BarberAvatar url={barber.image_url} name={barber.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" iconSize={40} />
                             </div>
                             <h4 className="text-base font-extrabold text-white mb-0.5 tracking-wide">{displayName}</h4>
                             <span className="text-[10px] font-bold text-[#CBB79A] tracking-wider uppercase mb-3">{specialtyText}</span>
-                            
-                            {/* Specialties detail */}
-                            <p className="text-[11px] text-white/50 mb-4 truncate w-full">
-                              {tagsText}
-                            </p>
-
-                            {/* Availability status */}
+                            <p className="text-[11px] text-white/50 mb-4 truncate w-full">{tagsText}</p>
                             <div className={`flex items-center gap-1.5 mb-5 text-[11px] ${availabilityColor} font-medium`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${!(isAngel || isMarko) ? 'animate-pulse' : ''}`}></span>
                               <span>{availabilityText}</span>
                             </div>
-                            
                             <button 
                               onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
-                              className="btn-outline w-full py-2.5 rounded-xl text-[11px] uppercase tracking-wider font-extrabold transition-all cursor-pointer"
+                              className="w-full py-2.5 rounded-xl border border-white/10 hover:border-[#CBB79A] hover:bg-[#CBB79A] hover:text-black text-white text-[10px] uppercase tracking-wider font-extrabold transition-all duration-300 cursor-pointer"
                             >
-                              VER PERFIL
+                              Reservar
                             </button>
                           </div>
                         </div>
                       );
                     })}
-                    </div>
                   </div>
                 </div>
-              );
-            })()}
-
-              {/* Centered CTA below carousel */}
-              <div className="flex justify-center mt-10 reveal-item delay-300">
-                <button 
-                  onClick={() => handleStartBooking()} 
-                  className="btn-outline py-3 px-8 rounded-full text-[11px] uppercase tracking-widest font-extrabold flex items-center gap-2 transition-all cursor-pointer"
-                >
-                  VER TODO EL EQUIPO <span className="text-[14px]">→</span>
-                </button>
               </div>
             </div>
 
             {/* SECTION: PANDA KIDS CLUB */}
-            <div id="pandakids" className="w-full reveal-item">
-              <div className="relative rounded-3xl overflow-hidden border border-[#CBB79A]/20 bg-gradient-to-br from-[#14120d] via-[#111115] to-[#0d0d10]">
-                {/* Aurora background glow using smooth CSS radial gradients */}
-                <div className="absolute inset-0 pointer-events-none z-0" style={{
-                  backgroundImage: 'radial-gradient(circle at 30% 20%, rgba(203,183,154,0.06) 0%, transparent 60%), radial-gradient(circle at 80% 80%, rgba(203,183,154,0.08) 0%, transparent 50%)'
-                }} />
+            <div id="pandakids" className="w-full reveal-item scroll-mt-24">
+              <div className="w-full bg-[#111115]/30 border border-white/[0.04] rounded-3xl p-6 lg:p-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center relative overflow-hidden group hover:border-[rgba(203,183,154,0.12)] transition-all duration-500">
+                {/* Left side: Premium Image Banner */}
+                <div className="w-full lg:w-[45%] aspect-[4/3] rounded-2xl overflow-hidden relative border border-white/5 bg-[#1c1c24] flex-shrink-0">
+                  <img 
+                    src={pandaKidsCover} 
+                    alt="Panda Kids Club" 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-1" />
+                  
+                  {/* Floating badge inside image */}
+                  <div className="absolute top-4 left-4 z-10 bg-black/70 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-1.5">
+                    <Heart size={12} className="text-[#CBB79A]" fill="#CBB79A" />
+                    <span className="text-[9px] font-extrabold text-white tracking-widest uppercase">ZONA EXCLUSIVA</span>
+                  </div>
+                </div>
 
-                <div className="relative z-10 flex flex-col lg:flex-row items-stretch">
-                  {/* Left: Kids photo */}
-                  <div className="w-full lg:w-[38%] min-h-[280px] lg:min-h-[380px] relative overflow-hidden">
-                    <img 
-                      src={pandaKidsCover} 
-                      alt="Panda Kids Club" 
-                      className="absolute inset-0 w-full h-full object-cover" 
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-black/40" />
-                    {/* Bottom gradient to blend */}
-                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#14120d] to-transparent lg:hidden" />
-                    <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#14120d] to-transparent hidden lg:block" />
+                {/* Right side: Premium Copywriting */}
+                <div className="flex-1 text-left space-y-6">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CLUB INFANTIL</span>
+                    <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">
+                      CORTES QUE HACEN<br />
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-[#CBB79A]">FELICES A LOS MÁS PEQUEÑOS</span>
+                    </h2>
+                    <p className="text-white/60 text-sm leading-relaxed">
+                      En Panda Barber los niños son parte de nuestra familia. Nuestros barberos saben exactamente cómo crear una experiencia divertida, cómoda y especial para ellos.
+                    </p>
                   </div>
 
-                  {/* Right: Info */}
-                  <div className="flex-1 p-6 lg:p-10 flex flex-col justify-center gap-5">
-                    {/* Header */}
-                    <div>
-                      <span className="inline-flex items-center gap-2 bg-[#CBB79A]/10 border border-[#CBB79A]/25 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#CBB79A] mb-4">
-                        <Heart size={10} fill="currentColor" /> PANDA KIDS CLUB
-                      </span>
-                      <h2 className="text-2xl lg:text-3xl font-extrabold text-white uppercase tracking-tight font-sans leading-tight mb-2">
-                        Cortes que hacen<br />
-                        <span className="text-[#CBB79A]">felices a los más pequeños</span>
-                      </h2>
-                      <p className="text-white/50 text-sm leading-relaxed max-w-md">
-                        En Panda Barber los niños son parte de nuestra familia. Nuestros barberos saben exactamente cómo crear una experiencia divertida, cómoda y especial para ellos.
-                      </p>
-                    </div>
-
-                    {/* Feature Badges */}
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { icon: <Scissors size={16} />, title: 'Silla especial kids', desc: 'Asiento adaptado para que estén cómodos' },
-                        { icon: <Sparkles size={16} />, title: 'Productos suaves', desc: 'Formulados para cuero cabelludo infantil' },
-                        { icon: <Gamepad2 size={16} />, title: 'Ambiente divertido', desc: 'Una experiencia que les va a encantar' },
-                        { icon: <Heart size={16} />, title: 'Barberos pacientes', desc: 'Con experiencia en atención a niños' },
-                      ].map((feat, i) => (
-                        <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.07] hover:border-[#CBB79A]/25 transition-all duration-300">
-                          <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/20 flex items-center justify-center flex-shrink-0 text-[#CBB79A]">
-                            {feat.icon}
-                          </div>
-                          <div>
-                            <p className="text-white text-[11px] font-bold leading-tight mb-0.5">{feat.title}</p>
-                            <p className="text-white/40 text-[10px] leading-tight">{feat.desc}</p>
-                          </div>
+                  {/* Feature Tags */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { icon: <Scissors size={16} />, title: 'Silla especial kids', desc: 'Asiento adaptado para que estén cómodos' },
+                      { icon: <Sparkles size={16} />, title: 'Productos suaves', desc: 'Formulados para cuero cabelludo infantil' },
+                      { icon: <Gamepad2 size={16} />, title: 'Ambiente divertido', desc: 'Una experiencia que les va a encantar' },
+                      { icon: <Heart size={16} />, title: 'Barberos pacientes', desc: 'Con experiencia en atención a niños' },
+                    ].map((feat, i) => (
+                      <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                        <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 flex items-center justify-center flex-shrink-0 text-[#CBB79A]">
+                          {feat.icon}
                         </div>
-                      ))}
-                    </div>
+                        <div>
+                          <p className="text-white text-[11px] font-bold leading-tight mb-0.5">{feat.title}</p>
+                          <p className="text-white/40 text-[10px] leading-tight">{feat.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
 
-                    {/* Testimonial */}
-                    <div className="bg-white/[0.03] border border-[#CBB79A]/15 rounded-2xl p-4 relative">
-                      <div className="text-[#CBB79A] text-3xl font-serif leading-none mb-1 opacity-40">"</div>
-                      <p className="text-white/70 text-sm italic leading-relaxed">
-                        Me gustó mucho el corte, el señor fue muy amable y me trató súper bien. ¡Quiero volver pronto!
-                      </p>
-                      <p className="text-[#CBB79A] text-[10px] font-bold uppercase tracking-wider mt-2">— Cliente Panda Kids ⭐⭐⭐⭐⭐</p>
-                    </div>
+                  {/* Testimonial */}
+                  <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-4 relative">
+                    <p className="text-white/60 text-xs italic leading-relaxed">
+                      "Me gustó mucho el corte, el señor fue muy amable y me trató súper bien. ¡Quiero volver pronto!"
+                    </p>
+                    <p className="text-[#CBB79A] text-[9px] font-bold uppercase tracking-wider mt-2">— Cliente Panda Kids ⭐⭐⭐⭐⭐</p>
+                  </div>
 
-                    {/* CTA */}
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <button
-                        onClick={() => handleStartBooking()}
-                        className="btn-gold py-3 px-7 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 whitespace-nowrap"
-                        style={{ borderRadius: '10px' }}
-                      >
-                        <Heart size={13} fill="black" /> RESERVAR PARA MI HIJO
-                      </button>
-                      <button
-                        onClick={() => document.getElementById('equipo')?.scrollIntoView({ behavior: 'smooth' })}
-                        className="btn-outline py-3 px-7 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2"
-                        style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
-                      >
-                        VER EL EQUIPO
-                      </button>
-                    </div>
+                  {/* CTA */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={() => handleStartBooking()}
+                      className="btn-gold py-3 px-7 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 whitespace-nowrap"
+                      style={{ borderRadius: '10px' }}
+                    >
+                      <Heart size={13} fill="black" /> RESERVAR PARA MI HIJO
+                    </button>
+                    <button
+                      onClick={() => document.getElementById('equipo')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="btn-outline py-3 px-7 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2"
+                      style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
+                    >
+                      VER EL EQUIPO
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1846,46 +1791,70 @@ export default function BookAppointment() {
 
             {/* SECTION: BARBERO DESTACADO DEL MES */}
             {topBarber && (
-              <div className="w-full bg-[#111115]/50 border border-white/5 rounded-3xl relative overflow-hidden text-left">
+              <div className="w-full text-left py-4">
                 {/* Main Content Area */}
-                <div className="flex flex-col md:flex-row items-stretch">
+                <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
                   {/* Left Column: Portrait */}
-                  <div className="w-full md:w-[30%] min-h-[340px] relative bg-[#1c1c24]">
+                  <div className="w-full lg:w-[35%] aspect-[4/5] relative rounded-2xl overflow-hidden border border-white/[0.06] bg-[#1c1c24] flex-shrink-0">
                     <BarberAvatar url={topBarber.image_url} name={topBarber.name} className="absolute inset-0 w-full h-full object-cover" iconSize={60} />
                     {/* Subtle gradient overlay at bottom */}
-                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#111115]/80 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black via-black/40 to-transparent z-1" />
                   </div>
 
                   {/* Center Column: Info */}
-                  <div className="flex-1 p-6 lg:p-8 flex flex-col justify-center">
-                    {/* Subtitle */}
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#CBB79A] flex items-center gap-1.5 mb-3">
-                      👑 BARBERO DESTACADO DEL MES
-                    </span>
-                    
-                    {/* Name */}
-                    <h3 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-3">
-                      {topBarber.name}
-                    </h3>
+                  <div className="flex-1 space-y-6">
+                    <div>
+                      {/* Subtitle */}
+                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#CBB79A] flex items-center gap-1.5 mb-3">
+                        👑 BARBERO DESTACADO DEL MES
+                      </span>
+                      
+                      {/* Name */}
+                      <h3 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-3">
+                        {topBarber.name}
+                      </h3>
 
-                    {/* Badges */}
-                    <div className="flex items-center gap-2 mb-5">
-                      <span className="px-2.5 py-1 rounded text-[9px] font-extrabold tracking-wider bg-white/5 border border-white/10 text-white/70 uppercase">
-                        MASTER BARBER
-                      </span>
-                      <span className="text-white/20">•</span>
-                      <span className="px-2.5 py-1 rounded text-[9px] font-extrabold tracking-wider bg-[#CBB79A]/10 border border-[#CBB79A]/20 text-[#CBB79A] uppercase">
-                        TOP DEL MES
-                      </span>
+                      {/* Badges */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-extrabold tracking-widest text-white/50 uppercase">
+                          MASTER BARBER
+                        </span>
+                        <span className="text-white/20">•</span>
+                        <span className="text-[9px] font-extrabold tracking-widest text-[#CBB79A] uppercase">
+                          TOP DEL MES
+                        </span>
+                      </div>
                     </div>
 
                     {/* Biography Quote */}
-                    <p className="text-white/70 text-sm italic font-medium leading-relaxed border-l-2 border-[#CBB79A]/30 pl-4 mb-6 max-w-[90%]">
+                    <p className="text-white/60 text-sm leading-relaxed italic border-l-2 border-[#CBB79A]/30 pl-4">
                       "{topBarber.biography || 'Especializado en cortes clásicos y modernos con un estilo y precisión impecables.'}"
                     </p>
 
+                    {/* Bottom Stats Grid */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 flex items-center justify-center">
+                          <Check size={14} className="text-[#CBB79A]" />
+                        </div>
+                        <div className="flex flex-col text-left">
+                          <span className="text-xs font-bold text-white leading-tight">+8 años</span>
+                          <span className="text-[10px] text-white/40">de experiencia</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 flex items-center justify-center">
+                          <Star size={14} className="text-[#CBB79A]" />
+                        </div>
+                        <div className="flex flex-col text-left">
+                          <span className="text-xs font-bold text-white leading-tight">500+</span>
+                          <span className="text-[10px] text-white/40">clientes felices</span>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Action buttons */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                       <button
                         onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
                         className="btn-gold py-3 px-8 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 whitespace-nowrap"
@@ -1905,73 +1874,31 @@ export default function BookAppointment() {
 
                   {/* Right Column: Portfolio Grid (desktop only) */}
                   {isDesktop && (
-                    <div className="w-[30%] p-4 flex items-center">
-                      <div className="grid grid-cols-2 gap-1.5 w-full">
+                    <div className="w-[30%] flex items-center justify-end pl-4">
+                      <div className="grid grid-cols-2 gap-2 w-full max-w-[280px]">
                         {topBarberPortfolio.slice(0, 4).map((img, idx) => (
-                          <div key={img.id || idx} className="aspect-square bg-white/5 border border-white/10 rounded-lg overflow-hidden">
+                          <div key={img.id || idx} className="aspect-square bg-white/5 border border-white/10 rounded-xl overflow-hidden">
                             <img src={img.image_url} alt="Work" className="w-full h-full object-cover hover:scale-110 transition-transform duration-300" />
                           </div>
                         ))}
                         {/* Placeholder grids if no portfolio loaded */}
                         {topBarberPortfolio.length < 4 && Array.from({ length: 4 - topBarberPortfolio.length }).map((_, idx) => (
-                          <div key={`ph-${idx}`} className="aspect-square bg-white/[0.03] border border-white/[0.06] rounded-lg overflow-hidden flex items-center justify-center">
-                            <Scissors size={12} className="text-white/10" />
+                          <div key={`ph-${idx}`} className="aspect-square bg-white/[0.02] border border-white/[0.04] rounded-xl overflow-hidden flex items-center justify-center">
+                            <Scissors size={14} className="text-white/10" />
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
                 </div>
-
-                {/* Bottom Stats Bar */}
-                <div className="border-t border-white/[0.06] bg-white/[0.02] px-6 lg:px-10 py-4">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/20 flex items-center justify-center">
-                        <Check size={14} className="text-[#CBB79A]" />
-                      </div>
-                      <div className="flex flex-col text-left">
-                        <span className="text-xs font-bold text-white leading-tight">+8 años</span>
-                        <span className="text-[10px] text-white/40">de experiencia</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/20 flex items-center justify-center">
-                        <Star size={14} className="text-[#CBB79A]" />
-                      </div>
-                      <div className="flex flex-col text-left">
-                        <span className="text-xs font-bold text-white leading-tight">500+</span>
-                        <span className="text-[10px] text-white/40">clientes felices</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/20 flex items-center justify-center">
-                        <Scissors size={14} className="text-[#CBB79A]" />
-                      </div>
-                      <div className="flex flex-col text-left">
-                        <span className="text-xs font-bold text-white leading-tight">Especialista</span>
-                        <span className="text-[10px] text-white/40">en fades</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/20 flex items-center justify-center">
-                        <Info size={14} className="text-[#CBB79A]" />
-                      </div>
-                      <div className="flex flex-col text-left">
-                        <span className="text-xs font-bold text-white leading-tight">Asesoría</span>
-                        <span className="text-[10px] text-white/40">de imagen</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
 
             {/* SECTION: EXPERIENCIA PANDA SECTION (INTEGRADA EN PAGINA) */}
-            <div id="experiencia-section" className="w-full reveal-item scroll-mt-24">
-              <div className="relative rounded-3xl overflow-hidden border border-white/[0.08] bg-[#0d0d11]/50 p-6 md:p-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
+            <div id="experiencia-section" className="w-full reveal-item scroll-mt-24 py-4">
+              <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
                 {/* Left: Video */}
-                <div className="w-full lg:w-[45%] aspect-video rounded-2xl overflow-hidden relative border border-white/[0.05] bg-black flex-shrink-0">
+                <div className="w-full lg:w-[45%] aspect-video rounded-2xl overflow-hidden relative border border-white/[0.06] bg-black flex-shrink-0">
                   <video
                     autoPlay
                     loop
@@ -1987,7 +1914,7 @@ export default function BookAppointment() {
                 {/* Right: Info */}
                 <div className="flex-1 text-left space-y-6">
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CULTURA, ESTILO Y HOSPITALIDAD</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CULTURA, ESTILO Y HOSPITALIDAD</span>
                     <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">EXPERIENCIA PANDA</h2>
                     <p className="text-white/60 text-sm leading-relaxed">
                       En <strong className="text-[#CBB79A] font-semibold">Panda Barber Studio</strong> redefinimos la experiencia clásica de barbería. Fusionamos el arte del corte urbano y la tinta en un club social exclusivo diseñado para tu comodidad y relax.
@@ -1995,23 +1922,23 @@ export default function BookAppointment() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex gap-3 items-start">
-                      <div className="p-2.5 rounded-xl bg-[#CBB79A]/10 text-[#CBB79A] mt-0.5 border border-[#CBB79A]/20">
+                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex gap-3 items-start">
+                      <div className="p-2.5 rounded-xl bg-[#CBB79A]/10 text-[#CBB79A] mt-0.5">
                         <Coffee size={16} />
                       </div>
                       <div className="space-y-1">
                         <h4 className="text-white font-extrabold text-[12px] uppercase tracking-wider">Panda Cafe & Bar</h4>
-                        <p className="text-white/50 text-[11px] leading-normal">Café de especialidad, bebidas premium y cerveza fría de cortesía en cada sesión.</p>
+                        <p className="text-white/40 text-[11px] leading-normal">Café de especialidad, bebidas premium y cerveza fría de cortesía en cada sesión.</p>
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex gap-3 items-start">
-                      <div className="p-2.5 rounded-xl bg-[#CBB79A]/10 text-[#CBB79A] mt-0.5 border border-[#CBB79A]/20">
+                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex gap-3 items-start">
+                      <div className="p-2.5 rounded-xl bg-[#CBB79A]/10 text-[#CBB79A] mt-0.5">
                         <Gamepad2 size={16} />
                       </div>
                       <div className="space-y-1">
                         <h4 className="text-white font-extrabold text-[12px] uppercase tracking-wider">Espacio Retro Arcade</h4>
-                        <p className="text-white/50 text-[11px] leading-normal">Consolas arcade clásicas libres para divertirte mientras esperas tu turno.</p>
+                        <p className="text-white/40 text-[11px] leading-normal">Consolas arcade clásicas libres para divertirte mientras esperas tu turno.</p>
                       </div>
                     </div>
                   </div>
