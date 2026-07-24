@@ -2122,7 +2122,7 @@ export default function BookAppointment() {
                   <div className="border-t border-white/[0.05] pt-6 mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                       <Phone size={14} className="text-[#CBB79A]" />
-                      <span className="text-white/70 text-xs font-extrabold">+58 412 123 4567</span>
+                      <span className="text-white/70 text-xs font-extrabold">+58 424-2259724</span>
                     </div>
 
                     <a 
