@@ -1177,54 +1177,7 @@ export default function BookAppointment() {
           </>
         )}
 
-        {/* ── 3D PANDA BEAR & WAVING HAND LAYERING (Background Layer z-5) ── */}
-        {!isDesktop ? (
-          // GROUPED MOBILE RENDER (Responsive & Locked)
-          <div className={`absolute pointer-events-none z-5 flex items-end justify-end overflow-visible ${!isResting ? 'opacity-0' : ''}`}
-            style={{
-              width: `${80 * activeBearCfg.scale}%`,
-              maxWidth: `${600 * activeBearCfg.scale}px`,
-              bottom: `${activeBearCfg.y}%`,
-              right: `${activeBearCfg.x}%`,
-              transform: `rotate(${activeBearCfg.rotate}deg)`,
-              transformOrigin: 'center bottom',
-            }}
-          >
-            <div className="relative w-full">
-              {/* Bear Body */}
-              <img
-                src={bearBody}
-                alt="Panda Barber 3D"
-                className="w-full h-auto object-contain block"
-                style={{
-                  filter: 'drop-shadow(-6px 12px 18px rgba(0,0,0,0.65)) drop-shadow(0px 4px 8px rgba(0,0,0,0.4))',
-                }}
-              />
-              
-              {/* Bear Waving Hand Wrapper grouped relative to Bear Body */}
-              <div
-                className="absolute flex items-center justify-center"
-                style={{
-                  width: `${(35 * activeBearCfg.handScale) / (80 * activeBearCfg.scale) * 100}%`,
-                  bottom: `${activeBearCfg.handY}%`,
-                  right: `${activeBearCfg.handX}%`,
-                  transform: `rotate(${activeBearCfg.handRotate}deg)`,
-                  transformOrigin: '70% 85%',
-                }}
-              >
-                <img
-                  src={bearHand}
-                  alt="Waving Hand"
-                  className="w-full h-auto object-contain origin-[70%_85%] animate-hand-wave"
-                  style={{ filter: 'drop-shadow(-4px 8px 12px rgba(0,0,0,0.5))' }}
-                />
-              </div>
-            </div>
-          </div>
-        ) : (
-          // Hide bear on desktop as per new reference layout
-          null
-        )}
+        {/* ── 3D PANDA BEAR REMOVED FOR CLEAN MINIMALIST HERO LAYOUT ── */}
 
         {/* ── Left-side text legibility gradient (z-10 overlays Bear) ── */}
         <div className="absolute inset-0 pointer-events-none z-10" style={{
