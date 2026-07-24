@@ -1218,19 +1218,21 @@ export default function BookAppointment() {
           </div>
 
           {/* Hero Welcome content */}
-          <div className="w-full flex flex-col gap-4 lg:gap-5" style={{ maxWidth: isDesktop ? '650px' : '100%' }}>
+          <div className="w-full flex flex-col gap-5 lg:gap-6" style={{ maxWidth: isDesktop ? '650px' : '100%' }}>
             <div className="reveal-item delay-200">
-              <span className="text-[11px] lg:text-[13px] font-black uppercase tracking-[0.35em] text-[#CBB79A] block mb-2">BIENVENIDO A</span>
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white leading-[1.05] mb-1 font-sans">PANDA BARBER</h1>
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-[#CBB79A] leading-[1.05] mb-4 font-sans">STUDIO</h1>
+              <span className="text-[10px] lg:text-[13px] font-black uppercase tracking-[0.35em] text-[#CBB79A] block mb-1">BIENVENIDO A</span>
+              <h1 className="text-[40px] sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white leading-[0.95] mb-1 font-sans">PANDA BARBER</h1>
+              <h1 className="text-[40px] sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-[#CBB79A] leading-[0.95] mb-2 font-sans">STUDIO</h1>
             </div>
 
-            <p className="text-white text-base sm:text-xl lg:text-[22px] font-extrabold leading-snug font-sans tracking-wide reveal-item delay-300">
-              Tu estilo comienza con<br className="sm:hidden" /> el profesional correcto.
-            </p>
-            <p className="text-white/85 text-base sm:text-lg lg:text-[17px] leading-relaxed font-normal font-sans max-w-[580px] reveal-item delay-400">
-              Barbería y tatuajes en un espacio creado para cuidar cada detalle de tu{'\u00A0'}imagen.
-            </p>
+            <div className="flex flex-col gap-2.5 reveal-item delay-300">
+              <p className="text-white text-base sm:text-xl lg:text-[22px] font-extrabold leading-snug font-sans tracking-wide">
+                Tu estilo comienza con<br className="sm:hidden" /> el profesional correcto.
+              </p>
+              <p className="text-white/60 text-sm sm:text-lg lg:text-[17px] leading-relaxed font-normal font-sans max-w-[580px]">
+                Barbería y tatuajes en un espacio creado para cuidar cada detalle de tu{'\u00A0'}imagen.
+              </p>
+            </div>
           </div>
 
           {/* Buttons drawer */}
