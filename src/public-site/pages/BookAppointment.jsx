@@ -1150,7 +1150,7 @@ export default function BookAppointment() {
                 style={{
                   backgroundImage: `url(${slide})`,
                   backgroundSize: isDesktop ? 'cover' : '153%',
-                  backgroundPosition: isDesktop ? (index === 0 ? '90% 25%' : 'center 20%') : '100% 33%',
+                  backgroundPosition: isDesktop ? (index === 0 ? '98% 25%' : '80% 20%') : '100% 33%',
                   filter: 'brightness(0.70) contrast(1.05)',
                   maskImage: isDesktop 
                     ? `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop}%, rgba(0, 0, 0, 0) ${gradientStop + 25}%)`
