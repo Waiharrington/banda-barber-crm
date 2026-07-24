@@ -326,8 +326,11 @@ export const dataService = {
           id,
           status,
           total_price,
+          scheduled_at,
+          created_at,
           started_at,
           completed_at,
+          clients (name),
           services (name, price)
         )
       `)
@@ -374,7 +377,7 @@ export const dataService = {
     const topServices = Object.entries(serviceCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
-      .map(([name, count]) => ({ name, count }));
+      .map(([service_name, count]) => ({ service_name, count }));
 
     const avgDurationMin = durationCount > 0 ? Math.round(totalDurationMs / durationCount / 60000) : 0;
 
@@ -384,7 +387,8 @@ export const dataService = {
       totalProductComm,
       totalTips,
       topServices,
-      avgDurationMin
+      avgDurationMin,
+      rawRecords: _asArray(staffRecords)
     };
   },
 
@@ -980,7 +984,7 @@ export const dataService = {
     if (cached) return cached;
     const { data, error } = await supabase
       .from('inventory_movements')
-      .select('*, inventory(name)')
+      .select('*, inventory(name, category, inventory_type)')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return _asArray(data);
@@ -1024,7 +1028,8 @@ export const dataService = {
       *, 
       clients(id, name, phone), 
       services(name, price),
-      staff(id, name, image_url)
+      staff(id, name, image_url),
+      appointment_staff(*, staff(name, role))
     `)
       .gte('scheduled_at', startDate)
       .lt('scheduled_at', endDate)

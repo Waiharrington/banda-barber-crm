@@ -30,6 +30,13 @@ import { useAuth } from '../context/AuthContext';
 import { useScrollLock } from '../hooks/useScrollLock';
 import { supabase } from '../lib/supabase';
 
+const getReceptionRoleGroup = (member) => {
+  const role = (member?.role?.split('|')[0] || '').toLowerCase();
+  if (role.includes('asistente') || role.includes('lavado')) return 'assistants';
+  if (role.includes('tatu')) return 'tattoo';
+  return 'barbers';
+};
+
 const ReceptionModule = ({ isMobile, rates }) => {
   const { showToast, triggerConfetti, triggerRocket } = useNotifs();
   const [clients, setClients] = useState([]);
@@ -202,7 +209,12 @@ const ReceptionModule = ({ isMobile, rates }) => {
       setExchangeRate(activeRate);
 
       if (selectedClientRef.current) {
-        selectRecommendedBarber(selectedClientRef.current, filteredStaff, active, false);
+        selectRecommendedBarber(
+          selectedClientRef.current,
+          filteredStaff.filter(member => getReceptionRoleGroup(member) === 'barbers'),
+          active,
+          false
+        );
       }
     } catch (err) {
       console.error(err);
@@ -243,7 +255,12 @@ const ReceptionModule = ({ isMobile, rates }) => {
     setIdSearch('');
     setSearchResults([]);
     showToast(`Cliente identificado: ${client.name}`);
-    selectRecommendedBarber(client, staff, activeAppointments, true);
+    selectRecommendedBarber(
+      client,
+      staff.filter(member => getReceptionRoleGroup(member) === 'barbers'),
+      activeAppointments,
+      true
+    );
   };
 
   const handleSearchInput = (val) => {
@@ -442,6 +459,15 @@ const ReceptionModule = ({ isMobile, rates }) => {
       }
     });
   };
+
+  const staffGroups = [
+    { id: 'barbers', label: 'BARBEROS DISPONIBLES' },
+    { id: 'assistants', label: 'ASISTENTES DISPONIBLES' },
+    { id: 'tattoo', label: 'TATUADORES DISPONIBLES' }
+  ].map(group => ({
+    ...group,
+    members: staff.filter(member => getReceptionRoleGroup(member) === group.id)
+  }));
 
   return (
     <div className="animate-fade-in" style={{ 
@@ -727,9 +753,17 @@ const ReceptionModule = ({ isMobile, rates }) => {
                   </p>
                 </div>
               )}
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px' }}>BARBEROS Y ASISTENTES DISPONIBLES</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '12px' }}>
-                {staff.map((s, idx) => {
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                {staffGroups.map(group => (
+                  <div key={group.id}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px' }}>{group.label}</label>
+                    {group.members.length === 0 ? (
+                      <div style={{ padding: '14px 16px', borderRadius: '14px', border: '1px dashed rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.3)', fontSize: '11px' }}>
+                        No hay personal disponible en este grupo
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '12px' }}>
+                {group.members.map((s, idx) => {
                   const active = activeAppointments.find(a => a.staff_id === s.id);
                   const isBusy = !!active;
                   let timeLeft = 0;
@@ -857,6 +891,10 @@ const ReceptionModule = ({ isMobile, rates }) => {
                     </div>
                   );
                 })}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 

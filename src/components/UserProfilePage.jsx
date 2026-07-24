@@ -19,7 +19,11 @@ import {
   Smartphone,
   Tag,
   Key,
-  ChevronDown
+  ChevronDown,
+  Target,
+  Pencil,
+  Check,
+  X
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -41,6 +45,10 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
     topServices: [],
     avgDurationMin: 0
   });
+  const [todayAppointments, setTodayAppointments] = useState([]);
+  const [monthlyStats, setMonthlyStats] = useState({ servicesCount: 0, income: 0 });
+  const [editingGoals, setEditingGoals] = useState(false);
+  const [goalDraft, setGoalDraft] = useState({ income: '', services: '' });
 
   // Inventory/Tools State
   const [tools, setTools] = useState([]);
@@ -58,11 +66,40 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
   const loadProfileData = async () => {
     try {
       setLoading(true);
-      const profileStats = await dataService.getStaffProfileStats(staffMember.id);
+      const [profileStats, today] = await Promise.all([
+        dataService.getStaffProfileStats(staffMember.id),
+        dataService.getTodayAppointments()
+      ]);
       setStats(profileStats);
+
+      const assistantRole = (staffMember.role || '').toLowerCase();
+      const assistant = assistantRole.includes('asistente') || assistantRole.includes('lavado');
+      setTodayAppointments(asArray(today).filter(appointment => (
+        assistant
+          ? asArray(appointment.appointment_staff).some(entry => String(entry.staff_id) === String(staffMember.id))
+          : String(appointment.staff_id) === String(staffMember.id)
+      )));
+
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      const monthRecords = asArray(profileStats.rawRecords).filter(record => {
+        const appointment = record.appointments;
+        const date = new Date(appointment?.scheduled_at || appointment?.created_at || 0);
+        return appointment && date >= monthStart;
+      });
+      setMonthlyStats({
+        servicesCount: monthRecords.length,
+        income: monthRecords.reduce((sum, record) => (
+          sum
+          + Number(record.commission_earned || 0)
+          + Number(record.product_commission || 0)
+          + Number(record.tip_amount || 0)
+        ), 0)
+      });
     } catch (error) {
       console.error('Error loading stats:', error);
-      showToast('Error cargando métricas del barbero', 'error');
+      showToast('Error cargando métricas del perfil', 'error');
     } finally {
       setLoading(false);
     }
@@ -110,7 +147,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
   };
 
   const handleRemoveTool = async (toolId) => {
-    if (!await confirm('¿Seguro que deseas eliminar esta herramienta del inventario del barbero?')) return;
+    if (!await confirm('¿Seguro que deseas eliminar esta herramienta del inventario personal?')) return;
     try {
       setLoading(true);
       const toolToRemove = tools.find(t => t.id === toolId);
@@ -139,6 +176,38 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
   const roleRaw = staffMember?.role || 'ASISTENTE';
   const roleName = roleRaw.includes('|') ? roleRaw.split('|')[0] : roleRaw;
   const rawPermissions = roleRaw.includes('|') ? roleRaw.split('|')[1].split(',') : [];
+  const isAssistant = roleName.toLowerCase().includes('asistente') || roleName.toLowerCase().includes('lavado');
+  const goalStoragePrefix = `panda_profile_goal_${staffMember?.id}`;
+  const monthlyGoalIncome = Number(localStorage.getItem(`${goalStoragePrefix}_income`) || (isAssistant ? 100 : 400));
+  const monthlyGoalServices = Number(localStorage.getItem(`${goalStoragePrefix}_services`) || (isAssistant ? 50 : 40));
+  const incomeProgress = Math.min(100, Math.round((monthlyStats.income / Math.max(1, monthlyGoalIncome)) * 100));
+  const serviceProgress = Math.min(100, Math.round((monthlyStats.servicesCount / Math.max(1, monthlyGoalServices)) * 100));
+  const completedToday = todayAppointments.filter(appointment => appointment.status === 'Completado').length;
+  const todayIncome = asArray(stats.rawRecords).reduce((sum, record) => {
+    const appointment = record.appointments;
+    const date = new Date(appointment?.scheduled_at || appointment?.created_at || 0);
+    const now = new Date();
+    if (date.toDateString() !== now.toDateString()) return sum;
+    return sum + Number(record.commission_earned || 0) + Number(record.product_commission || 0) + Number(record.tip_amount || 0);
+  }, 0);
+
+  const openGoalEditor = () => {
+    setGoalDraft({ income: String(monthlyGoalIncome), services: String(monthlyGoalServices) });
+    setEditingGoals(true);
+  };
+
+  const saveGoals = () => {
+    const income = Number(goalDraft.income);
+    const services = Number(goalDraft.services);
+    if (income > 0) localStorage.setItem(`${goalStoragePrefix}_income`, String(income));
+    if (services > 0) localStorage.setItem(`${goalStoragePrefix}_services`, String(services));
+    setEditingGoals(false);
+    showToast('Metas actualizadas');
+  };
+
+  const formatTime = (value) => value
+    ? new Date(value).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true })
+    : '--:--';
 
   const translatePermission = (perm) => {
     const mapping = {
@@ -450,13 +519,40 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
         </div>
       ) : (
         <>
+          <div className="glass-card anim-1" style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)',
+            borderRadius: '22px',
+            overflow: 'hidden',
+            border: '1px solid rgba(255,255,255,0.06)'
+          }}>
+            {[
+              { label: isAssistant ? 'Lavados hoy' : 'Servicios hoy', value: completedToday },
+              { label: 'Este mes', value: monthlyStats.servicesCount },
+              { label: 'Ganancia hoy', value: `$${todayIncome.toFixed(2)}` },
+              { label: 'Ganancia mes', value: `$${monthlyStats.income.toFixed(2)}` },
+              { label: 'Tiempo prom.', value: `${stats.avgDurationMin} min` }
+            ].map((item, index) => (
+              <div key={item.label} style={{
+                padding: '18px 16px',
+                textAlign: 'center',
+                borderRight: !isMobile && index < 4 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                borderBottom: isMobile && index < 4 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                gridColumn: isMobile && index === 4 ? '1 / -1' : 'auto'
+              }}>
+                <div style={{ color: 'var(--gold-primary)', fontSize: isMobile ? '21px' : '24px', fontWeight: '950' }}>{item.value}</div>
+                <div style={{ marginTop: '5px', color: 'rgba(255,255,255,0.38)', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{item.label}</div>
+              </div>
+            ))}
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }} className="anim-1">
             
             {/* Services Commission Card */}
             <div className="glass-card stat-glow-card anim-2" style={{ background: 'linear-gradient(135deg, rgba(28,28,30,0.6) 0%, rgba(255, 255, 255,0.02) 100%)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <span style={{ fontSize: '11px', fontWeight: '850', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Comisión Servicios</span>
+                  <span style={{ fontSize: '11px', fontWeight: '850', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{isAssistant ? 'Ingresos por lavados' : 'Comisión servicios'}</span>
                   <h3 style={{ fontSize: '30px', fontWeight: '950', color: 'white', marginTop: '6px', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>${stats.totalServiceComm.toFixed(2)}</h3>
                 </div>
                 <div style={{ width: '44px', height: '44px', borderRadius: '14px', backgroundColor: 'rgba(255, 255, 255,0.1)', border: '1px solid rgba(255, 255, 255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -496,6 +592,81 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
 
           </div>
 
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '16px' }} className="anim-3">
+            <div className="glass-card" style={{ padding: isMobile ? '20px' : '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                  <Calendar size={17} color="var(--gold-primary)" />
+                  <h4 style={{ fontSize: '13px', fontWeight: '900', color: 'white', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                    {isAssistant ? 'Servicios asignados hoy' : 'Agenda de hoy'}
+                  </h4>
+                </div>
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>{completedToday}/{todayAppointments.length} completados</span>
+              </div>
+
+              {todayAppointments.length === 0 ? (
+                <div style={{ padding: '30px 18px', textAlign: 'center', color: 'rgba(255,255,255,0.28)', fontSize: '12px', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '14px' }}>
+                  {isAssistant ? 'No tienes servicios asignados para hoy' : 'No tienes citas agendadas para hoy'}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {todayAppointments.map(appointment => {
+                    const active = appointment.status === 'En Silla';
+                    const completed = appointment.status === 'Completado';
+                    return (
+                      <div key={appointment.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', borderRadius: '14px', background: active ? 'rgba(214,190,151,0.08)' : 'rgba(255,255,255,0.025)', border: active ? '1px solid rgba(214,190,151,0.22)' : '1px solid rgba(255,255,255,0.035)' }}>
+                        <span style={{ width: '62px', flexShrink: 0, color: active ? 'var(--gold-primary)' : 'rgba(255,255,255,0.4)', fontSize: '11px', fontWeight: '700' }}>{formatTime(appointment.scheduled_at || appointment.created_at)}</span>
+                        <span style={{ width: 7, height: 7, flexShrink: 0, borderRadius: '50%', background: completed ? '#30d158' : active ? 'var(--gold-primary)' : '#555' }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ color: 'white', fontSize: '13px', fontWeight: '750', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{appointment.clients?.name || 'Cliente'}</div>
+                          <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{appointment.services?.name || 'Servicio'}</div>
+                        </div>
+                        <span style={{ flexShrink: 0, padding: '4px 9px', borderRadius: '20px', color: completed ? '#30d158' : active ? 'var(--gold-primary)' : '#888', background: completed ? 'rgba(48,209,88,0.1)' : active ? 'rgba(214,190,151,0.1)' : 'rgba(255,255,255,0.05)', fontSize: '10px', fontWeight: '800' }}>{appointment.status}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="glass-card" style={{ padding: isMobile ? '20px' : '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                  <Target size={17} color="var(--gold-primary)" />
+                  <h4 style={{ fontSize: '13px', fontWeight: '900', color: 'white', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Metas del mes</h4>
+                </div>
+                {!editingGoals ? (
+                  <button onClick={openGoalEditor} style={{ border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#999', borderRadius: '8px', padding: '5px 9px', cursor: 'pointer', display: 'flex', gap: '5px', alignItems: 'center', fontSize: '10px', fontWeight: '800' }}><Pencil size={10} /> Editar</button>
+                ) : (
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    <button onClick={saveGoals} style={{ border: '1px solid rgba(214,190,151,0.3)', background: 'rgba(214,190,151,0.12)', color: 'var(--gold-primary)', borderRadius: '8px', padding: '5px 8px', cursor: 'pointer' }}><Check size={11} /></button>
+                    <button onClick={() => setEditingGoals(false)} style={{ border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#888', borderRadius: '8px', padding: '5px 8px', cursor: 'pointer' }}><X size={11} /></button>
+                  </div>
+                )}
+              </div>
+
+              {editingGoals ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <label style={{ color: '#888', fontSize: '10px', fontWeight: '800' }}>META {isAssistant ? 'LAVADOS' : 'SERVICIOS'}<input className="custom-form-input" type="number" value={goalDraft.services} onChange={event => setGoalDraft(current => ({ ...current, services: event.target.value }))} style={{ marginTop: '6px' }} /></label>
+                  <label style={{ color: '#888', fontSize: '10px', fontWeight: '800' }}>META INGRESOS (USD)<input className="custom-form-input" type="number" value={goalDraft.income} onChange={event => setGoalDraft(current => ({ ...current, income: event.target.value }))} style={{ marginTop: '6px' }} /></label>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {[
+                    { label: isAssistant ? 'Lavados' : 'Servicios', value: `${monthlyStats.servicesCount} / ${monthlyGoalServices}`, progress: serviceProgress, color: 'var(--gold-primary)' },
+                    { label: 'Ingresos', value: `$${monthlyStats.income.toFixed(2)} / $${monthlyGoalIncome.toFixed(2)}`, progress: incomeProgress, color: '#30d158' }
+                  ].map(goal => (
+                    <div key={goal.label}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#aaa', fontSize: '12px' }}><span>{goal.label}</span><strong style={{ color: 'white' }}>{goal.value}</strong></div>
+                      <div style={{ height: 6, borderRadius: 6, overflow: 'hidden', background: 'rgba(255,255,255,0.06)' }}><div style={{ height: '100%', width: `${goal.progress}%`, background: goal.color, borderRadius: 6 }} /></div>
+                      <div style={{ marginTop: '5px', textAlign: 'right', color: goal.progress >= 100 ? goal.color : '#555', fontSize: '10px' }}>{goal.progress >= 100 ? '¡Meta alcanzada!' : `${goal.progress}% completado`}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* 3. Double Column Detail Section */}
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '24px' }}>
             
@@ -511,7 +682,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.03)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontWeight: '800', letterSpacing: '0.5px' }}>
-                    <Star size={12} color="var(--gold-primary)" /> SERVICIOS
+                    <Star size={12} color="var(--gold-primary)" /> {isAssistant ? 'LAVADOS' : 'SERVICIOS'}
                   </div>
                   <div style={{ fontSize: '32px', fontWeight: '950', color: 'white', marginTop: '8px', fontFamily: 'Outfit, var(--font-sans), system-ui' }}>{stats.totalAppointments}</div>
                 </div>
@@ -527,7 +698,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
 
               {/* Top Services ranking list */}
               <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: '850', color: 'rgba(255,255,255,0.4)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Servicios más realizados</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '850', color: 'rgba(255,255,255,0.4)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{isAssistant ? 'Lavados más realizados' : 'Servicios más realizados'}</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {stats.topServices.length === 0 ? (
                     <div style={{ padding: '30px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '16px' }}>No hay registros de servicios aún</div>

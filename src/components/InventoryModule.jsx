@@ -16,7 +16,10 @@ import {
   Filter, 
   ShieldAlert,
   X,
-  Camera
+  Camera,
+  ShoppingBag,
+  Coffee,
+  Wrench
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
@@ -28,6 +31,26 @@ import PandaSelect from './PandaSelect';
 import PandaCamera from './PandaCamera';
 import AnimatedModal from './AnimatedModal';
 
+const INVENTORY_TABS = [
+  { id: 'retail', label: 'Productos para venta', shortLabel: 'Productos', inventoryType: 'barbershop', defaultCategory: 'Venta', icon: ShoppingBag },
+  { id: 'cafe', label: 'Panda Café', shortLabel: 'Panda Café', inventoryType: 'cafe', defaultCategory: 'Bebidas', icon: Coffee },
+  { id: 'tools', label: 'Herramientas y accesorios', shortLabel: 'Herramientas', inventoryType: 'tools', defaultCategory: 'Herramienta', icon: Wrench }
+];
+
+const belongsToInventory = (item, inventoryId) => {
+  const type = item?.inventory_type || 'barbershop';
+  const category = item?.category || '';
+
+  if (inventoryId === 'cafe') return type === 'cafe';
+  if (inventoryId === 'tools') {
+    return type === 'tools'
+      || (type === 'barbershop' && ['Herramienta', 'Accesorios', 'Uso Interno'].includes(category));
+  }
+
+  return type === 'barbershop'
+    && !['Herramienta', 'Accesorios', 'Uso Interno'].includes(category);
+};
+
 const InventoryModule = ({ isMobile, currency, rates }) => {
   const { user } = useAuth();
   const { showToast } = useNotifs();
@@ -37,6 +60,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeInventory, setActiveInventory] = useState('retail');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [newItem, setNewItem] = useState({ 
@@ -53,6 +77,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
     stock_dirty: false,
     commission_pct_dirty: false
   });
+  const selectedInventory = INVENTORY_TABS.find(tab => tab.id === activeInventory) || INVENTORY_TABS[0];
 
   useEffect(() => {
     fetchInventory();
@@ -61,11 +86,15 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      const [invData, staffData] = await Promise.all([
-        dataService.getInventory(),
+      const [retailData, cafeData, toolsData, staffData] = await Promise.all([
+        dataService.getInventory('barbershop'),
+        dataService.getInventory('cafe'),
+        dataService.getInventory('tools'),
         dataService.getStaff()
       ]);
-      setInventory(invData);
+      const mergedInventory = [...retailData, ...cafeData, ...toolsData]
+        .filter((item, index, items) => items.findIndex(candidate => candidate.id === item.id) === index);
+      setInventory(mergedInventory);
       setStaff(staffData);
     } catch (error) {
       console.error('Error fetching inventory:', error);
@@ -118,6 +147,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
       // Ensure empty strings are treated as 0
       const finalItem = {
         ...cleanItem,
+        inventory_type: selectedInventory.inventoryType,
         price: Number(cleanItem.price) || 0,
         cost_price: Number(cleanItem.cost_price) || 0,
         stock: Number(cleanItem.stock) || 0,
@@ -137,7 +167,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
       }
 
       setShowAddForm(false);
-      setNewItem({ name: '', stock: 0, price: 0, cost_price: 0, commission_pct: 10, category: 'Venta', image_url: '', cost_price_dirty: false, price_dirty: false, stock_dirty: false, commission_pct_dirty: false });
+      setNewItem({ name: '', stock: 0, price: 0, cost_price: 0, commission_pct: 10, category: selectedInventory.defaultCategory, image_url: '', staff_id: null, cost_price_dirty: false, price_dirty: false, stock_dirty: false, commission_pct_dirty: false });
       fetchInventory();
       showToast('Producto agregado al almacén');
     } catch (error) {
@@ -159,9 +189,10 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
     }
   };
 
-  const lowStockCount = inventory.filter(item => item.stock <= 5 && item.category !== 'Accesorios').length;
+  const visibleInventory = inventory.filter(item => belongsToInventory(item, activeInventory));
+  const lowStockCount = visibleInventory.filter(item => item.stock <= 5 && item.category !== 'Accesorios').length;
 
-  const filteredInventory = inventory.filter(item => {
+  const filteredInventory = visibleInventory.filter(item => {
     const searchMatch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     if (!searchMatch) return false;
 
@@ -177,15 +208,38 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
     return true;
   });
 
+  const handleInventoryChange = (inventoryId) => {
+    const nextInventory = INVENTORY_TABS.find(tab => tab.id === inventoryId);
+    if (!nextInventory) return;
+
+    setActiveInventory(inventoryId);
+    setSearchTerm('');
+    setShowAddForm(false);
+    setNewItem({
+      name: '',
+      stock: 0,
+      price: 0,
+      cost_price: 0,
+      commission_pct: 10,
+      category: nextInventory.defaultCategory,
+      image_url: '',
+      staff_id: null,
+      cost_price_dirty: false,
+      price_dirty: false,
+      stock_dirty: false,
+      commission_pct_dirty: false
+    });
+  };
+
   return (
     <div className="animate-fade-in" style={{ paddingBottom: isMobile ? '80px' : '0' }}>
       <header style={{ 
         display: 'flex', 
         flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between', 
-        alignItems: isMobile ? 'flex-start' : 'center', 
-        gap: isMobile ? '20px' : '0',
-        marginBottom: isMobile ? '24px' : '40px' 
+        alignItems: isMobile ? 'flex-start' : 'flex-end',
+        gap: '20px',
+        marginBottom: isMobile ? '20px' : '24px'
       }}>
         <div>
           <h2 style={{ fontSize: isMobile ? '26px' : '32px', fontWeight: '800', letterSpacing: '-0.5px', lineHeight: '1.2' }}>Control de <span className="text-gold">Stock</span></h2>
@@ -199,7 +253,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
               setLoadingHistory(true);
               try {
                 const data = await dataService.getInventoryMovements();
-                setHistory(data);
+                setHistory(data.filter(move => belongsToInventory(move.inventory, activeInventory)));
               } catch (e) {
                 console.error(e);
               } finally {
@@ -225,7 +279,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
                   price: 0,
                   cost_price: 0,
                   commission_pct: 10,
-                  category: 'Venta',
+                  category: selectedInventory.defaultCategory,
                   image_url: '',
                   staff_id: null,
                   cost_price_dirty: false,
@@ -245,9 +299,78 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
         </div>
       </header>
 
+      <div
+        role="tablist"
+        aria-label="Seleccionar inventario"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(180px, 1fr))',
+          gap: isMobile ? '8px' : '12px',
+          marginBottom: isMobile ? '24px' : '32px'
+        }}
+      >
+        {INVENTORY_TABS.map(tab => {
+          const Icon = tab.icon;
+          const isActive = activeInventory === tab.id;
+          const itemCount = inventory.filter(item => belongsToInventory(item, tab.id)).length;
+
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => handleInventoryChange(tab.id)}
+              style={{
+                minHeight: isMobile ? '54px' : '64px',
+                padding: isMobile ? '12px 14px' : '14px 18px',
+                borderRadius: '16px',
+                border: `1px solid ${isActive ? 'rgba(212,175,55,0.7)' : 'rgba(255,255,255,0.08)'}`,
+                background: isActive
+                  ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.06))'
+                  : 'rgba(255,255,255,0.025)',
+                color: isActive ? 'var(--gold-primary)' : 'var(--text-secondary)',
+                boxShadow: isActive ? '0 12px 28px rgba(0,0,0,0.25), inset 0 0 20px rgba(212,175,55,0.04)' : 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                transition: 'all 0.25s ease',
+                textAlign: 'left'
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                <Icon size={19} />
+                <span style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '850', lineHeight: '1.2' }}>
+                  {isMobile ? tab.shortLabel : tab.label}
+                </span>
+              </span>
+              <span style={{
+                minWidth: '26px',
+                height: '26px',
+                padding: '0 7px',
+                borderRadius: '999px',
+                background: isActive ? 'var(--gold-primary)' : 'rgba(255,255,255,0.06)',
+                color: isActive ? '#080808' : 'var(--text-muted)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                fontWeight: '900'
+              }}>
+                {itemCount}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {showAddForm && (
         <div className="glass-card animate-slide-up" style={{ marginBottom: '32px', borderRadius: '28px' }}>
-          <h3 style={{ marginBottom: '24px', fontSize: '20px', fontWeight: '800' }}>Nuevo Producto en Inventario</h3>
+          <h3 style={{ marginBottom: '24px', fontSize: '20px', fontWeight: '800' }}>
+            Nuevo registro · <span className="text-gold">{selectedInventory.label}</span>
+          </h3>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>NOMBRE</label>
@@ -258,14 +381,23 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
               value={newItem.category}
               onChange={(val) => setNewItem({...newItem, category: val})}
               options={[
-                { label: '🛒 Para Venta', value: 'Venta' },
-                { label: '💈 Uso Interno', value: 'Uso Interno' },
-                { label: '✂️ Accesorios', value: 'Accesorios' },
-                { label: '🔧 Herramienta', value: 'Herramienta' }
+                ...(activeInventory === 'retail' ? [
+                  { label: '🛒 Para Venta', value: 'Venta' }
+                ] : []),
+                ...(activeInventory === 'cafe' ? [
+                  { label: '☕ Bebidas', value: 'Bebidas' },
+                  { label: '🥐 Alimentos', value: 'Alimentos' },
+                  { label: '📦 Insumos de Café', value: 'Insumos Café' }
+                ] : []),
+                ...(activeInventory === 'tools' ? [
+                  { label: '🔧 Herramienta', value: 'Herramienta' },
+                  { label: '✂️ Accesorio', value: 'Accesorios' },
+                  { label: '💈 Uso Interno', value: 'Uso Interno' }
+                ] : [])
               ]}
             />
 
-            {newItem.category === 'Herramienta' && (
+            {activeInventory === 'tools' && (
               <PandaSelect 
                 label="ASIGNAR A"
                 placeholder="Selecciona barbero"
@@ -329,7 +461,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
               />
             </div>
 
-            {(newItem.category === 'Venta' || newItem.category === 'Accesorios') && (
+            {(activeInventory === 'retail' || activeInventory === 'cafe') && (
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>PRECIO DE VENTA (€)</label>
                 <input 
@@ -342,7 +474,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
               </div>
             )}
 
-            {(newItem.category === 'Venta' || newItem.category === 'Accesorios') && (
+            {activeInventory === 'retail' && (
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)' }}>COMISIÓN VENDEDOR (%)</label>
                 <input 
@@ -401,7 +533,7 @@ const InventoryModule = ({ isMobile, currency, rates }) => {
           <Search style={{ position: 'absolute', left: '16px', top: '14px' }} size={18} color="var(--text-muted)" />
           <input 
             type="text" 
-            placeholder="Buscar en el almacén..." 
+            placeholder={`Buscar en ${selectedInventory.label.toLowerCase()}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="glass-search-bar focus-ring"
