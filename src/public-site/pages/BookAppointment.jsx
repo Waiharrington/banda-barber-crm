@@ -2069,7 +2069,9 @@ export default function BookAppointment() {
 
                 <div className="bg-[#111115]/50 border border-white/5 rounded-3xl p-6 lg:p-8 flex flex-col justify-between h-full min-h-[350px] relative overflow-hidden group hover:border-[#CBB79A]/20 transition-all duration-300">
                   {/* Subtle geometric overlay glow */}
-                  <div className="absolute right-[-40px] top-[-40px] w-48 h-48 rounded-full bg-[#CBB79A]/5 blur-3xl pointer-events-none" />
+                  <div className="absolute right-0 top-0 w-48 h-48 pointer-events-none" style={{
+                    backgroundImage: 'radial-gradient(circle at 100% 0%, rgba(203,183,154,0.08) 0%, transparent 70%)'
+                  }} />
 
                   <div className="space-y-6">
                     {/* Header Sede */}
