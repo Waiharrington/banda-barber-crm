@@ -1689,106 +1689,122 @@ export default function BookAppointment() {
 
             {/* SECTION: BARBERO DESTACADO DEL MES */}
             {topBarber && (
-              <div className="w-full bg-[#111115]/50 border border-white/5 rounded-3xl p-6 lg:p-10 relative overflow-hidden text-left flex flex-col md:flex-row gap-8 items-stretch">
-                {/* Left Column: Portrait */}
-                <div className="w-full md:w-[35%] min-h-[300px] rounded-2xl overflow-hidden relative bg-[#1c1c24] border border-white/5">
-                  <BarberAvatar url={topBarber.image_url} name={topBarber.name} className="absolute inset-0 w-full h-full object-cover" iconSize={60} />
-                </div>
+              <div className="w-full bg-[#111115]/50 border border-white/5 rounded-3xl relative overflow-hidden text-left">
+                {/* Main Content Area */}
+                <div className="flex flex-col md:flex-row items-stretch">
+                  {/* Left Column: Portrait */}
+                  <div className="w-full md:w-[30%] min-h-[340px] relative bg-[#1c1c24]">
+                    <BarberAvatar url={topBarber.image_url} name={topBarber.name} className="absolute inset-0 w-full h-full object-cover" iconSize={60} />
+                    {/* Subtle gradient overlay at bottom */}
+                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#111115]/80 to-transparent" />
+                  </div>
 
-                {/* Right Column: Info */}
-                <div className="flex-1 flex flex-col justify-between relative">
-                  {/* Portfolio thumbnails top-right (desktop only) */}
-                  {isDesktop && (
-                    <div className="absolute top-0 right-0 grid grid-cols-3 gap-1.5 w-32">
-                      {topBarberPortfolio.slice(0, 6).map((img, idx) => (
-                        <div key={img.id || idx} className="aspect-square bg-white/5 border border-white/10 rounded-lg overflow-hidden">
-                          <img src={img.image_url} alt="Work" className="w-full h-full object-cover" />
-                        </div>
-                      ))}
-                      {/* Placeholder grids if no portfolio loaded */}
-                      {topBarberPortfolio.length === 0 && Array.from({ length: 6 }).map((_, idx) => (
-                        <div key={idx} className="aspect-square bg-white/5 border border-white/10 rounded-lg overflow-hidden flex items-center justify-center">
-                          <Scissors size={10} className="text-white/20" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div>
+                  {/* Center Column: Info */}
+                  <div className="flex-1 p-6 lg:p-8 flex flex-col justify-center">
                     {/* Subtitle */}
-                    <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#CBB79A] flex items-center gap-1.5 mb-3">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#CBB79A] flex items-center gap-1.5 mb-3">
                       👑 BARBERO DESTACADO DEL MES
                     </span>
                     
-                    {/* Name & Badges */}
-                    <div className="flex items-center gap-3 mb-6 flex-wrap">
-                      <h3 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans">
-                        {topBarber.name}
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider bg-white/5 border border-white/10 text-white/70 uppercase">
-                          MASTER BARBER
-                        </span>
-                        <span className="px-2.5 py-0.5 rounded text-[9px] font-extrabold tracking-wider bg-[#CBB79A]/10 border border-[#CBB79A]/20 text-[#CBB79A] uppercase">
-                          TOP DEL MES
-                        </span>
-                      </div>
+                    {/* Name */}
+                    <h3 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-3">
+                      {topBarber.name}
+                    </h3>
+
+                    {/* Badges */}
+                    <div className="flex items-center gap-2 mb-5">
+                      <span className="px-2.5 py-1 rounded text-[9px] font-extrabold tracking-wider bg-white/5 border border-white/10 text-white/70 uppercase">
+                        MASTER BARBER
+                      </span>
+                      <span className="text-white/20">•</span>
+                      <span className="px-2.5 py-1 rounded text-[9px] font-extrabold tracking-wider bg-[#CBB79A]/10 border border-[#CBB79A]/20 text-[#CBB79A] uppercase">
+                        TOP DEL MES
+                      </span>
                     </div>
 
                     {/* Biography Quote */}
-                    <p className="text-white/80 text-sm italic font-medium leading-relaxed max-w-[70%] border-l-2 border-[#CBB79A]/30 pl-4 mb-8">
+                    <p className="text-white/70 text-sm italic font-medium leading-relaxed border-l-2 border-[#CBB79A]/30 pl-4 mb-6 max-w-[90%]">
                       "{topBarber.biography || 'Especializado en cortes clásicos y modernos con un estilo y precisión impecables.'}"
                     </p>
 
-                    {/* Mini Stats Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-[80%] mb-8">
-                      <div className="flex items-center gap-2.5">
-                        <Check size={16} className="text-[#CBB79A]" />
-                        <div className="flex flex-col text-left">
-                          <span className="text-xs font-bold text-white leading-tight">+8 años</span>
-                          <span className="text-[10px] text-white/40">de experiencia</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2.5">
-                        <Star size={16} className="text-[#CBB79A]" />
-                        <div className="flex flex-col text-left">
-                          <span className="text-xs font-bold text-white leading-tight">500+</span>
-                          <span className="text-[10px] text-white/40">clientes felices</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2.5">
-                        <Scissors size={16} className="text-[#CBB79A]" />
-                        <div className="flex flex-col text-left">
-                          <span className="text-xs font-bold text-white leading-tight">Especialista</span>
-                          <span className="text-[10px] text-white/40">en fades</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2.5">
-                        <Info size={16} className="text-[#CBB79A]" />
-                        <div className="flex flex-col text-left">
-                          <span className="text-xs font-bold text-white leading-tight">Asesoría</span>
-                          <span className="text-[10px] text-white/40">de imagen</span>
-                        </div>
-                      </div>
+                    {/* Action buttons */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                      <button
+                        onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
+                        className="btn-gold py-3 px-8 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2"
+                        style={{ borderRadius: '10px' }}
+                      >
+                        AGENDAR CON {topBarber.name.split(' ')[0]} <ArrowRight size={14} />
+                      </button>
+                      <button
+                        onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
+                        className="btn-outline py-3 px-8 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2"
+                        style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
+                      >
+                        <User size={13} /> VER SU PERFIL
+                      </button>
                     </div>
                   </div>
 
-                  {/* Action buttons */}
-                  <div className="flex flex-col sm:flex-row items-center gap-4 mt-auto">
-                    <button
-                      onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
-                      className="btn-gold w-full sm:w-auto py-3 px-8 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2"
-                      style={{ borderRadius: '10px' }}
-                    >
-                      AGENDAR CON {topBarber.name.split(' ')[0]} <ArrowRight size={14} />
-                    </button>
-                    <button
-                      onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
-                      className="btn-outline w-full sm:w-auto py-3 px-8 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2"
-                      style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
-                    >
-                      VER SU PERFIL
-                    </button>
+                  {/* Right Column: Portfolio Grid (desktop only) */}
+                  {isDesktop && (
+                    <div className="w-[28%] p-4 flex items-center">
+                      <div className="grid grid-cols-2 gap-1.5 w-full">
+                        {topBarberPortfolio.slice(0, 8).map((img, idx) => (
+                          <div key={img.id || idx} className="aspect-square bg-white/5 border border-white/10 rounded-lg overflow-hidden">
+                            <img src={img.image_url} alt="Work" className="w-full h-full object-cover hover:scale-110 transition-transform duration-300" />
+                          </div>
+                        ))}
+                        {/* Placeholder grids if no portfolio loaded */}
+                        {topBarberPortfolio.length < 8 && Array.from({ length: 8 - topBarberPortfolio.length }).map((_, idx) => (
+                          <div key={`ph-${idx}`} className="aspect-square bg-white/[0.03] border border-white/[0.06] rounded-lg overflow-hidden flex items-center justify-center">
+                            <Scissors size={12} className="text-white/10" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom Stats Bar */}
+                <div className="border-t border-white/[0.06] bg-white/[0.02] px-6 lg:px-10 py-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/20 flex items-center justify-center">
+                        <Check size={14} className="text-[#CBB79A]" />
+                      </div>
+                      <div className="flex flex-col text-left">
+                        <span className="text-xs font-bold text-white leading-tight">+8 años</span>
+                        <span className="text-[10px] text-white/40">de experiencia</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/20 flex items-center justify-center">
+                        <Star size={14} className="text-[#CBB79A]" />
+                      </div>
+                      <div className="flex flex-col text-left">
+                        <span className="text-xs font-bold text-white leading-tight">500+</span>
+                        <span className="text-[10px] text-white/40">clientes felices</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/20 flex items-center justify-center">
+                        <Scissors size={14} className="text-[#CBB79A]" />
+                      </div>
+                      <div className="flex flex-col text-left">
+                        <span className="text-xs font-bold text-white leading-tight">Especialista</span>
+                        <span className="text-[10px] text-white/40">en fades</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/20 flex items-center justify-center">
+                        <Info size={14} className="text-[#CBB79A]" />
+                      </div>
+                      <div className="flex flex-col text-left">
+                        <span className="text-xs font-bold text-white leading-tight">Asesoría</span>
+                        <span className="text-[10px] text-white/40">de imagen</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
