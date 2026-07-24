@@ -2237,7 +2237,7 @@ export default function BookAppointment() {
                 <div className="border-t border-white/[0.04] pt-8 pb-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] font-bold text-white/30">
                   <p>© 2026 Panda Barber Studio. Todos los derechos reservados.</p>
                   <p className="flex items-center gap-1">
-                    Diseño Premium <span className="text-[#CBB79A]">★</span> Panda Studio
+                    Diseño & Desarrollo <span className="text-[#CBB79A]">★</span> SomosDos Studio
                   </p>
                 </div>
               </footer>
