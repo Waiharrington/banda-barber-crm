@@ -2486,20 +2486,10 @@ export default function BookAppointment() {
                     ].map((cat, catIndex) => {
                       const isOpen = openCategory === cat.key;
                       const catServices = cat.isKids
-                        ? getServicesForCategory('Corte').filter(s => 
-                            s.name.toLowerCase().includes('niño') ||
-                            s.name.toLowerCase().includes('kids') ||
-                            s.name.toLowerCase().includes('infantil') ||
-                            s.name.toLowerCase().includes('menor')
-                          ).concat(
-                            // fallback: if no kids-specific services exist, show all corte services
-                            getServicesForCategory('Corte').filter(s =>
-                              !s.name.toLowerCase().includes('niño') &&
-                              !s.name.toLowerCase().includes('kids') &&
-                              !s.name.toLowerCase().includes('infantil') &&
-                              !s.name.toLowerCase().includes('menor')
-                            ).slice(0, 3)
-                          )
+                        ? getServicesForCategory('Corte').filter(s => {
+                            const name = s.name.toLowerCase();
+                            return name.includes('básico') || name.includes('basico') || name.includes('desvanecido') || name.includes('fade');
+                          })
                         : getServicesForCategory(cat.key);
                       return (
                         <div 
