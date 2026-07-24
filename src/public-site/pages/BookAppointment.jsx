@@ -215,6 +215,11 @@ export default function BookAppointment() {
   }, [showWelcome]);
 
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  const [visibleCount, setVisibleCount] = useState(() => {
+    if (window.innerWidth >= 1200) return 5;
+    if (window.innerWidth >= 768) return 3;
+    return 1;
+  });
   const [isScrolled, setIsScrolled] = useState(false);
   const [showExperienceModal, setShowExperienceModal] = useState(false);
   const [artistFilter, setArtistFilter] = useState('todos');
@@ -273,14 +278,14 @@ export default function BookAppointment() {
       return true;
     }).length;
 
-    if (filteredCount <= 5) {
+    if (filteredCount <= visibleCount) {
       setBarberStartIndex(0);
       return;
     }
 
     const interval = setInterval(() => {
       setBarberStartIndex(prev => {
-        const maxIndex = filteredCount - 5;
+        const maxIndex = filteredCount - visibleCount;
         if (prev >= maxIndex) {
           return 0; // Wrap around to the start
         }
@@ -289,10 +294,19 @@ export default function BookAppointment() {
     }, 4500); // Shift every 4.5 seconds
 
     return () => clearInterval(interval);
-  }, [barbers, artistFilter, showWelcome]);
+  }, [barbers, artistFilter, showWelcome, visibleCount]);
 
   useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+      if (window.innerWidth >= 1200) {
+        setVisibleCount(5);
+      } else if (window.innerWidth >= 768) {
+        setVisibleCount(3);
+      } else {
+        setVisibleCount(1);
+      }
+    };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -1627,8 +1641,8 @@ export default function BookAppointment() {
                 </button>
                 
                 <button 
-                  onClick={() => setBarberStartIndex(prev => Math.min(Math.max(0, barbers.length - 5), prev + 1))}
-                  disabled={barberStartIndex >= barbers.length - 5}
+                  onClick={() => setBarberStartIndex(prev => Math.min(Math.max(0, barbers.length - visibleCount), prev + 1))}
+                  disabled={barberStartIndex >= barbers.length - visibleCount}
                   className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/80 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-[#CBB79A]/50 transition-all disabled:opacity-0 disabled:pointer-events-none z-10 cursor-pointer shadow-lg"
                 >
                   <ChevronRight size={20} />
@@ -1637,7 +1651,7 @@ export default function BookAppointment() {
                 <div className="overflow-hidden w-full">
                   <div 
                     className="flex transition-transform duration-500 ease-in-out"
-                    style={{ transform: `translateX(-${barberStartIndex * 20}%)` }}
+                    style={{ transform: `translateX(-${barberStartIndex * (100 / visibleCount)}%)` }}
                     key={artistFilter}
                   >
                     {barbers.filter(barber => {
@@ -1662,7 +1676,7 @@ export default function BookAppointment() {
                       const tagsText = isAbraham ? 'Fade • Barba • Clásicos' : isAlejandro ? 'Corte • Barba • Diseños' : isAngel ? 'Fade • Corte • Barba' : isJose ? 'Corte • Barba • Clásicos' : isMarko ? 'Realismo • Black & Grey' : 'Corte • Barba';
                       
                       return (
-                        <div key={barber.id} className="w-1/5 shrink-0 px-3 animate-[premiumFadeUp_0.6s_cubic-bezier(0.16,1,0.3,1)_both]" style={{ animationDelay: `${idx * 60}ms` }}>
+                        <div key={barber.id} className="shrink-0 px-3 animate-[premiumFadeUp_0.6s_cubic-bezier(0.16,1,0.3,1)_both]" style={{ width: `${100 / visibleCount}%`, animationDelay: `${idx * 60}ms` }}>
                           <div className="bg-[#111115]/50 border border-white/5 rounded-2xl p-5 flex flex-col items-center text-center relative group hover:border-[rgba(203,183,154,0.3)] transition-all duration-300">
                             <div className="w-full aspect-[4/5] rounded-xl overflow-hidden mb-4 relative bg-[#1c1c24] border border-white/5">
                               <BarberAvatar url={barber.image_url} name={barber.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" iconSize={40} />
