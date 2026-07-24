@@ -2482,7 +2482,7 @@ export default function BookAppointment() {
                       { key: 'Corte', label: 'Corte', sub: 'Renueva tu estilo', icon: <Scissors size={22} strokeWidth={1.5} />, img: '/services/corte.png' },
                       { key: 'Barba', label: 'Barba', sub: 'Perfilado y define', icon: <User size={22} strokeWidth={1.5} />, img: '/services/barba.png' },
                       { key: 'Tatuajes', label: 'Tatuaje', sub: 'Arte que se queda', icon: <PenTool size={22} strokeWidth={1.5} />, img: '/services/tatuaje.png' },
-                      { key: 'Kids', label: 'Panda Kids', sub: 'Para los más pequeños', icon: <Heart size={22} strokeWidth={1.5} />, img: '/services/corte.png', isKids: true },
+                      { key: 'Kids', label: 'Panda Kids', sub: 'Para los más pequeños', icon: <Heart size={22} strokeWidth={1.5} />, img: '/services/panda_kids.png', isKids: true },
                     ].map((cat, catIndex) => {
                       const isOpen = openCategory === cat.key;
                       const catServices = cat.isKids
