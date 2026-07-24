@@ -2395,7 +2395,7 @@ export default function BookAppointment() {
 
         {/* ── INTERACTIVE WIZARD FLOW SCREEN (STEPS 1-6) ── */}
         {(!showWelcome || isTransitioning) && !success && (
-          <div className={`w-full max-w-xl mx-auto px-4 pb-24 flex flex-col flex-1 relative z-10 lg:pt-28 pt-24 ${step === 2 && expandedBarber ? 'pt-0' : ''}`}>
+          <div className={`w-full max-w-xl mx-auto px-4 pb-10 flex flex-col flex-1 relative z-10 lg:pt-10 pt-8 ${step === 2 && expandedBarber ? 'pt-0' : ''}`}>
             
             {/* Wizard Header: PASO X DE 6 with title/subtitle and back button */}
             {!(step === 2 && expandedBarber) && (
