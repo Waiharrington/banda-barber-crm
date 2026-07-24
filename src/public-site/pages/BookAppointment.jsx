@@ -53,6 +53,7 @@ import barberiaCover from '../../assets/barberia_cover.png';
 import tatuajesCover from '../../assets/tatuajes_cover.png';
 import experienciaPandaCover from '../../assets/experiencia_panda_cover.png';
 import pandaKidsCover from '../../assets/panda_kids.png';
+import pandaKidsVideo from '../../assets/panda_kids_video.mp4';
 import heroSlide1 from '../../assets/hero1.png';
 import heroSlide2 from '../../assets/hero2.png';
 import heroSlide3 from '../../assets/hero3.png';
@@ -1738,16 +1739,21 @@ export default function BookAppointment() {
             {/* SECTION: PANDA KIDS CLUB */}
             <div id="pandakids" className="w-full reveal-item scroll-mt-24">
               <div className="w-full bg-[#111115]/30 border border-white/[0.04] rounded-3xl overflow-hidden flex flex-col lg:flex-row items-stretch group hover:border-[rgba(203,183,154,0.12)] transition-all duration-500">
-                {/* Left side: Full-Bleed Image Banner */}
-                <div className="w-full lg:w-[45%] min-h-[380px] relative bg-[#1c1c24] flex-shrink-0">
-                  <img 
-                    src={pandaKidsCover} 
-                    alt="Panda Kids Club" 
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                  />
+                {/* Left side: Full-Bleed Video Banner */}
+                <div className="w-full lg:w-[45%] min-h-[380px] relative bg-black flex-shrink-0">
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{ filter: 'brightness(0.85)', objectPosition: 'center top' }}
+                  >
+                    <source src={pandaKidsVideo} type="video/mp4" />
+                  </video>
                   <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/80 via-black/20 lg:via-transparent to-transparent lg:to-[#111115]/30 z-1" />
                   
-                  {/* Floating badge inside image */}
+                  {/* Floating badge inside video */}
                   <div className="absolute top-6 left-6 z-10 bg-black/70 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-1.5">
                     <Heart size={12} className="text-[#CBB79A]" fill="#CBB79A" />
                     <span className="text-[9px] font-extrabold text-white tracking-widest uppercase">ZONA EXCLUSIVA</span>
