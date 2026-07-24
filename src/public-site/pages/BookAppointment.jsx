@@ -1818,30 +1818,26 @@ export default function BookAppointment() {
 
             {/* SECTION: BARBERO DESTACADO DEL MES */}
             {topBarber && (
-              <div className="w-full text-left py-4">
-                {/* Main Content Area */}
-                <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
-                  {/* Left Column: Portrait */}
-                  <div className="w-full lg:w-[35%] aspect-[4/5] relative rounded-2xl overflow-hidden border border-white/[0.06] bg-[#1c1c24] flex-shrink-0">
+              <div className="w-full text-left">
+                <div className="w-full bg-[#111115]/30 border border-white/[0.04] rounded-3xl overflow-hidden flex flex-col lg:flex-row items-stretch group hover:border-[rgba(203,183,154,0.12)] transition-all duration-500">
+                  {/* Left Column: Full-Bleed Portrait */}
+                  <div className="w-full lg:w-[38%] min-h-[420px] lg:min-h-auto relative bg-[#1c1c24] flex-shrink-0">
                     <BarberAvatar url={topBarber.image_url} name={topBarber.name} className="absolute inset-0 w-full h-full object-cover" iconSize={60} />
-                    {/* Subtle gradient overlay at bottom */}
-                    <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black via-black/40 to-transparent z-1" />
+                    <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/80 via-black/20 lg:via-transparent to-transparent lg:to-[#111115]/30 z-1" />
+                    
+                    {/* Floating badge */}
+                    <div className="absolute top-6 left-6 z-10 bg-black/70 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-1.5">
+                      <span className="text-[9px] font-extrabold text-[#CBB79A] tracking-widest uppercase">BARBERO DEL MES</span>
+                    </div>
                   </div>
 
-                  {/* Center Column: Info */}
-                  <div className="flex-1 space-y-6">
-                    <div>
-                      {/* Subtitle */}
-                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#CBB79A] flex items-center gap-1.5 mb-3">
-                        👑 BARBERO DESTACADO DEL MES
-                      </span>
-                      
-                      {/* Name */}
-                      <h3 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-3">
+                  {/* Right Column: Info & Portfolio Grid */}
+                  <div className="flex-1 p-8 lg:p-12 text-left space-y-8 flex flex-col justify-center">
+                    <div className="space-y-3">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block">TALENTO DESTACADO</span>
+                      <h3 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans">
                         {topBarber.name}
                       </h3>
-
-                      {/* Badges */}
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-extrabold tracking-widest text-white/50 uppercase">
                           MASTER BARBER
@@ -1854,7 +1850,7 @@ export default function BookAppointment() {
                     </div>
 
                     {/* Biography Quote */}
-                    <p className="text-white/80 text-[15px] leading-relaxed italic border-l-2 border-[#CBB79A]/30 pl-4">
+                    <p className="text-white/85 text-[15px] leading-relaxed italic border-l-2 border-[#CBB79A]/30 pl-4">
                       "{topBarber.biography || 'Especializado en cortes clásicos y modernos con un estilo y precisión impecables.'}"
                     </p>
 
@@ -1880,6 +1876,23 @@ export default function BookAppointment() {
                       </div>
                     </div>
 
+                    {/* Portfolio/Trabajos Destacados Grid */}
+                    <div className="space-y-3">
+                      <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#CBB79A]/70 block">PORTAFOLIO DE TRABAJOS</span>
+                      <div className="grid grid-cols-4 gap-3">
+                        {topBarberPortfolio.slice(0, 4).map((img, idx) => (
+                          <div key={img.id || idx} className="aspect-square bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                            <img src={img.image_url} alt="Corte Abraham Díaz" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300 cursor-pointer" />
+                          </div>
+                        ))}
+                        {topBarberPortfolio.length < 4 && Array.from({ length: 4 - topBarberPortfolio.length }).map((_, idx) => (
+                          <div key={`ph-${idx}`} className="aspect-square bg-white/[0.02] border border-white/[0.04] rounded-xl overflow-hidden flex items-center justify-center">
+                            <Scissors size={14} className="text-white/10" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     {/* Action buttons */}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                       <button
@@ -1898,25 +1911,6 @@ export default function BookAppointment() {
                       </button>
                     </div>
                   </div>
-
-                  {/* Right Column: Portfolio Grid (desktop only) */}
-                  {isDesktop && (
-                    <div className="w-[30%] flex items-center justify-end pl-4">
-                      <div className="grid grid-cols-2 gap-2 w-full max-w-[280px]">
-                        {topBarberPortfolio.slice(0, 4).map((img, idx) => (
-                          <div key={img.id || idx} className="aspect-square bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                            <img src={img.image_url} alt="Work" className="w-full h-full object-cover hover:scale-110 transition-transform duration-300" />
-                          </div>
-                        ))}
-                        {/* Placeholder grids if no portfolio loaded */}
-                        {topBarberPortfolio.length < 4 && Array.from({ length: 4 - topBarberPortfolio.length }).map((_, idx) => (
-                          <div key={`ph-${idx}`} className="aspect-square bg-white/[0.02] border border-white/[0.04] rounded-xl overflow-hidden flex items-center justify-center">
-                            <Scissors size={14} className="text-white/10" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
