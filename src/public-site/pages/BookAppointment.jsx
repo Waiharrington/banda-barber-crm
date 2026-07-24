@@ -220,10 +220,6 @@ export default function BookAppointment() {
     if (window.innerWidth >= 768) return 3;
     return 1;
   });
-  const [mobilePosX, setMobilePosX] = useState(100);
-  const [mobilePosY, setMobilePosY] = useState(40);
-  const [mobileZoom, setMobileZoom] = useState(100);
-  const [showMobileTool, setShowMobileTool] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showExperienceModal, setShowExperienceModal] = useState(false);
   const [artistFilter, setArtistFilter] = useState('todos');
@@ -1153,8 +1149,8 @@ export default function BookAppointment() {
                 className={`absolute inset-0 hero-slide opacity-0 z-1 ${index === currentSlide ? 'hero-slide-active z-2' : ''}`}
                 style={{
                   backgroundImage: `url(${slide})`,
-                  backgroundSize: isDesktop ? 'cover' : `${mobileZoom}%`,
-                  backgroundPosition: isDesktop ? (index === 0 ? '90% 40%' : 'center 40%') : `${mobilePosX}% ${mobilePosY}%`,
+                  backgroundSize: isDesktop ? 'cover' : '153%',
+                  backgroundPosition: isDesktop ? (index === 0 ? '90% 40%' : 'center 40%') : '100% 33%',
                   filter: 'brightness(0.70) contrast(1.05)',
                   maskImage: isDesktop 
                     ? `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop}%, rgba(0, 0, 0, 0) ${gradientStop + 25}%)`
@@ -1277,68 +1273,6 @@ export default function BookAppointment() {
 
         </div>
 
-        {/* Mobile Real-time Tuner Controls */}
-        {!isDesktop && (
-          <div className="fixed bottom-4 right-4 z-[999] flex flex-col items-end gap-2 pointer-events-auto">
-            <button 
-              onClick={() => setShowMobileTool(prev => !prev)}
-              className="bg-[#CBB79A] text-black font-extrabold px-4 py-2 rounded-xl text-[10px] uppercase tracking-wider shadow-lg flex items-center gap-1.5"
-            >
-              <span>🎛️ {showMobileTool ? 'Cerrar Ajustes' : 'Ajustar Foto'}</span>
-            </button>
-            {showMobileTool && (
-              <div className="bg-[#111115]/95 border border-white/10 rounded-2xl p-4 w-72 backdrop-blur-md shadow-2xl flex flex-col gap-3 text-left">
-                <span className="text-[10px] font-bold text-[#CBB79A] uppercase tracking-wider block mb-1">Ajuste de Banner Móvil</span>
-                
-                {/* Horizontal X Slider */}
-                <div>
-                  <div className="flex justify-between text-[10px] font-bold mb-1">
-                    <span className="text-white/60">Posición X (Izquierda/Derecha)</span>
-                    <span className="text-[#CBB79A]">{mobilePosX}%</span>
-                  </div>
-                  <input 
-                    type="range" min="0" max="100" value={mobilePosX} 
-                    onChange={e => setMobilePosX(Number(e.target.value))}
-                    className="w-full accent-[#CBB79A] h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-
-                {/* Vertical Y Slider */}
-                <div>
-                  <div className="flex justify-between text-[10px] font-bold mb-1">
-                    <span className="text-white/60">Posición Y (Arriba/Abajo)</span>
-                    <span className="text-[#CBB79A]">{mobilePosY}%</span>
-                  </div>
-                  <input 
-                    type="range" min="0" max="100" value={mobilePosY} 
-                    onChange={e => setMobilePosY(Number(e.target.value))}
-                    className="w-full accent-[#CBB79A] h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-
-                {/* Zoom Slider */}
-                <div>
-                  <div className="flex justify-between text-[10px] font-bold mb-1">
-                    <span className="text-white/60">Zoom (Tamaño de Foto)</span>
-                    <span className="text-[#CBB79A]">{mobileZoom}%</span>
-                  </div>
-                  <input 
-                    type="range" min="100" max="250" value={mobileZoom} 
-                    onChange={e => setMobileZoom(Number(e.target.value))}
-                    className="w-full accent-[#CBB79A] h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-
-                <div className="border-t border-white/5 pt-2 mt-1">
-                  <span className="text-[9px] text-white/40 block font-semibold">Valor para guardar:</span>
-                  <code className="text-[10px] text-emerald-400 block font-mono select-all">
-                    X: {mobilePosX}%, Y: {mobilePosY}%, Zoom: {mobileZoom}%
-                  </code>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Centered Scroll Indicator (Desktop Only) */}
         {isDesktop && (
