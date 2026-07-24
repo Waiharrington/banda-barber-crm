@@ -844,7 +844,12 @@ export default function BookAppointment() {
         ]);
         setServices(servicesData);
         
-        const filteredBarbers = staffData.filter(s => s.active !== false);
+        const filteredBarbers = staffData.filter(s => {
+          if (s.active === false) return false;
+          const nameLower = s.name.toLowerCase();
+          const roleLower = (s.role || '').toLowerCase();
+          return !nameLower.includes('administrador') && !nameLower.includes('admin') && !roleLower.includes('admin') && !roleLower.includes('administrador');
+        });
 
         // Ángel es el dueño y Moret Serrano va al lado (segundo en la vitrina)
         const sortedBarbers = [...filteredBarbers].sort((a, b) => {
