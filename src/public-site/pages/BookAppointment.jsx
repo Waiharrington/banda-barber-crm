@@ -2723,16 +2723,16 @@ export default function BookAppointment() {
                           return (
                             <>
                               {/* Immersive Cinematic Hero Video/Photo Header */}
-                              <div className="relative w-full h-auto -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d]">
+                              <div className="relative w-full aspect-[3/4] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d]">
                                 {getBarberVideo(expandedBarber.name) ? (
-                                  <div className="w-full relative">
-                                      {/* Crisp foreground video in its exact original aspect ratio */}
+                                  <div className="w-full h-full relative">
+                                      {/* Crisp foreground video filling edge to edge */}
                                       <video
                                         autoPlay
                                         loop
                                         muted
                                         playsInline
-                                        className="w-full block relative z-10"
+                                        className="w-full h-full object-cover object-center relative z-10"
                                         style={{ filter: 'brightness(0.9)' }}
                                       >
                                         <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
