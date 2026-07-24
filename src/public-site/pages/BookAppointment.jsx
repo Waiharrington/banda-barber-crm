@@ -255,6 +255,37 @@ export default function BookAppointment() {
     return () => clearInterval(interval);
   }, [showWelcome]);
 
+  // Autoplay for the Artists Carousel
+  useEffect(() => {
+    if (!showWelcome) return;
+    
+    const activeFilter = artistFilter;
+    const filteredCount = barbers.filter(barber => {
+      if (activeFilter === 'todos') return true;
+      const r = (barber.role?.split('|')[0] || '').toLowerCase().trim();
+      if (activeFilter === 'barberos') return r.includes('barber') || r.includes('corte') || r.includes('barba');
+      if (activeFilter === 'tatuadores') return r.includes('tatu') || r.includes('ink') || r.includes('artista');
+      return true;
+    }).length;
+
+    if (filteredCount <= 5) {
+      setBarberStartIndex(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setBarberStartIndex(prev => {
+        const maxIndex = filteredCount - 5;
+        if (prev >= maxIndex) {
+          return 0; // Wrap around to the start
+        }
+        return prev + 1;
+      });
+    }, 4500); // Shift every 4.5 seconds
+
+    return () => clearInterval(interval);
+  }, [barbers, artistFilter, showWelcome]);
+
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
     window.addEventListener('resize', handleResize);
