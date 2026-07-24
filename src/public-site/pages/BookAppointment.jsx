@@ -57,6 +57,10 @@ import heroSlide1 from '../../assets/hero1.png';
 import heroSlide2 from '../../assets/hero2.png';
 import heroSlide3 from '../../assets/hero3.png';
 import heroSlide4 from '../../assets/hero4.png';
+import abrahamWork1 from '../../assets/abraham_work1.jpg';
+import abrahamWork2 from '../../assets/abraham_work2.png';
+import abrahamWork3 from '../../assets/abraham_work3.jpg';
+import abrahamWork4 from '../../assets/abraham_work4.jpg';
 
 // Reusable AnimatedSection component to perform fade-up on scroll reveal
 function AnimatedSection({ children, className = "", delay = 0, from = "bottom" }) {
@@ -430,12 +434,35 @@ export default function BookAppointment() {
   const [barberOfMonth, setBarberOfMonth] = useState(null);
   const [topClients, setTopClients] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [topBarberPortfolio, setTopBarberPortfolio] = useState([]);
+  const [topBarberPortfolio, setTopBarberPortfolio] = useState([
+    { id: 'ab1', image_url: abrahamWork1 },
+    { id: 'ab2', image_url: abrahamWork2 },
+    { id: 'ab3', image_url: abrahamWork3 },
+    { id: 'ab4', image_url: abrahamWork4 }
+  ]);
 
   useEffect(() => {
     const topBarber = barbers.find(b => b.name.toLowerCase().includes('abraham')) || barberOfMonth || (barbers.length > 0 ? barbers[0] : null);
     if (topBarber?.id) {
-      publicService.getStaffPortfolio(topBarber.id).then(setTopBarberPortfolio).catch(() => []);
+      publicService.getStaffPortfolio(topBarber.id).then(data => {
+        if (data && data.length > 0) {
+          setTopBarberPortfolio(data);
+        } else {
+          setTopBarberPortfolio([
+            { id: 'ab1', image_url: abrahamWork1 },
+            { id: 'ab2', image_url: abrahamWork2 },
+            { id: 'ab3', image_url: abrahamWork3 },
+            { id: 'ab4', image_url: abrahamWork4 }
+          ]);
+        }
+      }).catch(() => {
+        setTopBarberPortfolio([
+          { id: 'ab1', image_url: abrahamWork1 },
+          { id: 'ab2', image_url: abrahamWork2 },
+          { id: 'ab3', image_url: abrahamWork3 },
+          { id: 'ab4', image_url: abrahamWork4 }
+        ]);
+      });
     }
   }, [barberOfMonth, barbers]);
   // One-time migration: the hero was recomposed (text left / bear right), so the
