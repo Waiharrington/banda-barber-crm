@@ -2824,11 +2824,7 @@ export default function BookAppointment() {
                                   </div>
                                 )}
                                 
-                                {/* Absolute overlay gradients for text contrast */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0e] via-[#0a0a0e]/30 to-transparent z-[2]"></div>
-                                <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0e]/50 via-transparent to-transparent z-[2]"></div>
-
-                                <button onClick={() => { setExpandedBarber(null); setExpandedBarberPortfolio([]); scrollToTop(); }} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center z-20 hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer">
+                                {/* Absolute overlay gradients for text cont                                <div className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center z-20 hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer">
                                   <ChevronLeft size={20} className="text-white" />
                                 </button>
                                 
@@ -2849,50 +2845,85 @@ export default function BookAppointment() {
                                   </button>
                                 </div>
                                 
-                                <div className="absolute bottom-6 left-4 right-4 z-20">
+                                <div className="absolute bottom-8 left-6 right-6 z-20">
                                   {badge && (
-                                    <span className="inline-block px-3 py-1 rounded-full bg-[var(--champagne)] text-[9px] font-black text-black uppercase tracking-widest mb-3 shadow-lg shadow-[var(--champagne)]/10">
+                                    <span className="urban-tape mb-3 text-[10px]">
                                       {badge}
                                     </span>
                                   )}
-                                  <h3 className="font-black text-4xl text-white leading-none tracking-tight">{expandedBarber.name}</h3>
-                                  <p className="text-xs text-[var(--champagne)] font-bold tracking-wider uppercase mt-2">{specialty}</p>
+                                  <div className="relative">
+                                    <div className="urban-stencil-text select-none">PANDA</div>
+                                    <h3 className="font-black text-5xl text-white leading-none tracking-tighter uppercase mb-1 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
+                                      {expandedBarber.name}
+                                    </h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="urban-street-tag urban-street-tag-glow text-[10px]">
+                                        {specialty}
+                                      </span>
+                                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--champagne)] animate-ping" />
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* Glassmorphism Stats Cards (2x2 Grid) */}
+                              {/* Brutalist Asymmetric Stats Section */}
                               {(() => {
                                 const stats = getBarberStats(expandedBarber);
                                 return (
-                                  <div className="grid grid-cols-2 gap-3 mb-6 profile-stats-enter">
-                                    {[
-                                      { icon: <Scissors size={18} />, value: stats.services_count, label: 'Servicios' },
-                                      { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>, value: stats.happy_clients, label: 'Clientes felices' },
-                                      { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, value: stats.experience, label: 'Experiencia' },
-                                      { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, value: stats.location, label: 'Ubicación' }
-                                    ].map((s, i) => (
-                                      <div key={i} className="flex flex-col items-start p-4 rounded-2xl bg-white/[0.03] border border-white/5 shadow-md">
-                                        <span className="text-[var(--champagne)] mb-2.5 bg-[#d4bc9a]/10 p-2 rounded-xl">{s.icon}</span>
-                                        <span className="text-lg font-black text-white tracking-tight">{s.value}</span>
-                                        <span className="text-[10px] text-white/50 font-medium tracking-wide uppercase mt-0.5">{s.label}</span>
+                                  <div className="grid grid-cols-2 gap-4 mb-8 profile-stats-enter">
+                                    <div className="urban-industrial-panel p-5 flex flex-col justify-between h-[115px]">
+                                      <span className="text-[10px] text-white/40 font-black uppercase tracking-widest leading-none">// TRABAJOS</span>
+                                      <div>
+                                        <div className="urban-stat-num">{stats.services_count}</div>
+                                        <span className="text-[9px] text-white/60 font-bold uppercase tracking-wider">Cortes completados</span>
                                       </div>
-                                    ))}
+                                    </div>
+
+                                    <div className="urban-industrial-panel p-5 flex flex-col justify-between h-[115px] border-left-[#ffffff]">
+                                      <span className="text-[10px] text-white/40 font-black uppercase tracking-widest leading-none">// FEEDBACK</span>
+                                      <div>
+                                        <div className="urban-stat-num urban-stat-accent">{stats.happy_clients}</div>
+                                        <span className="text-[9px] text-white/60 font-bold uppercase tracking-wider">Clientes felices</span>
+                                      </div>
+                                    </div>
+
+                                    <div className="urban-industrial-panel p-5 flex flex-col justify-between h-[115px]">
+                                      <span className="text-[10px] text-white/40 font-black uppercase tracking-widest leading-none">// EXPERIENCIA</span>
+                                      <div>
+                                        <div className="urban-stat-num">{stats.experience}</div>
+                                        <span className="text-[9px] text-white/60 font-bold uppercase tracking-wider">Años de trayectoria</span>
+                                      </div>
+                                    </div>
+
+                                    <div className="urban-industrial-panel p-5 flex flex-col justify-between h-[115px]">
+                                      <span className="text-[10px] text-white/40 font-black uppercase tracking-widest leading-none">// UBICACIÓN</span>
+                                      <div>
+                                        <div className="text-sm font-black text-white leading-tight truncate uppercase tracking-tight">{stats.location}</div>
+                                        <span className="text-[9px] text-white/60 font-bold uppercase tracking-wider">Sede oficial</span>
+                                      </div>
+                                    </div>
                                   </div>
                                 );
                               })()}
 
-                              {/* Editorial Quote Section */}
-                              <div className="relative bg-white/[0.02] border border-white/5 rounded-2xl p-5 mb-6 overflow-hidden profile-bio-enter">
-                                <span className="absolute -right-2 -bottom-8 text-8xl font-serif text-white/[0.04] pointer-events-none select-none">”</span>
-                                <h4 className="font-extrabold text-sm text-[var(--champagne)] uppercase tracking-widest mb-3">Sobre Mí</h4>
-                                <p className="text-[15px] text-white/80 leading-relaxed italic font-medium relative z-10">
+                              {/* Creative Manifesto Section */}
+                              <div className="relative urban-industrial-panel p-6 mb-8 profile-bio-enter">
+                                <div className="absolute -top-3 left-4">
+                                  <span className="urban-tape urban-tape-accent text-[9px]">
+                                    MANIFESTO // {expandedBarber.name}
+                                  </span>
+                                </div>
+                                <p className="text-[15px] text-white/90 leading-relaxed italic font-medium relative z-10 pt-2">
                                   "{getBarberBiography(expandedBarber)}"
                                 </p>
                               </div>
 
-                              {/* Recent Works Gallery */}
-                              <div className="mb-6 profile-gallery-enter">
-                                <h4 className="font-extrabold text-base text-white mb-3 tracking-tight">Trabajos recientes</h4>
+                              {/* Recent Works Collage Gallery */}
+                              <div className="mb-8 profile-gallery-enter">
+                                <div className="flex items-center justify-between mb-4">
+                                  <h4 className="font-extrabold text-sm text-white/80 uppercase tracking-widest">// RECIENTES / PORTAFOLIO</h4>
+                                  <span className="text-[9px] text-[var(--champagne)] font-bold tracking-wider uppercase border border-[var(--champagne)]/20 px-2 py-0.5 rounded">GALERÍA</span>
+                                </div>
                                 {portfolioLoading ? (
                                   <div className="flex gap-3 overflow-hidden">
                                     {[1, 2, 3].map(i => (
@@ -2901,27 +2932,35 @@ export default function BookAppointment() {
                                   </div>
                                 ) : expandedBarberPortfolio.length === 0 ? (
                                   <div className="flex items-center justify-center h-24 rounded-2xl border border-white/5 bg-white/[0.02] border-dashed">
-                                    <p className="text-sm text-white/40 font-medium">Sin fotos de trabajos aún</p>
+                                    <p className="text-xs text-white/40 font-bold uppercase tracking-wider">// Sin registros cargados</p>
                                   </div>
                                 ) : (
-                                  <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar snap-x snap-mandatory">
+                                  <div className="flex gap-4 overflow-x-auto pb-4 pt-1 hide-scrollbar snap-x snap-mandatory px-2">
                                     {expandedBarberPortfolio.map(photo => (
                                       <div 
                                         key={photo.id} 
                                         onClick={() => setActiveLightboxImage(photo.image_url)}
-                                        className="w-32 h-44 rounded-2xl overflow-hidden flex-shrink-0 bg-white/5 border border-white/10 hover:border-[var(--champagne)] cursor-pointer transition-all duration-300 active:scale-95 shadow-lg group snap-start"
+                                        className="polaroid-gallery-item w-32 h-44 rounded-xl overflow-hidden flex-shrink-0 bg-[#0d0d12] border border-white/10 hover:border-[var(--champagne)] cursor-pointer transition-all duration-300 active:scale-95 shadow-2xl group snap-start p-1.5"
                                       >
-                                        <img src={photo.image_url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                        <div className="w-full h-[82%] rounded-lg overflow-hidden bg-black/40">
+                                          <img src={photo.image_url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                        </div>
+                                        <div className="h-[18%] flex items-center justify-center">
+                                          <span className="text-[7px] text-white/40 font-black uppercase tracking-widest">PANDA CREW</span>
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
                                 )}
                               </div>
 
-                              {/* Premium Services Cards */}
+                              {/* Brutalist Chalkboard Services Menu */}
                               <div className="mb-8">
-                                <h4 className="font-extrabold text-base text-white mb-4 tracking-tight">Servicios Destacados</h4>
-                                <div className="grid grid-cols-2 gap-2.5">
+                                <div className="flex items-center justify-between mb-4">
+                                  <h4 className="font-extrabold text-sm text-white/80 uppercase tracking-widest">// MENÚ DE SERVICIOS</h4>
+                                  <span className="text-[9px] text-white/40 font-bold tracking-wider uppercase">PREMIUM RATE</span>
+                                </div>
+                                <div className="flex flex-col bg-white/[0.01] border border-white/5 rounded-2xl p-4 gap-1">
                                   {(() => {
                                     const isTattoo = expandedBarber.role?.toLowerCase().includes('tatuador') || specialty.toLowerCase().includes('tatuador');
                                     const filtered = services.filter(s => {
@@ -2942,18 +2981,13 @@ export default function BookAppointment() {
                                     ];
 
                                     return itemsToRender.map((s, i) => (
-                                      <div key={s.id || i} className="flex flex-col justify-between p-3.5 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all">
-                                        <div className="flex items-center justify-between mb-2">
-                                          <span className="text-[var(--champagne)] bg-[#d4bc9a]/10 p-1.5 rounded-lg">
-                                            {isTattoo ? <Star size={15} /> : <Scissors size={15} />}
-                                          </span>
-                                          <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider">
-                                            {s.duration} min
-                                          </span>
+                                      <div key={s.id || i} className="urban-service-row flex items-center justify-between py-3 px-2">
+                                        <div className="flex flex-col items-start gap-0.5">
+                                          <span className="text-xs font-black text-white tracking-tight uppercase">{s.name}</span>
+                                          <span className="text-[9px] text-white/40 font-bold uppercase tracking-wider">{s.duration} MINUTES // EST. TIME</span>
                                         </div>
-                                        <div>
-                                          <h5 className="text-xs font-bold text-white tracking-tight leading-tight mb-1 truncate">{s.name}</h5>
-                                          <span className="text-sm font-extrabold text-[var(--champagne)]">${s.price}</span>
+                                        <div className="flex items-center gap-1">
+                                          <span className="text-xs font-black text-[var(--champagne)]">${s.price}</span>
                                         </div>
                                       </div>
                                     ));

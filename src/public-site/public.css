@@ -2748,3 +2748,136 @@ body.hide-public-header header,
 body.hide-public-header nav {
   display: none !important;
 }
+
+/* ==========================================================================
+   URBAN / STREET BRUTALIST STYLE FOR EXPANDED PROFILE
+   ========================================================================== */
+
+/* Distressed tape overlay */
+.urban-tape {
+  position: relative;
+  background: #c4a882;
+  color: #000;
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 12px;
+  transform: rotate(-2deg);
+  box-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+  display: inline-block;
+}
+
+.urban-tape-accent {
+  background: #ffffff;
+  color: #000000;
+  transform: rotate(1deg);
+}
+
+/* Stencil and brutalist typography */
+.urban-stencil-text {
+  font-family: 'Outfit', 'Arial Black', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.2);
+  color: transparent;
+  font-size: 4rem;
+  line-height: 0.8;
+  opacity: 0.12;
+  position: absolute;
+  top: 10px;
+  right: -10px;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Polaroid-like photo rotation for works gallery */
+.polaroid-gallery-item:nth-child(even) {
+  transform: rotate(2deg);
+}
+.polaroid-gallery-item:nth-child(odd) {
+  transform: rotate(-1.5deg);
+}
+.polaroid-gallery-item:hover {
+  transform: rotate(0deg) scale(1.05);
+  z-index: 10;
+  border-color: #d4bc9a;
+}
+
+/* Industrial warning tape border */
+.urban-industrial-panel {
+  position: relative;
+  background: linear-gradient(135deg, rgba(20, 20, 25, 0.85) 0%, rgba(10, 10, 12, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-left: 3px solid #d4bc9a;
+  border-bottom: 2px solid rgba(212, 188, 154, 0.3);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+
+.urban-industrial-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50px;
+  height: 4px;
+  background: repeating-linear-gradient(
+    -45deg,
+    #d4bc9a,
+    #d4bc9a 4px,
+    #141419 4px,
+    #141419 8px
+  );
+}
+
+/* Large numbers styling */
+.urban-stat-num {
+  font-size: 2.2rem;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  background: linear-gradient(180deg, #ffffff 0%, #b3b3b3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: 'Outfit', sans-serif;
+}
+
+.urban-stat-accent {
+  background: linear-gradient(180deg, #d4bc9a 0%, #a38865 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Chalkboard service list */
+.urban-service-row {
+  border-bottom: 1px dashed rgba(255,255,255,0.08);
+  transition: all 0.3s ease;
+}
+
+.urban-service-row:hover {
+  background: rgba(212, 188, 154, 0.03);
+  border-bottom: 1px dashed rgba(212, 188, 154, 0.3);
+}
+
+/* Custom street tag badge */
+.urban-street-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #14141a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.urban-street-tag-glow {
+  border-color: rgba(212, 188, 154, 0.4);
+  box-shadow: 0 0 10px rgba(212, 188, 154, 0.1);
+}
+
