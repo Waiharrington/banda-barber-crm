@@ -1833,10 +1833,12 @@ export default function BookAppointment() {
                                     setStep(2);
                                     setExpandedBarber(barber);
                                     setShowWelcome(false);
-                                    setExpandedBarberPortfolio([]);
-                                    publicService.getBarberPhotos(barber.id).then(photos => {
-                                      setExpandedBarberPortfolio(photos);
-                                    }).catch(() => {});
+                                    setExpandedBarberPortfolio([
+                                      { id: 'ab1', image_url: abrahamWork1 },
+                                      { id: 'ab2', image_url: abrahamWork2 },
+                                      { id: 'ab3', image_url: abrahamWork3 },
+                                      { id: 'ab4', image_url: abrahamWork4 }
+                                    ]);
                                     scrollToTop();
                                   }
                                 }}
@@ -3052,12 +3054,14 @@ export default function BookAppointment() {
                               key={barber.id}
                               onClick={async () => {
                                 setExpandedBarber(barber);
-                                setExpandedBarberPortfolio([]);
-                                setPortfolioLoading(true);
-                                scrollToTop();
-                                const photos = await publicService.getStaffPortfolio(barber.id);
-                                setExpandedBarberPortfolio(photos);
+                                setExpandedBarberPortfolio([
+                                   { id: 'ab1', image_url: abrahamWork1 },
+                                   { id: 'ab2', image_url: abrahamWork2 },
+                                   { id: 'ab3', image_url: abrahamWork3 },
+                                   { id: 'ab4', image_url: abrahamWork4 }
+                                 ]);
                                 setPortfolioLoading(false);
+                                scrollToTop();
                               }}
                               className={`relative rounded-2xl border overflow-hidden transition-all duration-300 cursor-pointer text-left bg-[#131316] hover:border-white/15 active:scale-[0.98] collapsed-card-reveal flex flex-col ${
                                 isSelected 
