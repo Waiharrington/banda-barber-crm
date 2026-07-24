@@ -224,6 +224,7 @@ export default function BookAppointment() {
   const [showExperienceModal, setShowExperienceModal] = useState(false);
   const [artistFilter, setArtistFilter] = useState('todos');
   const [loadDeferredAssets, setLoadDeferredAssets] = useState(false);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
@@ -318,6 +319,20 @@ export default function BookAppointment() {
     }, 1500);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    // Preload the first slide image to guarantee smooth animation trigger
+    const img = new Image();
+    img.src = heroSlides[0];
+    img.onload = () => {
+      setImagesLoaded(true);
+    };
+    // Fallback in case loading fails or takes too long to avoid blocking forever
+    const fallbackTimer = setTimeout(() => {
+      setImagesLoaded(true);
+    }, 3000);
+    return () => clearTimeout(fallbackTimer);
+  }, [heroSlides]);
 
   // Hide layout header during active booking wizard flow
   useEffect(() => {
@@ -1162,7 +1177,7 @@ export default function BookAppointment() {
         <div id="hero-sentinel" className="absolute top-0 left-0 w-1 h-1 pointer-events-none opacity-0" />
         {/* Background Slideshow (Fades and Ken Burns Zoom) */}
         {showPhoto && (
-          <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] lg:absolute lg:inset-0 lg:w-full lg:h-full lg:aspect-auto pointer-events-none z-0 overflow-hidden animate-hero-reveal">
+          <div className={`relative w-full aspect-[4/3] sm:aspect-[16/9] lg:absolute lg:inset-0 lg:w-full lg:h-full lg:aspect-auto pointer-events-none z-0 overflow-hidden ${imagesLoaded ? 'animate-hero-reveal opacity-100' : 'opacity-0'} transition-opacity duration-700`}>
             {heroSlides.map((slide, index) => (
               <div 
                 key={index}
