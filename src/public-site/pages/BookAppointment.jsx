@@ -1150,7 +1150,7 @@ export default function BookAppointment() {
         <div id="hero-sentinel" className="absolute top-0 left-0 w-1 h-1 pointer-events-none opacity-0" />
         {/* Background Slideshow (Fades and Ken Burns Zoom) */}
         {showPhoto && (
-          <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] lg:absolute lg:inset-0 lg:w-full lg:h-full lg:aspect-auto pointer-events-none z-0 overflow-hidden">
+          <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] lg:absolute lg:inset-0 lg:w-full lg:h-full lg:aspect-auto pointer-events-none z-0 overflow-hidden animate-hero-reveal">
             {heroSlides.map((slide, index) => (
               <div 
                 key={index}
