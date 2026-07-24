@@ -2089,85 +2089,97 @@ export default function BookAppointment() {
 
 
               {/* SECTION: FOOTER (PANDA BARBER STUDIO) */}
-              <footer className="w-full pt-12 border-t border-white/5 text-left grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8">
-                {/* Column 1: Logo & text */}
-                <div className="md:col-span-1">
-                  <div className="flex items-center gap-2.5 mb-4">
-                    <img src={logo} alt="Panda Barber Logo" className="w-8 h-8 object-contain" />
-                    <div className="flex flex-col text-left">
-                      <span className="font-extrabold text-[13px] tracking-[0.12em] text-white leading-none">PANDA BARBER</span>
-                      <span className="text-[9px] tracking-[0.3em] text-[#CBB79A] uppercase font-semibold">STUDIO</span>
-                    </div>
+              <footer className="w-full pt-16 border-t border-white/[0.05] text-left">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-12">
+                  
+                  {/* Column 1: Navigation */}
+                  <div>
+                    <h5 className="text-[11px] font-extrabold text-white uppercase tracking-[0.2em] mb-5">Navegación</h5>
+                    <ul className="space-y-3 text-[12px] font-bold text-white/50 list-none">
+                      <li><Link to="/" onClick={() => handleScrollTo('inicio')} className="hover:text-[#CBB79A] transition-colors no-underline">Inicio</Link></li>
+                      <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Servicios</a></li>
+                      <li><a href="#equipo" className="hover:text-[#CBB79A] transition-colors no-underline">Equipo</a></li>
+                      <li><a href="#experiencia-section" className="hover:text-[#CBB79A] transition-colors no-underline">Experiencia</a></li>
+                      <li><a href="#ubicacion" className="hover:text-[#CBB79A] transition-colors no-underline">Ubicación</a></li>
+                    </ul>
                   </div>
-                  <p className="text-white/50 text-[11px] leading-relaxed mb-6">
-                    Barbería y tatuajes de alta calidad. Profesionales apasionados por el estilo y la excelencia.
+
+                  {/* Column 2: Services */}
+                  <div>
+                    <h5 className="text-[11px] font-extrabold text-white uppercase tracking-[0.2em] mb-5">Servicios</h5>
+                    <ul className="space-y-3 text-[12px] font-bold text-white/50 list-none">
+                      <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Cortes</a></li>
+                      <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Barba</a></li>
+                      <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Tatuajes</a></li>
+                      <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Paquetes</a></li>
+                      <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Productos</a></li>
+                    </ul>
+                  </div>
+
+                  {/* Column 3: Contact */}
+                  <div>
+                    <h5 className="text-[11px] font-extrabold text-white uppercase tracking-[0.2em] mb-5">Contacto</h5>
+                    <ul className="space-y-4 text-[12px] font-bold text-white/50 list-none">
+                      <li className="flex items-center gap-2.5">
+                        <Phone size={14} className="text-[#CBB79A]" />
+                        <a href="tel:+584242259724" className="hover:text-[#CBB79A] transition-colors text-white/70">+58 424-2259724</a>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <MapPin size={14} className="text-[#CBB79A]" />
+                        <span className="text-white/70">Maracay, Venezuela</span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <Instagram size={14} className="text-[#CBB79A]" />
+                        <a href="https://www.instagram.com/pandabarberestudio/" target="_blank" rel="noopener noreferrer" className="hover:text-[#CBB79A] transition-colors text-[#CBB79A]/85">@pandabarberestudio</a>
+                      </li>
+                      
+                      {/* Social icons */}
+                      <li className="flex items-center gap-3.5 pt-1.5">
+                        <a href="https://www.instagram.com/pandabarberestudio/" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-[#CBB79A] transition-colors" aria-label="Instagram">
+                          <Instagram size={16} />
+                        </a>
+                        <a href="#" className="text-white/40 hover:text-[#CBB79A] transition-colors" aria-label="Facebook">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                          </svg>
+                        </a>
+                        <a href="https://wa.me/584242259724" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-[#CBB79A] transition-colors" aria-label="WhatsApp">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                          </svg>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* Column 4: Hours */}
+                  <div>
+                    <h5 className="text-[11px] font-extrabold text-white uppercase tracking-[0.2em] mb-5">Horarios</h5>
+                    <ul className="space-y-3.5 text-[12px] font-bold text-white/50 list-none">
+                      <li className="flex items-start gap-2.5">
+                        <Clock size={14} className="text-[#CBB79A] shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-white/70">Lun - Sáb</p>
+                          <p className="text-white/40 text-[11px] mt-0.5">9:00am - 8:00pm</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-2.5 text-white/30">
+                        <Clock size={14} className="shrink-0 mt-0.5 text-white/10" />
+                        <div>
+                          <p className="text-white/30">Domingos</p>
+                          <p className="text-white/20 text-[11px] mt-0.5">Cerrado</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Sub-footer strip */}
+                <div className="border-t border-white/[0.04] pt-8 pb-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] font-bold text-white/30">
+                  <p>© 2026 Panda Barber Studio. Todos los derechos reservados.</p>
+                  <p className="flex items-center gap-1">
+                    Diseño Premium <span className="text-[#CBB79A]">★</span> Panda Studio
                   </p>
-                  <p className="text-[10px] text-white/30">
-                    © 2026 Panda Barber Studio. <br /> Todos los derechos reservados.
-                  </p>
-                </div>
-
-                {/* Column 2: Navigation */}
-                <div>
-                  <h5 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Navegación</h5>
-                  <ul className="space-y-2 text-[11px] font-bold text-white/50 list-none">
-                    <li><Link to="/" onClick={() => handleScrollTo('inicio')} className="hover:text-[#CBB79A] transition-colors no-underline">Inicio</Link></li>
-                    <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Servicios</a></li>
-                    <li><a href="#equipo" className="hover:text-[#CBB79A] transition-colors no-underline">Equipo</a></li>
-                    <li><a href="#experiencia" className="hover:text-[#CBB79A] transition-colors no-underline">Experiencia</a></li>
-                    <li><a href="#ubicacion" className="hover:text-[#CBB79A] transition-colors no-underline">Ubicación</a></li>
-                  </ul>
-                </div>
-
-                {/* Column 3: Services */}
-                <div>
-                  <h5 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Servicios</h5>
-                  <ul className="space-y-2 text-[11px] font-bold text-white/50 list-none">
-                    <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Cortes</a></li>
-                    <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Barba</a></li>
-                    <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Tatuajes</a></li>
-                    <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Paquetes</a></li>
-                    <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Productos</a></li>
-                  </ul>
-                </div>
-
-                {/* Column 4: Contact */}
-                <div>
-                  <h5 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Contacto</h5>
-                  <ul className="space-y-2.5 text-[11px] font-bold text-white/50 list-none">
-                    <li>+58 424-2259724</li>
-                    <li>📍 Maracay, Venezuela</li>
-                    <li className="text-[#CBB79A]/70">@pandabarberestudio</li>
-                    {/* Social icons */}
-                    <li className="flex items-center gap-3 pt-2">
-                      <a href="https://www.instagram.com/pandabarberestudio/" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-[#CBB79A] transition-colors" aria-label="Instagram">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                        </svg>
-                      </a>
-                      <a href="#" className="text-white/40 hover:text-[#CBB79A] transition-colors" aria-label="Facebook">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                        </svg>
-                      </a>
-                      <a href="https://wa.me/584242259724" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-[#CBB79A] transition-colors" aria-label="WhatsApp">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                        </svg>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Column 5: Hours */}
-                <div>
-                  <h5 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Horarios</h5>
-                  <ul className="space-y-2 text-[11px] font-bold text-white/50 list-none">
-                    <li>Lun - Sáb: 9:00am - 8:00pm</li>
-                    <li className="text-white/30">Dom: Cerrado</li>
-                  </ul>
                 </div>
               </footer>
 
