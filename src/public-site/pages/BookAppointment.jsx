@@ -2142,7 +2142,7 @@ export default function BookAppointment() {
                     </div>
 
                     <a 
-                      href="https://maps.google.com" 
+                      href="https://google.com/maps/place/Panda+Barber+Estudio/data=!4m2!3m1!1s0x0:0x219ca2f89dc85e8a?sa=X&ved=1t:2428&ictx=111" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="btn-gold py-2.5 px-6 rounded-xl text-[10px] uppercase tracking-wider font-extrabold flex items-center gap-1.5 cursor-pointer"
