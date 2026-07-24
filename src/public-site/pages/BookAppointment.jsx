@@ -2723,7 +2723,7 @@ export default function BookAppointment() {
                           return (
                             <>
                               {/* Immersive Cinematic Hero Video/Photo Header */}
-                              <div className="relative h-[640px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d]">
+                              <div className="relative h-[700px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d]">
                                 {getBarberVideo(expandedBarber.name) ? (
                                   <div className="w-full h-full relative">
                                     <video
