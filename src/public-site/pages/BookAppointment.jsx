@@ -2722,9 +2722,27 @@ export default function BookAppointment() {
 
                           return (
                             <>
-                              {/* Hero photo */}
-                              <div className="relative h-[420px] -mx-4 -mt-8 mb-4 overflow-hidden rounded-b-3xl border-b border-white/5 shadow-2xl bg-white/[0.02]">
-                                {expandedBarber.image_url ? (
+                              {/* Immersive Cinematic Hero Video/Photo Header */}
+                              <div className="relative h-[480px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d]">
+                                {getBarberVideo(expandedBarber.name) ? (
+                                  <div className="w-full h-full relative">
+                                    <video
+                                      autoPlay
+                                      loop
+                                      muted
+                                      playsInline
+                                      className="w-full h-full object-cover"
+                                      style={{ filter: 'brightness(0.85)' }}
+                                    >
+                                      <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
+                                    </video>
+                                    {/* Real-time status pill */}
+                                    <div className="absolute bottom-20 left-4 z-20 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full flex items-center gap-1.5 pointer-events-none">
+                                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                      <span className="text-[9px] font-black text-white uppercase tracking-widest">En Acción</span>
+                                    </div>
+                                  </div>
+                                ) : expandedBarber.image_url ? (
                                   <img src={expandedBarber.image_url} alt={expandedBarber.name} className="w-full h-full object-cover object-top" />
                                 ) : (
                                   <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-white/[0.04] to-transparent">
@@ -2734,79 +2752,88 @@ export default function BookAppointment() {
                                     <span className="text-[10px] text-white/20 font-bold uppercase tracking-wider">Sin foto de perfil</span>
                                   </div>
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0e] via-[#0a0a0e]/20 to-transparent"></div>
-                                <button onClick={() => { setExpandedBarber(null); setExpandedBarberPortfolio([]); }} className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center z-10 hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer">
-                                  <ChevronLeft size={18} className="text-white" />
+                                
+                                {/* Absolute overlay gradients for text contrast */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0e] via-[#0a0a0e]/30 to-transparent z-[2]"></div>
+                                <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0e]/50 via-transparent to-transparent z-[2]"></div>
+
+                                <button onClick={() => { setExpandedBarber(null); setExpandedBarberPortfolio([]); }} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center z-20 hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer">
+                                  <ChevronLeft size={20} className="text-white" />
                                 </button>
-                                <div className="absolute top-4 right-4 flex gap-2 z-10">
+                                
+                                <div className="absolute top-4 right-4 flex gap-2 z-20">
                                   <button 
                                     onClick={() => handleShare(expandedBarber)}
-                                    className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer"
+                                    className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer"
                                     title="Compartir"
                                   >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                                   </button>
                                   <button 
                                     onClick={() => toggleFavorite(expandedBarber.id)}
-                                    className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer"
+                                    className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer"
                                     title="Favorito"
                                   >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill={favorites.includes(expandedBarber.id) ? "#ff453a" : "none"} stroke={favorites.includes(expandedBarber.id) ? "#ff453a" : "white"} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill={favorites.includes(expandedBarber.id) ? "#ff453a" : "none"} stroke={favorites.includes(expandedBarber.id) ? "#ff453a" : "white"} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                                   </button>
                                 </div>
-                                <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-                                  {badge && <span className="inline-block px-3 py-1 rounded-lg bg-white/10 backdrop-blur-sm text-[9px] font-black text-white uppercase tracking-wider mb-2">{badge}</span>}
-                                  <h3 className="font-black text-3xl text-white leading-none">{expandedBarber.name}</h3>
-
+                                
+                                <div className="absolute bottom-6 left-4 right-4 z-20">
+                                  {badge && (
+                                    <span className="inline-block px-3 py-1 rounded-full bg-[var(--champagne)] text-[9px] font-black text-black uppercase tracking-widest mb-3 shadow-lg shadow-[var(--champagne)]/10">
+                                      {badge}
+                                    </span>
+                                  )}
+                                  <h3 className="font-black text-4xl text-white leading-none tracking-tight">{expandedBarber.name}</h3>
+                                  <p className="text-xs text-[var(--champagne)] font-bold tracking-wider uppercase mt-2">{specialty}</p>
                                 </div>
                               </div>
 
-                              {/* Stats row */}
-                              <div className="flex justify-between py-3 border-y border-white/5 mb-4">
+                              {/* Glassmorphism Stats Cards (2x2 Grid) */}
+                              <div className="grid grid-cols-2 gap-3 mb-6">
                                 {[
-                                  { icon: <Scissors size={16} />, value: '324', label: 'Servicios' },
-                                  { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>, value: '98%', label: 'Clientes felices' },
-                                  { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, value: '5 años', label: 'Experiencia' },
-                                  { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, value: 'Panda', label: 'Sede Principal' }
+                                  { icon: <Scissors size={18} />, value: '324', label: 'Servicios' },
+                                  { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>, value: '98%', label: 'Clientes felices' },
+                                  { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, value: '5 años', label: 'Experiencia' },
+                                  { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, value: 'Panda Sede', label: 'Ubicación' }
                                 ].map((s, i) => (
-                                  <div key={i} className="flex flex-col items-center gap-1 flex-1">
-                                    <span className="text-[var(--champagne)]">{s.icon}</span>
-                                    <span className="text-sm font-bold text-white">{s.value}</span>
-                                    <span className="text-[10px] text-white/60 font-semibold">{s.label}</span>
+                                  <div key={i} className="flex flex-col items-start p-4 rounded-2xl bg-white/[0.03] border border-white/5 shadow-md">
+                                    <span className="text-[var(--champagne)] mb-2.5 bg-[#d4bc9a]/10 p-2 rounded-xl">{s.icon}</span>
+                                    <span className="text-lg font-black text-white tracking-tight">{s.value}</span>
+                                    <span className="text-[10px] text-white/50 font-medium tracking-wide uppercase mt-0.5">{s.label}</span>
                                   </div>
                                 ))}
                               </div>
 
-                              {/* About */}
-                              <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4 mb-4">
-                                <h4 className="font-extrabold text-base text-white mb-2">Sobre {expandedBarber.name}</h4>
-                                <p className="text-sm text-white/70 leading-relaxed">
-                                  {expandedBarber.biography || "Especialista en fades y cortes modernos. Me enfoco en resaltar tu estilo y personalidad con cada detalle."}
+                              {/* Editorial Quote Section */}
+                              <div className="relative bg-white/[0.02] border border-white/5 rounded-2xl p-5 mb-6 overflow-hidden">
+                                <span className="absolute -right-2 -bottom-8 text-8xl font-serif text-white/[0.04] pointer-events-none select-none">”</span>
+                                <h4 className="font-extrabold text-sm text-[var(--champagne)] uppercase tracking-widest mb-3">Sobre Mí</h4>
+                                <p className="text-[15px] text-white/80 leading-relaxed italic font-medium relative z-10">
+                                  "{expandedBarber.biography || 'Especialista en fades y cortes modernos. Me enfoco en resaltar tu estilo y personalidad con cada detalle.'}"
                                 </p>
                               </div>
 
-                              {/* Recent works — real photos from staff_portfolio */}
-                              <div className="mb-4">
-                                <div className="flex items-center justify-between mb-3">
-                                  <h4 className="font-extrabold text-base text-white">Trabajos recientes</h4>
-                                </div>
+                              {/* Recent Works Gallery */}
+                              <div className="mb-6">
+                                <h4 className="font-extrabold text-base text-white mb-3 tracking-tight">Trabajos recientes</h4>
                                 {portfolioLoading ? (
-                                  <div className="flex gap-2">
-                                    {[1,2,3].map(i => (
-                                      <div key={i} className="w-28 h-36 rounded-2xl flex-shrink-0 bg-white/5 animate-pulse" />
+                                  <div className="flex gap-3 overflow-hidden">
+                                    {[1, 2, 3].map(i => (
+                                      <div key={i} className="w-32 h-44 rounded-2xl flex-shrink-0 bg-white/5 animate-pulse" />
                                     ))}
                                   </div>
                                 ) : expandedBarberPortfolio.length === 0 ? (
-                                  <div className="flex items-center justify-center h-16 rounded-xl border border-white/5 bg-white/[0.02]">
+                                  <div className="flex items-center justify-center h-24 rounded-2xl border border-white/5 bg-white/[0.02] border-dashed">
                                     <p className="text-sm text-white/40 font-medium">Sin fotos de trabajos aún</p>
                                   </div>
                                 ) : (
-                                  <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+                                  <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar snap-x snap-mandatory">
                                     {expandedBarberPortfolio.map(photo => (
                                       <div 
                                         key={photo.id} 
                                         onClick={() => setActiveLightboxImage(photo.image_url)}
-                                        className="w-28 h-36 rounded-2xl overflow-hidden flex-shrink-0 bg-white/5 border border-white/10 hover:border-[var(--champagne)] cursor-pointer transition-all duration-300 active:scale-95 shadow-lg group"
+                                        className="w-32 h-44 rounded-2xl overflow-hidden flex-shrink-0 bg-white/5 border border-white/10 hover:border-[var(--champagne)] cursor-pointer transition-all duration-300 active:scale-95 shadow-lg group snap-start"
                                       >
                                         <img src={photo.image_url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                                       </div>
@@ -2815,44 +2842,23 @@ export default function BookAppointment() {
                                 )}
                               </div>
 
-                              {/* Presentation Video */}
-                              {getBarberVideo(expandedBarber.name) && (
-                                <div className="mb-4">
-                                  <h4 className="font-extrabold text-base text-white mb-2.5">Presentación</h4>
-                                  <div className="w-full rounded-2xl overflow-hidden relative border border-white/5 bg-[#0a0a0d] shadow-xl">
-                                    <video
-                                      autoPlay
-                                      loop
-                                      muted
-                                      playsInline
-                                      className="w-full block"
-                                      style={{ filter: 'brightness(0.95)' }}
-                                    >
-                                      <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
-                                    </video>
-                                    <div className="absolute bottom-3 left-3 z-10 bg-black/60 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-lg flex items-center gap-1.5 pointer-events-none">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                                      <span className="text-[8px] font-black text-white uppercase tracking-widest">En Acción</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Services */}
-                              <div className="mb-4">
-                                <h4 className="font-extrabold text-base text-white mb-3">Servicios</h4>
-                                <div className="grid grid-cols-2 gap-2">
+                              {/* Premium Services Cards */}
+                              <div className="mb-8">
+                                <h4 className="font-extrabold text-base text-white mb-4 tracking-tight">Servicios Destacados</h4>
+                                <div className="grid grid-cols-2 gap-2.5">
                                   {[
-                                    { icon: <Scissors size={16} />, name: 'Corte', price: '$25' },
-                                    { icon: <Scissors size={16} />, name: 'Corte + Barba', price: '$35' },
-                                    { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5.5 8.5L9 12l-3.5 3.5L2 12l3.5-3.5zM18.5 8.5L15 12l3.5 3.5L22 12l-3.5-3.5z"/></svg>, name: 'Barba', price: '$15' },
-                                    { icon: <Star size={16} />, name: 'Diseños', price: '$10' },
-                                    { icon: <Award size={16} />, name: 'Premium', price: '$50' }
+                                    { icon: <Scissors size={15} />, name: 'Corte Tradicional', price: '$25', duration: '30 min' },
+                                    { icon: <Scissors size={15} />, name: 'Corte + Barba Ritual', price: '$35', duration: '45 min' },
+                                    { icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5.5 8.5L9 12l-3.5 3.5L2 12l3.5-3.5zM18.5 8.5L15 12l3.5 3.5L22 12l-3.5-3.5z"/></svg>, name: 'Afeitado Clásico', price: '$15', duration: '20 min' },
+                                    { icon: <Star size={15} />, name: 'Diseño Personalizado', price: '$10', duration: '15 min' }
                                   ].map((s, i) => (
-                                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/[0.02]">
-                                      <span className="text-[var(--champagne)]">{s.icon}</span>
-                                      <div className="flex flex-col">
-                                        <span className="text-xs font-bold text-white">{s.name}</span>
+                                    <div key={i} className="flex flex-col justify-between p-3.5 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[var(--champagne)] bg-[#d4bc9a]/10 p-1.5 rounded-lg">{s.icon}</span>
+                                        <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider">{s.duration}</span>
+                                      </div>
+                                      <div>
+                                        <h5 className="text-xs font-bold text-white tracking-tight leading-tight mb-1">{s.name}</h5>
                                         <span className="text-sm font-extrabold text-[var(--champagne)]">{s.price}</span>
                                       </div>
                                     </div>
@@ -2860,29 +2866,31 @@ export default function BookAppointment() {
                                 </div>
                               </div>
 
-                              {/* CTA */}
-                              <button
-                                onClick={(e) => { createRipple(e); setSelectedBarber(expandedBarber); setStep(step + 1); scrollToTop(); }}
-                                className="w-full relative overflow-hidden rounded-2xl haptic-bounce ripple-container group"
-                                style={{
-                                  background: 'linear-gradient(135deg, #d4bc9a 0%, #c4a882 40%, #b8976e 100%)',
-                                  boxShadow: '0 8px 32px rgba(203,183,154,0.35), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25)'
-                                }}
-                              >
-                                {/* Shimmer sweep */}
-                                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-                                <div className="relative z-10 py-4 px-6 flex items-center justify-between">
-                                  <div className="flex flex-col items-start">
-                                    <span className="text-black/50 text-[9px] font-black uppercase tracking-[0.2em] leading-none mb-1">Reservar con</span>
-                                    <span className="text-black font-black text-lg leading-none tracking-tight">{expandedBarber.name}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-9 h-9 rounded-full bg-black/15 flex items-center justify-center">
-                                      <Check size={18} className="text-black" strokeWidth={3} />
+                              {/* Floating / Sticky Booking CTA Area */}
+                              <div className="sticky bottom-0 -mx-4 px-4 pt-4 pb-6 bg-[#0a0a0e]/95 backdrop-blur-xl border-t border-white/5 z-20">
+                                <button
+                                  onClick={(e) => { createRipple(e); setSelectedBarber(expandedBarber); setStep(step + 1); scrollToTop(); }}
+                                  className="w-full relative overflow-hidden rounded-2xl haptic-bounce ripple-container group shadow-lg"
+                                  style={{
+                                    background: 'linear-gradient(135deg, #d4bc9a 0%, #c4a882 40%, #b8976e 100%)',
+                                    boxShadow: '0 8px 32px rgba(203,183,154,0.35), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25)'
+                                  }}
+                                >
+                                  {/* Shimmer sweep */}
+                                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+                                  <div className="relative z-10 py-4 px-6 flex items-center justify-between">
+                                    <div className="flex flex-col items-start">
+                                      <span className="text-black/50 text-[9px] font-black uppercase tracking-[0.2em] leading-none mb-1">Reservar con</span>
+                                      <span className="text-black font-black text-lg leading-none tracking-tight">{expandedBarber.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-9 h-9 rounded-full bg-black/15 flex items-center justify-center">
+                                        <Check size={18} className="text-black" strokeWidth={3} />
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              </button>
+                                </button>
+                              </div>
                             </>
                           );
                         })()}
