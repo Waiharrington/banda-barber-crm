@@ -1710,25 +1710,25 @@ export default function BookAppointment() {
 
             {/* SECTION: PANDA KIDS CLUB */}
             <div id="pandakids" className="w-full reveal-item scroll-mt-24">
-              <div className="w-full bg-[#111115]/30 border border-white/[0.04] rounded-3xl p-6 lg:p-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center relative overflow-hidden group hover:border-[rgba(203,183,154,0.12)] transition-all duration-500">
-                {/* Left side: Premium Image Banner */}
-                <div className="w-full lg:w-[45%] aspect-[4/3] rounded-2xl overflow-hidden relative border border-white/5 bg-[#1c1c24] flex-shrink-0">
+              <div className="w-full bg-[#111115]/30 border border-white/[0.04] rounded-3xl overflow-hidden flex flex-col lg:flex-row items-stretch group hover:border-[rgba(203,183,154,0.12)] transition-all duration-500">
+                {/* Left side: Full-Bleed Image Banner */}
+                <div className="w-full lg:w-[45%] min-h-[380px] relative bg-[#1c1c24] flex-shrink-0">
                   <img 
                     src={pandaKidsCover} 
                     alt="Panda Kids Club" 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-1" />
+                  <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/80 via-black/20 lg:via-transparent to-transparent lg:to-[#111115]/30 z-1" />
                   
                   {/* Floating badge inside image */}
-                  <div className="absolute top-4 left-4 z-10 bg-black/70 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-1.5">
+                  <div className="absolute top-6 left-6 z-10 bg-black/70 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-1.5">
                     <Heart size={12} className="text-[#CBB79A]" fill="#CBB79A" />
                     <span className="text-[9px] font-extrabold text-white tracking-widest uppercase">ZONA EXCLUSIVA</span>
                   </div>
                 </div>
 
                 {/* Right side: Premium Copywriting */}
-                <div className="flex-1 text-left space-y-6">
+                <div className="flex-1 p-8 lg:p-12 text-left space-y-6 flex flex-col justify-center">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CLUB INFANTIL</span>
                     <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">
@@ -1741,7 +1741,7 @@ export default function BookAppointment() {
                   </div>
 
                   {/* Feature Tags */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
                       { icon: <Scissors size={16} />, title: 'Silla especial kids', desc: 'Asiento adaptado para que estén cómodos' },
                       { icon: <Sparkles size={16} />, title: 'Productos suaves', desc: 'Formulados para cuero cabelludo infantil' },
@@ -1895,24 +1895,31 @@ export default function BookAppointment() {
             )}
 
             {/* SECTION: EXPERIENCIA PANDA SECTION (INTEGRADA EN PAGINA) */}
-            <div id="experiencia-section" className="w-full reveal-item scroll-mt-24 py-4">
-              <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
-                {/* Left: Video */}
-                <div className="w-full lg:w-[45%] aspect-video rounded-2xl overflow-hidden relative border border-white/[0.06] bg-black flex-shrink-0">
+            <div id="experiencia-section" className="w-full reveal-item scroll-mt-24">
+              <div className="w-full bg-[#111115]/30 border border-white/[0.04] rounded-3xl overflow-hidden flex flex-col lg:flex-row items-stretch group hover:border-[rgba(203,183,154,0.12)] transition-all duration-500">
+                {/* Left side: Full-Bleed Video Panel */}
+                <div className="w-full lg:w-[45%] min-h-[380px] relative bg-black flex-shrink-0">
                   <video
                     autoPlay
                     loop
                     muted
                     playsInline
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover"
                     style={{ filter: 'brightness(0.85)', objectPosition: 'center top' }}
                   >
                     <source src={heroVideo} type="video/mp4" />
                   </video>
+                  <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/80 via-black/20 lg:via-transparent to-transparent lg:to-[#111115]/30 z-1" />
+                  
+                  {/* Floating badge inside video */}
+                  <div className="absolute top-6 left-6 z-10 bg-black/70 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-1.5">
+                    <Sparkles size={12} className="text-[#CBB79A]" />
+                    <span className="text-[9px] font-extrabold text-white tracking-widest uppercase">CLUB PRIVADO</span>
+                  </div>
                 </div>
 
-                {/* Right: Info */}
-                <div className="flex-1 text-left space-y-6">
+                {/* Right side: Premium Copywriting */}
+                <div className="flex-1 p-8 lg:p-12 text-left space-y-6 flex flex-col justify-center">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CULTURA, ESTILO Y HOSPITALIDAD</span>
                     <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">EXPERIENCIA PANDA</h2>
