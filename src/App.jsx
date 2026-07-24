@@ -131,7 +131,13 @@ function App() {
   useEffect(() => {
     const syncRates = async () => {
       const ratesData = await dataService.getExchangeRates();
-      if (ratesData) setRates(ratesData);
+      if (ratesData) {
+        setRates({
+          bcv: ratesData.bcv ? Number(Number(ratesData.bcv).toFixed(2)) : 0,
+          euro: ratesData.euro ? Number(Number(ratesData.euro).toFixed(2)) : 0,
+          updated_at: ratesData.updated_at
+        });
+      }
     };
     syncRates();
     const interval = setInterval(syncRates, 10 * 60 * 1000);
@@ -197,7 +203,7 @@ function App() {
   const [chartData, setChartData] = useState({
     labels: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
     datasets: [{
-      label: 'Ventas (€)',
+      label: 'Ventas ($)',
       data: [0, 0, 0, 0, 0, 0, 0],
       borderColor: '#ffffff',
       backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -319,7 +325,7 @@ function App() {
         if (lastNotifiedDaily !== todayStr) {
           notificationService.sendNotification(
             '🎯 ¡Meta Diaria Alcanzada! 🎉',
-            `¡Espectacular! Se ha alcanzado la meta diaria de €${dailyGoal} USD (Total hoy: €${computedStats.income.toFixed(2)} USD).`
+            `¡Espectacular! Se ha alcanzado la meta diaria de $${dailyGoal} USD (Total hoy: $${computedStats.income.toFixed(2)} USD).`
           );
           localStorage.setItem('panda_goal_notified_daily', todayStr);
         }
@@ -331,7 +337,7 @@ function App() {
         if (lastNotifiedWeekly !== lastSundayStr) {
           notificationService.sendNotification(
             '🏆 ¡Meta Semanal Alcanzada! 🌟',
-            `¡Increíble trabajo equipo! Se alcanzó la meta semanal de €${weeklyGoal} USD (Total semanal: €${computedStats.weeklyIncome.toFixed(2)} USD).`
+            `¡Increíble trabajo equipo! Se alcanzó la meta semanal de $${weeklyGoal} USD (Total semanal: $${computedStats.weeklyIncome.toFixed(2)} USD).`
           );
           localStorage.setItem('panda_goal_notified_weekly', lastSundayStr);
         }
@@ -343,7 +349,7 @@ function App() {
         if (lastNotifiedMonthly !== currentMonthStr) {
           notificationService.sendNotification(
             '👑 ¡Objetivo Mensual Completado! 🚀',
-            `¡Histórico! Se ha completado el objetivo mensual de €${monthlyGoal} USD (Total mensual: €${computedStats.monthlyIncome.toFixed(2)} USD).`
+            `¡Histórico! Se ha completado el objetivo mensual de $${monthlyGoal} USD (Total mensual: $${computedStats.monthlyIncome.toFixed(2)} USD).`
           );
           localStorage.setItem('panda_goal_notified_monthly', currentMonthStr);
         }
@@ -376,28 +382,36 @@ function App() {
   // Phase 2: Heavy data — runs silently after loader is gone
   async function fetchSecondaryData() {
     try {
-      const currentWeekStartISO = getStartOfCurrentWeek().toISOString();
-      const currentMonthStartISO = getStartOfCurrentMonth().toISOString();
-      const chartStart = new Date();
-      chartStart.setDate(chartStart.getDate() - 6);
-      chartStart.setHours(0, 0, 0, 0);
-      const dashboardStartISO = new Date(Math.min(
-        new Date(currentWeekStartISO).getTime(),
-        new Date(currentMonthStartISO).getTime(),
-        chartStart.getTime()
-      )).toISOString();
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      const currentWeekStart = getStartOfCurrentWeek();
+      const previousWeekStart = new Date(currentWeekStart);
+      previousWeekStart.setDate(previousWeekStart.getDate() - 7);
+      const currentMonthStart = getStartOfCurrentMonth();
+      const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const currentMonthStartISO = currentMonthStart.toISOString();
+      const dashboardStartISO = previousMonthStart.toISOString();
 
-      const [t, ext, inv, apps, todayApps, fullClients] = await Promise.all([
+      const [t, ext, inv, apps, recentApps, fullClients] = await Promise.all([
         dataService.getTransactions(dashboardStartISO),
         dataService.getExtras(),
         dataService.getInventory(),
         dataService.getAppointmentsByState(['Completado'], dashboardStartISO),
-        dataService.getTodayAppointments(),
+        dataService.getAppointmentsInRange(yesterdayStart.toISOString(), tomorrowStart.toISOString()),
         dataService.getClients() // Full client data with visit counts
       ]);
 
       const st = await dataService.getStaff();
       const operationalTransactions = t.filter(tr => !isImportedHistoricalTransaction(tr));
+      const inRange = (value, start, end) => {
+        if (!value) return false;
+        const timestamp = new Date(value).getTime();
+        return timestamp >= start.getTime() && timestamp < end.getTime();
+      };
+      const todayApps = recentApps.filter(app => inRange(app.scheduled_at, todayStart, tomorrowStart));
+      const yesterdayApps = recentApps.filter(app => inRange(app.scheduled_at, yesterdayStart, todayStart));
       
       const staffWithStats = st.map(barber => {
         // Historical Appts logic (services and extras)
@@ -440,38 +454,59 @@ function App() {
         staff: staffWithStats, 
         extras: ext || [], 
         inventory: inv?.filter(i => i.is_for_sale !== false) || [],
-        appointments: apps,
+        appointments: apps.filter(app =>
+          inRange(app.completed_at || app.scheduled_at || app.created_at, currentMonthStart, tomorrowStart)
+        ),
         todayAppointments: todayApps
       }));
-      const today = new Date().toISOString().split('T')[0];
-      const todayTransactions = operationalTransactions.filter(trans => trans.created_at?.startsWith(today));
-
-      setStats({
-        income: todayTransactions.filter(tr => tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0),
-        weeklyIncome: operationalTransactions.filter(tr => tr.type === 'income' && tr.created_at >= currentWeekStartISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
-        monthlyIncome: operationalTransactions.filter(tr => tr.type === 'income' && tr.created_at >= currentMonthStartISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
+      const incomeInRange = (start, end) => operationalTransactions
+        .filter(tr => tr.type === 'income' && inRange(tr.created_at, start, end))
+        .reduce((acc, tr) => acc + Number(tr.amount || 0), 0);
+      const clientsCreatedInRange = (start, end) => fullClients.filter(client =>
+        inRange(client.created_at, start, end)
+      ).length;
+      const todayTransactions = operationalTransactions.filter(trans => inRange(trans.created_at, todayStart, tomorrowStart));
+      const computedStats = {
+        income: incomeInRange(todayStart, tomorrowStart),
+        yesterdayIncome: incomeInRange(yesterdayStart, todayStart),
+        weeklyIncome: incomeInRange(currentWeekStart, tomorrowStart),
+        previousWeekIncome: incomeInRange(previousWeekStart, currentWeekStart),
+        monthlyIncome: incomeInRange(currentMonthStart, tomorrowStart),
+        previousMonthIncome: incomeInRange(previousMonthStart, currentMonthStart),
         expenses: todayTransactions.filter(tr => tr.type === 'expense').reduce((acc, tr) => acc + Number(tr.amount), 0),
         clients: fullClients.length,
-        appointments: todayTransactions.length 
+        appointments: todayApps.length,
+        yesterdayAppointments: yesterdayApps.length,
+        newClientsToday: clientsCreatedInRange(todayStart, tomorrowStart),
+        newClientsYesterday: clientsCreatedInRange(yesterdayStart, todayStart),
+        clientsThisWeek: clientsCreatedInRange(currentWeekStart, tomorrowStart),
+        clientsPreviousWeek: clientsCreatedInRange(previousWeekStart, currentWeekStart),
+        noShowsToday: todayApps.filter(app => ['Cancelado', 'No Asistió', 'No asistió'].includes(app.status)).length,
+        noShowsYesterday: yesterdayApps.filter(app => ['Cancelado', 'No Asistió', 'No asistió'].includes(app.status)).length
+      };
+      setStats(computedStats);
+
+      const weekDays = [...Array(7)].map((_, index) => {
+        const start = new Date(currentWeekStart);
+        start.setDate(start.getDate() + index);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 1);
+        return { start, end };
       });
-      if (operationalTransactions.length > 0) {
-        const last7Days = [...Array(7)].map((_, i) => {
-          const d = new Date(); d.setDate(d.getDate() - (6 - i));
-          return d.toISOString().split('T')[0];
-        });
-        const dailyTotals = last7Days.map(day => operationalTransactions.filter(tr => tr.created_at?.startsWith(day) && tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0));
-        setChartData({
-          labels: ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
-          datasets: [{ label: 'Ventas (€)', data: dailyTotals, borderColor: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.1)', fill: true, tension: 0.4 }]
-        });
-      }
+      setChartData({
+        labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+        datasets: [{
+          label: 'Ventas ($)',
+          data: weekDays.map(({ start, end }) => incomeInRange(start, end)),
+          borderColor: '#c5a880',
+          backgroundColor: 'rgba(197, 168, 128, 0.12)',
+          fill: true,
+          tension: 0.4
+        }]
+      });
 
       // Check goals
-      checkGoalsAndNotify({
-        income: todayTransactions.filter(tr => tr.type === 'income').reduce((acc, tr) => acc + Number(tr.amount), 0),
-        weeklyIncome: operationalTransactions.filter(tr => tr.type === 'income' && tr.created_at >= currentWeekStartISO).reduce((acc, tr) => acc + Number(tr.amount), 0),
-        monthlyIncome: operationalTransactions.filter(tr => tr.type === 'income' && tr.created_at >= currentMonthStartISO).reduce((acc, tr) => acc + Number(tr.amount), 0)
-      });
+      checkGoalsAndNotify(computedStats);
     } catch (error) { console.error('Error fetching secondary data:', error); }
   }
 
@@ -542,6 +577,13 @@ function App() {
     } catch (error) { console.error('Error seeding:', error); }
   };
 
+  const [openScheduleAddModal, setOpenScheduleAddModal] = useState(false);
+
+  const handleOpenScheduleAppt = () => {
+    setOpenScheduleAddModal(true);
+    handleTabChange('scheduling');
+  };
+
   const renderContent = () => {
     // Shared content logic (Desktop and mobile modules call the same components but with different props/layouts)
     switch (activeTab) {
@@ -549,6 +591,7 @@ function App() {
         return isMobile ? (
           <MobileDashboard 
             onOpenSale={() => setIsReceptionModalOpen(true)} 
+            onOpenSchedule={handleOpenScheduleAppt}
             stats={stats} 
             chartData={chartData} 
             dbData={dbData} 
@@ -562,6 +605,7 @@ function App() {
             isTablet={isTablet}
             isCollapsed={isCollapsed}
             onOpenSale={() => setIsReceptionModalOpen(true)} 
+            onOpenSchedule={handleOpenScheduleAppt}
             stats={stats} 
             chartData={chartData} 
             dbData={dbData} 
@@ -577,7 +621,7 @@ function App() {
       case 'reception': return <div className="p-container"><ReceptionModule isMobile={isMobile} /></div>;
       case 'checkout': return <div className="p-container"><CheckoutPOS isMobile={isMobile} rates={effectiveRates} onOpenSale={() => setIsSaleModalOpen(true)} onNavigate={handleTabChange} /></div>;
       case 'barber': return <div className="p-container"><BarberPanel isMobile={isMobile} rates={effectiveRates} /></div>;
-      case 'scheduling': return <div className="p-container"><SchedulingModule isMobile={isMobile} rates={effectiveRates} /></div>;
+      case 'scheduling': return <div className="p-container"><SchedulingModule isMobile={isMobile} rates={effectiveRates} openAddModal={openScheduleAddModal} onCloseAddModal={() => setOpenScheduleAddModal(false)} /></div>;
       case 'services': return <div className="p-container"><ServicesModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
       case 'inventory': return <div className="p-container"><InventoryModule isMobile={isMobile} currency={currency} rates={effectiveRates} /></div>;
       case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={effectiveRates} staff={dbData.staff} /></div>;

@@ -159,7 +159,7 @@ const calculateCouponDiscount = (coupon, apps, washes, wRate) => {
   return 5;
 };
 
-const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
+const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView, onClose }) => {
   const { showToast, triggerConfetti, triggerRocket } = useNotifs();
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -187,7 +187,13 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   const { isModalOpen } = useModal();
   
   // Checkout Multi-State
-  const [fixedRate, setFixedRate] = useState(rates?.usd || 0);
+  const [fixedRate, setFixedRate] = useState(() => rates?.usd ? Number(Number(rates.usd).toFixed(2)) : 0);
+
+  useEffect(() => {
+    if (rates?.usd) {
+      setFixedRate(Number(Number(rates.usd).toFixed(2)));
+    }
+  }, [rates]);
   const [tips, setTips] = useState([]); // Array of { id, staffId, amount }
   const [cart, setCart] = useState([]); // Sold products
   const [itemSalesAssociations, setItemSalesAssociations] = useState({}); // { itemId: staffId }
@@ -482,6 +488,16 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
       );
 
       setPendingServices(filtered);
+
+      const preselectId = preselectAppId || sessionStorage.getItem('panda_preselect_appointment_id');
+      if (preselectId) {
+        if (!preselectAppId) sessionStorage.removeItem('panda_preselect_appointment_id');
+        const targetApp = filtered.find(a => a.id === preselectId);
+        if (targetApp) {
+          setSelectedApp(targetApp);
+        }
+      }
+
       setInventory(inv.filter(i => i.category === 'Venta'));
       setAllExtras(ext?.filter(e => e.name !== 'SYSTEM_CONFIG_RATES') || []);
       setAllServices(srv || []);
@@ -1288,16 +1304,19 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
   }
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '100px', maxWidth: '100%' }}>
-      <header style={{ marginBottom: isMobile ? '16px' : '40px' }}>
-        <h1 style={{ fontSize: '32px', fontWeight: '900' }}>Caja <span className="text-gold">Panda Pro</span></h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Liquidación de servicios y venta de productos.</p>
-      </header>
+    <div className="animate-fade-in" style={{ paddingBottom: isModalView ? '0px' : '100px', maxWidth: '100%' }}>
+      {!isModalView && (
+        <header style={{ marginBottom: isMobile ? '16px' : '40px' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: '900' }}>Caja <span className="text-gold">Panda Pro</span></h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Liquidación de servicios y venta de productos.</p>
+        </header>
+      )}
 
-      <div className="checkout-pos-container">
+      <div className={isModalView ? "checkout-modal-wrapper" : "checkout-pos-container"} style={{ width: '100%' }}>
         <div className="checkout-pos-grid">
         
-        <section>
+        {!isModalView && (
+          <section>
           <div className="glass-card" style={{ marginBottom: isMobile ? '12px' : '32px', borderRadius: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1497,8 +1516,9 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
             </div>
           )}
         </section>
+        )}
 
-        <section>
+        <section style={isModalView ? { width: '100%' } : {}}>
           {(!selectedApp && !isDirectSale) ? (
             <div className="glass-card" style={{ height: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', borderRadius: '24px', color: 'var(--text-muted)' }}>
               <CreditCard size={48} style={{ marginBottom: '20px', opacity: 0.2 }} />
@@ -1583,8 +1603,14 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate }) => {
                   <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '900', whiteSpace: 'nowrap' }}>TASA MANUAL (€)</label>
                   <input 
                     type="number" 
+                    step="0.01"
                     value={fixedRate} 
                     onChange={(e) => setFixedRate(e.target.value)}
+                    onBlur={() => {
+                      if (fixedRate) {
+                        setFixedRate(Number(Number(fixedRate).toFixed(2)));
+                      }
+                    }}
                     style={{ width: isMobile ? '90px' : '100px', textAlign: 'right', fontWeight: '900', color: 'var(--gold-primary)', background: 'none', border: '1px solid rgba(255, 255, 255,0.3)', marginLeft: isMobile ? '0' : '10px' }}
                   />
                 </div>

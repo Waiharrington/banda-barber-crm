@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, User, Phone, CreditCard, Loader2, Calendar } from 'lucide-react';
+import { X, User, Phone, CreditCard, Loader2, Megaphone } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import { ModalShield } from '../context/ModalContext';
@@ -16,7 +16,8 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
     name: '',
     phone: '',
     id_card: '',
-    birth_date: ''
+    birth_date: '',
+    origin: ''
   });
 
   useScrollLock(isOpen);
@@ -24,7 +25,7 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     
-    if (!formData.name || !formData.phone || !formData.id_card) {
+    if (!formData.name || !formData.phone || !formData.id_card || !formData.origin) {
       showToast('Por favor completa todos los campos.', 'error');
       return;
     }
@@ -80,7 +81,9 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
               borderRadius: '32px', 
               border: '1.5px solid rgba(255, 255, 255,0.3)',
               padding: '32px',
-              position: 'relative'
+              position: 'relative',
+              maxHeight: '90vh',
+              overflowY: 'auto'
             }}>
               <button 
                 onClick={onClose} 
@@ -182,6 +185,30 @@ const NewClientModal = ({ isOpen, onClose, onSuccess }) => {
                     onChange={(e) => setFormData({...formData, birth_date: e.target.value})}
                     style={{ width: '100%' }}
                   />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    ¿Cómo conoció Panda Barber?
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <Megaphone style={{ position: 'absolute', left: '16px', top: '14px', pointerEvents: 'none' }} size={18} color="var(--gold-primary)" />
+                    <select
+                      value={formData.origin}
+                      onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
+                      required
+                      style={{ width: '100%', paddingLeft: '48px', appearance: 'none' }}
+                    >
+                      <option value="">Seleccionar origen</option>
+                      <option value="Instagram">Instagram</option>
+                      <option value="Referido">Referido por otra persona</option>
+                      <option value="Google">Google / Google Maps</option>
+                      <option value="TikTok">TikTok</option>
+                      <option value="Facebook">Facebook</option>
+                      <option value="Presencial">Pasó por el local</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>

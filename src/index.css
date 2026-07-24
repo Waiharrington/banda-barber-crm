@@ -1453,6 +1453,46 @@ input[type="submit"]:active {
     max-width: 480px !important;
     margin: 0 auto !important;
   }
+
+  /* Centered Floating Pop-up Modals (Dashboard Quick Checkout) */
+  .global-modal-overlay.modal-centered-overlay {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    background-color: rgba(0, 0, 0, 0.82) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+
+  .global-modal-card.modal-popup-centered {
+    width: 100% !important;
+    max-width: 650px !important;
+    height: auto !important;
+    max-height: 90vh !important;
+    border-radius: 28px !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+    margin: auto !important;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.9) !important;
+    background: #161617 !important;
+    padding: 24px !important;
+    position: relative !important;
+    overflow-y: auto !important;
+  }
+
+  .global-modal-card.modal-popup-fullmodule {
+    width: 95vw !important;
+    max-width: 1200px !important;
+    height: auto !important;
+    max-height: 92vh !important;
+    border-radius: 28px !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+    margin: auto !important;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.9) !important;
+    background: #161617 !important;
+    padding: 28px !important;
+    position: relative !important;
+    overflow-y: auto !important;
+  }
 }
 
 /* Premium Modal Input Styling (Apple UX / Pro) */

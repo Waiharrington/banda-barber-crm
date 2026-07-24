@@ -16,6 +16,7 @@ import {
   CreditCard,
   UserCheck,
   UserCircle,
+  User,
   Settings,
   History
 } from 'lucide-react';
@@ -305,7 +306,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
                 {user?.image_url ? (
                   <img src={user.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <img src={logo} alt="" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
+                  <User size={18} color="var(--champagne)" />
                 )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>

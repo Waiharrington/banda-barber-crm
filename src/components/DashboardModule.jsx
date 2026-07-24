@@ -1,5 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
+import CheckoutPOS from './CheckoutPOS';
+import NewClientModal from './NewClientModal';
+import NewAppointmentModal from './NewAppointmentModal';
+const ReceptionModule = lazy(() => import('./ReceptionModule'));
 import { 
   TrendingUp, 
   Users, 
@@ -17,6 +21,7 @@ import {
   ArrowRight,
   ShoppingBag,
   Scissors as ScissorsIcon,
+  ClipboardList,
   Circle,
   RefreshCw,
   Gift,
@@ -30,7 +35,9 @@ import {
   Bell,
   Store,
   ChevronDown,
-  UserX
+  UserX,
+  CreditCard,
+  Wallet
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -87,6 +94,7 @@ const DashboardModule = ({
   isTablet,
   isCollapsed,
   onOpenSale, 
+  onOpenSchedule,
   stats, 
   chartData, 
   dbData, 
@@ -127,85 +135,254 @@ const DashboardModule = ({
   const getShortName = (fullName) => fullName ? fullName.split(' ')[0] : '';
   const staffList = dbData?.staff || [];
   const sortedStaff = [...staffList]
-    .filter(s => !s.role || !s.role.toLowerCase().startsWith('admin'))
+    .filter(s => {
+      const role = String(s.role || '').toLowerCase();
+      return role.includes('barbero') || role.includes('tatuador');
+    })
     .sort((a, b) => (b.stats?.monthlyIncome || 0) - (a.stats?.monthlyIncome || 0));
 
-  const firstPlace = sortedStaff[0] || { name: 'Marco', stats: { monthlyIncome: 2850 }, image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60' };
-  const secondPlace = sortedStaff[1] || { name: 'Luis', stats: { monthlyIncome: 2120 }, image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60' };
-  const thirdPlace = sortedStaff[2] || { name: 'Alejandro', stats: { monthlyIncome: 1850 }, image_url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=60' };
+  const firstPlace = sortedStaff[0] || { name: 'Sin datos', stats: { monthlyIncome: 0 }, image_url: '' };
+  const secondPlace = sortedStaff[1] || { name: 'Sin datos', stats: { monthlyIncome: 0 }, image_url: '' };
+  const thirdPlace = sortedStaff[2] || { name: 'Sin datos', stats: { monthlyIncome: 0 }, image_url: '' };
+  const [realtimeAppointments, setRealtimeAppointments] = useState([]);
+
+  // --- Real Database Metrics Calculations ---
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const citasHoyCount = stats?.appointments ?? dbData?.todayAppointments?.length ?? 0;
+  const facturadoHoyAmount = stats?.income || 0;
+  const clientesNuevosCount = stats?.newClientsToday ??
+    (dbData?.clients || []).filter(c => c.created_at?.startsWith(todayStr)).length;
+
+  const occupiedChairsCount = (realtimeAppointments || []).filter(a => a.status === 'En Silla').length;
+  const totalChairs = 7;
+  const ocupacionPercent = Math.round((occupiedChairsCount / totalChairs) * 100);
+
+  const inasistenciasCount = stats?.noShowsToday ?? 0;
+
+  const realUpcomingAppointments = (dbData?.todayAppointments || [])
+    .filter(a => a.status === 'Agendado')
+    .sort((a, b) => new Date(a.scheduled_at || 0) - new Date(b.scheduled_at || 0))
+    .map(a => {
+      let timeFormatted = 'Ahora';
+      if (a.scheduled_at) {
+        const d = new Date(a.scheduled_at);
+        const h = d.getHours();
+        const m = d.getMinutes().toString().padStart(2, '0');
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        timeFormatted = `${h12}:${m} ${ampm}`;
+      }
+      return {
+        id: a.id,
+        time: timeFormatted,
+        name: a.clients?.name || 'Cliente',
+        service: a.services?.name || 'Servicio',
+        barber: a.staff?.name || 'Barbero',
+        avatar: a.staff?.image_url,
+        status: a.status
+      };
+    });
+
+  const weeklyIncomeAmount = stats?.weeklyIncome || stats?.income || 0;
+
+  const serviceCounts = {};
+  (dbData?.appointments || []).forEach(a => {
+    const sName = a.services?.name;
+    if (sName) serviceCounts[sName] = (serviceCounts[sName] || 0) + 1;
+  });
+  const sortedServices = Object.entries(serviceCounts)
+    .map(([name, val]) => ({ name, val }))
+    .sort((a, b) => b.val - a.val);
+
+  const finalTopServices = sortedServices.length > 0
+    ? sortedServices.slice(0, 5)
+    : (dbData?.services || []).slice(0, 5).map(s => ({ name: s.name, val: 0 }));
+
+  const realTotalClients = dbData?.clients?.length || 0;
+  const originCounts = {};
+  (dbData?.clients || []).forEach(c => {
+    const origin = String(c.origin || c.source || c.referral_source || 'Sin registrar').trim();
+    originCounts[origin] = (originCounts[origin] || 0) + 1;
+  });
+  const originColors = ['var(--champagne)', 'rgba(255,255,255,0.6)', 'rgba(255,255,255,0.2)'];
+  const originPercentages = Object.entries(originCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3)
+    .map(([label, count], index) => {
+      const pct = realTotalClients ? Math.round((count / realTotalClients) * 100) : 0;
+      return { label, val: `${pct}%`, color: originColors[index], pct };
+    });
+  let originGradientOffset = 0;
+  const originGradient = originPercentages.length
+    ? `conic-gradient(${originPercentages.map(origin => {
+        const start = originGradientOffset;
+        originGradientOffset += origin.pct;
+        return `${origin.color} ${start}% ${originGradientOffset}%`;
+      }).join(', ')})`
+    : 'conic-gradient(rgba(255,255,255,0.04) 0 100%)';
+
+  const currentMonthAmountReal = stats?.monthlyIncome || 0;
 
   const [isEditingGoals, setIsEditingGoals] = useState(false);
-  const [currentMonthAmount, setCurrentMonthAmount] = useState(() => {
-    const val = parseFloat(localStorage.getItem('panda_current_month_amount') || '28400');
-    return val < 1000 ? val * 1000 : val;
-  });
   const [monthlyGoal, setMonthlyGoal] = useState(() => {
     const val = parseFloat(localStorage.getItem('panda_monthly_goal') || '35000');
     return val < 1000 ? val * 1000 : val;
   });
-  const [selectedChair, setSelectedChair] = useState(null);
-
-  const [chairs, setChairs] = useState(() => {
-    const saved = localStorage.getItem('panda_chairs_state');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return [
-      { 
-        id: '01', 
-        type: 'Luis Gómez', 
-        name: 'Juan Pérez', 
-        service: 'Corte + Barba', 
-        time: '09:30', 
-        duration: '30 min', 
-        status: 'En servicio', 
-        glowClass: 'chair-halo-en-servicio',
-        statusColor: '#ef4444',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100'
-      },
-      { 
-        id: '02', 
-        type: 'Mateo Fernández', 
-        status: 'Limpieza', 
-        glowClass: 'chair-halo-limpieza',
-        statusColor: '#eab308',
-        info: 'Disponible en 10 min'
-      },
-      { 
-        id: '03', 
-        type: 'Alejandro Ruiz', 
-        name: 'Carlos Ramírez', 
-        service: 'Degradado', 
-        time: '10:15', 
-        duration: '25 min', 
-        status: 'Reservada', 
-        glowClass: 'chair-halo-reservada',
-        statusColor: '#f97316',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100'
-      },
-      { 
-        id: '04', 
-        type: 'Daniel Medina', 
-        status: 'Disponible', 
-        glowClass: 'chair-halo-disponible',
-        statusColor: '#22c55e',
-        info: 'Próximo: 11:00 AM'
-      },
-    ];
-  });
-
-  const monthlyProgress = Math.round((currentMonthAmount / (monthlyGoal || 1)) * 100);
-
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const [selectedChair, setSelectedChair] = useState(null);
+  const [chairPage, setChairPage] = useState(0);
+  const [checkoutChairModal, setCheckoutChairModal] = useState(null);
+  const [modalPaymentMethod, setModalPaymentMethod] = useState('Efectivo');
+  const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
+  const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const [showCheckoutPopup, setShowCheckoutPopup] = useState(false);
+  const [showReceptionPopup, setShowReceptionPopup] = useState(false);
+  const [showSchedulePopup, setShowSchedulePopup] = useState(false);
+
+  useEffect(() => {
+    const fetchChairData = async () => {
+      try {
+        const activeApps = await dataService.getAppointmentsByState(['En Silla', 'Agendado']);
+        setRealtimeAppointments(activeApps || []);
+      } catch (e) {
+        console.error("Error fetching realtime chair data:", e);
+      }
+    };
+    fetchChairData();
+    const interval = setInterval(fetchChairData, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleQuickCheckout = async () => {
+    if (!checkoutChairModal) return;
+    try {
+      setIsProcessingCheckout(true);
+      const chair = checkoutChairModal;
+      
+      await dataService.processFinalPayment({
+        appointmentId: chair.appointmentId,
+        appointmentIds: [chair.appointmentId],
+        paymentMethod: modalPaymentMethod,
+        totalAmountUsd: chair.rawPrice || 0,
+        staffInvolved: chair.appointment?.staff_id ? [{ staffId: chair.appointment.staff_id, role: 'barber', amountUsd: chair.rawPrice || 0 }] : []
+      });
+
+      showToast(`¡Cobro de ${chair.price} registrado con éxito! Silla liberada.`);
+      setCheckoutChairModal(null);
+      
+      const activeApps = await dataService.getAppointmentsByState(['En Silla', 'Agendado']);
+      setRealtimeAppointments(activeApps || []);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error("Error processing quick checkout:", err);
+      showToast("Error al procesar el cobro", "error");
+    } finally {
+      setIsProcessingCheckout(false);
+    }
+  };
+
+  const formatElapsedTime = React.useCallback((startedAt) => {
+    if (!startedAt) return '00:00 min';
+    const start = new Date(startedAt);
+    const now = currentTime;
+    const diffMs = Math.max(0, now.getTime() - start.getTime());
+    const totalSecs = Math.floor(diffMs / 1000);
+
+    if (totalSecs < 3600) {
+      const mins = Math.floor(totalSecs / 60);
+      const secs = String(totalSecs % 60).padStart(2, '0');
+      return `${mins}:${secs} min`;
+    } else {
+      const hrs = Math.floor(totalSecs / 3600);
+      const mins = Math.floor((totalSecs % 3600) / 60);
+      return `${hrs}h ${mins}m`;
+    }
+  }, [currentTime]);
+
+  const allChairsData = React.useMemo(() => {
+    const activeInChair = realtimeAppointments.filter(a => a.status === 'En Silla');
+    const result = [];
+
+    for (let i = 1; i <= 7; i++) {
+      const chairId = String(i).padStart(2, '0');
+      const activeApp = activeInChair[i - 1];
+
+      if (activeApp) {
+        const elapsedStr = formatElapsedTime(activeApp.started_at || activeApp.created_at);
+
+        const priceVal = activeApp.total_price || activeApp.services?.price || 0;
+        const priceStr = `$${priceVal}`;
+
+        const barber = activeApp.staff || {};
+        const barberName = barber.name || activeApp.staff_name || `Barbero`;
+
+        result.push({
+          id: chairId,
+          appointmentId: activeApp.id,
+          type: barberName,
+          barberAvatar: barber.image_url,
+          name: activeApp.clients?.name || activeApp.client_name || 'Cliente',
+          service: activeApp.services?.name || 'Servicio',
+          price: priceStr,
+          rawPrice: priceVal,
+          elapsed: elapsedStr,
+          status: 'En servicio',
+          glowClass: 'chair-halo-en-servicio',
+          statusColor: '#ef4444',
+          isOccupied: true,
+          appointment: activeApp
+        });
+      } else {
+        result.push({
+          id: chairId,
+          type: `Silla ${chairId}`,
+          status: 'Disponible',
+          glowClass: 'chair-halo-disponible',
+          statusColor: '#22c55e',
+          info: 'Disponible',
+          isOccupied: false
+        });
+      }
+    }
+    return result;
+  }, [realtimeAppointments, formatElapsedTime]);
+
+  const itemsPerPage = isMobile ? 1 : 4;
+  const maxPages = Math.max(0, Math.ceil(allChairsData.length / itemsPerPage) - 1);
+  const visibleChairs = React.useMemo(() => {
+    const startIndex = chairPage * itemsPerPage;
+    return allChairsData.slice(startIndex, startIndex + itemsPerPage);
+  }, [allChairsData, chairPage, itemsPerPage]);
+
+  const monthlyProgressReal = Math.round((currentMonthAmountReal / (monthlyGoal || 1)) * 100);
+  const percentChange = (current, previous) => {
+    const currentValue = Number(current || 0);
+    const previousValue = Number(previous || 0);
+    if (previousValue === 0) return currentValue === 0 ? 0 : null;
+    return Math.round(((currentValue - previousValue) / Math.abs(previousValue)) * 100);
+  };
+  const renderComparison = (current, previous, label) => {
+    const change = percentChange(current, previous);
+    if (change === null) {
+      return <><span style={{ fontSize: '7px' }}>●</span> Sin base <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>{label}</span></>;
+    }
+    const isUp = change > 0;
+    const isDown = change < 0;
+    return (
+      <>
+        <span style={{ fontSize: '7px' }}>{isUp ? '▲' : isDown ? '▼' : '●'}</span>
+        {Math.abs(change)}%
+        <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>{label}</span>
+      </>
+    );
+  };
 
   const formattedTime = currentTime.toLocaleTimeString('es-ES', {
     hour: '2-digit',
@@ -248,7 +425,7 @@ const DashboardModule = ({
     labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
     datasets: [
       {
-        data: chartData?.income || [400, 520, 480, 600, 720, 950, 920],
+        data: chartData?.datasets?.[0]?.data || [0, 0, 0, 0, 0, 0, 0],
         borderColor: '#CBB79A',
         borderWidth: 2.5,
         pointBackgroundColor: '#CBB79A',
@@ -524,7 +701,7 @@ const DashboardModule = ({
             {/* + Nueva cita gold button */}
             {!(user?.role === 'Barbero' || user?.role?.startsWith('Barbero|')) && (
             <button 
-              onClick={onOpenSale}
+              onClick={() => setShowSchedulePopup(true)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -592,10 +769,10 @@ const DashboardModule = ({
                 <Calendar size={13} color="rgba(255,255,255,0.6)" />
               </div>
               <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: '1px 0' }}>
-                {dbData?.todayAppointments?.length || 12}
+                {citasHoyCount}
               </div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
-                <span style={{ fontSize: '7px' }}>▲</span> 20% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs ayer</span>
+                {renderComparison(citasHoyCount, stats?.yesterdayAppointments, 'vs ayer')}
               </div>
             </div>
 
@@ -603,13 +780,13 @@ const DashboardModule = ({
             <div className="glass-card" style={{ padding: '8px 10px', borderRadius: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '76px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.7 }}>
                 <span style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.5px' }}>FACTURADO HOY</span>
-                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', fontWeight: '800' }}>€</span>
+                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', fontWeight: '800' }}>$</span>
               </div>
               <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: '1px 0' }}>
-                ${formatCurrency(stats?.income || 245000)}
+                ${formatCurrency(facturadoHoyAmount)}
               </div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
-                <span style={{ fontSize: '7px' }}>▲</span> 18% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs ayer</span>
+                {renderComparison(facturadoHoyAmount, stats?.yesterdayIncome, 'vs ayer')}
               </div>
             </div>
 
@@ -620,10 +797,10 @@ const DashboardModule = ({
                 <Users size={13} color="rgba(255,255,255,0.6)" />
               </div>
               <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: '1px 0' }}>
-                4
+                {clientesNuevosCount}
               </div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
-                <span style={{ fontSize: '7px' }}>▲</span> 33% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs ayer</span>
+                {renderComparison(clientesNuevosCount, stats?.newClientsYesterday, 'vs ayer')}
               </div>
             </div>
 
@@ -635,14 +812,14 @@ const DashboardModule = ({
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '1px 0' }}>
                 <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>
-                  86%
+                  {ocupacionPercent}%
                 </div>
                 <div style={{ width: '45px', height: '4px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: '86%', height: '100%', background: 'linear-gradient(to right, var(--champagne), #fff)', borderRadius: '2px' }} />
+                  <div style={{ width: `${ocupacionPercent}%`, height: '100%', background: 'linear-gradient(to right, var(--champagne), #fff)', borderRadius: '2px' }} />
                 </div>
               </div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
-                <span style={{ fontSize: '7px' }}>▲</span> 8% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs ayer</span>
+                <span>{occupiedChairsCount} de {totalChairs}</span> <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>sillas ocupadas</span>
               </div>
             </div>
 
@@ -653,10 +830,10 @@ const DashboardModule = ({
                 <UserX size={13} color="rgba(255,255,255,0.6)" />
               </div>
               <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: '1px 0' }}>
-                1
+                {inasistenciasCount}
               </div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
-                <span style={{ fontSize: '7px' }}>▲</span> 2% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs ayer</span>
+                {renderComparison(inasistenciasCount, stats?.noShowsYesterday, 'vs ayer')}
               </div>
             </div>
           </div>
@@ -682,8 +859,20 @@ const DashboardModule = ({
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '6px' }}>
-                <button style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.75)', cursor: 'pointer' }}>&lt;</button>
-                <button style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.75)', cursor: 'pointer' }}>&gt;</button>
+                <button 
+                  onClick={() => setChairPage(prev => Math.max(0, prev - 1))}
+                  style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: chairPage === 0 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.75)', cursor: chairPage === 0 ? 'default' : 'pointer' }}
+                  disabled={chairPage === 0}
+                >
+                  &lt;
+                </button>
+                <button 
+                  onClick={() => setChairPage(prev => Math.min(maxPages, prev + 1))}
+                  style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: chairPage >= maxPages ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.75)', cursor: chairPage >= maxPages ? 'default' : 'pointer' }}
+                  disabled={chairPage >= maxPages}
+                >
+                  &gt;
+                </button>
               </div>
             </div>
 
@@ -691,11 +880,11 @@ const DashboardModule = ({
               display: 'grid', 
               gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', 
               gap: '14px',
-                  flex: 1,
+              flex: 1,
               minHeight: 0,
               alignItems: 'stretch'
             }}>
-              {chairs.map((chair) => {
+              {visibleChairs.map((chair) => {
                  const isOccupied = chair.status === 'En servicio' || chair.status === 'Reservada';
                  const isCleaning = chair.status === 'Limpieza';
                  const isAvailable = chair.status === 'Disponible';
@@ -703,7 +892,13 @@ const DashboardModule = ({
                 return (
                   <div 
                     key={chair.id} 
-                    onClick={() => setSelectedChair(chair)}
+                    onClick={() => {
+                      if (chair.isOccupied) {
+                        setCheckoutChairModal(chair);
+                      } else {
+                        setSelectedChair(chair);
+                      }
+                    }}
                     style={{
                       backgroundColor: 'rgba(0,0,0,0.15)',
                       border: `1.5px solid ${chair.statusColor || 'rgba(255,255,255,0.04)'}`,
@@ -722,8 +917,47 @@ const DashboardModule = ({
                     {/* Ring glow backdrop */}
                     <div className={`chair-halo ${chair.glowClass}`} />
                     
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 2, height: '26px', flexShrink: 0 }}>
-                      <span style={{ fontSize: '15px', fontWeight: '900', color: 'rgba(255,255,255,0.2)' }}>{chair.id}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 2, height: '40px', flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        {isOccupied ? (
+                          chair.barberAvatar ? (
+                            <img 
+                              src={chair.barberAvatar} 
+                              alt={chair.type} 
+                              style={{ 
+                                width: '40px', 
+                                height: '40px', 
+                                borderRadius: '50%', 
+                                objectFit: 'cover',
+                                border: '2px solid var(--champagne)',
+                                boxShadow: '0 0 12px rgba(197, 168, 128, 0.6)',
+                                transform: 'translate(-4px, -4px)'
+                              }} 
+                            />
+                          ) : (
+                            <div style={{
+                              width: '40px',
+                              height: '40px',
+                              borderRadius: '50%',
+                              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                              border: '2px solid var(--champagne)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '12px',
+                              fontWeight: '900',
+                              color: 'var(--champagne)',
+                              boxShadow: '0 0 12px rgba(197, 168, 128, 0.6)',
+                              transform: 'translate(-4px, -4px)'
+                            }}>
+                              {chair.type ? chair.type.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : ''}
+                            </div>
+                          )
+                        ) : (
+                          <span style={{ fontSize: '16px', fontWeight: '900', color: 'rgba(255,255,255,0.2)' }}>{chair.id}</span>
+                        )}
+                      </div>
+
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', textAlign: 'right' }}>
                         <span style={{ fontSize: '10px', fontWeight: '900', color: 'white', letterSpacing: '0.3px', lineHeight: '1' }}>{chair.type}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -740,7 +974,8 @@ const DashboardModule = ({
                         style={{ 
                           maxHeight: '100%', 
                           maxWidth: '100%',
-                          transform: 'scale(1.25)',
+                          transform: isOccupied ? 'scale(1.38) translateY(2px)' : 'scale(1.35)',
+                          transition: 'transform 0.3s ease',
                           objectFit: 'contain',
                           filter: isAvailable ? 'brightness(0.3) grayscale(0.5)' : isCleaning ? 'brightness(0.5) drop-shadow(0 8px 16px rgba(0,0,0,0.65))' : 'drop-shadow(0 8px 16px rgba(0,0,0,0.65))',
                           zIndex: 2
@@ -754,7 +989,7 @@ const DashboardModule = ({
                         <div style={{ 
                           backgroundColor: 'rgba(0,0,0,0.45)', 
                           borderRadius: '8px', 
-                          padding: '4px 6px',
+                          padding: '4px 8px',
                           border: '1px solid rgba(255,255,255,0.03)',
                           display: 'flex',
                           alignItems: 'center',
@@ -762,29 +997,13 @@ const DashboardModule = ({
                           height: '100%',
                           boxSizing: 'border-box'
                         }}>
-                          <div style={{
-                            width: '20px',
-                            height: '20px',
-                            borderRadius: '50%',
-                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                            border: '1px solid rgba(255, 255, 255, 0.12)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '8px',
-                            fontWeight: '800',
-                            color: 'var(--champagne)',
-                            flexShrink: 0
-                          }}>
-                            {chair.name ? chair.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : ''}
-                          </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: '10px', fontWeight: '800', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{chair.name}</div>
                             <div style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{chair.service}</div>
                           </div>
                           <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '9px', fontWeight: '800', color: 'white' }}>{chair.time}</div>
-                            <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.75)', fontWeight: '600' }}>{chair.duration}</div>
+                            <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--champagne)' }}>{chair.price}</div>
+                            <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.75)', fontWeight: '600' }}>{chair.elapsed}</div>
                           </div>
                         </div>
                       )}
@@ -865,19 +1084,19 @@ const DashboardModule = ({
               </div>
               <div style={{ flexShrink: 0, marginBottom: '6px' }}>
                 <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>
-                  €6.580.000
+                  ${formatCurrency(weeklyIncomeAmount)}
                 </div>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700', marginTop: '2px' }}>
-                  <span style={{ fontSize: '7px' }}>▲</span> 18% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs semana anterior</span>
+                  {renderComparison(weeklyIncomeAmount, stats?.previousWeekIncome, 'vs semana anterior')}
                 </div>
               </div>
               <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
                 <Line 
-                  data={{
+                  data={chartData ? weeklyChartData : {
                     labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
                     datasets: [
                       {
-                        data: [450, 520, 480, 600, 720, 950, 920],
+                        data: [0, 0, 0, 0, 0, 0, 0],
                         borderColor: '#c5a880',
                         borderWidth: 2,
                         pointBackgroundColor: '#c5a880',
@@ -911,13 +1130,7 @@ const DashboardModule = ({
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1, margin: '2px 0' }} className="panda-scrollbar">
-                {[
-                  { name: 'Degradado + Barba', val: 236 },
-                  { name: 'Corte Clásico', val: 189 },
-                  { name: 'Corte + Barba', val: 142 },
-                  { name: 'Afeitado Premium', val: 98 },
-                  { name: 'Diseño', val: 67 }
-                ].map((s, idx) => (
+                {finalTopServices.map((s, idx) => (
                   <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', paddingBottom: '2px', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
                     <span style={{ color: 'white', fontWeight: '600' }}>
                       <span style={{ color: 'rgba(255,255,255,0.35)', marginRight: '6px', fontWeight: '800' }}>{idx + 1}</span> {s.name}
@@ -958,25 +1171,13 @@ const DashboardModule = ({
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minHeight: 0 }}>
-                {/* SVG Donut */}
-                <div style={{ position: 'relative', width: '65px', height: '65px', flexShrink: 0 }}>
-                  <svg width="65" height="65" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="4" />
-                    {/* Instagram (52%) */}
-                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--champagne)" strokeWidth="4" strokeDasharray="52 48" strokeDashoffset="25" />
-                    {/* Referidos (28%) */}
-                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="4" strokeDasharray="28 72" strokeDashoffset="-27" />
-                    {/* Presencial (20%) */}
-                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="4" strokeDasharray="20 80" strokeDashoffset="-55" />
-                  </svg>
+                {/* Donut generated from the real client-origin distribution */}
+                <div style={{ position: 'relative', width: '65px', height: '65px', flexShrink: 0, borderRadius: '50%', background: originGradient }}>
+                  <div style={{ position: 'absolute', inset: '8px', borderRadius: '50%', backgroundColor: '#161617' }} />
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
-                  {[
-                    { label: 'Instagram', val: '52%', color: 'var(--champagne)' },
-                    { label: 'Referidos', val: '28%', color: 'rgba(255,255,255,0.6)' },
-                    { label: 'Presencial', val: '20%', color: 'rgba(255,255,255,0.2)' }
-                  ].map((origin, idx) => (
+                  {originPercentages.map((origin, idx) => (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '9.5px', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <div style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: origin.color }} />
@@ -1000,10 +1201,10 @@ const DashboardModule = ({
               }}>
                 <div>
                   <div style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '600' }}>Clientes totales</div>
-                  <div style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>248</div>
+                  <div style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>{realTotalClients}</div>
                 </div>
                 <div style={{ fontSize: '8.5px', color: '#c5a880', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span>▲ 15%</span> <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs semana ant.</span>
+                  {renderComparison(stats?.clientsThisWeek, stats?.clientsPreviousWeek, 'vs semana ant.')}
                 </div>
               </div>
             </div>
@@ -1035,38 +1236,43 @@ const DashboardModule = ({
               <h3 style={{ fontSize: '11.5px', fontWeight: '800', color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Próximas citas</h3>
               <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.75)', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => onNavigate && onNavigate('scheduling')}>Ver calendario</span>
             </div>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1 }} className="panda-scrollbar">
-              {[
-                { time: '10:00 AM', name: 'Miguel Torres', service: 'Corte Clásico', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60', status: 'active' },
-                { time: '10:45 AM', name: 'Andrés Gómez', service: 'Fade + Barba', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60', status: 'active' },
-                { time: '11:30 AM', name: 'Luis Martínez', service: 'Arreglo de Barba', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=60', status: 'active' }
-              ].map((item, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.02)', flexShrink: 0 }}>
-                  <span style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.6)', width: '60px' }}>{item.time}</span>
-                  <div style={{
-                    width: '22px',
-                    height: '22px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '9px',
-                    fontWeight: '800',
-                    color: 'var(--champagne)',
-                    flexShrink: 0
-                  }}>
-                    {item.name ? item.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : ''}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '11.5px', fontWeight: '700', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
-                    <div style={{ fontSize: '9.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.service}</div>
-                  </div>
-                  <div style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: item.status === 'active' ? 'var(--champagne)' : 'rgba(255,255,255,0.2)' }} />
+              {realUpcomingAppointments.length === 0 ? (
+                <div style={{ padding: '16px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>
+                  No hay citas próximas agendadas para hoy
                 </div>
-              ))}
+              ) : (
+                realUpcomingAppointments.map((item) => (
+                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.02)', flexShrink: 0 }}>
+                    <span style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.6)', width: '60px' }}>{item.time}</span>
+                    <div style={{
+                      width: '22px',
+                      height: '22px',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '9px',
+                      fontWeight: '800',
+                      color: 'var(--champagne)',
+                      flexShrink: 0
+                    }}>
+                      {item.avatar ? (
+                        <img src={item.avatar} alt={item.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        item.name.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                      <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.service} • {item.barber}</div>
+                    </div>
+                    <div style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: item.status === 'En Silla' ? '#30d158' : 'var(--champagne)' }} />
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -1083,10 +1289,10 @@ const DashboardModule = ({
             <h3 style={{ fontSize: '10px', fontWeight: '800', color: 'white', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Acciones rápidas</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
               {[
-                { label: 'Nueva Cita', action: onOpenSale, icon: Plus },
-                { label: 'Cliente', action: () => onNavigate && onNavigate('clients'), icon: User },
-                { label: 'Cobro POS', action: onOpenSale, icon: ShoppingBag },
-                { label: 'Inventario', action: () => onNavigate && onNavigate('inventory'), icon: ScissorsIcon }
+                { label: 'Nueva Cita', action: () => setShowSchedulePopup(true), icon: Plus },
+                { label: 'Cliente', action: () => setShowNewClientModal(true), icon: User },
+                { label: 'Cobro POS', action: () => setShowCheckoutPopup(true), icon: ShoppingBag },
+                { label: 'Recepción', action: () => setShowReceptionPopup(true), icon: ClipboardList }
               ].map((act, idx) => {
                 const ActIcon = act.icon;
                 return (
@@ -1400,17 +1606,17 @@ const DashboardModule = ({
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
               <span style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>
-                ${formatCurrency(currentMonthAmount)} <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: '600' }}>/ ${formatCurrency(monthlyGoal)}</span>
+                ${formatCurrency(currentMonthAmountReal)} <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: '600' }}>/ ${formatCurrency(monthlyGoal)}</span>
               </span>
               <span style={{ fontSize: '10.5px', fontWeight: '900', color: 'var(--champagne)' }}>
-                {monthlyProgress}%
+                {monthlyProgressReal}%
               </span>
             </div>
             <div style={{ height: '5px', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '2.5px', overflow: 'hidden', marginBottom: '6px' }}>
-              <div style={{ width: `${Math.min(100, monthlyProgress)}%`, height: '100%', background: 'linear-gradient(to right, #c5a880, #e5d4bc)', borderRadius: '2.5px' }} />
+              <div style={{ width: `${Math.min(100, monthlyProgressReal)}%`, height: '100%', background: 'linear-gradient(to right, #c5a880, #e5d4bc)', borderRadius: '2.5px' }} />
             </div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
-              <span style={{ fontSize: '7px' }}>▲</span> 15% <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>vs mes anterior</span>
+              {renderComparison(currentMonthAmountReal, stats?.previousMonthIncome, 'vs mes anterior')}
             </div>
           </div>
 
@@ -1709,16 +1915,8 @@ const DashboardModule = ({
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    const updatedChairs = chairs.map(c => {
-                      if (c.id === selectedChair.id) {
-                        return selectedChair;
-                      }
-                      return c;
-                    });
-                    setChairs(updatedChairs);
-                    localStorage.setItem('panda_chairs_state', JSON.stringify(updatedChairs));
                     setSelectedChair(null);
-                    showToast('Silla actualizada correctamente.');
+                    showToast('El estado de las sillas se actualiza desde Recepción.');
                   }}
                   className="premium-btn-gold"
                   style={{
@@ -1776,7 +1974,7 @@ const DashboardModule = ({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>FACTURACIÓN ACTUAL (€)</label>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>FACTURACIÓN ACTUAL (USD)</label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
                     <DollarSign size={15} color="var(--champagne)" />
@@ -1784,9 +1982,8 @@ const DashboardModule = ({
                   <input 
                     type="number" 
                     step="1"
-                    value={currentMonthAmount} 
-                    onChange={(e) => setCurrentMonthAmount(parseFloat(e.target.value) || 0)}
-                    placeholder="Ej. 28400"
+                    value={currentMonthAmountReal}
+                    readOnly
                     className="premium-modal-input"
                     style={{
                       width: '100%',
@@ -1805,7 +2002,7 @@ const DashboardModule = ({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>META DEL MES (€)</label>
+                <label style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.75)' }}>META DEL MES (USD)</label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <div style={{ position: 'absolute', left: '12px', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center' }}>
                     <Target size={15} color="var(--champagne)" />
@@ -1852,7 +2049,6 @@ const DashboardModule = ({
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    localStorage.setItem('panda_current_month_amount', currentMonthAmount.toString());
                     localStorage.setItem('panda_monthly_goal', monthlyGoal.toString());
                     setIsEditingGoals(false);
                     showToast('Meta mensual actualizada correctamente.');
@@ -1874,6 +2070,162 @@ const DashboardModule = ({
           )
         )}
       </AnimatedModal>
+
+      {/* Modal Resumen de Cobro Emergente desde Silla */}
+      <AnimatedModal isOpen={!!checkoutChairModal}>
+        {(overlayClass, cardClass) => (
+          checkoutChairModal && (
+            <div className={`${overlayClass} modal-centered-overlay`}>
+              <div className={`${cardClass} modal-popup-centered`}>
+                <button 
+                  onClick={() => setCheckoutChairModal(null)}
+                  style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '20px',
+                    backgroundColor: 'rgba(0,0,0,0.6)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    color: 'white',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 99
+                  }}
+                  title="Cerrar"
+                >
+                  <X size={18} />
+                </button>
+
+                <CheckoutPOS 
+                  rates={rates} 
+                  isMobile={isMobile} 
+                  onNavigate={onNavigate}
+                  preselectAppId={checkoutChairModal.appointmentId}
+                  isModalView={true}
+                  onClose={() => {
+                    setCheckoutChairModal(null);
+                    const fetchChairData = async () => {
+                      try {
+                        const activeApps = await dataService.getAppointmentsByState(['En Silla', 'Agendado']);
+                        setRealtimeAppointments(activeApps || []);
+                      } catch (e) { console.error(e); }
+                    };
+                    fetchChairData();
+                    if (onRefresh) onRefresh();
+                  }}
+                />
+              </div>
+            </div>
+          )
+        )}
+      </AnimatedModal>
+
+      {/* Modal: Nuevo Cliente */}
+      <NewClientModal 
+        isOpen={showNewClientModal}
+        onClose={() => setShowNewClientModal(false)}
+        onSuccess={(newClient) => {
+          setShowNewClientModal(false);
+          if (onRefresh) onRefresh();
+        }}
+      />
+
+      {/* Modal: Cobro POS Popup */}
+      <AnimatedModal isOpen={showCheckoutPopup}>
+        {(overlayClass, cardClass) => (
+          showCheckoutPopup && (
+            <div className={`${overlayClass} modal-centered-overlay`}>
+              <div className={`${cardClass} modal-popup-fullmodule`}>
+                <button 
+                  onClick={() => setShowCheckoutPopup(false)}
+                  style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '20px',
+                    backgroundColor: 'rgba(0,0,0,0.6)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    color: 'white',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 99
+                  }}
+                  title="Cerrar"
+                >
+                  <X size={18} />
+                </button>
+                <CheckoutPOS 
+                  rates={rates} 
+                  isMobile={isMobile} 
+                  onNavigate={onNavigate}
+                  isModalView={false}
+                  onClose={() => {
+                    setShowCheckoutPopup(false);
+                    if (onRefresh) onRefresh();
+                  }}
+                />
+              </div>
+            </div>
+          )
+        )}
+      </AnimatedModal>
+
+      {/* Modal: Recepción Popup */}
+      <AnimatedModal isOpen={showReceptionPopup}>
+        {(overlayClass, cardClass) => (
+          showReceptionPopup && (
+            <div className={`${overlayClass} modal-centered-overlay`}>
+              <div className={`${cardClass} modal-popup-fullmodule`}>
+                <button 
+                  onClick={() => setShowReceptionPopup(false)}
+                  style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '20px',
+                    backgroundColor: 'rgba(0,0,0,0.6)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    color: 'white',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 99
+                  }}
+                  title="Cerrar"
+                >
+                  <X size={18} />
+                </button>
+                <Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}><RefreshCw className="animate-spin" style={{ marginBottom: '10px' }} /> Cargando Recepción...</div>}>
+                  <ReceptionModule isMobile={isMobile} rates={rates} />
+                </Suspense>
+              </div>
+            </div>
+          )
+        )}
+      </AnimatedModal>
+
+      {/* Modal: Nueva Cita Popup */}
+      <NewAppointmentModal 
+        isOpen={showSchedulePopup}
+        onClose={() => setShowSchedulePopup(false)}
+        rates={rates}
+        onSuccess={() => {
+          setShowSchedulePopup(false);
+          if (onRefresh) onRefresh();
+        }}
+      />
+
       <style>{`
         /* ── AMBIENT CINEMATIC ORBS ── */
         .l-dashboard-orb {
