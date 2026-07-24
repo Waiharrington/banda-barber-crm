@@ -2517,9 +2517,6 @@ export default function BookAppointment() {
                               <div className="category-title-wrapper">
                                 <span className="category-title flex items-center gap-2">
                                   {cat.label}
-                                  {cat.isKids && (
-                                    <span className="text-[8px] bg-[#CBB79A] text-black font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full">KIDS</span>
-                                  )}
                                 </span>
                                 <span className="category-subtitle">{cat.sub}</span>
                                 <div className="category-underline"></div>
