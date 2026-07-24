@@ -63,6 +63,26 @@ import abrahamWork2 from '../../assets/abraham_work2.png';
 import abrahamWork3 from '../../assets/abraham_work3.jpg';
 import abrahamWork4 from '../../assets/abraham_work4.jpg';
 
+import videoJeff from '../../assets/barber_video_jeff.mp4';
+import videoJuan from '../../assets/barber_video_juan.mp4';
+import videoMoret from '../../assets/barber_video_moret.mp4';
+import videoAlejandro from '../../assets/barber_video_alejandro.mp4';
+import videoMarko from '../../assets/barber_video_marko.mp4';
+import videoAbraham from '../../assets/barber_video_abraham.mp4';
+import videoAngel from '../../assets/barber_video_angel.mp4';
+
+const getBarberVideo = (barberName) => {
+  const name = barberName?.toLowerCase() || '';
+  if (name.includes('jeff')) return videoJeff;
+  if (name.includes('juan')) return videoJuan;
+  if (name.includes('moret')) return videoMoret;
+  if (name.includes('alejandro')) return videoAlejandro;
+  if (name.includes('marko') || name.includes('marco')) return videoMarko;
+  if (name.includes('abraham')) return videoAbraham;
+  if (name.includes('ángel') || name.includes('angel')) return videoAngel;
+  return null;
+};
+
 // Reusable AnimatedSection component to perform fade-up on scroll reveal
 function AnimatedSection({ children, className = "", delay = 0, from = "bottom" }) {
   const ref = useRef(null);
@@ -1750,9 +1770,20 @@ export default function BookAppointment() {
                               >
                                 <BarberAvatar url={barber.image_url} name={barber.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" iconSize={40} />
                                 
+                                {/* Hover-to-Autoplay Presentation Video */}
+                                {isBookable && getBarberVideo(barber.name) && (
+                                  <video
+                                    src={getBarberVideo(barber.name)}
+                                    loop
+                                    muted
+                                    playsInline
+                                    className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-[1] pointer-events-none"
+                                  />
+                                )}
+
                                 {/* Sleek Apple style view profile overlay on hover */}
                                 {isBookable && (
-                                  <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none">
+                                  <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none z-[2]">
                                     <div className="w-10 h-10 rounded-full bg-black/60 border border-[#CBB79A]/30 flex items-center justify-center text-[#CBB79A] shadow-lg">
                                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
