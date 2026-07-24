@@ -748,19 +748,19 @@ export default function BookAppointment() {
   const nextBtnRef = useRef(null);
   const scrollToNextButton = () => {
     setTimeout(() => {
-      nextBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 150);
+      nextBtnRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+    }, 50);
   };
   const scrollToTimeSlots = () => {
     setTimeout(() => {
-      timeSlotsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 150);
+      timeSlotsRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }, 50);
   };
   const scrollToTop = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'auto' });
     } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'auto' });
     }
   };
   useEffect(() => {
