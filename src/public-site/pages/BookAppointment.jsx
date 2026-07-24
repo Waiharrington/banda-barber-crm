@@ -2726,7 +2726,7 @@ export default function BookAppointment() {
                           return (
                             <>
                               {/* Hero photo */}
-                              <div className="relative h-[420px] -mx-4 mb-4 overflow-hidden rounded-b-3xl border-b border-white/5 shadow-2xl bg-white/[0.02]">
+                              <div className="relative h-[420px] -mx-4 -mt-8 mb-4 overflow-hidden rounded-b-3xl border-b border-white/5 shadow-2xl bg-white/[0.02]">
                                 {expandedBarber.image_url ? (
                                   <img src={expandedBarber.image_url} alt={expandedBarber.name} className="w-full h-full object-cover object-top" />
                                 ) : (
