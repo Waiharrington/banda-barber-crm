@@ -83,6 +83,35 @@ const getBarberVideo = (barberName) => {
   return null;
 };
 
+const getBarberBiography = (barber) => {
+  if (barber?.biography && barber.biography.trim().length > 10) {
+    return barber.biography;
+  }
+  const name = barber?.name?.toLowerCase() || '';
+  if (name.includes('ángel') || name.includes('angel')) {
+    return 'Fundador de Panda Barber Studio. Con años de experiencia liderando tendencias, me especializo en cortes clásicos y el cuidado integral de la imagen masculina de la más alta calidad.';
+  }
+  if (name.includes('moret')) {
+    return 'Especialista en cortes modernos, degradados perfectos (fades) y diseños personalizados. Apasionado por el arte urbano y los detalles precisos que marcan la diferencia.';
+  }
+  if (name.includes('jeff')) {
+    return 'Artista del diseño capilar y el afeitado clásico. Experto en transformar tu idea en un estilo único, cuidando la simetría y combinando técnicas tradicionales con tendencias globales.';
+  }
+  if (name.includes('juan')) {
+    return 'Maestro de la navaja y rituales de barba. Me enfoco en brindar una experiencia relajante y un cuidado detallado para que tu barba luzca impecable y con la forma perfecta.';
+  }
+  if (name.includes('alejandro')) {
+    return 'Especialista en estilos contemporáneos y cortes texturizados. Mi objetivo es que cada cliente encuentre su propio estilo mediante un asesoramiento personalizado y detallado.';
+  }
+  if (name.includes('abraham')) {
+    return 'Experto en cortes vanguardistas, perfiles limpios y cuidado capilar. Dedicado al 100% a la precisión milimétrica en cada fade y a la total satisfacción de quienes confían en mis manos.';
+  }
+  if (name.includes('marko') || name.includes('marco')) {
+    return 'Artista del tatuaje y la barbería creativa. Combino mi pasión por el dibujo y el diseño para ofrecer estilos innovadores, trazos perfectos y acabados de alta definición.';
+  }
+  return 'Especialista en fades, cortes modernos y cuidado integral. Enfocado en brindar una experiencia premium de barbería a través de detalles que definen tu personalidad.';
+};
+
 // Reusable AnimatedSection component to perform fade-up on scroll reveal
 function AnimatedSection({ children, className = "", delay = 0, from = "bottom" }) {
   const ref = useRef(null);
@@ -2805,7 +2834,7 @@ export default function BookAppointment() {
                                 <span className="absolute -right-2 -bottom-8 text-8xl font-serif text-white/[0.04] pointer-events-none select-none">”</span>
                                 <h4 className="font-extrabold text-sm text-[var(--champagne)] uppercase tracking-widest mb-3">Sobre Mí</h4>
                                 <p className="text-[15px] text-white/80 leading-relaxed italic font-medium relative z-10">
-                                  "{expandedBarber.biography || 'Especialista en fades y cortes modernos. Me enfoco en resaltar tu estilo y personalidad con cada detalle.'}"
+                                  "{getBarberBiography(expandedBarber)}"
                                 </p>
                               </div>
 
