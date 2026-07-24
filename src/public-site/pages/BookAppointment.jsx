@@ -2763,7 +2763,7 @@ export default function BookAppointment() {
                                   <div className="flex items-center gap-2 mt-1.5">
                                     <Star size={14} className="text-amber-400 fill-amber-400" />
                                     <span className="text-sm font-bold text-white">{rating}</span>
-                                    <span className="text-xs text-white/40">({reviews} reseñas)</span>
+                                    <span className="text-sm text-white/60">({reviews} reseñas)</span>
                                   </div>
                                 </div>
                               </div>
@@ -2778,16 +2778,16 @@ export default function BookAppointment() {
                                 ].map((s, i) => (
                                   <div key={i} className="flex flex-col items-center gap-1 flex-1">
                                     <span className="text-[var(--champagne)]">{s.icon}</span>
-                                    <span className="text-xs font-bold text-white">{s.value}</span>
-                                    <span className="text-[8px] text-white/35 font-medium">{s.label}</span>
+                                    <span className="text-sm font-bold text-white">{s.value}</span>
+                                    <span className="text-[10px] text-white/60 font-semibold">{s.label}</span>
                                   </div>
                                 ))}
                               </div>
 
                               {/* About */}
                               <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4 mb-4">
-                                <h4 className="font-bold text-sm text-white mb-2">Sobre {expandedBarber.name}</h4>
-                                <p className="text-[11px] text-white/40 leading-relaxed">
+                                <h4 className="font-extrabold text-base text-white mb-2">Sobre {expandedBarber.name}</h4>
+                                <p className="text-sm text-white/70 leading-relaxed">
                                   {expandedBarber.biography || "Especialista en fades y cortes modernos. Me enfoco en resaltar tu estilo y personalidad con cada detalle."}
                                 </p>
                               </div>
@@ -2795,7 +2795,7 @@ export default function BookAppointment() {
                               {/* Recent works — real photos from staff_portfolio */}
                               <div className="mb-4">
                                 <div className="flex items-center justify-between mb-3">
-                                  <h4 className="font-bold text-sm text-white">Trabajos recientes</h4>
+                                  <h4 className="font-extrabold text-base text-white">Trabajos recientes</h4>
                                 </div>
                                 {portfolioLoading ? (
                                   <div className="flex gap-2">
@@ -2805,7 +2805,7 @@ export default function BookAppointment() {
                                   </div>
                                 ) : expandedBarberPortfolio.length === 0 ? (
                                   <div className="flex items-center justify-center h-16 rounded-xl border border-white/5 bg-white/[0.02]">
-                                    <p className="text-[10px] text-white/25 font-medium">Sin fotos de trabajos aún</p>
+                                    <p className="text-sm text-white/40 font-medium">Sin fotos de trabajos aún</p>
                                   </div>
                                 ) : (
                                   <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
@@ -2825,7 +2825,7 @@ export default function BookAppointment() {
                               {/* Presentation Video */}
                               {getBarberVideo(expandedBarber.name) && (
                                 <div className="mb-4">
-                                  <h4 className="font-bold text-sm text-white mb-2.5">Presentación</h4>
+                                  <h4 className="font-extrabold text-base text-white mb-2.5">Presentación</h4>
                                   <div className="w-full aspect-[3/4] rounded-2xl overflow-hidden relative border border-white/5 bg-[#0a0a0d] shadow-xl">
                                     <video
                                       autoPlay
@@ -2847,7 +2847,7 @@ export default function BookAppointment() {
 
                               {/* Services */}
                               <div className="mb-4">
-                                <h4 className="font-bold text-sm text-white mb-3">Servicios</h4>
+                                <h4 className="font-extrabold text-base text-white mb-3">Servicios</h4>
                                 <div className="grid grid-cols-2 gap-2">
                                   {[
                                     { icon: <Scissors size={16} />, name: 'Corte', price: '$25' },
@@ -2859,8 +2859,8 @@ export default function BookAppointment() {
                                     <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/[0.02]">
                                       <span className="text-[var(--champagne)]">{s.icon}</span>
                                       <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-white/60">{s.name}</span>
-                                        <span className="text-[11px] font-extrabold text-[var(--champagne)]">{s.price}</span>
+                                        <span className="text-xs font-bold text-white">{s.name}</span>
+                                        <span className="text-sm font-extrabold text-[var(--champagne)]">{s.price}</span>
                                       </div>
                                     </div>
                                   ))}
