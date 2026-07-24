@@ -107,7 +107,7 @@ const getBarberBiography = (barber) => {
     return 'Experto en cortes vanguardistas, perfiles limpios y cuidado capilar. Dedicado al 100% a la precisión milimétrica en cada fade y a la total satisfacción de quienes confían en mis manos.';
   }
   if (name.includes('marko') || name.includes('marco')) {
-    return 'Artista del tatuaje y la barbería creativa. Combino mi pasión por el dibujo y el diseño para ofrecer estilos innovadores, trazos perfectos y acabados de alta definición.';
+    return 'Artista del tatuaje profesional. Combino mi pasión por la ilustración, el puntillismo y el realismo para plasmar arte único en tu piel con máxima precisión e higiene.';
   }
   return 'Especialista en fades, cortes modernos y cuidado integral. Enfocado en brindar una experiencia premium de barbería a través de detalles que definen tu personalidad.';
 };
