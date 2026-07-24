@@ -1510,9 +1510,34 @@ export default function BookAppointment() {
                   </div>
                 </div>
 
-                {/* Card 3: Experiencia Panda */}
+                {/* Card 3: Panda Kids */}
                 <div 
                   className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-300"
+                  onClick={() => document.getElementById('pandakids')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center transition-all duration-700 brightness-[0.6] group-hover:brightness-[0.88] group-hover:scale-110 z-0" 
+                    style={{ backgroundImage: `url(${pandaKidsCover})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-1" />
+                  
+                  <div className="relative z-10 flex flex-col items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-[#CBB79A] flex items-center justify-center shadow-lg shadow-[#CBB79A]/20 transition-transform duration-300 group-hover:scale-110">
+                      <Heart size={20} className="text-black" fill="black" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-extrabold text-white mb-2 uppercase tracking-wide">PANDA KIDS</h3>
+                      <p className="text-white/60 text-xs leading-relaxed mb-4">Cortes especiales para los más pequeños. Paciencia, cuidado y diversión garantizados.</p>
+                      <span className="text-[#CBB79A] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
+                        VER SERVICIOS KIDS <span className="text-[14px]">→</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 4: Experiencia Panda */}
+                <div 
+                  className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-400"
                   onClick={() => setShowExperienceModal(true)}
                 >
                   <div 
@@ -1530,35 +1555,6 @@ export default function BookAppointment() {
                       <p className="text-white/60 text-xs leading-relaxed mb-4">Ambiente exclusivo, atención premium y los mejores productos.</p>
                       <span className="text-[#CBB79A] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
                         DESCUBRIR MÁS <span className="text-[14px]">→</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card 4: Panda Kids */}
-                <div 
-                  className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-400"
-                  onClick={() => document.getElementById('pandakids')?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center transition-all duration-700 brightness-[0.6] group-hover:brightness-[0.88] group-hover:scale-110 z-0" 
-                    style={{ backgroundImage: `url(${pandaKidsCover})` }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-1" />
-                  
-                  <div className="absolute top-4 right-4 z-10">
-                    <span className="bg-[#CBB79A] text-black text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-full">NUEVO</span>
-                  </div>
-                  
-                  <div className="relative z-10 flex flex-col items-start gap-4">
-                    <div className="w-12 h-12 rounded-full bg-[#CBB79A] flex items-center justify-center shadow-lg shadow-[#CBB79A]/20 transition-transform duration-300 group-hover:scale-110">
-                      <Heart size={20} className="text-black" fill="black" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-extrabold text-white mb-2 uppercase tracking-wide">PANDA KIDS</h3>
-                      <p className="text-white/60 text-xs leading-relaxed mb-4">Cortes especiales para los más pequeños. Paciencia, cuidado y diversión garantizados.</p>
-                      <span className="text-[#CBB79A] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
-                        VER SERVICIOS KIDS <span className="text-[14px]">→</span>
                       </span>
                     </div>
                   </div>
