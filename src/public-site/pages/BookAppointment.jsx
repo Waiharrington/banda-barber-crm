@@ -2819,7 +2819,7 @@ export default function BookAppointment() {
                                   { icon: <Scissors size={18} />, value: '324', label: 'Servicios' },
                                   { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>, value: '98%', label: 'Clientes felices' },
                                   { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, value: '5 años', label: 'Experiencia' },
-                                  { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, value: 'Panda Sede', label: 'Ubicación' }
+                                  { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, value: expandedBarber.location || 'San Jacinto Sede', label: 'Ubicación' }
                                 ].map((s, i) => (
                                   <div key={i} className="flex flex-col items-start p-4 rounded-2xl bg-white/[0.03] border border-white/5 shadow-md">
                                     <span className="text-[var(--champagne)] mb-2.5 bg-[#d4bc9a]/10 p-2 rounded-xl">{s.icon}</span>
