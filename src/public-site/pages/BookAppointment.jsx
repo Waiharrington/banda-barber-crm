@@ -1226,7 +1226,7 @@ export default function BookAppointment() {
             </div>
 
             <p className="text-white text-base sm:text-xl lg:text-[22px] font-extrabold leading-snug font-sans tracking-wide reveal-item delay-300">
-              Tu estilo comienza con el profesional correcto.
+              Tu estilo comienza con<br className="sm:hidden" /> el profesional correcto.
             </p>
             <p className="text-white/85 text-base sm:text-lg lg:text-[17px] leading-relaxed font-normal font-sans max-w-[580px] reveal-item delay-400">
               Barbería y tatuajes en un espacio creado para cuidar cada detalle de tu{'\u00A0'}imagen.
