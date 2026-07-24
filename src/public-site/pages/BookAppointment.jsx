@@ -1713,17 +1713,35 @@ export default function BookAppointment() {
                              <span className="text-xs lg:text-sm font-black text-[#CBB79A] tracking-widest uppercase mb-2">{specialtyText}</span>
                              <p className="text-sm lg:text-base text-white/70 mb-4 truncate w-full tracking-wide">{tagsText}</p>
                              {isBookable ? (
-                               <button 
-                                 onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
-                                 className="text-xs lg:text-sm font-black uppercase tracking-widest text-[#CBB79A] hover:text-white transition-all duration-300 cursor-pointer flex items-center gap-1 border-b border-[#CBB79A]/20 hover:border-white pb-0.5"
-                               >
-                                 <span>Reservar Cita</span> <span>→</span>
-                               </button>
-                             ) : (
-                               <span className="text-[9px] font-black uppercase tracking-widest text-white/30 border border-white/5 px-2.5 py-1 rounded-md mt-1">
-                                 Staff Panda
-                               </span>
-                             )}
+                                <button 
+                                  onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
+                                  className="mt-4 px-8 py-2.5 rounded-full border text-xs lg:text-sm font-black uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+                                  style={{
+                                    borderColor: 'rgba(203, 183, 154, 0.35)',
+                                    background: 'rgba(203, 183, 154, 0.04)',
+                                    color: '#CBB79A',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#CBB79A';
+                                    e.currentTarget.style.color = '#000000';
+                                    e.currentTarget.style.borderColor = '#CBB79A';
+                                    e.currentTarget.style.boxShadow = '0 0 15px rgba(203, 183, 154, 0.4)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'rgba(203, 183, 154, 0.04)';
+                                    e.currentTarget.style.color = '#CBB79A';
+                                    e.currentTarget.style.borderColor = 'rgba(203, 183, 154, 0.35)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                                  }}
+                                >
+                                  Reservar Cita
+                                </button>
+                              ) : (
+                                <span className="text-[9px] font-black uppercase tracking-widest text-white/30 border border-white/5 px-2.5 py-1 rounded-md mt-4">
+                                  Staff Panda
+                                </span>
+                              )}
                            </div>
                          </div>
                        );
