@@ -567,9 +567,15 @@ export default function BookAppointment() {
   };
   const [expandedBarber, setExpandedBarber] = useState(null);
   const [expandedBarberPortfolio, setExpandedBarberPortfolio] = useState([]);
+  const [barberSearchQuery, setBarberSearchQuery] = useState('');
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const [activeLightboxImage, setActiveLightboxImage] = useState(null);
   const [toast, setToast] = useState(null);
+
+  // Clear barber search when step or selected category changes
+  useEffect(() => {
+    setBarberSearchQuery('');
+  }, [step, selectedCategory]);
   const [favorites, setFavorites] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('favorite_barbers') || '[]');
@@ -3031,115 +3037,164 @@ export default function BookAppointment() {
                         })()}
                       </div>
                     ) : (
-                      /* GRID CARDS */
-                      <div className="grid grid-cols-2 gap-3">
-                        {barbers
-                          .filter(b => selectedCategory === 'Tatuajes'
-                            ? b.role?.includes('Tatuador') || b.role?.includes('Artista')
-                            : b.role?.includes('Barbero')
-                          )
-                          .map((barber, bIdx) => {
-                          const specialty = barber.specialty || (barber.role?.includes('Tatuador') ? 'Artista Tatuador' : 'Barbero Profesional');
-                          const badge = barber.badge || '';
-                          const ratings = ['4.9', '4.8', '4.9', '4.7', '4.8'];
-                          const rating = ratings[bIdx % ratings.length];
-                          const reviewsList = [324, 210, 189, 98, 142];
-                          const reviews = reviewsList[bIdx % reviewsList.length];
-                          const available = bIdx % 4 !== 2;
-                          const availTexts = ['Disponible hoy', 'Disponible hoy', 'Disponible mañana', 'Disponible hoy', 'Disponible el sábado'];
-                          const availText = availTexts[bIdx % availTexts.length];
-                          const isSelected = selectedBarber?.id === barber.id;
-                          return (
-                            <div
-                              key={barber.id}
-                              onClick={async () => {
-                                setExpandedBarber(barber);
-                                setExpandedBarberPortfolio([
-                                   { id: 'ab1', image_url: abrahamWork1 },
-                                   { id: 'ab2', image_url: abrahamWork2 },
-                                   { id: 'ab3', image_url: abrahamWork3 },
-                                   { id: 'ab4', image_url: abrahamWork4 }
-                                 ]);
-                                setPortfolioLoading(false);
-                                scrollToTop();
-                              }}
-                              className={`relative rounded-2xl border overflow-hidden transition-all duration-300 cursor-pointer text-left bg-[#131316] hover:border-white/15 active:scale-[0.98] collapsed-card-reveal flex flex-col ${
-                                isSelected 
-                                  ? 'border-[var(--champagne)] shadow-[0_0_22px_rgba(203,183,154,0.18)] ring-1 ring-[var(--champagne)]' 
-                                  : 'border-white/8'
-                              }`}
+                      /* GRID CARDS WITH SEARCH FILTER */
+                      <div className="space-y-4">
+                        {/* Premium Search Input */}
+                        <div className="relative">
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-white/40">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                          </span>
+                          <input
+                            type="text"
+                            value={barberSearchQuery}
+                            onChange={(e) => setBarberSearchQuery(e.target.value)}
+                            placeholder={selectedCategory === 'Tatuajes' ? "Buscar tatuador por nombre..." : "Buscar barbero por nombre..."}
+                            className="w-full bg-[#131316] border border-white/5 rounded-2xl py-3.5 pl-11 pr-10 text-xs font-semibold text-white placeholder-white/30 focus:outline-none focus:border-[var(--champagne)]/30 transition-all shadow-lg"
+                          />
+                          {barberSearchQuery && (
+                            <button
+                              onClick={() => setBarberSearchQuery('')}
+                              className="absolute inset-y-0 right-0 flex items-center pr-4 text-white/40 hover:text-white transition-colors"
                             >
-                              <div className="relative h-44 overflow-hidden bg-white/[0.02]">
-                                {barber.image_url ? (
-                                  <img src={barber.image_url} alt={barber.name} className="w-full h-full object-cover object-top" />
-                                ) : (
-                                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-[var(--champagne-dark)]/5 to-transparent">
-                                    <div className="w-14 h-14 rounded-full bg-white/[0.03] border border-white/5 flex items-center justify-center text-[var(--champagne)] shadow-inner">
-                                      <User size={26} strokeWidth={1.5} />
-                                    </div>
-                                    <span className="text-[8px] text-[var(--champagne)]/40 font-bold uppercase tracking-widest">Panda Barber</span>
-                                  </div>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#131316] via-transparent to-transparent"></div>
-                                
-                                {/* Selection mark */}
-                                {isSelected && (
-                                  <div className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-[var(--champagne)] flex items-center justify-center shadow-lg border border-black/10 z-10 animate-scale-up">
-                                    <Check size={14} className="text-black" strokeWidth={3} />
-                                  </div>
-                                )}
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                          )}
+                        </div>
 
-                                {badge && (
-                                  <div className="absolute top-2 left-2 px-2 py-1 rounded-lg bg-gradient-to-br from-amber-500/80 to-orange-600/80 backdrop-blur-sm flex items-center gap-1">
-                                    <span className="text-[8px] font-black text-white uppercase tracking-wider">{badge}</span>
-                                  </div>
-                                )}
-                                <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center z-10" onClick={(e) => { e.stopPropagation(); toggleFavorite(barber.id); }}>
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill={favorites.includes(barber.id) ? "#ff453a" : "none"} stroke={favorites.includes(barber.id) ? "#ff453a" : "white"} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                                </div>
+                        {(() => {
+                          const filtered = barbers.filter(b => {
+                            const roleMatches = selectedCategory === 'Tatuajes'
+                              ? b.role?.includes('Tatuador') || b.role?.includes('Artista')
+                              : b.role?.includes('Barbero');
+                            
+                            if (!roleMatches) return false;
+                            if (!barberSearchQuery) return true;
+                            
+                            const query = barberSearchQuery.toLowerCase();
+                            return b.name?.toLowerCase().includes(query) || 
+                                   (b.specialty || '').toLowerCase().includes(query) || 
+                                   (b.role || '').toLowerCase().includes(query);
+                          });
+
+                          if (filtered.length === 0) {
+                            return (
+                              <div className="flex flex-col items-center justify-center py-12 px-4 border border-dashed border-white/5 bg-white/[0.01] rounded-2xl">
+                                <span className="text-white/20 mb-3">
+                                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                </span>
+                                <p className="text-xs font-bold text-white/55 uppercase tracking-wider">No se encontraron resultados</p>
+                                <p className="text-[10px] text-white/30 mt-1">Intenta con otro nombre o especialidad</p>
                               </div>
-                              <div className="p-3 flex flex-col gap-1.5 flex-1 justify-between">
-                                <div>
-                                  <h4 className="font-extrabold text-sm text-white leading-tight">{barber.name}</h4>
-                                  <p className="text-white/40 text-[10px] font-medium mt-0.5">{specialty}</p>
-                                  <div className="flex items-center gap-1 mt-1">
-                                    <Star size={10} className="text-amber-400 fill-amber-400" />
-                                    <span className="text-[11px] font-bold text-white">{rating}</span>
-                                    <span className="text-[9px] text-white/30">({reviews})</span>
-                                  </div>
-                                </div>
-                                <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-white/5">
-                                  {/* Availability */}
-                                  <div className="flex items-center gap-1.5">
-                                    <span className={`w-1.5 h-1.5 rounded-full availability-pulse ${available ? '' : 'amber'}`}></span>
-                                    <span className={`text-[9px] font-bold ${available ? 'text-emerald-400' : 'text-amber-400'}`}>{availText}</span>
-                                  </div>
-                                  {/* Full-width ELEGIR button */}
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedBarber(isSelected ? null : barber);
-                                      if (!isSelected) scrollToNextButton();
+                            );
+                          }
+
+                          return (
+                            <div className="grid grid-cols-2 gap-3">
+                              {filtered.map((barber, bIdx) => {
+                                const specialty = barber.specialty || (barber.role?.includes('Tatuador') ? 'Artista Tatuador' : 'Barbero Profesional');
+                                const badge = barber.badge || '';
+                                const ratings = ['4.9', '4.8', '4.9', '4.7', '4.8'];
+                                const rating = ratings[bIdx % ratings.length];
+                                const reviewsList = [324, 210, 189, 98, 142];
+                                const reviews = reviewsList[bIdx % reviewsList.length];
+                                const available = bIdx % 4 !== 2;
+                                const availTexts = ['Disponible hoy', 'Disponible hoy', 'Disponible mañana', 'Disponible hoy', 'Disponible el sábado'];
+                                const availText = availTexts[bIdx % availTexts.length];
+                                const isSelected = selectedBarber?.id === barber.id;
+                                return (
+                                  <div
+                                    key={barber.id}
+                                    onClick={async () => {
+                                      setExpandedBarber(barber);
+                                      setExpandedBarberPortfolio([
+                                         { id: 'ab1', image_url: abrahamWork1 },
+                                         { id: 'ab2', image_url: abrahamWork2 },
+                                         { id: 'ab3', image_url: abrahamWork3 },
+                                         { id: 'ab4', image_url: abrahamWork4 }
+                                       ]);
+                                      setPortfolioLoading(false);
+                                      scrollToTop();
                                     }}
-                                    className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 cursor-pointer haptic-bounce ${
+                                    className={`relative rounded-2xl border overflow-hidden transition-all duration-300 cursor-pointer text-left bg-[#131316] hover:border-white/15 active:scale-[0.98] collapsed-card-reveal flex flex-col ${
                                       isSelected 
-                                        ? 'bg-[var(--champagne)] text-black shadow-[0_4px_14px_rgba(203,183,154,0.35)] scale-[1.02]' 
-                                        : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                                        ? 'border-[var(--champagne)] shadow-[0_0_22px_rgba(203,183,154,0.18)] ring-1 ring-[var(--champagne)]' 
+                                        : 'border-white/8'
                                     }`}
                                   >
-                                    {isSelected ? '✓ Elegido' : 'Elegir'}
-                                  </button>
-                                  {/* Tap hint — only when not selected */}
-                                  {!isSelected && (
-                                    <p className="text-center text-[8px] text-white/20 font-medium tracking-wide -mt-0.5">
-                                      Tócame para escoger
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
+                                    <div className="relative h-44 overflow-hidden bg-white/[0.02]">
+                                      {barber.image_url ? (
+                                        <img src={barber.image_url} alt={barber.name} className="w-full h-full object-cover object-top" />
+                                      ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-[var(--champagne-dark)]/5 to-transparent">
+                                          <div className="w-14 h-14 rounded-full bg-white/[0.03] border border-white/5 flex items-center justify-center text-[var(--champagne)] shadow-inner">
+                                            <User size={26} strokeWidth={1.5} />
+                                          </div>
+                                          <span className="text-[8px] text-[var(--champagne)]/40 font-bold uppercase tracking-widest">Panda Barber</span>
+                                        </div>
+                                      )}
+                                      <div className="absolute inset-0 bg-gradient-to-t from-[#131316] via-transparent to-transparent"></div>
+                                      
+                                      {/* Selection mark */}
+                                      {isSelected && (
+                                        <div className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-[var(--champagne)] flex items-center justify-center shadow-lg border border-black/10 z-10 animate-scale-up">
+                                          <Check size={14} className="text-black" strokeWidth={3} />
+                                        </div>
+                                      )}
+
+                                      {badge && (
+                                        <div className="absolute top-2 left-2 px-2 py-1 rounded-lg bg-gradient-to-br from-amber-500/80 to-orange-600/80 backdrop-blur-sm flex items-center gap-1">
+                                          <span className="text-[8px] font-black text-white uppercase tracking-wider">{badge}</span>
+                                        </div>
+                                      )}
+                                      <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center z-10" onClick={(e) => { e.stopPropagation(); toggleFavorite(barber.id); }}>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill={favorites.includes(barber.id) ? "#ff453a" : "none"} stroke={favorites.includes(barber.id) ? "#ff453a" : "white"} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                      </div>
+                                    </div>
+                                    <div className="p-3 flex flex-col gap-1.5 flex-1 justify-between">
+                                      <div>
+                                        <h4 className="font-extrabold text-sm text-white leading-tight">{barber.name}</h4>
+                                        <p className="text-white/40 text-[10px] font-medium mt-0.5">{specialty}</p>
+                                        <div className="flex items-center gap-1 mt-1">
+                                          <Star size={10} className="text-amber-400 fill-amber-400" />
+                                          <span className="text-[11px] font-bold text-white">{rating}</span>
+                                          <span className="text-[9px] text-white/30">({reviews})</span>
+                                        </div>
+                                      </div>
+                                      <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-white/5">
+                                        {/* Availability */}
+                                        <div className="flex items-center gap-1.5">
+                                          <span className={`w-1.5 h-1.5 rounded-full availability-pulse ${available ? '' : 'amber'}`}></span>
+                                          <span className={`text-[9px] font-bold ${available ? 'text-emerald-400' : 'text-amber-400'}`}>{availText}</span>
+                                        </div>
+                                        {/* Full-width ELEGIR button */}
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedBarber(isSelected ? null : barber);
+                                            if (!isSelected) scrollToNextButton();
+                                          }}
+                                          className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 cursor-pointer haptic-bounce ${
+                                            isSelected 
+                                              ? 'bg-[var(--champagne)] text-black shadow-[0_4px_14px_rgba(203,183,154,0.35)] scale-[1.02]' 
+                                              : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                                          }`}
+                                        >
+                                          {isSelected ? '✓ Elegido' : 'Elegir'}
+                                        </button>
+                                        {/* Tap hint — only when not selected */}
+                                        {!isSelected && (
+                                          <p className="text-center text-[8px] text-white/20 font-medium tracking-wide -mt-0.5">
+                                            Tócame para escoger
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           );
-                        })}
+                        })()}
                       </div>
                     )}
                   </div>
