@@ -32,6 +32,7 @@ import {
   Beer,
   GlassWater,
   Gamepad2,
+  Heart,
   X
 } from 'lucide-react';
 import { publicService } from '../services/publicService';
@@ -1457,7 +1458,7 @@ export default function BookAppointment() {
               <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2 reveal-item">NUESTRAS EXPERIENCIAS</span>
               <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight mb-12 uppercase font-sans reveal-item delay-100">ELIGE TU SERVICIO</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
                 {/* Card 1: Barbería */}
                 <div 
                   className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-100"
@@ -1528,6 +1529,37 @@ export default function BookAppointment() {
                       <p className="text-white/60 text-xs leading-relaxed mb-4">Ambiente exclusivo, atención premium y los mejores productos.</p>
                       <span className="text-[#CBB79A] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
                         DESCUBRIR MÁS <span className="text-[14px]">→</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 4: Panda Kids */}
+                <div 
+                  className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.35)] group cursor-pointer reveal-item delay-400"
+                  onClick={() => document.getElementById('pandakids')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  {/* Background: champagne dark gradient + subtle animated shimmer */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#1a1610] via-[#111115] to-[#0d0d10] z-0" />
+                  <div className="absolute inset-0 opacity-20 z-0" style={{
+                    backgroundImage: 'radial-gradient(ellipse at 60% 20%, rgba(203,183,154,0.5) 0%, transparent 70%)',
+                  }} />
+                  {/* Small decorative shapes */}
+                  <div className="absolute top-6 right-6 w-20 h-20 rounded-full bg-[#CBB79A]/5 border border-[#CBB79A]/10 z-1" />
+                  <div className="absolute top-14 right-14 w-8 h-8 rounded-full bg-[#CBB79A]/10 border border-[#CBB79A]/20 z-1" />
+                  <div className="absolute top-4 right-4 z-10">
+                    <span className="bg-[#CBB79A] text-black text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-full">NUEVO</span>
+                  </div>
+                  
+                  <div className="relative z-10 flex flex-col items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-[#CBB79A] flex items-center justify-center shadow-lg shadow-[#CBB79A]/20 transition-transform duration-300 group-hover:scale-110">
+                      <Heart size={20} className="text-black" fill="black" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-extrabold text-white mb-2 uppercase tracking-wide">PANDA KIDS</h3>
+                      <p className="text-white/60 text-xs leading-relaxed mb-4">Cortes especiales para los más pequeños. Paciencia, cuidado y diversión garantizados.</p>
+                      <span className="text-[#CBB79A] text-xs font-extrabold uppercase tracking-wider flex items-center gap-1 hover:underline cursor-pointer">
+                        VER SERVICIOS KIDS <span className="text-[14px]">→</span>
                       </span>
                     </div>
                   </div>
@@ -1684,6 +1716,98 @@ export default function BookAppointment() {
                 >
                   VER TODO EL EQUIPO <span className="text-[14px]">→</span>
                 </button>
+              </div>
+            </div>
+
+            {/* SECTION: PANDA KIDS CLUB */}
+            <div id="pandakids" className="w-full reveal-item">
+              <div className="relative rounded-3xl overflow-hidden border border-[#CBB79A]/20 bg-gradient-to-br from-[#14120d] via-[#111115] to-[#0d0d10]">
+                {/* Aurora background glow */}
+                <div className="absolute inset-0 pointer-events-none z-0">
+                  <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-[#CBB79A]/5 blur-3xl" />
+                  <div className="absolute bottom-0 right-1/4 w-64 h-64 rounded-full bg-[#CBB79A]/8 blur-2xl" />
+                </div>
+
+                <div className="relative z-10 flex flex-col lg:flex-row items-stretch">
+                  {/* Left: Placeholder for kids photo (user will provide) */}
+                  <div className="w-full lg:w-[38%] min-h-[280px] lg:min-h-[380px] relative bg-[#1a1610] flex items-center justify-center overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#CBB79A]/5 via-transparent to-[#CBB79A]/10" />
+                    <div className="flex flex-col items-center gap-4 relative z-10 p-8">
+                      <div className="w-24 h-24 rounded-full bg-[#CBB79A]/10 border-2 border-[#CBB79A]/30 flex items-center justify-center">
+                        <Heart size={40} className="text-[#CBB79A]" />
+                      </div>
+                      <p className="text-white/30 text-xs text-center font-medium">Foto de niño próximamente</p>
+                      <p className="text-white/20 text-[10px] text-center">Pásanos las fotos de Instagram<br />y las subimos aquí</p>
+                    </div>
+                    {/* Bottom gradient to blend */}
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#14120d] to-transparent lg:hidden" />
+                    <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#14120d] to-transparent hidden lg:block" />
+                  </div>
+
+                  {/* Right: Info */}
+                  <div className="flex-1 p-6 lg:p-10 flex flex-col justify-center gap-5">
+                    {/* Header */}
+                    <div>
+                      <span className="inline-flex items-center gap-2 bg-[#CBB79A]/10 border border-[#CBB79A]/25 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#CBB79A] mb-4">
+                        <Heart size={10} fill="currentColor" /> PANDA KIDS CLUB
+                      </span>
+                      <h2 className="text-2xl lg:text-3xl font-extrabold text-white uppercase tracking-tight font-sans leading-tight mb-2">
+                        Cortes que hacen<br />
+                        <span className="text-[#CBB79A]">felices a los más pequeños</span>
+                      </h2>
+                      <p className="text-white/50 text-sm leading-relaxed max-w-md">
+                        En Panda Barber los niños son parte de nuestra familia. Nuestros barberos saben exactamente cómo crear una experiencia divertida, cómoda y especial para ellos.
+                      </p>
+                    </div>
+
+                    {/* Feature Badges */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { icon: <Scissors size={16} />, title: 'Silla especial kids', desc: 'Asiento adaptado para que estén cómodos' },
+                        { icon: <Sparkles size={16} />, title: 'Productos suaves', desc: 'Formulados para cuero cabelludo infantil' },
+                        { icon: <Gamepad2 size={16} />, title: 'Ambiente divertido', desc: 'Una experiencia que les va a encantar' },
+                        { icon: <Heart size={16} />, title: 'Barberos pacientes', desc: 'Con experiencia en atención a niños' },
+                      ].map((feat, i) => (
+                        <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.07] hover:border-[#CBB79A]/25 transition-all duration-300">
+                          <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/20 flex items-center justify-center flex-shrink-0 text-[#CBB79A]">
+                            {feat.icon}
+                          </div>
+                          <div>
+                            <p className="text-white text-[11px] font-bold leading-tight mb-0.5">{feat.title}</p>
+                            <p className="text-white/40 text-[10px] leading-tight">{feat.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Testimonial */}
+                    <div className="bg-white/[0.03] border border-[#CBB79A]/15 rounded-2xl p-4 relative">
+                      <div className="text-[#CBB79A] text-3xl font-serif leading-none mb-1 opacity-40">"</div>
+                      <p className="text-white/70 text-sm italic leading-relaxed">
+                        Me gustó mucho el corte, el señor fue muy amable y me trató súper bien. ¡Quiero volver pronto!
+                      </p>
+                      <p className="text-[#CBB79A] text-[10px] font-bold uppercase tracking-wider mt-2">— Cliente Panda Kids ⭐⭐⭐⭐⭐</p>
+                    </div>
+
+                    {/* CTA */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={() => handleStartBooking()}
+                        className="btn-gold py-3 px-7 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 whitespace-nowrap"
+                        style={{ borderRadius: '10px' }}
+                      >
+                        <Heart size={13} fill="black" /> RESERVAR PARA MI HIJO
+                      </button>
+                      <button
+                        onClick={() => document.getElementById('equipo')?.scrollIntoView({ behavior: 'smooth' })}
+                        className="btn-outline py-3 px-7 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2"
+                        style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
+                      >
+                        VER EL EQUIPO
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -2195,15 +2319,31 @@ export default function BookAppointment() {
                       { key: 'Corte', label: 'Corte', sub: 'Renueva tu estilo', icon: <Scissors size={22} strokeWidth={1.5} />, img: '/services/corte.png' },
                       { key: 'Barba', label: 'Barba', sub: 'Perfilado y define', icon: <User size={22} strokeWidth={1.5} />, img: '/services/barba.png' },
                       { key: 'Tatuajes', label: 'Tatuaje', sub: 'Arte que se queda', icon: <PenTool size={22} strokeWidth={1.5} />, img: '/services/tatuaje.png' },
+                      { key: 'Kids', label: 'Panda Kids', sub: 'Para los más pequeños', icon: <Heart size={22} strokeWidth={1.5} />, img: '/services/corte.png', isKids: true },
                     ].map((cat, catIndex) => {
                       const isOpen = openCategory === cat.key;
-                      const catServices = getServicesForCategory(cat.key);
+                      const catServices = cat.isKids
+                        ? getServicesForCategory('Corte').filter(s => 
+                            s.name.toLowerCase().includes('niño') ||
+                            s.name.toLowerCase().includes('kids') ||
+                            s.name.toLowerCase().includes('infantil') ||
+                            s.name.toLowerCase().includes('menor')
+                          ).concat(
+                            // fallback: if no kids-specific services exist, show all corte services
+                            getServicesForCategory('Corte').filter(s =>
+                              !s.name.toLowerCase().includes('niño') &&
+                              !s.name.toLowerCase().includes('kids') &&
+                              !s.name.toLowerCase().includes('infantil') &&
+                              !s.name.toLowerCase().includes('menor')
+                            ).slice(0, 3)
+                          )
+                        : getServicesForCategory(cat.key);
                       return (
                         <div 
                           key={cat.key} 
                           className={`rounded-2xl border overflow-hidden transition-all duration-300 accordion-category-card stagger-enter stagger-${catIndex + 1} ${
                             isOpen ? 'is-open' : ''
-                          }`}
+                          } ${cat.isKids ? 'border-[rgba(203,183,154,0.3)]' : ''}`}
                         >
                           {/* Header card — click to toggle */}
                           <button 
@@ -2213,13 +2353,21 @@ export default function BookAppointment() {
                           >
                             <div className="category-image-wrapper">
                               <img src={cat.img} alt={cat.label} />
+                              {cat.isKids && (
+                                <div className="absolute inset-0 bg-gradient-to-br from-[#CBB79A]/20 to-transparent" />
+                              )}
                             </div>
                             <div className="accordion-category-header-content">
-                              <div className="category-icon-wrapper">
+                              <div className={`category-icon-wrapper ${cat.isKids ? 'bg-[#CBB79A]/20' : ''}`}>
                                 {cat.icon}
                               </div>
                               <div className="category-title-wrapper">
-                                <span className="category-title">{cat.label}</span>
+                                <span className="category-title flex items-center gap-2">
+                                  {cat.label}
+                                  {cat.isKids && (
+                                    <span className="text-[8px] bg-[#CBB79A] text-black font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full">KIDS</span>
+                                  )}
+                                </span>
                                 <span className="category-subtitle">{cat.sub}</span>
                                 <div className="category-underline"></div>
                               </div>
@@ -2230,6 +2378,12 @@ export default function BookAppointment() {
                           {/* Expandable list of services */}
                           {isOpen && (
                             <div className="accordion-services-list">
+                              {cat.isKids && (
+                                <div className="px-4 py-2 bg-[#CBB79A]/5 border-b border-[#CBB79A]/10 flex items-center gap-2">
+                                  <Heart size={11} className="text-[#CBB79A]" fill="currentColor" />
+                                  <span className="text-[10px] text-[#CBB79A] font-bold uppercase tracking-wider">Servicios especiales para niños</span>
+                                </div>
+                              )}
                               {catServices.length === 0 ? (
                                 <div className="text-center py-6 text-white/35 text-xs font-semibold">
                                   No hay servicios disponibles en esta categoría.
