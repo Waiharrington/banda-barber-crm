@@ -12,17 +12,17 @@ export default function PublicLayout() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 30) {
+    const handleScroll = (e) => {
+      const scrollTop = e.target?.scrollTop ?? window.scrollY;
+      if (scrollTop > 30) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
       }
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    // Run once initially to check scroll position
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    // Use capture phase (true) to intercept scroll events from scrollable divs inside child pages
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
   }, []);
 
   useEffect(() => {
