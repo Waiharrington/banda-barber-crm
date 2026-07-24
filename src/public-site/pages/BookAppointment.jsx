@@ -1231,10 +1231,7 @@ export default function BookAppointment() {
         {/* ── Grain/noise texture ── */}
         <div className="absolute inset-0 pointer-events-none z-15 hero-grain" />
 
-        {/* Logo top-left (mobile only, absolute positioned over the mobile slideshow) */}
-        <div className={`absolute top-4 left-6 z-20 ${fade(1)} lg:hidden`}>
-          <img src={logo} alt="Panda Barber" className="w-16 h-16 object-contain filter brightness-110" />
-        </div>
+
 
         {/* Centered content container positioned vertically centered relative to full-screen photo backgrounds */}
         <div className="w-full max-w-[1440px] mx-auto flex flex-col justify-center items-start gap-5 lg:gap-8 relative z-20 px-6 lg:px-12 text-left pt-6 lg:pt-0 lg:my-auto">

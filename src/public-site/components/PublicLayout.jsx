@@ -99,29 +99,27 @@ export default function PublicLayout() {
         </div>
       </header>
 
-      {/* Navbar - Floating Hamburger Menu (Mobile Only) */}
+      {/* Navbar - Glassmorphic Mobile Header Bar (Mobile Only) */}
       <nav 
-        className="fixed top-0 w-full z-50 pointer-events-none lg:hidden"
+        className="fixed top-0 left-0 w-full h-[64px] z-50 bg-[rgba(7,7,10,0.8)] backdrop-blur-md border-b border-[rgba(255,255,255,0.06)] flex items-center justify-between px-6 lg:hidden"
       >
-        {/* We use padding-top: 32px to align the hamburger icon properly with the content instead of sticking to the top */}
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-          
-          {/* Menu Button - Always visible */}
-          <div className="pointer-events-none">
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              style={{ background: 'rgba(7, 7, 10, 0.8)', backdropFilter: 'blur(10px)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', cursor: 'pointer', padding: '10px', borderRadius: '10px' }}
-              className="pointer-events-auto flex items-center justify-center shadow-lg hover:bg-[rgba(255,255,255,0.05)] transition-colors"
-            >
-              {menuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
+        {/* Clickable Logo */}
+        <Link to="/" onClick={() => setMenuOpen(false)} className="flex items-center">
+          <img src={logo} alt="Panda Barber Studio" className="h-[38px] object-contain filter brightness-110" />
+        </Link>
 
-        {/* Menu Dropdown - Always visible when open */}
+        {/* Menu Toggle Button */}
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          style={{ cursor: 'pointer', padding: '8px', color: 'var(--text-primary)' }}
+          className="flex items-center justify-center transition-colors"
+        >
+          {menuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
+        {/* Menu Dropdown - Floating clean menu */}
         {menuOpen && (
           <div 
-            className="pointer-events-auto"
             style={{
               background: 'rgba(7, 7, 10, 0.98)',
               backdropFilter: 'blur(20px)',
@@ -132,7 +130,7 @@ export default function PublicLayout() {
               gap: 12,
               boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
               position: 'absolute',
-              top: '80px',
+              top: '72px',
               right: '16px',
               width: '280px',
               borderRadius: '16px',
