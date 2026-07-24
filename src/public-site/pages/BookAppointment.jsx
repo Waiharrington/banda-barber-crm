@@ -1229,7 +1229,7 @@ export default function BookAppointment() {
               <p className="text-white text-sm sm:text-xl lg:text-[22px] font-extrabold leading-snug font-sans tracking-wide">
                 Tu estilo comienza con el profesional correcto.
               </p>
-              <p className="text-white/60 text-sm sm:text-lg lg:text-[17px] leading-relaxed font-normal font-sans max-w-[580px]">
+              <p className="text-white/60 text-sm sm:text-lg lg:text-[17px] leading-relaxed font-normal font-sans max-w-[580px] lg:max-w-[480px]">
                 Barbería y tatuajes en un espacio creado para cuidar cada detalle de tu{'\u00A0'}imagen.
               </p>
             </div>
