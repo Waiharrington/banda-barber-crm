@@ -1715,6 +1715,23 @@ export default function BookAppointment() {
                          <div key={barber.id} className="shrink-0 px-3 animate-[premiumFadeUp_0.6s_cubic-bezier(0.16,1,0.3,1)_both]" style={{ width: `${100 / visibleCount}%`, animationDelay: `${idx * 60}ms` }}>
                            <div className="flex flex-col items-center text-center relative group transition-all duration-300">
                              <div 
+                                onMouseEnter={(e) => {
+                                  if (isBookable) {
+                                    const video = e.currentTarget.querySelector('video');
+                                    if (video) { try { video.play(); } catch (err) {} }
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (isBookable) {
+                                    const video = e.currentTarget.querySelector('video');
+                                    if (video) {
+                                      try {
+                                        video.pause();
+                                        video.currentTime = 0;
+                                      } catch (err) {}
+                                    }
+                                  }
+                                }}
                                 onClick={() => {
                                   if (isBookable) {
                                     setStep(2);
@@ -2773,6 +2790,29 @@ export default function BookAppointment() {
                                   </div>
                                 )}
                               </div>
+
+                              {/* Presentation Video */}
+                              {getBarberVideo(expandedBarber.name) && (
+                                <div className="mb-4">
+                                  <h4 className="font-bold text-sm text-white mb-2.5">Presentación</h4>
+                                  <div className="w-full aspect-[16/9] rounded-2xl overflow-hidden relative border border-white/5 bg-[#0a0a0d] shadow-xl">
+                                    <video
+                                      autoPlay
+                                      loop
+                                      muted
+                                      playsInline
+                                      className="w-full h-full object-cover"
+                                      style={{ filter: 'brightness(0.95)' }}
+                                    >
+                                      <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
+                                    </video>
+                                    <div className="absolute bottom-3 left-3 z-10 bg-black/60 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-lg flex items-center gap-1.5 pointer-events-none">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                                      <span className="text-[8px] font-black text-white uppercase tracking-widest">En Acción</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
 
                               {/* Services */}
                               <div className="mb-4">
