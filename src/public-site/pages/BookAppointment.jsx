@@ -1537,38 +1537,76 @@ export default function BookAppointment() {
 
             {/* SECTION: NUESTROS ARTISTAS */}
             <div className="w-full text-left relative" id="equipo">
-              <div className="w-full flex flex-col items-center mb-12 reveal-item">
+              <div className="w-full flex flex-col items-center mb-8 reveal-item">
                 <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CONOCE AL EQUIPO</span>
-                <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans">NUESTROS ARTISTAS</h2>
+                <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-6">NUESTROS ARTISTAS</h2>
+                
+                {/* Apple-style Filter Selector */}
+                <div className="inline-flex p-1 bg-white/[0.03] border border-white/[0.08] rounded-full backdrop-blur-md">
+                  {[
+                    { id: 'todos', label: 'Todos' },
+                    { id: 'barberos', label: 'Barberos' },
+                    { id: 'tatuadores', label: 'Tatuadores' }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setArtistFilter(tab.id);
+                        setBarberStartIndex(0);
+                      }}
+                      className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                        artistFilter === tab.id
+                          ? 'bg-[#CBB79A] text-black shadow-lg shadow-[#CBB79A]/20 scale-105'
+                          : 'text-white/60 hover:text-white hover:bg-white/[0.02]'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="relative px-6 reveal-item delay-200">
-                {/* Left navigation arrow */}
-                <button 
-                  onClick={() => setBarberStartIndex(prev => Math.max(0, prev - 1))}
-                  className="absolute left-[-20px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-[#CBB79A]/40 bg-black/40 text-[#CBB79A] flex items-center justify-center hover:bg-[#CBB79A] hover:text-black transition-all cursor-pointer z-30"
-                  style={{ opacity: barberStartIndex === 0 ? 0.35 : 1, pointerEvents: barberStartIndex === 0 ? 'none' : 'auto' }}
-                  aria-label="Previous"
-                >
-                  <ChevronLeft size={16} />
-                </button>
+              {(() => {
+                const displayedBarbers = barbers.filter(barber => {
+                  if (artistFilter === 'todos') return true;
+                  const r = (barber.role?.split('|')[0] || '').toLowerCase().trim();
+                  if (artistFilter === 'barberos') {
+                    return r.includes('barber') || r.includes('corte') || r.includes('barba');
+                  }
+                  if (artistFilter === 'tatuadores') {
+                    return r.includes('tatu') || r.includes('ink') || r.includes('artista');
+                  }
+                  return true;
+                });
 
-                {/* Right navigation arrow */}
-                <button 
-                  onClick={() => setBarberStartIndex(prev => Math.min(Math.max(0, barbers.length - 5), prev + 1))}
-                  className="absolute right-[-20px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#CBB79A] text-black flex items-center justify-center hover:bg-[#CBB79A]/80 transition-all cursor-pointer z-30"
-                  style={{ opacity: barberStartIndex + 5 >= barbers.length ? 0.35 : 1, pointerEvents: barberStartIndex + 5 >= barbers.length ? 'none' : 'auto' }}
-                  aria-label="Next"
-                >
-                  <ChevronRight size={16} />
-                </button>
+                return (
+                  <div className="relative px-6 reveal-item delay-200">
+                    {/* Left navigation arrow */}
+                    <button 
+                      onClick={() => setBarberStartIndex(prev => Math.max(0, prev - 1))}
+                      className="absolute left-[-20px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-[#CBB79A]/40 bg-black/40 text-[#CBB79A] flex items-center justify-center hover:bg-[#CBB79A] hover:text-black transition-all cursor-pointer z-30"
+                      style={{ opacity: barberStartIndex === 0 ? 0.35 : 1, pointerEvents: barberStartIndex === 0 ? 'none' : 'auto' }}
+                      aria-label="Previous"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
 
-                <div className="overflow-hidden w-full">
-                  <div 
-                    className="flex transition-transform duration-500 ease-in-out"
-                    style={{ transform: `translateX(-${barberStartIndex * 20}%)` }}
-                  >
-                    {barbers.map((barber) => {
+                    {/* Right navigation arrow */}
+                    <button 
+                      onClick={() => setBarberStartIndex(prev => Math.min(Math.max(0, displayedBarbers.length - 5), prev + 1))}
+                      className="absolute right-[-20px] top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#CBB79A] text-black flex items-center justify-center hover:bg-[#CBB79A]/80 transition-all cursor-pointer z-30"
+                      style={{ opacity: barberStartIndex + 5 >= displayedBarbers.length ? 0.35 : 1, pointerEvents: barberStartIndex + 5 >= displayedBarbers.length ? 'none' : 'auto' }}
+                      aria-label="Next"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+
+                    <div className="overflow-hidden w-full">
+                      <div 
+                        className="flex transition-transform duration-500 ease-in-out"
+                        style={{ transform: `translateX(-${barberStartIndex * 20}%)` }}
+                      >
+                        {displayedBarbers.map((barber) => {
                       const isAngel = barber.name === 'Ángel Serrano';
                       const isMarko = barber.name === 'Marko Cardozo';
                       const isAbraham = barber.name === 'Abraham Díaz';
@@ -1627,9 +1665,11 @@ export default function BookAppointment() {
                         </div>
                       );
                     })}
+                    </div>
                   </div>
                 </div>
-              </div>
+              );
+            })()}
 
               {/* Centered CTA below carousel */}
               <div className="flex justify-center mt-10 reveal-item delay-300">
