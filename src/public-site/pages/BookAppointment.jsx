@@ -2726,7 +2726,7 @@ export default function BookAppointment() {
                           return (
                             <>
                               {/* Hero photo */}
-                              <div className="relative h-56 -mx-4 mb-4 overflow-hidden rounded-b-3xl border-b border-white/5 shadow-2xl bg-white/[0.02]">
+                              <div className="relative h-80 -mx-4 mb-4 overflow-hidden rounded-b-3xl border-b border-white/5 shadow-2xl bg-white/[0.02]">
                                 {expandedBarber.image_url ? (
                                   <img src={expandedBarber.image_url} alt={expandedBarber.name} className="w-full h-full object-cover object-top" />
                                 ) : (
@@ -2826,7 +2826,7 @@ export default function BookAppointment() {
                               {getBarberVideo(expandedBarber.name) && (
                                 <div className="mb-4">
                                   <h4 className="font-bold text-sm text-white mb-2.5">Presentación</h4>
-                                  <div className="w-full aspect-[16/9] rounded-2xl overflow-hidden relative border border-white/5 bg-[#0a0a0d] shadow-xl">
+                                  <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden relative border border-white/5 bg-[#0a0a0d] shadow-xl">
                                     <video
                                       autoPlay
                                       loop
