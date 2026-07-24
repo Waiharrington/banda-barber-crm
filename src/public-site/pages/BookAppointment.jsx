@@ -1612,7 +1612,6 @@ export default function BookAppointment() {
 
             {/* SECTION: NUESTROS ARTISTAS / EL EQUIPO */}
             <div className="w-full text-center reveal-item pt-16" id="equipo">
-              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">EL EQUIPO</span>
               <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-5">
                 NUESTRO <span className="text-[#CBB79A]">EQUIPO</span>
               </h2>
@@ -1685,8 +1684,13 @@ export default function BookAppointment() {
                        const dotColor = (isAngel || isMarko) ? 'bg-white/30' : 'bg-emerald-400';
                        
                        const displayName = isAbraham ? 'Abraham Diaz' : isAlejandro ? 'Alejandro Ramirez' : barber.name;
-                       const specialtyText = isAbraham ? 'MASTER BARBER' : isAlejandro ? 'BARBERO' : isAngel ? 'BARBERO' : isJose ? 'BARBERO' : isMarko ? 'TATUADOR' : (barber.role?.split('|')[0] || 'Estilista').trim().toUpperCase();
-                       const tagsText = isAbraham ? 'Fade • Barba • Clásicos' : isAlejandro ? 'Corte • Barba • Diseños' : isAngel ? 'Fade • Corte • Barba' : isJose ? 'Corte • Barba • Clásicos' : isMarko ? 'Realismo • Black & Grey' : (barber.role?.split('|')[1] || 'Estilo • Cuidado').trim();
+                       const rawRole = (barber.role?.split('|')[0] || 'Estilista').trim();
+                       const isRawRolePermissions = rawRole.includes(',') || rawRole.includes('barber') || rawRole.includes('schedule');
+                       const specialtyText = isAbraham ? 'MASTER BARBER' : isAlejandro ? 'BARBERO' : isAngel ? 'BARBERO' : isJose ? 'BARBERO' : isMarko ? 'TATUADOR' : (isRawRolePermissions ? 'ESTILISTA' : rawRole.toUpperCase());
+                       const cleanTags = (barber.role?.split('|')[1] || '').trim();
+                       const isRawPermissions = cleanTags.includes(',') || cleanTags.includes('barber') || cleanTags.includes('schedule') || !cleanTags;
+                       const defaultTags = specialtyText.includes('TATUA') ? 'Realismo • Black & Grey' : (specialtyText.includes('MANICUR') || specialtyText.includes('UÑA') ? 'Manicura • Nails • Arte' : 'Corte • Barba • Estilo');
+                       const tagsText = isAbraham ? 'Fade • Barba • Clásicos' : isAlejandro ? 'Corte • Barba • Diseños' : isAngel ? 'Fade • Corte • Barba' : isJose ? 'Corte • Barba • Clásicos' : isMarko ? 'Realismo • Black & Grey' : (isRawPermissions ? defaultTags : cleanTags);
                        
                        return (
                          <div key={barber.id} className="shrink-0 px-3 animate-[premiumFadeUp_0.6s_cubic-bezier(0.16,1,0.3,1)_both]" style={{ width: `${100 / visibleCount}%`, animationDelay: `${idx * 60}ms` }}>
@@ -1700,12 +1704,12 @@ export default function BookAppointment() {
                                  <span className={`text-[8px] font-black ${availabilityColor} uppercase tracking-widest`}>{availabilityText}</span>
                                </div>
                              </div>
-                             <h4 className="text-base font-extrabold text-white mb-0.5 tracking-tight">{displayName}</h4>
-                             <span className="text-[10px] font-extrabold text-[#CBB79A] tracking-widest uppercase mb-1">{specialtyText}</span>
-                             <p className="text-[11px] text-white/40 mb-3.5 truncate w-full tracking-wide">{tagsText}</p>
+                             <h4 className="text-lg font-extrabold text-white mb-1 tracking-tight">{displayName}</h4>
+                             <span className="text-[11px] font-black text-[#CBB79A] tracking-widest uppercase mb-1.5">{specialtyText}</span>
+                             <p className="text-[13px] text-white/50 mb-4 truncate w-full tracking-wide">{tagsText}</p>
                              <button 
                                onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
-                               className="text-[10px] font-black uppercase tracking-widest text-[#CBB79A] hover:text-white transition-all duration-300 cursor-pointer flex items-center gap-1 border-b border-[#CBB79A]/20 hover:border-white pb-0.5"
+                               className="text-[11px] font-black uppercase tracking-widest text-[#CBB79A] hover:text-white transition-all duration-300 cursor-pointer flex items-center gap-1 border-b border-[#CBB79A]/20 hover:border-white pb-0.5"
                              >
                                <span>Reservar Cita</span> <span>→</span>
                              </button>
