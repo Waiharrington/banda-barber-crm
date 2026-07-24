@@ -52,6 +52,7 @@ import goldChair from '../../assets/gold_chair.png';
 import barberiaCover from '../../assets/barberia_cover.png';
 import tatuajesCover from '../../assets/tatuajes_cover.png';
 import experienciaPandaCover from '../../assets/experiencia_panda_cover.png';
+import pandaKidsCover from '../../assets/panda_kids.png';
 import heroSlide1 from '../../assets/hero1.png';
 import heroSlide2 from '../../assets/hero2.png';
 import heroSlide3 from '../../assets/hero3.png';
@@ -1536,17 +1537,15 @@ export default function BookAppointment() {
 
                 {/* Card 4: Panda Kids */}
                 <div 
-                  className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.35)] group cursor-pointer reveal-item delay-400"
+                  className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-400"
                   onClick={() => document.getElementById('pandakids')?.scrollIntoView({ behavior: 'smooth' })}
                 >
-                  {/* Background: champagne dark gradient + subtle animated shimmer */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#1a1610] via-[#111115] to-[#0d0d10] z-0" />
-                  <div className="absolute inset-0 opacity-20 z-0" style={{
-                    backgroundImage: 'radial-gradient(ellipse at 60% 20%, rgba(203,183,154,0.5) 0%, transparent 70%)',
-                  }} />
-                  {/* Small decorative shapes */}
-                  <div className="absolute top-6 right-6 w-20 h-20 rounded-full bg-[#CBB79A]/5 border border-[#CBB79A]/10 z-1" />
-                  <div className="absolute top-14 right-14 w-8 h-8 rounded-full bg-[#CBB79A]/10 border border-[#CBB79A]/20 z-1" />
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center transition-all duration-700 brightness-[0.6] group-hover:brightness-[0.88] group-hover:scale-110 z-0" 
+                    style={{ backgroundImage: `url(${pandaKidsCover})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-1" />
+                  
                   <div className="absolute top-4 right-4 z-10">
                     <span className="bg-[#CBB79A] text-black text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-full">NUEVO</span>
                   </div>
@@ -1728,16 +1727,14 @@ export default function BookAppointment() {
                 }} />
 
                 <div className="relative z-10 flex flex-col lg:flex-row items-stretch">
-                  {/* Left: Placeholder for kids photo (user will provide) */}
-                  <div className="w-full lg:w-[38%] min-h-[280px] lg:min-h-[380px] relative bg-[#1a1610] flex items-center justify-center overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#CBB79A]/5 via-transparent to-[#CBB79A]/10" />
-                    <div className="flex flex-col items-center gap-4 relative z-10 p-8">
-                      <div className="w-24 h-24 rounded-full bg-[#CBB79A]/10 border-2 border-[#CBB79A]/30 flex items-center justify-center">
-                        <Heart size={40} className="text-[#CBB79A]" />
-                      </div>
-                      <p className="text-white/30 text-xs text-center font-medium">Foto de niño próximamente</p>
-                      <p className="text-white/20 text-[10px] text-center">Pásanos las fotos de Instagram<br />y las subimos aquí</p>
-                    </div>
+                  {/* Left: Kids photo */}
+                  <div className="w-full lg:w-[38%] min-h-[280px] lg:min-h-[380px] relative overflow-hidden">
+                    <img 
+                      src={pandaKidsCover} 
+                      alt="Panda Kids Club" 
+                      className="absolute inset-0 w-full h-full object-cover" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-black/40" />
                     {/* Bottom gradient to blend */}
                     <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#14120d] to-transparent lg:hidden" />
                     <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#14120d] to-transparent hidden lg:block" />
