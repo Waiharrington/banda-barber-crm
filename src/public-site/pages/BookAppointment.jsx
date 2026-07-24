@@ -363,10 +363,14 @@ export default function BookAppointment() {
     return () => clearInterval(interval);
   }, [showWelcome]);
 
-  // Autoplay for the Artists Carousel
+  // Autoplay for the Artists Carousel - pauses whenever the user interacts (arrows or tapping a card)
+  const nextAutoAdvanceAtRef = useRef(0);
+  const pauseTeamCarousel = () => {
+    nextAutoAdvanceAtRef.current = Date.now() + 4500;
+  };
   useEffect(() => {
     if (!showWelcome) return;
-    
+
     const activeFilter = artistFilter;
     const filteredCount = barbers.filter(barber => {
       if (activeFilter === 'todos') return true;
@@ -381,7 +385,11 @@ export default function BookAppointment() {
       return;
     }
 
+    nextAutoAdvanceAtRef.current = Date.now() + 4500;
+
     const interval = setInterval(() => {
+      if (Date.now() < nextAutoAdvanceAtRef.current) return; // paused by recent user interaction
+      nextAutoAdvanceAtRef.current = Date.now() + 4500;
       setBarberStartIndex(prev => {
         const maxIndex = filteredCount - visibleCount;
         if (prev >= maxIndex) {
@@ -389,7 +397,7 @@ export default function BookAppointment() {
         }
         return prev + 1;
       });
-    }, 4500); // Shift every 4.5 seconds
+    }, 500); // Poll every 500ms, but only advance every 4.5s of inactivity
 
     return () => clearInterval(interval);
   }, [barbers, artistFilter, showWelcome, visibleCount]);
@@ -567,6 +575,10 @@ export default function BookAppointment() {
   };
   const [expandedBarber, setExpandedBarber] = useState(null);
   const [expandedBarberPortfolio, setExpandedBarberPortfolio] = useState([]);
+  const [activeTeamCardId, setActiveTeamCardId] = useState(null);
+  const isTouchDevice = useMemo(() => (
+    typeof window !== 'undefined' && window.matchMedia('(hover: none), (pointer: coarse)').matches
+  ), []);
   const [barberSearchQuery, setBarberSearchQuery] = useState('');
   const [profileSourceStep, setProfileSourceStep] = useState(1);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
@@ -844,6 +856,8 @@ export default function BookAppointment() {
     setSelectedDate(null);
     setSelectedTime(null);
     setOpenCategory(null);
+    setExpandedBarber(null);
+    setActiveTeamCardId(null);
   };
 
   // Step transition - instant (no animation)
@@ -868,7 +882,6 @@ export default function BookAppointment() {
   };
   useEffect(() => {
     if (step !== prevStepRef.current) {
-      setExpandedBarber(null);
       prevStepRef.current = step;
       if (scrollContainerRef.current) {
         scrollContainerRef.current.scrollTop = 0;
@@ -1761,16 +1774,16 @@ export default function BookAppointment() {
               {/* Slider Component */}
               <div className="relative w-full px-12 group/slider">
                 {/* Nav buttons */}
-                <button 
-                  onClick={() => setBarberStartIndex(prev => Math.max(0, prev - 1))}
+                <button
+                  onClick={() => { pauseTeamCarousel(); setBarberStartIndex(prev => Math.max(0, prev - 1)); }}
                   disabled={barberStartIndex === 0}
                   className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/80 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-[#CBB79A]/50 transition-all disabled:opacity-0 disabled:pointer-events-none z-10 cursor-pointer shadow-lg"
                 >
                   <ChevronLeft size={20} />
                 </button>
-                
-                <button 
-                  onClick={() => setBarberStartIndex(prev => Math.min(Math.max(0, barbers.length - visibleCount), prev + 1))}
+
+                <button
+                  onClick={() => { pauseTeamCarousel(); setBarberStartIndex(prev => Math.min(Math.max(0, barbers.length - visibleCount), prev + 1)); }}
                   disabled={barberStartIndex >= barbers.length - visibleCount}
                   className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/80 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-[#CBB79A]/50 transition-all disabled:opacity-0 disabled:pointer-events-none z-10 cursor-pointer shadow-lg"
                 >
@@ -1820,6 +1833,7 @@ export default function BookAppointment() {
                              <div 
                                 onMouseEnter={(e) => {
                                   if (isBookable) {
+                                    pauseTeamCarousel();
                                     const video = e.currentTarget.querySelector('video');
                                     if (video) { try { video.play(); } catch (err) {} }
                                   }
@@ -1836,7 +1850,8 @@ export default function BookAppointment() {
                                   }
                                 }}
                                 onClick={() => {
-                                  if (isBookable) {
+                                  if (!isBookable) return;
+                                  const openProfile = () => {
                                     setProfileSourceStep(1);
                                     setStep(2);
                                     setExpandedBarber(barber);
@@ -1848,29 +1863,42 @@ export default function BookAppointment() {
                                       { id: 'ab4', image_url: abrahamWork4 }
                                     ]);
                                     setPortfolioLoading(false);
+                                    setActiveTeamCardId(null);
                                     scrollToTop();
+                                  };
+                                  if (isTouchDevice && activeTeamCardId !== barber.id) {
+                                    // First tap on mobile: reveal video + "Ver Perfil" instead of navigating right away
+                                    pauseTeamCarousel();
+                                    setActiveTeamCardId(barber.id);
+                                    return;
                                   }
+                                  openProfile();
                                 }}
                                 className={`w-full aspect-[4/5] rounded-2xl overflow-hidden mb-4 relative bg-[#0d0d11] border border-white/5 shadow-2xl ${
                                   isBookable ? 'cursor-pointer' : ''
                                 }`}
                               >
                                 <BarberAvatar url={barber.image_url} name={barber.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" iconSize={40} />
-                                
-                                {/* Hover-to-Autoplay Presentation Video */}
+
+                                {/* Hover-to-Autoplay Presentation Video (desktop) / Tap-to-Reveal (mobile) */}
                                 {isBookable && getBarberVideo(barber.name) && (
                                   <video
                                     src={getBarberVideo(barber.name)}
                                     loop
                                     muted
                                     playsInline
-                                    className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-[1] pointer-events-none"
+                                    autoPlay={activeTeamCardId === barber.id}
+                                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 z-[1] pointer-events-none group-hover:opacity-100 ${
+                                      activeTeamCardId === barber.id ? 'opacity-100' : 'opacity-0'
+                                    }`}
                                   />
                                 )}
 
-                                {/* Sleek Apple style view profile overlay on hover */}
+                                {/* Sleek Apple style view profile overlay on hover (desktop) / first tap (mobile) */}
                                 {isBookable && (
-                                  <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none z-[2]">
+                                  <div className={`absolute inset-0 bg-black/40 backdrop-blur-[1px] transition-all duration-300 flex flex-col items-center justify-center gap-2 z-[2] group-hover:opacity-100 group-hover:pointer-events-auto ${
+                                    activeTeamCardId === barber.id ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                                  }`}>
                                     <div className="w-10 h-10 rounded-full bg-black/60 border border-[#CBB79A]/30 flex items-center justify-center text-[#CBB79A] shadow-lg">
                                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -2831,13 +2859,25 @@ export default function BookAppointment() {
                               <div className="relative h-[700px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d] profile-video-hero">
                                 {getBarberVideo(expandedBarber.name) ? (
                                   <div className="w-full h-full relative profile-video-inner">
+                                    {expandedBarber.image_url && (
+                                      <img
+                                        src={expandedBarber.image_url}
+                                        alt={expandedBarber.name}
+                                        className="profile-video-poster"
+                                        style={{ filter: 'brightness(0.85)' }}
+                                      />
+                                    )}
                                     <video
+                                      key={expandedBarber.id}
                                       autoPlay
                                       loop
                                       muted
                                       playsInline
-                                      className="w-full h-full object-cover"
+                                      preload="auto"
+                                      poster={expandedBarber.image_url || undefined}
+                                      className="w-full h-full object-cover profile-video-el"
                                       style={{ filter: 'brightness(0.85)' }}
+                                      onLoadedData={(e) => e.currentTarget.classList.add('loaded')}
                                     >
                                       <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
                                     </video>
@@ -3040,7 +3080,7 @@ export default function BookAppointment() {
                               {/* Floating / Sticky Booking CTA Area */}
                               <div className="sticky bottom-0 -mx-4 px-4 pt-4 pb-6 bg-[#0a0a0e]/95 backdrop-blur-xl border-t border-white/5 z-20">
                                 <button
-                                  onClick={(e) => { createRipple(e); setSelectedBarber(expandedBarber); setStep(step + 1); scrollToTop(); }}
+                                  onClick={(e) => { createRipple(e); setSelectedBarber(expandedBarber); setExpandedBarber(null); setStep(step + 1); scrollToTop(); }}
                                   className="w-full relative overflow-hidden rounded-2xl haptic-bounce ripple-container group shadow-lg"
                                   style={{
                                     background: 'linear-gradient(135deg, #d4bc9a 0%, #c4a882 40%, #b8976e 100%)',
