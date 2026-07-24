@@ -741,10 +741,12 @@ export default function BookAppointment() {
           return r.includes('barber') || r.includes('barba') || r.includes('corte') || r.includes('artista') || r.includes('tatu') || r.includes('ink') || r.includes('style');
         });
 
-        // Ángel es el dueño de la barbería: siempre debe aparecer primero en la vitrina del cliente
+        // Ángel es el dueño y Moret Serrano va al lado (segundo en la vitrina)
         const sortedBarbers = [...filteredBarbers].sort((a, b) => {
           if (a.name === 'Ángel Serrano') return -1;
           if (b.name === 'Ángel Serrano') return 1;
+          if (a.name === 'Moret Serrano') return -1;
+          if (b.name === 'Moret Serrano') return 1;
           return 0;
         });
         setBarbers(sortedBarbers);
