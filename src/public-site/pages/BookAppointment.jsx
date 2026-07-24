@@ -2826,13 +2826,13 @@ export default function BookAppointment() {
                               {getBarberVideo(expandedBarber.name) && (
                                 <div className="mb-4">
                                   <h4 className="font-extrabold text-base text-white mb-2.5">Presentación</h4>
-                                  <div className="w-full aspect-[3/4] rounded-2xl overflow-hidden relative border border-white/5 bg-[#0a0a0d] shadow-xl">
+                                  <div className="w-full rounded-2xl overflow-hidden relative border border-white/5 bg-[#0a0a0d] shadow-xl">
                                     <video
                                       autoPlay
                                       loop
                                       muted
                                       playsInline
-                                      className="w-full h-full object-contain"
+                                      className="w-full block"
                                       style={{ filter: 'brightness(0.95)' }}
                                     >
                                       <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
