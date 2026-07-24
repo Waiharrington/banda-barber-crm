@@ -1693,26 +1693,26 @@ export default function BookAppointment() {
                 {/* Main Content Area */}
                 <div className="flex flex-col md:flex-row items-stretch">
                   {/* Left Column: Portrait */}
-                  <div className="w-full md:w-[30%] min-h-[340px] relative bg-[#1c1c24]">
+                  <div className="w-full md:w-[28%] min-h-[260px] relative bg-[#1c1c24]">
                     <BarberAvatar url={topBarber.image_url} name={topBarber.name} className="absolute inset-0 w-full h-full object-cover" iconSize={60} />
                     {/* Subtle gradient overlay at bottom */}
                     <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#111115]/80 to-transparent" />
                   </div>
 
                   {/* Center Column: Info */}
-                  <div className="flex-1 p-6 lg:p-8 flex flex-col justify-center">
+                  <div className="flex-1 p-5 lg:p-6 flex flex-col justify-center">
                     {/* Subtitle */}
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#CBB79A] flex items-center gap-1.5 mb-3">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#CBB79A] flex items-center gap-1.5 mb-2">
                       👑 BARBERO DESTACADO DEL MES
                     </span>
                     
                     {/* Name */}
-                    <h3 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-3">
+                    <h3 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-2">
                       {topBarber.name}
                     </h3>
 
                     {/* Badges */}
-                    <div className="flex items-center gap-2 mb-5">
+                    <div className="flex items-center gap-2 mb-3">
                       <span className="px-2.5 py-1 rounded text-[9px] font-extrabold tracking-wider bg-white/5 border border-white/10 text-white/70 uppercase">
                         MASTER BARBER
                       </span>
@@ -1723,7 +1723,7 @@ export default function BookAppointment() {
                     </div>
 
                     {/* Biography Quote */}
-                    <p className="text-white/70 text-sm italic font-medium leading-relaxed border-l-2 border-[#CBB79A]/30 pl-4 mb-6 max-w-[90%]">
+                    <p className="text-white/70 text-[13px] italic font-medium leading-relaxed border-l-2 border-[#CBB79A]/30 pl-4 mb-4 max-w-[90%]">
                       "{topBarber.biography || 'Especializado en cortes clásicos y modernos con un estilo y precisión impecables.'}"
                     </p>
 
@@ -1748,7 +1748,7 @@ export default function BookAppointment() {
 
                   {/* Right Column: Portfolio Grid (desktop only) */}
                   {isDesktop && (
-                    <div className="w-[28%] p-4 flex items-center">
+                    <div className="w-[26%] p-3 flex items-center">
                       <div className="grid grid-cols-2 gap-1.5 w-full">
                         {topBarberPortfolio.slice(0, 8).map((img, idx) => (
                           <div key={img.id || idx} className="aspect-square bg-white/5 border border-white/10 rounded-lg overflow-hidden">
@@ -1767,7 +1767,7 @@ export default function BookAppointment() {
                 </div>
 
                 {/* Bottom Stats Bar */}
-                <div className="border-t border-white/[0.06] bg-white/[0.02] px-6 lg:px-10 py-4">
+                <div className="border-t border-white/[0.06] bg-white/[0.02] px-6 lg:px-10 py-3">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/20 flex items-center justify-center">
