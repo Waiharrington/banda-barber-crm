@@ -83,8 +83,23 @@ const getBarberVideo = (barberName) => {
   return null;
 };
 
+const parseBarberBioObj = (barber) => {
+  if (barber?.biography && barber.biography.trim().startsWith('{')) {
+    try {
+      return JSON.parse(barber.biography);
+    } catch (e) {
+      console.warn("Error parsing barber biography JSON", e);
+    }
+  }
+  return null;
+};
+
 const getBarberBiography = (barber) => {
-  if (barber?.biography && barber.biography.trim().length > 10) {
+  const bioObj = parseBarberBioObj(barber);
+  if (bioObj && bioObj.bio) {
+    return bioObj.bio;
+  }
+  if (barber?.biography && !barber.biography.trim().startsWith('{') && barber.biography.trim().length > 10) {
     return barber.biography;
   }
   const name = barber?.name?.toLowerCase() || '';
@@ -110,6 +125,38 @@ const getBarberBiography = (barber) => {
     return 'Artista del tatuaje profesional. Combino mi pasión por la ilustración, el puntillismo y el realismo para plasmar arte único en tu piel con máxima precisión e higiene.';
   }
   return 'Especialista en fades, cortes modernos y cuidado integral. Enfocado en brindar una experiencia premium de barbería a través de detalles que definen tu personalidad.';
+};
+
+const getBarberStats = (barber) => {
+  const bioObj = parseBarberBioObj(barber);
+  const name = barber?.name?.toLowerCase() || '';
+  
+  // Custom default values based on employee to look more realistic
+  let defServices = '324';
+  let defHappy = '98%';
+  let defExp = '5 años';
+  let defLoc = barber?.location || 'San Jacinto Sede';
+  
+  if (name.includes('ángel') || name.includes('angel')) {
+    defServices = '780+';
+    defHappy = '99%';
+    defExp = '8 años';
+  } else if (name.includes('moret')) {
+    defServices = '520+';
+    defHappy = '98%';
+    defExp = '4 años';
+  } else if (name.includes('marko') || name.includes('marco')) {
+    defServices = '190+';
+    defHappy = '97%';
+    defExp = '3 años';
+  }
+  
+  return {
+    services_count: bioObj?.services_count || defServices,
+    happy_clients: bioObj?.happy_clients || defHappy,
+    experience: bioObj?.experience || defExp,
+    location: bioObj?.location || defLoc
+  };
 };
 
 // Reusable AnimatedSection component to perform fade-up on scroll reveal
@@ -2814,20 +2861,25 @@ export default function BookAppointment() {
                               </div>
 
                               {/* Glassmorphism Stats Cards (2x2 Grid) */}
-                              <div className="grid grid-cols-2 gap-3 mb-6">
-                                {[
-                                  { icon: <Scissors size={18} />, value: '324', label: 'Servicios' },
-                                  { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>, value: '98%', label: 'Clientes felices' },
-                                  { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, value: '5 años', label: 'Experiencia' },
-                                  { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, value: expandedBarber.location || 'San Jacinto Sede', label: 'Ubicación' }
-                                ].map((s, i) => (
-                                  <div key={i} className="flex flex-col items-start p-4 rounded-2xl bg-white/[0.03] border border-white/5 shadow-md">
-                                    <span className="text-[var(--champagne)] mb-2.5 bg-[#d4bc9a]/10 p-2 rounded-xl">{s.icon}</span>
-                                    <span className="text-lg font-black text-white tracking-tight">{s.value}</span>
-                                    <span className="text-[10px] text-white/50 font-medium tracking-wide uppercase mt-0.5">{s.label}</span>
+                              {(() => {
+                                const stats = getBarberStats(expandedBarber);
+                                return (
+                                  <div className="grid grid-cols-2 gap-3 mb-6">
+                                    {[
+                                      { icon: <Scissors size={18} />, value: stats.services_count, label: 'Servicios' },
+                                      { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>, value: stats.happy_clients, label: 'Clientes felices' },
+                                      { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, value: stats.experience, label: 'Experiencia' },
+                                      { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, value: stats.location, label: 'Ubicación' }
+                                    ].map((s, i) => (
+                                      <div key={i} className="flex flex-col items-start p-4 rounded-2xl bg-white/[0.03] border border-white/5 shadow-md">
+                                        <span className="text-[var(--champagne)] mb-2.5 bg-[#d4bc9a]/10 p-2 rounded-xl">{s.icon}</span>
+                                        <span className="text-lg font-black text-white tracking-tight">{s.value}</span>
+                                        <span className="text-[10px] text-white/50 font-medium tracking-wide uppercase mt-0.5">{s.label}</span>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
+                                );
+                              })()}
 
                               {/* Editorial Quote Section */}
                               <div className="relative bg-white/[0.02] border border-white/5 rounded-2xl p-5 mb-6 overflow-hidden">
@@ -2870,23 +2922,42 @@ export default function BookAppointment() {
                               <div className="mb-8">
                                 <h4 className="font-extrabold text-base text-white mb-4 tracking-tight">Servicios Destacados</h4>
                                 <div className="grid grid-cols-2 gap-2.5">
-                                  {[
-                                    { icon: <Scissors size={15} />, name: 'Corte Tradicional', price: '$25', duration: '30 min' },
-                                    { icon: <Scissors size={15} />, name: 'Corte + Barba Ritual', price: '$35', duration: '45 min' },
-                                    { icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5.5 8.5L9 12l-3.5 3.5L2 12l3.5-3.5zM18.5 8.5L15 12l3.5 3.5L22 12l-3.5-3.5z"/></svg>, name: 'Afeitado Clásico', price: '$15', duration: '20 min' },
-                                    { icon: <Star size={15} />, name: 'Diseño Personalizado', price: '$10', duration: '15 min' }
-                                  ].map((s, i) => (
-                                    <div key={i} className="flex flex-col justify-between p-3.5 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all">
-                                      <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[var(--champagne)] bg-[#d4bc9a]/10 p-1.5 rounded-lg">{s.icon}</span>
-                                        <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider">{s.duration}</span>
+                                  {(() => {
+                                    const isTattoo = expandedBarber.role?.toLowerCase().includes('tatuador') || specialty.toLowerCase().includes('tatuador');
+                                    const filtered = services.filter(s => {
+                                      const cat = (s.category || '').toLowerCase();
+                                      if (isTattoo) {
+                                        return cat === 'tatuajes';
+                                      } else {
+                                        return cat === 'barbería' || cat === 'servicios' || cat === 'tratamientos' || s.name.toLowerCase().includes('corte') || s.name.toLowerCase().includes('barba');
+                                      }
+                                    }).slice(0, 4);
+
+                                    // Fallback defaults if no DB services found
+                                    const itemsToRender = filtered.length > 0 ? filtered : [
+                                      { name: isTattoo ? 'Tatuaje Mini' : 'Corte Tradicional', price: isTattoo ? 40 : 25, duration: 30 },
+                                      { name: isTattoo ? 'Tatuaje Mediano' : 'Corte + Barba Ritual', price: isTattoo ? 80 : 35, duration: 45 },
+                                      { name: isTattoo ? 'Tatuaje Grande' : 'Afeitado Clásico', price: isTattoo ? 150 : 15, duration: 30 },
+                                      { name: isTattoo ? 'Diseño Flash' : 'Diseño Personalizado', price: isTattoo ? 50 : 10, duration: 15 }
+                                    ];
+
+                                    return itemsToRender.map((s, i) => (
+                                      <div key={s.id || i} className="flex flex-col justify-between p-3.5 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <span className="text-[var(--champagne)] bg-[#d4bc9a]/10 p-1.5 rounded-lg">
+                                            {isTattoo ? <Star size={15} /> : <Scissors size={15} />}
+                                          </span>
+                                          <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider">
+                                            {s.duration} min
+                                          </span>
+                                        </div>
+                                        <div>
+                                          <h5 className="text-xs font-bold text-white tracking-tight leading-tight mb-1 truncate">{s.name}</h5>
+                                          <span className="text-sm font-extrabold text-[var(--champagne)]">${s.price}</span>
+                                        </div>
                                       </div>
-                                      <div>
-                                        <h5 className="text-xs font-bold text-white tracking-tight leading-tight mb-1">{s.name}</h5>
-                                        <span className="text-sm font-extrabold text-[var(--champagne)]">{s.price}</span>
-                                      </div>
-                                    </div>
-                                  ))}
+                                    ));
+                                  })()}
                                 </div>
                               </div>
 

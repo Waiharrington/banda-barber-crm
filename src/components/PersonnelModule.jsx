@@ -251,7 +251,11 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
     specialty: '',
     badge: '',
     biography: '',
-    payroll_frequency: 'weekly'
+    payroll_frequency: 'weekly',
+    services_count: '',
+    happy_clients: '',
+    experience: '',
+    location: ''
   });
 
   // Camera State
@@ -473,6 +477,25 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       perms = pPart.split(',');
     }
 
+    let bioText = person.biography || '';
+    let sCount = '';
+    let hClients = '';
+    let expYears = '';
+    let workLoc = '';
+    
+    if (bioText.trim().startsWith('{')) {
+      try {
+        const parsedBioObj = JSON.parse(bioText);
+        bioText = parsedBioObj.bio || '';
+        sCount = parsedBioObj.services_count || '';
+        hClients = parsedBioObj.happy_clients || '';
+        expYears = parsedBioObj.experience || '';
+        workLoc = parsedBioObj.location || '';
+      } catch (e) {
+        console.warn("Error parsing biography JSON in PersonnelModule:", e);
+      }
+    }
+
     setFormData({
       name: person.name,
       roles: rolesArray,
@@ -487,8 +510,12 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       password: '',
       specialty: person.specialty || '',
       badge: person.badge || '',
-      biography: person.biography || '',
-      payroll_frequency: person.payroll_frequency || 'weekly'
+      biography: bioText,
+      payroll_frequency: person.payroll_frequency || 'weekly',
+      services_count: sCount,
+      happy_clients: hClients,
+      experience: expYears,
+      location: workLoc
     });
     setEditingId(person.id);
     loadPortfolio(person.id);
@@ -518,7 +545,11 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         password: '',
         specialty: '',
         badge: '',
-        biography: ''
+        biography: '',
+        services_count: '',
+        happy_clients: '',
+        experience: '',
+        location: ''
       });
       setIsCreatingNewRole(false);
       setNewRoleName('');
@@ -626,6 +657,17 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         await handleSaveCustomRole(newRoleName, formData.permissions);
       }
 
+      let finalBiography = formData.biography || '';
+      if (formData.services_count || formData.happy_clients || formData.experience || formData.location) {
+        finalBiography = JSON.stringify({
+          bio: formData.biography || '',
+          services_count: formData.services_count || '',
+          happy_clients: formData.happy_clients || '',
+          experience: formData.experience || '',
+          location: formData.location || ''
+        });
+      }
+
       const submissionData = {
         name: formData.name,
         role: finalRole,
@@ -639,7 +681,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         birth_date: formData.birth_date || null,
         specialty: formData.specialty || '',
         badge: formData.badge || '',
-        biography: formData.biography || '',
+        biography: finalBiography,
         payroll_frequency: formData.payroll_frequency || 'weekly'
       };
 
@@ -1448,6 +1490,41 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                 </div>
               </div>
 
+              {/* Profile Stats Configuration */}
+              <div style={{ marginTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '16px' }}>
+                <h4 style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '12px', letterSpacing: '1px', textTransform: 'uppercase' }}>Estadísticas de Perfil Público (Opcional)</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '16px' }}>
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>CANT. SERVICIOS</label>
+                    <div style={{ position: 'relative' }}>
+                      <Scissors size={16} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                      <input className="form-input" placeholder="Ej. 324 o 500+" value={formData.services_count} onChange={e => setFormData({...formData, services_count: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>% CLIENTES FELICES</label>
+                    <div style={{ position: 'relative' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-primary)" strokeWidth="2" style={{ position: 'absolute', left: '16px', top: '16px' }}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                      <input className="form-input" placeholder="Ej. 98%" value={formData.happy_clients} onChange={e => setFormData({...formData, happy_clients: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>EXPERIENCIA</label>
+                    <div style={{ position: 'relative' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-primary)" strokeWidth="2" style={{ position: 'absolute', left: '16px', top: '16px' }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <input className="form-input" placeholder="Ej. 5 años" value={formData.experience} onChange={e => setFormData({...formData, experience: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>SEDE / UBICACIÓN</label>
+                    <div style={{ position: 'relative' }}>
+                      <MapPin size={16} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                      <input className="form-input" placeholder="Ej. San Jacinto Sede" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Biography Info */}
               <div className="form-group" style={{ marginTop: '16px' }}>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>SOBRE MÍ (DESCRIPCIÓN DE TU ESTILO O TRAYECTORIA)</label>
@@ -2147,6 +2224,41 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                           <div style={{ position: 'relative' }}>
                             <Star size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
                             <input className="form-input" placeholder="Ej. TOP FADE o EXPERTO" value={formData.badge} onChange={e => setFormData({...formData, badge: e.target.value.toUpperCase()})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Profile Stats Configuration */}
+                      <div style={{ marginTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '16px' }}>
+                        <h4 style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '12px', letterSpacing: '1px', textTransform: 'uppercase' }}>Estadísticas de Perfil Público (Opcional)</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '16px' }}>
+                          <div className="form-group">
+                            <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>CANT. SERVICIOS</label>
+                            <div style={{ position: 'relative' }}>
+                              <Scissors size={16} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                              <input className="form-input" placeholder="Ej. 324 o 500+" value={formData.services_count} onChange={e => setFormData({...formData, services_count: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                            </div>
+                          </div>
+                          <div className="form-group">
+                            <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>% CLIENTES FELICES</label>
+                            <div style={{ position: 'relative' }}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-primary)" strokeWidth="2" style={{ position: 'absolute', left: '16px', top: '16px' }}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                              <input className="form-input" placeholder="Ej. 98%" value={formData.happy_clients} onChange={e => setFormData({...formData, happy_clients: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                            </div>
+                          </div>
+                          <div className="form-group">
+                            <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>EXPERIENCIA</label>
+                            <div style={{ position: 'relative' }}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-primary)" strokeWidth="2" style={{ position: 'absolute', left: '16px', top: '16px' }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                              <input className="form-input" placeholder="Ej. 5 años" value={formData.experience} onChange={e => setFormData({...formData, experience: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                            </div>
+                          </div>
+                          <div className="form-group">
+                            <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', letterSpacing: '1px' }}>SEDE / UBICACIÓN</label>
+                            <div style={{ position: 'relative' }}>
+                              <MapPin size={16} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                              <input className="form-input" placeholder="Ej. San Jacinto Sede" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} style={{ width: '100%', height: '50px', paddingLeft: '48px' }} />
+                            </div>
                           </div>
                         </div>
                       </div>
