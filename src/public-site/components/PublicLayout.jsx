@@ -7,8 +7,23 @@ import logo from '../../assets/logo_full.png';
 export default function PublicLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 30) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Run once initially to check scroll position
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const client = localStorage.getItem('panda_public_client');
@@ -58,8 +73,14 @@ export default function PublicLayout() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Desktop Header */}
-      <header className="hidden lg:flex fixed top-0 w-full z-50 bg-[rgba(7,7,10,0.8)] backdrop-blur-md border-b border-[rgba(203,183,154,0.1)] transition-all duration-300">
-        <div className="w-full max-w-[1200px] mx-auto px-6 py-4 flex items-center justify-between">
+      <header 
+        className={`hidden lg:flex fixed top-0 w-full z-50 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isScrolled 
+            ? 'bg-[rgba(7,7,10,0.85)] backdrop-blur-xl border-b border-[rgba(203,183,154,0.12)] py-3 shadow-[0_4px_30px_rgba(0,0,0,0.6)]' 
+            : 'bg-transparent border-b border-transparent py-6'
+        }`}
+      >
+        <div className="w-full max-w-[1200px] mx-auto px-6 flex items-center justify-between">
           {/* Logo */}
           <a href="/" className="flex items-center no-underline">
             <img src={logo} alt="Panda Barber Studio" className="h-[48px] object-contain" style={{ filter: 'brightness(1.15)' }} />
@@ -101,7 +122,11 @@ export default function PublicLayout() {
 
       {/* Navbar - Glassmorphic Mobile Header Bar (Mobile Only) */}
       <nav 
-        className="fixed top-0 left-0 w-full h-[64px] z-50 bg-[rgba(7,7,10,0.8)] backdrop-blur-md border-b border-[rgba(255,255,255,0.06)] flex items-center justify-between px-6 lg:hidden"
+        className={`fixed top-0 left-0 w-full h-[64px] z-50 flex items-center justify-between px-6 lg:hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isScrolled 
+            ? 'bg-[rgba(7,7,10,0.85)] backdrop-blur-xl border-b border-[rgba(255,255,255,0.06)] shadow-[0_4px_25px_rgba(0,0,0,0.5)]' 
+            : 'bg-transparent border-b border-transparent'
+        }`}
       >
         {/* Clickable Logo */}
         <Link to="/" onClick={() => setMenuOpen(false)} className="flex items-center">

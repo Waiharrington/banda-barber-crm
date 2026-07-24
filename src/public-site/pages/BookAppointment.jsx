@@ -1453,7 +1453,7 @@ export default function BookAppointment() {
         : null;
 
       return (
-        <div className="landing-scroll-container w-full bg-[#050506]" style={{ paddingBottom: '0px' }}>
+        <div className="landing-scroll-container w-full bg-transparent" style={{ paddingBottom: '0px' }}>
           {heroContent}
 
           {/* Stats Bar */}
@@ -2359,6 +2359,12 @@ export default function BookAppointment() {
         style={{
           height: '100dvh',
           backgroundColor: '#050506',
+          backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px), 
+                            radial-gradient(circle at 50% 0%, rgba(203, 183, 154, 0.12) 0%, transparent 65%), 
+                            radial-gradient(circle at 0% 100%, rgba(139, 92, 26, 0.05) 0%, transparent 45%), 
+                            radial-gradient(circle at 100% 100%, rgba(203, 183, 154, 0.03) 0%, transparent 45%), 
+                            linear-gradient(to bottom, #050506 0%, #070709 50%, #030304 100%)`,
+          backgroundSize: '32px 32px, 100% 100%, 100% 100%, 100% 100%, 100% 100%',
           scrollbarWidth: 'none'
         }}
       >
