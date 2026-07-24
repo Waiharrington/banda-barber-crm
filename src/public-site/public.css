@@ -447,25 +447,23 @@
   50% { transform: translate(45px, -35px) scale(1.1); }
 }
 
-/* Step transitions anim */
+/* Step transitions anim — opacity/transform only (no filter) so it stays on the
+   compositor and doesn't drop frames on mobile, especially on real devices where
+   animating `filter: blur()` forces a repaint every frame. */
 .transition-step-container {
   width: 100%;
-  animation: stepFadeEnter 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+  animation: stepFadeEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes stepFadeEnter {
   0% {
     opacity: 0;
-    transform: translateY(40px) scale(0.92);
-    filter: blur(10px);
-  }
-  30% {
-    opacity: 0.45;
+    transform: translateY(16px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
+    transform: translateY(0);
   }
 }
 
@@ -2458,13 +2456,11 @@ input[type="date"] {
 @keyframes staggerSlideIn {
   0% {
     opacity: 0;
-    transform: translateY(45px) scale(0.92);
-    filter: blur(8px);
+    transform: translateY(24px) scale(0.96);
   }
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
-    filter: blur(0);
   }
 }
 

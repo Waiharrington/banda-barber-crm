@@ -1412,6 +1412,7 @@ export default function BookAppointment() {
                 setStep(6);
                 setAuthTab('login');
                 setShowWelcome(false);
+                scrollToTop();
                 setTimeout(() => {
                   setIsTransitioning(false);
                 }, 750);
