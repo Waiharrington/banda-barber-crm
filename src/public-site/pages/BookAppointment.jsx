@@ -48,7 +48,7 @@ import bearBody from '../../assets/oso_saludando.png';
 import bearHand from '../../assets/mano_oso_saludando.png';
 import posterMobile from '../../assets/fondo_panda_telefoon.png';
 import goldChair from '../../assets/gold_chair.png';
-import barberiaCover from '../../assets/barberia_cover.jpg';
+import barberiaCover from '../../assets/barberia_cover.png';
 import tatuajesCover from '../../assets/tatuajes_cover.png';
 import experienciaPandaCover from '../../assets/experiencia_panda_cover.png';
 import heroSlide1 from '../../assets/hero1.png';
