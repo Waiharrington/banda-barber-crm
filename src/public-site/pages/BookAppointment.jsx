@@ -1686,10 +1686,15 @@ export default function BookAppointment() {
                        const displayName = isAbraham ? 'Abraham Diaz' : isAlejandro ? 'Alejandro Ramirez' : barber.name;
                        const rawRole = (barber.role?.split('|')[0] || 'Estilista').trim();
                        const isRawRolePermissions = rawRole.includes(',') || rawRole.includes('barber') || rawRole.includes('schedule');
-                       const specialtyText = isAbraham ? 'MASTER BARBER' : isAlejandro ? 'BARBERO' : isAngel ? 'BARBERO' : isJose ? 'BARBERO' : isMarko ? 'TATUADOR' : (isRawRolePermissions ? 'ESTILISTA' : rawRole.toUpperCase());
+                       
+                       const isBarista = rawRole.toLowerCase().includes('barista');
+                       const isAsistente = rawRole.toLowerCase().includes('lavado') || rawRole.toLowerCase().includes('asist') || rawRole.toLowerCase().includes('clean');
+                       const isBookable = !isBarista && !isAsistente && !isRawRolePermissions && !rawRole.toLowerCase().includes('recep') && !rawRole.toLowerCase().includes('admin');
+                       
+                       const specialtyText = isAbraham ? 'MASTER BARBER' : isAlejandro ? 'BARBERO' : isAngel ? 'BARBERO' : isJose ? 'BARBERO' : isMarko ? 'TATUADOR' : (isBarista ? 'BARISTA' : isAsistente ? 'ASISTENTE DE LAVADO' : (isRawRolePermissions ? 'ESTILISTA' : rawRole.toUpperCase()));
                        const cleanTags = (barber.role?.split('|')[1] || '').trim();
                        const isRawPermissions = cleanTags.includes(',') || cleanTags.includes('barber') || cleanTags.includes('schedule') || !cleanTags;
-                       const defaultTags = specialtyText.includes('TATUA') ? 'Realismo • Black & Grey' : (specialtyText.includes('MANICUR') || specialtyText.includes('UÑA') ? 'Manicura • Nails • Arte' : 'Corte • Barba • Estilo');
+                       const defaultTags = isBarista ? 'Café • Bebidas • Experiencia' : (isAsistente ? 'Cuidado Capilar • Lavado • Confort' : (specialtyText.includes('TATUA') ? 'Realismo • Black & Grey' : (specialtyText.includes('MANICUR') || specialtyText.includes('UÑA') ? 'Manicura • Nails • Arte' : 'Corte • Barba • Estilo')));
                        const tagsText = isAbraham ? 'Fade • Barba • Clásicos' : isAlejandro ? 'Corte • Barba • Diseños' : isAngel ? 'Fade • Corte • Barba' : isJose ? 'Corte • Barba • Clásicos' : isMarko ? 'Realismo • Black & Grey' : (isRawPermissions ? defaultTags : cleanTags);
                        
                        return (
@@ -1704,15 +1709,21 @@ export default function BookAppointment() {
                                  <span className={`text-[8px] font-black ${availabilityColor} uppercase tracking-widest`}>{availabilityText}</span>
                                </div>
                              </div>
-                             <h4 className="text-lg font-extrabold text-white mb-1 tracking-tight">{displayName}</h4>
-                             <span className="text-[11px] font-black text-[#CBB79A] tracking-widest uppercase mb-1.5">{specialtyText}</span>
-                             <p className="text-[13px] text-white/50 mb-4 truncate w-full tracking-wide">{tagsText}</p>
-                             <button 
-                               onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
-                               className="text-[11px] font-black uppercase tracking-widest text-[#CBB79A] hover:text-white transition-all duration-300 cursor-pointer flex items-center gap-1 border-b border-[#CBB79A]/20 hover:border-white pb-0.5"
-                             >
-                               <span>Reservar Cita</span> <span>→</span>
-                             </button>
+                             <h4 className="text-xl lg:text-2xl font-extrabold text-white mb-1 tracking-tight">{displayName}</h4>
+                             <span className="text-xs lg:text-sm font-black text-[#CBB79A] tracking-widest uppercase mb-2">{specialtyText}</span>
+                             <p className="text-sm lg:text-base text-white/70 mb-4 truncate w-full tracking-wide">{tagsText}</p>
+                             {isBookable ? (
+                               <button 
+                                 onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
+                                 className="text-xs lg:text-sm font-black uppercase tracking-widest text-[#CBB79A] hover:text-white transition-all duration-300 cursor-pointer flex items-center gap-1 border-b border-[#CBB79A]/20 hover:border-white pb-0.5"
+                               >
+                                 <span>Reservar Cita</span> <span>→</span>
+                               </button>
+                             ) : (
+                               <span className="text-[9px] font-black uppercase tracking-widest text-white/30 border border-white/5 px-2.5 py-1 rounded-md mt-1">
+                                 Staff Panda
+                               </span>
+                             )}
                            </div>
                          </div>
                        );
