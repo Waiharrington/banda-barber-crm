@@ -439,6 +439,16 @@ export default function BookAppointment() {
     return () => clearTimeout(fallbackTimer);
   }, [heroSlides]);
 
+  // Preload the Step 1 service category thumbnails while the user is still on the welcome
+  // screen, so by the time they open the booking wizard the images are already cached and
+  // just play their entrance animation instead of loading in with a shimmer.
+  useEffect(() => {
+    ['/services/corte.webp', '/services/barba.webp', '/services/tatuaje.webp', '/services/panda_kids.webp'].forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
+
   // Hide layout header during active booking wizard flow
   useEffect(() => {
     if (!showWelcome) {
@@ -2739,10 +2749,10 @@ export default function BookAppointment() {
                 {step === 1 && (
                   <div className="space-y-3 w-full">
                     {[
-                      { key: 'Corte', label: 'Corte', sub: 'Renueva tu estilo', icon: <Scissors size={22} strokeWidth={1.5} />, img: '/services/corte.png' },
-                      { key: 'Barba', label: 'Barba', sub: 'Perfilado y define', icon: <User size={22} strokeWidth={1.5} />, img: '/services/barba.png' },
-                      { key: 'Tatuajes', label: 'Tatuaje', sub: 'Arte que se queda', icon: <PenTool size={22} strokeWidth={1.5} />, img: '/services/tatuaje.png' },
-                      { key: 'Kids', label: 'Panda Kids', sub: 'Para niños', icon: <Heart size={22} strokeWidth={1.5} />, img: '/services/panda_kids.png', isKids: true },
+                      { key: 'Corte', label: 'Corte', sub: 'Renueva tu estilo', icon: <Scissors size={22} strokeWidth={1.5} />, img: '/services/corte.webp' },
+                      { key: 'Barba', label: 'Barba', sub: 'Perfilado y define', icon: <User size={22} strokeWidth={1.5} />, img: '/services/barba.webp' },
+                      { key: 'Tatuajes', label: 'Tatuaje', sub: 'Arte que se queda', icon: <PenTool size={22} strokeWidth={1.5} />, img: '/services/tatuaje.webp' },
+                      { key: 'Kids', label: 'Panda Kids', sub: 'Para niños', icon: <Heart size={22} strokeWidth={1.5} />, img: '/services/panda_kids.webp', isKids: true },
                     ].map((cat, catIndex) => {
                       const isOpen = openCategory === cat.key;
                       const catServices = cat.isKids
