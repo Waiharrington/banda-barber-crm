@@ -1135,15 +1135,14 @@ export default function BookAppointment() {
     // Set variable to reference imported video asset
     const activeHeroVideo = heroVideo;
     const showPhoto = true;
-    const showVideo = false;
-
+    
     const heroContent = (
-      <div className={`w-full ${showPhoto ? 'h-auto min-h-[58vh] lg:min-h-[100vh]' : 'min-h-[66vh] lg:min-h-[100vh]'} flex flex-col justify-between items-stretch text-left px-6 lg:px-16 pt-8 lg:pt-32 pb-8 lg:pb-12 relative lg:overflow-visible overflow-hidden box-border gap-5 transition-all duration-500`} id="inicio">
+      <div className="w-full flex flex-col lg:relative lg:min-h-[100vh] lg:justify-between items-stretch text-left bg-[#050506] pb-8 lg:pb-12 lg:pt-32 transition-all duration-500" id="inicio">
         {/* Sentinel element to track scroll positioning */}
         <div id="hero-sentinel" className="absolute top-0 left-0 w-1 h-1 pointer-events-none opacity-0" />
         {/* Background Slideshow (Fades and Ken Burns Zoom) */}
         {showPhoto && (
-          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden w-full h-full">
+          <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] lg:absolute lg:inset-0 lg:w-full lg:h-full lg:aspect-auto pointer-events-none z-0 overflow-hidden">
             {heroSlides.map((slide, index) => (
               <div 
                 key={index}
@@ -1153,34 +1152,16 @@ export default function BookAppointment() {
                   backgroundSize: 'cover',
                   backgroundPosition: index === 0 ? '90% 40%' : 'center 40%',
                   filter: 'brightness(0.70) contrast(1.05)',
-                  maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop}%, rgba(0, 0, 0, 0) ${gradientStop + 25}%)`,
-                  WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop}%, rgba(0, 0, 0, 0) ${gradientStop + 25}%)`,
+                  maskImage: isDesktop 
+                    ? `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop}%, rgba(0, 0, 0, 0) ${gradientStop + 25}%)`
+                    : `linear-gradient(to bottom, rgba(0, 0, 0, 1) 75%, rgba(0, 0, 0, 0) 100%)`,
+                  WebkitMaskImage: isDesktop 
+                    ? `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop}%, rgba(0, 0, 0, 0) ${gradientStop + 25}%)`
+                    : `linear-gradient(to bottom, rgba(0, 0, 0, 1) 75%, rgba(0, 0, 0, 0) 100%)`,
                 }}
               />
             ))}
           </div>
-        )}
-
-        {/* Background Video */}
-        {showVideo && (
-          <video
-            ref={videoRef}
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute top-0 left-0 w-full object-cover pointer-events-none z-1 animate-video-fade-in"
-            style={{
-              height: '100%',
-              objectPosition: `center ${videoYOffset}%`,
-              transform: `scale(${videoZoom})`,
-              filter: 'brightness(0.80) contrast(1.05)',
-              maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
-              WebkitMaskImage: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) ${gradientStop - 20}%, rgba(0, 0, 0, 0) ${gradientStop}%)`,
-            }}
-          >
-            <source src={activeHeroVideo} type="video/mp4" />
-          </video>
         )}
 
         {/* ── Animated Ambient Spotlights (Auroras) ── */}
@@ -1193,40 +1174,45 @@ export default function BookAppointment() {
 
         {/* ── 3D PANDA BEAR REMOVED FOR CLEAN MINIMALIST HERO LAYOUT ── */}
 
-        {/* ── Left-side text legibility gradient (z-10 overlays Bear) ── */}
-        <div className="absolute inset-0 pointer-events-none z-10" style={{
-          background: 'linear-gradient(to right, rgba(5,5,6,0.95) 0%, rgba(5,5,6,0.5) 38%, rgba(5,5,6,0.1) 68%, transparent 85%)',
-        }} />
+        {/* ── Left-side text legibility gradient ── */}
+        {isDesktop && (
+          <div className="absolute inset-0 pointer-events-none z-10" style={{
+            background: 'linear-gradient(to right, rgba(5,5,6,0.95) 0%, rgba(5,5,6,0.5) 38%, rgba(5,5,6,0.1) 68%, transparent 85%)',
+          }} />
+        )}
 
-        {/* ── Bottom legibility gradient for buttons (z-10 overlays Bear) ── */}
-        <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10" style={{
-          height: '40%',
-          background: 'linear-gradient(to top, rgba(5,5,6,1) 0%, rgba(5,5,6,0.7) 35%, transparent 100%)',
-        }} />
+        {/* ── Bottom legibility gradient for buttons ── */}
+        {isDesktop && (
+          <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10" style={{
+            height: '40%',
+            background: 'linear-gradient(to top, rgba(5,5,6,1) 0%, rgba(5,5,6,0.7) 35%, transparent 100%)',
+          }} />
+        )}
 
         {/* ── Cinematic vignette ── */}
-        <div className="absolute inset-0 pointer-events-none z-10" style={{
-          background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.72) 100%)',
-        }} />
+        {isDesktop && (
+          <div className="absolute inset-0 pointer-events-none z-10" style={{
+            background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.72) 100%)',
+          }} />
+        )}
 
         {/* ── Grain/noise texture ── */}
         <div className="absolute inset-0 pointer-events-none z-15 hero-grain" />
 
-
-        {/* Logo top-left (mobile only, since desktop has fixed header logo) */}
-        <div className={`flex flex-col items-start relative z-20 ${fade(1)} lg:hidden`}>
-          <img src={logo} alt="Panda Barber" className="w-20 h-20 object-contain filter brightness-110 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
+        {/* Logo top-left (mobile only, absolute positioned over the mobile slideshow) */}
+        <div className={`absolute top-4 left-6 z-20 ${fade(1)} lg:hidden`}>
+          <img src={logo} alt="Panda Barber" className="w-16 h-16 object-contain filter brightness-110" />
         </div>
 
         {/* Centered content container positioned vertically centered relative to full-screen photo backgrounds */}
-        <div className="w-full max-w-[1440px] mx-auto flex flex-col justify-center items-start gap-6 lg:gap-8 relative z-20 my-auto px-6 lg:px-12 text-left">
+        <div className="w-full max-w-[1440px] mx-auto flex flex-col justify-center items-start gap-5 lg:gap-8 relative z-20 px-6 lg:px-12 text-left pt-6 lg:pt-0 lg:my-auto">
           
           {/* Trust/Reputation Badge */}
-          <div className="flex items-center gap-2 reveal-item delay-100">
-            <span className="text-[11px] lg:text-[12px] text-[#CBB79A] font-bold tracking-widest flex items-center gap-1">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 reveal-item delay-100 w-full">
+            <span className="text-[14px] lg:text-[12px] text-[#CBB79A] font-bold tracking-widest flex items-center gap-1 shrink-0">
               ★ ★ ★ ★ ★
             </span>
-            <span className="text-[10px] lg:text-[11px] text-white/50 font-medium uppercase tracking-[0.2em] border-l border-white/10 pl-2">
+            <span className="text-[10px] lg:text-[11px] text-white/50 font-medium uppercase tracking-[0.2em] sm:border-l sm:border-white/10 sm:pl-3 leading-none">
               +1,200 visitas agendadas con éxito
             </span>
           </div>
@@ -1235,8 +1221,8 @@ export default function BookAppointment() {
           <div className="w-full flex flex-col gap-4 lg:gap-5" style={{ maxWidth: isDesktop ? '650px' : '100%' }}>
             <div className="reveal-item delay-200">
               <span className="text-[11px] lg:text-[13px] font-black uppercase tracking-[0.35em] text-[#CBB79A] block mb-2">BIENVENIDO A</span>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white leading-[1.05] mb-1 font-sans">PANDA BARBER</h1>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-[#CBB79A] leading-[1.05] mb-4 font-sans">STUDIO</h1>
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white leading-[1.05] mb-1 font-sans">PANDA BARBER</h1>
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-[#CBB79A] leading-[1.05] mb-4 font-sans">STUDIO</h1>
             </div>
 
             <p className="text-white text-lg sm:text-xl lg:text-[22px] font-extrabold leading-snug font-sans tracking-wide reveal-item delay-300">
