@@ -1714,15 +1714,44 @@ export default function BookAppointment() {
                        return (
                          <div key={barber.id} className="shrink-0 px-3 animate-[premiumFadeUp_0.6s_cubic-bezier(0.16,1,0.3,1)_both]" style={{ width: `${100 / visibleCount}%`, animationDelay: `${idx * 60}ms` }}>
                            <div className="flex flex-col items-center text-center relative group transition-all duration-300">
-                             <div className="w-full aspect-[4/5] rounded-2xl overflow-hidden mb-4 relative bg-[#0d0d11] border border-white/5 shadow-2xl">
-                               <BarberAvatar url={barber.image_url} name={barber.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" iconSize={40} />
-                               
-                               {/* Floating availability dot inside image */}
-                               <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-lg flex items-center gap-1.5 pointer-events-none">
-                                 <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${!(isAngel || isMarko) ? 'animate-pulse' : ''}`}></span>
-                                 <span className={`text-[8px] font-black ${availabilityColor} uppercase tracking-widest`}>{availabilityText}</span>
-                               </div>
-                             </div>
+                             <div 
+                                onClick={() => {
+                                  if (isBookable) {
+                                    setStep(2);
+                                    setExpandedBarber(barber);
+                                    setShowWelcome(false);
+                                    setExpandedBarberPortfolio([]);
+                                    publicService.getBarberPhotos(barber.id).then(photos => {
+                                      setExpandedBarberPortfolio(photos);
+                                    }).catch(() => {});
+                                    scrollToTop();
+                                  }
+                                }}
+                                className={`w-full aspect-[4/5] rounded-2xl overflow-hidden mb-4 relative bg-[#0d0d11] border border-white/5 shadow-2xl ${
+                                  isBookable ? 'cursor-pointer' : ''
+                                }`}
+                              >
+                                <BarberAvatar url={barber.image_url} name={barber.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" iconSize={40} />
+                                
+                                {/* Sleek Apple style view profile overlay on hover */}
+                                {isBookable && (
+                                  <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-2 pointer-events-none">
+                                    <div className="w-10 h-10 rounded-full bg-black/60 border border-[#CBB79A]/30 flex items-center justify-center text-[#CBB79A] shadow-lg">
+                                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                      </svg>
+                                    </div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-[#CBB79A]">Ver Perfil</span>
+                                  </div>
+                                )}
+
+                                {/* Floating availability dot inside image */}
+                                <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-lg flex items-center gap-1.5 pointer-events-none">
+                                  <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${!(isAngel || isMarko) ? 'animate-pulse' : ''}`}></span>
+                                  <span className={`text-[8px] font-black ${availabilityColor} uppercase tracking-widest`}>{availabilityText}</span>
+                                </div>
+                              </div>
                              <h4 className="text-xl lg:text-2xl font-extrabold text-white mb-1 tracking-tight">{displayName}</h4>
                              <span className="text-xs lg:text-sm font-black text-[#CBB79A] tracking-widest uppercase mb-2">{specialtyText}</span>
                              <p className="text-sm lg:text-base text-white/70 mb-4 truncate w-full tracking-wide">{tagsText}</p>
