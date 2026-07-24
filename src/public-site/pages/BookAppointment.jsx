@@ -1722,11 +1722,10 @@ export default function BookAppointment() {
             {/* SECTION: PANDA KIDS CLUB */}
             <div id="pandakids" className="w-full reveal-item">
               <div className="relative rounded-3xl overflow-hidden border border-[#CBB79A]/20 bg-gradient-to-br from-[#14120d] via-[#111115] to-[#0d0d10]">
-                {/* Aurora background glow */}
-                <div className="absolute inset-0 pointer-events-none z-0">
-                  <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-[#CBB79A]/5 blur-3xl" />
-                  <div className="absolute bottom-0 right-1/4 w-64 h-64 rounded-full bg-[#CBB79A]/8 blur-2xl" />
-                </div>
+                {/* Aurora background glow using smooth CSS radial gradients */}
+                <div className="absolute inset-0 pointer-events-none z-0" style={{
+                  backgroundImage: 'radial-gradient(circle at 30% 20%, rgba(203,183,154,0.06) 0%, transparent 60%), radial-gradient(circle at 80% 80%, rgba(203,183,154,0.08) 0%, transparent 50%)'
+                }} />
 
                 <div className="relative z-10 flex flex-col lg:flex-row items-stretch">
                   {/* Left: Placeholder for kids photo (user will provide) */}
