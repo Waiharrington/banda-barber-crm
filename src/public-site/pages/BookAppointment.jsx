@@ -2734,7 +2734,12 @@ export default function BookAppointment() {
                             type="button"
                           >
                             <div className="category-image-wrapper">
-                              <img src={cat.img} alt={cat.label} />
+                              <img 
+                                src={cat.img} 
+                                alt={cat.label} 
+                                loading="eager"
+                                onLoad={(e) => e.currentTarget.classList.add('loaded')}
+                              />
                               {cat.isKids && (
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#CBB79A]/20 to-transparent" />
                               )}

@@ -912,6 +912,14 @@
   z-index: 1;
   overflow: hidden;
   border-radius: 0 16px 16px 0;
+  background: linear-gradient(110deg, #121216 30%, #1a1a20 50%, #121216 70%);
+  background-size: 200% 100%;
+  animation: category-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes category-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .category-image-wrapper img {
@@ -919,6 +927,12 @@
   height: 100%;
   object-fit: cover;
   object-position: right center;
+  opacity: 0;
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.category-image-wrapper img.loaded {
+  opacity: 1;
 }
 
 .category-image-wrapper::before {
