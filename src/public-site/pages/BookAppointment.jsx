@@ -1892,7 +1892,7 @@ export default function BookAppointment() {
                              <p className="text-sm lg:text-base text-white/70 mb-4 truncate w-full tracking-wide">{tagsText}</p>
                              {isBookable ? (
                                 <button 
-                                  onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
+                                  onClick={(e) => { e.stopPropagation(); setSelectedBarber(barber); handleStartBooking(); }}
                                   className="mt-4 px-8 py-2.5 rounded-full border text-xs lg:text-sm font-black uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
                                   style={{
                                     borderColor: 'rgba(203, 183, 154, 0.35)',
@@ -2108,7 +2108,20 @@ export default function BookAppointment() {
                         RESERVAR CITA <ArrowRight size={14} />
                       </button>
                       <button
-                        onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
+                        onClick={() => {
+                          setProfileSourceStep(1);
+                          setStep(2);
+                          setExpandedBarber(topBarber);
+                          setShowWelcome(false);
+                          setExpandedBarberPortfolio([
+                            { id: 'ab1', image_url: abrahamWork1 },
+                            { id: 'ab2', image_url: abrahamWork2 },
+                            { id: 'ab3', image_url: abrahamWork3 },
+                            { id: 'ab4', image_url: abrahamWork4 }
+                          ]);
+                          setPortfolioLoading(false);
+                          scrollToTop();
+                        }}
                         className="btn-outline py-3 px-8 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2"
                         style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
                       >
