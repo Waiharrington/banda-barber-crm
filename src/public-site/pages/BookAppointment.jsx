@@ -1731,10 +1731,10 @@ export default function BookAppointment() {
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                       <button
                         onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
-                        className="btn-gold py-3 px-8 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2"
+                        className="btn-gold py-3 px-8 rounded-xl font-extrabold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 whitespace-nowrap"
                         style={{ borderRadius: '10px' }}
                       >
-                        AGENDAR CON {topBarber.name.split(' ')[0]} <ArrowRight size={14} />
+                        RESERVAR CITA <ArrowRight size={14} />
                       </button>
                       <button
                         onClick={() => { setSelectedBarber(topBarber); handleStartBooking(); }}
