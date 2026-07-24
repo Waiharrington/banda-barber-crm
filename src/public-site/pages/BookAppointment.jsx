@@ -2030,93 +2030,112 @@ export default function BookAppointment() {
             </div>
 
             {/* SECTION: ¿POR QUÉ ELEGIR PANDA BARBER? / NUESTRAS SEDES */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start" id="ubicacion">
-                {/* Left column: Why Choose Us */}
-                <div className="lg:col-span-5 text-left">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">¿POR QUÉ ELEGIR</span>
-                  <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-8">PANDA BARBER?</h2>
-                  
+            {/* SECTION: ¿POR QUÉ ELEGIR PANDA BARBER? & UBICACIÓN */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch" id="ubicacion">
+              
+              {/* Left Column: Why Choose Us (Redesigned as premium cards) */}
+              <div className="lg:col-span-6 flex flex-col justify-center text-left">
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">¿POR QUÉ ELEGIR</span>
+                <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-8">
+                  PANDA BARBER?
+                </h2>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { icon: <User size={18} />, title: 'Profesionales', desc: 'Artistas expertos en últimas tendencias de corte urbano.' },
+                    { icon: <Award size={18} />, title: 'Calidad Premium', desc: 'Usamos productos de alta gama para el cuidado capilar.' },
+                    { icon: <CalendarIcon size={18} />, title: 'Reserva Fácil', desc: 'Agenda tu cita en segundos las 24 horas del día.' },
+                    { icon: <Scissors size={18} />, title: 'Ambiente Único', desc: 'Un espacio premium con cafe, bar y consolas retro.' },
+                  ].map((item, idx) => (
+                    <div key={idx} className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:border-[#CBB79A]/20 hover:bg-white/[0.04] transition-all duration-300 flex flex-col gap-3 group">
+                      <div className="w-9 h-9 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/25 flex items-center justify-center text-[#CBB79A] transition-colors group-hover:bg-[#CBB79A] group-hover:text-black">
+                        {item.icon}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-white mb-1 uppercase tracking-wider">{item.title}</h4>
+                        <p className="text-white/40 text-[11px] leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Column: Locations (Redesigned address cards) */}
+              <div className="lg:col-span-6 flex flex-col justify-center text-left">
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">NUESTRA SEDE</span>
+                <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-8">
+                  NUESTRA UBICACIÓN
+                </h2>
+
+                <div className="bg-[#111115]/50 border border-white/5 rounded-3xl p-6 lg:p-8 flex flex-col justify-between h-full min-h-[350px] relative overflow-hidden group hover:border-[#CBB79A]/20 transition-all duration-300">
+                  {/* Subtle geometric overlay glow */}
+                  <div className="absolute right-[-40px] top-[-40px] w-48 h-48 rounded-full bg-[#CBB79A]/5 blur-3xl pointer-events-none" />
+
                   <div className="space-y-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A] shrink-0">
-                        <User size={18} />
+                    {/* Header Sede */}
+                    <div className="flex items-center justify-between border-b border-white/[0.05] pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#CBB79A]/10 border border-[#CBB79A]/20 flex items-center justify-center text-[#CBB79A]">
+                          <MapPin size={18} />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">SEDE ÚNICA</h4>
+                          <span className="text-[9px] text-[#CBB79A] font-bold uppercase tracking-wider">Maracay, Venezuela</span>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-sm font-extrabold text-white mb-1 uppercase tracking-wider">Profesionales capacitados</h4>
-                        <p className="text-white/50 text-xs leading-relaxed">Artistas expertos en las últimas técnicas y tendencias de corte y diseño.</p>
-                      </div>
+                      <span className="bg-white/5 border border-white/10 px-2.5 py-1 rounded text-[9px] font-bold text-white/50 uppercase">
+                        ABIERTO
+                      </span>
                     </div>
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A] shrink-0">
-                        <Award size={18} />
+
+                    {/* Address details */}
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <MapPin size={16} className="text-[#CBB79A] shrink-0 mt-0.5" />
+                        <p className="text-white/70 text-xs leading-relaxed">
+                          Centro comercial ciudad jardín local #74 PB, Maracay 2102, Aragua, Venezuela
+                        </p>
                       </div>
-                      <div>
-                        <h4 className="text-sm font-extrabold text-white mb-1 uppercase tracking-wider">Productos de calidad</h4>
-                        <p className="text-white/50 text-xs leading-relaxed">Usamos productos premium para tu cuidado capilar, facial y corporal.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A] shrink-0">
-                        <CalendarIcon size={18} />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-extrabold text-white mb-1 uppercase tracking-wider">Reserva fácil y rápida</h4>
-                        <p className="text-white/50 text-xs leading-relaxed">Agenda tus citas en segundos desde cualquier dispositivo y a cualquier hora.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A] shrink-0">
-                        <Scissors size={18} />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-extrabold text-white mb-1 uppercase tracking-wider">Ambiente exclusivo</h4>
-                        <p className="text-white/50 text-xs leading-relaxed">Un espacio diseñado para tu total comodidad, relax y disfrute.</p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        <div className="flex items-start gap-3">
+                          <Clock size={16} className="text-[#CBB79A] shrink-0 mt-0.5" />
+                          <div className="text-left">
+                            <p className="text-white/70 text-xs font-bold leading-tight">Lun - Sáb</p>
+                            <p className="text-white/40 text-[10px] mt-0.5">9:00am - 8:00pm</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <Clock size={16} className="text-white/20 shrink-0 mt-0.5" />
+                          <div className="text-left">
+                            <p className="text-white/30 text-xs font-bold leading-tight">Domingos</p>
+                            <p className="text-white/20 text-[10px] mt-0.5">Cerrado</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Right column: Locations */}
-                <div className="lg:col-span-7 text-left">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">NUESTRA SEDE</span>
-                  <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-8">NUESTRA UBICACIÓN</h2>
-
-                  <div className="w-full">
-                    {/* Sede única */}
-                    <div className="bg-[#111115]/50 border border-white/5 rounded-2xl p-6 flex flex-col justify-between h-[360px] group hover:border-[rgba(203,183,154,0.2)] transition-all">
-                      <div>
-                        <div className="flex items-center gap-2 mb-4">
-                          <MapPin size={18} className="text-[#CBB79A]" />
-                          <h4 className="text-base font-extrabold text-white uppercase tracking-wide">SEDE ÚNICA</h4>
-                        </div>
-                        <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider mb-4">Maracay, Venezuela</p>
-                        
-                        <p className="text-white/70 text-xs leading-relaxed mb-4">
-                          📍 Centro comercial ciudad jardín local #74 PB, Maracay 2102, Aragua, Venezuela
-                        </p>
-                        <p className="text-white/50 text-[11px] leading-relaxed mb-1">
-                          🕒 Lun - Sáb: 9:00am - 8:00pm
-                        </p>
-                        <p className="text-white/50 text-[11px] leading-relaxed mb-4">
-                          Dom: Cerrado
-                        </p>
-                        <p className="text-[#CBB79A] text-xs font-bold">
-                          📞 +58 412 123 4567
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 mt-6">
-                        <button className="btn-outline py-2.5 rounded-xl text-[11px] uppercase tracking-wider font-extrabold transition-all cursor-pointer">
-                          VER EN MAPA
-                        </button>
-                        <button onClick={() => handleStartBooking()} className="btn-gold py-2.5 rounded-xl text-[11px] uppercase tracking-wider font-extrabold transition-all cursor-pointer">
-                          RESERVAR
-                        </button>
-                      </div>
+                  {/* Actions area */}
+                  <div className="border-t border-white/[0.05] pt-6 mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                      <Phone size={14} className="text-[#CBB79A]" />
+                      <span className="text-white/70 text-xs font-extrabold">+58 412 123 4567</span>
                     </div>
+
+                    <a 
+                      href="https://maps.google.com" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="btn-gold py-2.5 px-6 rounded-xl text-[10px] uppercase tracking-wider font-extrabold flex items-center gap-1.5 cursor-pointer"
+                      style={{ borderRadius: '10px' }}
+                    >
+                      <Compass size={13} /> VER EN GOOGLE MAPS
+                    </a>
                   </div>
                 </div>
               </div>
+            </div>
 
 
               {/* SECTION: FOOTER (PANDA BARBER STUDIO) */}
