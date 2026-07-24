@@ -1769,7 +1769,7 @@ export default function BookAppointment() {
             <div id="pandakids" className="w-full reveal-item scroll-mt-24">
               <div className="w-full bg-[#111115]/30 border border-white/[0.04] rounded-3xl overflow-hidden flex flex-col lg:flex-row items-stretch group hover:border-[rgba(203,183,154,0.12)] transition-all duration-500">
                 {/* Left side: Full-Bleed Video Banner */}
-                <div className="w-full lg:w-[45%] min-h-[380px] relative bg-black flex-shrink-0">
+                <div className="w-full lg:w-[45%] aspect-[16/9] lg:aspect-auto lg:min-h-[380px] relative bg-black flex-shrink-0">
                    {loadDeferredAssets ? (
                     <video
                       autoPlay
@@ -1960,7 +1960,7 @@ export default function BookAppointment() {
             <div id="experiencia-section" className="w-full reveal-item scroll-mt-24">
               <div className="w-full bg-[#111115]/30 border border-white/[0.04] rounded-3xl overflow-hidden flex flex-col lg:flex-row items-stretch group hover:border-[rgba(203,183,154,0.12)] transition-all duration-500">
                 {/* Left side: Full-Bleed Video Panel */}
-                <div className="w-full lg:w-[45%] min-h-[380px] relative bg-black flex-shrink-0">
+                <div className="w-full lg:w-[45%] aspect-[16/9] lg:aspect-auto lg:min-h-[380px] relative bg-black flex-shrink-0">
                    {loadDeferredAssets ? (
                     <video
                       autoPlay
