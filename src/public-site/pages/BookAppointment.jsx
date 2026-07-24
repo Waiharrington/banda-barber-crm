@@ -2736,11 +2736,6 @@ export default function BookAppointment() {
                                     >
                                       <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
                                     </video>
-                                    {/* Real-time status pill */}
-                                    <div className="absolute bottom-20 left-4 z-20 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full flex items-center gap-1.5 pointer-events-none">
-                                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                                      <span className="text-[9px] font-black text-white uppercase tracking-widest">En Acción</span>
-                                    </div>
                                   </div>
                                 ) : expandedBarber.image_url ? (
                                   <img src={expandedBarber.image_url} alt={expandedBarber.name} className="w-full h-full object-cover object-top" />
