@@ -2719,10 +2719,7 @@ export default function BookAppointment() {
                           const bIdx = barbers.findIndex(b => b.id === expandedBarber.id);
                           const specialty = expandedBarber.specialty || (expandedBarber.role?.includes('Tatuador') ? 'Artista Tatuador' : 'Barbero Profesional');
                           const badge = expandedBarber.badge || '';
-                          const ratings = ['4.9', '4.8', '4.9', '4.7', '4.8'];
-                          const rating = ratings[bIdx % ratings.length];
-                          const reviewsList = [324, 210, 189, 98, 142];
-                          const reviews = reviewsList[bIdx % reviewsList.length];
+
                           return (
                             <>
                               {/* Hero photo */}
@@ -2760,11 +2757,7 @@ export default function BookAppointment() {
                                 <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
                                   {badge && <span className="inline-block px-3 py-1 rounded-lg bg-white/10 backdrop-blur-sm text-[9px] font-black text-white uppercase tracking-wider mb-2">{badge}</span>}
                                   <h3 className="font-black text-3xl text-white leading-none">{expandedBarber.name}</h3>
-                                  <div className="flex items-center gap-2 mt-1.5">
-                                    <Star size={14} className="text-amber-400 fill-amber-400" />
-                                    <span className="text-sm font-bold text-white">{rating}</span>
-                                    <span className="text-sm text-white/60">({reviews} reseñas)</span>
-                                  </div>
+
                                 </div>
                               </div>
 
