@@ -1733,7 +1733,7 @@ export default function BookAppointment() {
                     <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CLUB INFANTIL</span>
                     <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">
                       CORTES QUE HACEN<br />
-                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-[#CBB79A]">FELICES A LOS MÁS PEQUEÑOS</span>
+                      <span className="text-[#CBB79A]">FELICES A LOS MÁS PEQUEÑOS</span>
                     </h2>
                     <p className="text-white/80 text-[15px] leading-relaxed">
                       En Panda Barber los niños son parte de nuestra familia. Nuestros barberos saben exactamente cómo crear una experiencia divertida, cómoda y especial para ellos.
