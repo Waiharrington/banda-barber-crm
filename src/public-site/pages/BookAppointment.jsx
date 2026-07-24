@@ -895,21 +895,16 @@ export default function BookAppointment() {
     }
   }, [step]);
 
-  // Lock body/html scroll on welcome screen to prevent any viewport bounce/scroll
+  // Lock body/html scroll for the whole booking page (welcome AND wizard steps) — this
+  // component always scrolls internally via scrollContainerRef, so if the body is left
+  // scrollable it creates a second, taller scroll area beneath the fixed 100dvh app
+  // container, which shows up as an empty black strip once you scroll past the app itself.
   useEffect(() => {
-    if (showWelcome || isTransitioning || isReturning) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-      document.body.style.height = '100%';
-    } else {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-      document.body.style.height = '';
-    }
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
     return () => {
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
@@ -917,7 +912,7 @@ export default function BookAppointment() {
       document.body.style.width = '';
       document.body.style.height = '';
     };
-  }, [showWelcome, isTransitioning, isReturning]);
+  }, []);
 
   // Check if client is logged in
   useEffect(() => {
