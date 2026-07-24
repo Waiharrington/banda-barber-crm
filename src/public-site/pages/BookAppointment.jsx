@@ -2832,7 +2832,7 @@ export default function BookAppointment() {
                                       loop
                                       muted
                                       playsInline
-                                      className="w-full h-full object-cover"
+                                      className="w-full h-full object-contain"
                                       style={{ filter: 'brightness(0.95)' }}
                                     >
                                       <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
