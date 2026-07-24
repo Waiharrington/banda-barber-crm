@@ -2723,32 +2723,19 @@ export default function BookAppointment() {
                           return (
                             <>
                               {/* Immersive Cinematic Hero Video/Photo Header */}
-                              <div className="relative w-full h-[480px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d]">
+                              <div className="relative h-[560px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d]">
                                 {getBarberVideo(expandedBarber.name) ? (
                                   <div className="w-full h-full relative">
-                                      {/* Blurred background video to fill empty space elegantly */}
-                                      <video
-                                        autoPlay
-                                        loop
-                                        muted
-                                        playsInline
-                                        className="absolute inset-0 w-full h-full object-cover opacity-35 select-none pointer-events-none"
-                                        style={{ filter: 'blur(20px) brightness(0.6)' }}
-                                      >
-                                        <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
-                                      </video>
-
-                                      {/* Crisp foreground video in its exact original aspect ratio */}
-                                      <video
-                                        autoPlay
-                                        loop
-                                        muted
-                                        playsInline
-                                        className="relative w-full h-full object-contain z-10"
-                                        style={{ filter: 'brightness(0.9)' }}
-                                      >
-                                        <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
-                                      </video>
+                                    <video
+                                      autoPlay
+                                      loop
+                                      muted
+                                      playsInline
+                                      className="w-full h-full object-cover"
+                                      style={{ filter: 'brightness(0.85)' }}
+                                    >
+                                      <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
+                                    </video>
                                     {/* Real-time status pill */}
                                     <div className="absolute bottom-20 left-4 z-20 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full flex items-center gap-1.5 pointer-events-none">
                                       <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
@@ -2756,9 +2743,9 @@ export default function BookAppointment() {
                                     </div>
                                   </div>
                                 ) : expandedBarber.image_url ? (
-                                  <img src={expandedBarber.image_url} alt={expandedBarber.name} className="w-full h-[420px] object-cover object-top" />
+                                  <img src={expandedBarber.image_url} alt={expandedBarber.name} className="w-full h-full object-cover object-top" />
                                 ) : (
-                                  <div className="w-full h-[420px] flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-white/[0.04] to-transparent">
+                                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-white/[0.04] to-transparent">
                                     <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/20">
                                       <User size={32} />
                                     </div>
