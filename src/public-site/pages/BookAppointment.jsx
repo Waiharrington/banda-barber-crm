@@ -3603,7 +3603,17 @@ export default function BookAppointment() {
               {step < 5 ? (
                 <button
                   ref={nextBtnRef}
-                  onClick={(e) => { createRipple(e); if (canNext()) { setStep(step + 1); scrollToTop(); } }}
+                  onClick={(e) => { 
+                    createRipple(e); 
+                    if (canNext()) { 
+                      if (step === 1 && selectedBarber) {
+                        setStep(3);
+                      } else {
+                        setStep(step + 1); 
+                      }
+                      scrollToTop(); 
+                    } 
+                  }}
                   disabled={!canNext()}
                   className={`w-full py-4 px-6 rounded-full font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all haptic-bounce ripple-container ${
                     canNext() 
