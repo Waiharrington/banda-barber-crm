@@ -1496,7 +1496,11 @@ export default function BookAppointment() {
                 {/* Card 1: Barbería */}
                 <div 
                   className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-100"
-                  onClick={() => document.getElementById('servicios')?.scrollIntoView({ behavior: 'smooth' })}
+                  onClick={() => {
+                    setArtistFilter('barberos');
+                    setBarberStartIndex(0);
+                    document.getElementById('equipo')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                 >
                   <div 
                     className="absolute inset-0 bg-cover bg-center transition-all duration-700 brightness-[0.6] group-hover:brightness-[0.88] group-hover:scale-110 z-0" 
@@ -1521,7 +1525,11 @@ export default function BookAppointment() {
                 {/* Card 2: Tatuajes */}
                 <div 
                   className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-200"
-                  onClick={() => document.getElementById('equipo')?.scrollIntoView({ behavior: 'smooth' })}
+                  onClick={() => {
+                    setArtistFilter('tatuadores');
+                    setBarberStartIndex(0);
+                    document.getElementById('equipo')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                 >
                   <div 
                     className="absolute inset-0 bg-cover bg-center transition-all duration-700 brightness-[0.6] group-hover:brightness-[0.88] group-hover:scale-110 z-0" 
@@ -1571,7 +1579,7 @@ export default function BookAppointment() {
                 {/* Card 4: Experiencia Panda */}
                 <div 
                   className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-400"
-                  onClick={() => setShowExperienceModal(true)}
+                  onClick={() => document.getElementById('experiencia-section')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   <div 
                     className="absolute inset-0 bg-cover bg-center transition-all duration-700 brightness-[0.6] group-hover:brightness-[0.88] group-hover:scale-110 z-0" 
@@ -1959,7 +1967,69 @@ export default function BookAppointment() {
               </div>
             )}
 
-              {/* SECTION: ¿POR QUÉ ELEGIR PANDA BARBER? / NUESTRAS SEDES */}
+            {/* SECTION: EXPERIENCIA PANDA SECTION (INTEGRADA EN PAGINA) */}
+            <div id="experiencia-section" className="w-full reveal-item scroll-mt-24">
+              <div className="relative rounded-3xl overflow-hidden border border-white/[0.08] bg-[#0d0d11]/50 p-6 md:p-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
+                {/* Left: Video */}
+                <div className="w-full lg:w-[45%] aspect-video rounded-2xl overflow-hidden relative border border-white/[0.05] bg-black flex-shrink-0">
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                    style={{ filter: 'brightness(0.85)', objectPosition: 'center top' }}
+                  >
+                    <source src={heroVideo} type="video/mp4" />
+                  </video>
+                </div>
+
+                {/* Right: Info */}
+                <div className="flex-1 text-left space-y-6">
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CULTURA, ESTILO Y HOSPITALIDAD</span>
+                    <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">EXPERIENCIA PANDA</h2>
+                    <p className="text-white/60 text-sm leading-relaxed">
+                      En <strong className="text-[#CBB79A] font-semibold">Panda Barber Studio</strong> redefinimos la experiencia clásica de barbería. Fusionamos el arte del corte urbano y la tinta en un club social exclusivo diseñado para tu comodidad y relax.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex gap-3 items-start">
+                      <div className="p-2.5 rounded-xl bg-[#CBB79A]/10 text-[#CBB79A] mt-0.5 border border-[#CBB79A]/20">
+                        <Coffee size={16} />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-white font-extrabold text-[12px] uppercase tracking-wider">Panda Cafe & Bar</h4>
+                        <p className="text-white/50 text-[11px] leading-normal">Café de especialidad, bebidas premium y cerveza fría de cortesía en cada sesión.</p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex gap-3 items-start">
+                      <div className="p-2.5 rounded-xl bg-[#CBB79A]/10 text-[#CBB79A] mt-0.5 border border-[#CBB79A]/20">
+                        <Gamepad2 size={16} />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-white font-extrabold text-[12px] uppercase tracking-wider">Espacio Retro Arcade</h4>
+                        <p className="text-white/50 text-[11px] leading-normal">Consolas arcade clásicas libres para divertirte mientras esperas tu turno.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <button 
+                      onClick={() => handleStartBooking()}
+                      className="btn-gold px-7 py-3 rounded-xl text-[11px] uppercase tracking-wider font-extrabold flex items-center justify-center gap-2"
+                      style={{ borderRadius: '10px' }}
+                    >
+                      Reservar visita <ArrowRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION: ¿POR QUÉ ELEGIR PANDA BARBER? / NUESTRAS SEDES */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start" id="ubicacion">
                 {/* Left column: Why Choose Us */}
                 <div className="lg:col-span-5 text-left">
