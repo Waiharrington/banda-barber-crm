@@ -2911,7 +2911,7 @@ export default function BookAppointment() {
                               })()}
 
                               {/* Creative Manifesto Section */}
-                              <div className="relative urban-industrial-panel p-6 mb-8 profile-bio-enter">
+                              <div className="relative urban-industrial-panel overflow-visible p-6 mb-8 profile-bio-enter">
                                 <div className="absolute -top-3 left-4">
                                   <span className="urban-tape urban-tape-accent text-[9px]">
                                     MANIFESTO // {expandedBarber.name}

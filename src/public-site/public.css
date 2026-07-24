@@ -2812,7 +2812,7 @@ body.hide-public-header nav {
   border-left: 3px solid #d4bc9a;
   border-bottom: 2px solid rgba(212, 188, 154, 0.3);
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .urban-industrial-panel::before {
