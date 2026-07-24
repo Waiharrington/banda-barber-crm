@@ -748,7 +748,7 @@ export default function BookAppointment() {
   const nextBtnRef = useRef(null);
   const scrollToNextButton = () => {
     setTimeout(() => {
-      nextBtnRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+      nextBtnRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
     }, 50);
   };
   const scrollToTimeSlots = () => {
@@ -2462,7 +2462,7 @@ export default function BookAppointment() {
 
         {/* ── INTERACTIVE WIZARD FLOW SCREEN (STEPS 1-6) ── */}
         {(!showWelcome || isTransitioning) && !success && (
-          <div className={`w-full max-w-xl mx-auto px-4 pb-10 flex flex-col flex-1 relative z-10 lg:pt-10 pt-8 ${step === 2 && expandedBarber ? 'pt-0' : ''}`}>
+          <div className={`w-full max-w-xl mx-auto px-4 pb-28 lg:pb-16 flex flex-col flex-1 relative z-10 lg:pt-10 pt-8 ${step === 2 && expandedBarber ? 'pt-0' : ''}`}>
             
             {/* Wizard Header: PASO X DE 6 with title/subtitle and back button */}
             {!(step === 2 && expandedBarber) && (
@@ -3637,7 +3637,7 @@ export default function BookAppointment() {
             </div>
 
             {/* Footer Navigation Buttons — hidden when barber profile is expanded or when in Step 3 (which has its own button) */}
-            <div className={`mt-4 pb-2 ${(step === 2 && expandedBarber) || step === 3 ? 'hidden' : ''}`}>
+            <div className={`mt-8 pb-10 ${(step === 2 && expandedBarber) || step === 3 ? 'hidden' : ''}`}>
               {step < 5 ? (
                 <button
                   ref={nextBtnRef}
