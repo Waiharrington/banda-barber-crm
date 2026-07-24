@@ -1617,31 +1617,34 @@ export default function BookAppointment() {
             </div>
 
             {/* SECTION: NUESTROS ARTISTAS / EL EQUIPO */}
-            <div className="w-full text-center reveal-item" id="equipo">
+            <div className="w-full text-center reveal-item pt-16" id="equipo">
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">EL EQUIPO</span>
-              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-5">
                 NUESTROS <span className="text-[#CBB79A]">ARTISTAS</span>
               </h2>
               
-              {/* Category Filter Pills */}
-              <div className="flex items-center justify-center gap-2 mb-8">
+              {/* Category Filter Tabs (Apple Style Typography) */}
+              <div className="flex items-center justify-center gap-6 mb-8 text-[10px] font-black uppercase tracking-[0.2em]">
                 <button 
                   onClick={() => { setArtistFilter('todos'); setBarberStartIndex(0); }}
-                  className={`px-5 py-2 rounded-xl text-[10px] uppercase tracking-wider font-extrabold transition-all duration-300 ${artistFilter === 'todos' ? 'bg-[#CBB79A] text-black' : 'bg-white/5 text-white/60 border border-white/5 hover:bg-white/10'}`}
+                  className={`pb-1.5 transition-all relative cursor-pointer ${artistFilter === 'todos' ? 'text-[#CBB79A]' : 'text-white/40 hover:text-white/80'}`}
                 >
-                  Todos
+                  <span>Todos</span>
+                  {artistFilter === 'todos' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#CBB79A] rounded-full animate-fade-in" />}
                 </button>
                 <button 
                   onClick={() => { setArtistFilter('barberos'); setBarberStartIndex(0); }}
-                  className={`px-5 py-2 rounded-xl text-[10px] uppercase tracking-wider font-extrabold transition-all duration-300 ${artistFilter === 'barberos' ? 'bg-[#CBB79A] text-black' : 'bg-white/5 text-white/60 border border-white/5 hover:bg-white/10'}`}
+                  className={`pb-1.5 transition-all relative cursor-pointer ${artistFilter === 'barberos' ? 'text-[#CBB79A]' : 'text-white/40 hover:text-white/80'}`}
                 >
-                  Barberos
+                  <span>Barberos</span>
+                  {artistFilter === 'barberos' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#CBB79A] rounded-full animate-fade-in" />}
                 </button>
                 <button 
                   onClick={() => { setArtistFilter('tatuadores'); setBarberStartIndex(0); }}
-                  className={`px-5 py-2 rounded-xl text-[10px] uppercase tracking-wider font-extrabold transition-all duration-300 ${artistFilter === 'tatuadores' ? 'bg-[#CBB79A] text-black' : 'bg-white/5 text-white/60 border border-white/5 hover:bg-white/10'}`}
+                  className={`pb-1.5 transition-all relative cursor-pointer ${artistFilter === 'tatuadores' ? 'text-[#CBB79A]' : 'text-white/40 hover:text-white/80'}`}
                 >
-                  Tatuadores
+                  <span>Tatuadores</span>
+                  {artistFilter === 'tatuadores' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#CBB79A] rounded-full animate-fade-in" />}
                 </button>
               </div>
 
@@ -1663,56 +1666,58 @@ export default function BookAppointment() {
                 >
                   <ChevronRight size={20} />
                 </button>
-
-                <div className="overflow-hidden w-full">
-                  <div 
-                    className="flex transition-transform duration-500 ease-in-out"
-                    style={{ transform: `translateX(-${barberStartIndex * (100 / visibleCount)}%)` }}
-                    key={artistFilter}
-                  >
-                    {barbers.filter(barber => {
-                      if (artistFilter === 'todos') return true;
-                      const r = (barber.role?.split('|')[0] || '').toLowerCase().trim();
-                      if (artistFilter === 'barberos') return r.includes('barber') || r.includes('corte') || r.includes('barba');
-                      if (artistFilter === 'tatuadores') return r.includes('tatu') || r.includes('ink') || r.includes('artista');
-                      return true;
-                    }).map((barber, idx) => {
-                      const isAngel = barber.name === 'Ángel Serrano';
-                      const isMarko = barber.name === 'Marko Cardozo';
-                      const isAbraham = barber.name === 'Abraham Díaz';
-                      const isAlejandro = barber.name === 'Alejandro Ramírez';
-                      const isJose = barber.name === 'José Cordero';
-                      
-                      const availabilityText = (isAngel || isMarko) ? 'Disponible mañana' : 'Disponible hoy';
-                      const availabilityColor = (isAngel || isMarko) ? 'text-white/40' : 'text-emerald-400';
-                      const dotColor = (isAngel || isMarko) ? 'bg-white/30' : 'bg-emerald-400';
-                      
-                      const displayName = isAbraham ? 'Abraham Diaz' : isAlejandro ? 'Alejandro Ramirez' : barber.name;
-                      const specialtyText = isAbraham ? 'MASTER BARBER' : isAlejandro ? 'BARBERO' : isAngel ? 'BARBERO' : isJose ? 'BARBERO' : isMarko ? 'TATUADOR' : 'BARBERO';
-                      const tagsText = isAbraham ? 'Fade • Barba • Clásicos' : isAlejandro ? 'Corte • Barba • Diseños' : isAngel ? 'Fade • Corte • Barba' : isJose ? 'Corte • Barba • Clásicos' : isMarko ? 'Realismo • Black & Grey' : 'Corte • Barba';
-                      
-                      return (
-                        <div key={barber.id} className="shrink-0 px-3 animate-[premiumFadeUp_0.6s_cubic-bezier(0.16,1,0.3,1)_both]" style={{ width: `${100 / visibleCount}%`, animationDelay: `${idx * 60}ms` }}>
-                          <div className="bg-[#111115]/50 border border-white/5 rounded-2xl p-5 flex flex-col items-center text-center relative group hover:border-[rgba(203,183,154,0.3)] transition-all duration-300">
-                            <div className="w-full aspect-[4/5] rounded-xl overflow-hidden mb-4 relative bg-[#1c1c24] border border-white/5">
-                              <BarberAvatar url={barber.image_url} name={barber.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" iconSize={40} />
-                            </div>
-                            <h4 className="text-base font-extrabold text-white mb-0.5 tracking-wide">{displayName}</h4>
-                            <span className="text-[11px] font-bold text-[#CBB79A] tracking-wider uppercase mb-3">{specialtyText}</span>
-                            <p className="text-[12px] lg:text-[13px] text-white/60 mb-4 truncate w-full">{tagsText}</p>
-                            <div className={`flex items-center gap-1.5 mb-5 text-[12px] ${availabilityColor} font-bold`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${!(isAngel || isMarko) ? 'animate-pulse' : ''}`}></span>
-                              <span>{availabilityText}</span>
-                            </div>
-                            <button 
-                              onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
-                              className="w-full py-2.5 rounded-xl border border-white/10 hover:border-[#CBB79A] hover:bg-[#CBB79A] hover:text-black text-white text-[11px] uppercase tracking-wider font-extrabold transition-all duration-300 cursor-pointer"
-                            >
-                              Reservar
-                            </button>
-                          </div>
-                        </div>
-                      );
+ 
+                 <div className="overflow-hidden w-full">
+                   <div 
+                     className="flex transition-transform duration-500 ease-in-out"
+                     style={{ transform: `translateX(-${barberStartIndex * (100 / visibleCount)}%)` }}
+                     key={artistFilter}
+                   >
+                     {barbers.filter(barber => {
+                       if (artistFilter === 'todos') return true;
+                       const r = (barber.role?.split('|')[0] || '').toLowerCase().trim();
+                       if (artistFilter === 'barberos') return r.includes('barber') || r.includes('corte') || r.includes('barba');
+                       if (artistFilter === 'tatuadores') return r.includes('tatu') || r.includes('ink') || r.includes('artista');
+                       return true;
+                     }).map((barber, idx) => {
+                       const isAngel = barber.name === 'Ángel Serrano';
+                       const isMarko = barber.name === 'Marko Cardozo';
+                       const isAbraham = barber.name === 'Abraham Díaz';
+                       const isAlejandro = barber.name === 'Alejandro Ramírez';
+                       const isJose = barber.name === 'José Cordero';
+                       
+                       const availabilityText = (isAngel || isMarko) ? 'Mañana' : 'Hoy';
+                       const availabilityColor = (isAngel || isMarko) ? 'text-white/40' : 'text-emerald-400';
+                       const dotColor = (isAngel || isMarko) ? 'bg-white/30' : 'bg-emerald-400';
+                       
+                       const displayName = isAbraham ? 'Abraham Diaz' : isAlejandro ? 'Alejandro Ramirez' : barber.name;
+                       const specialtyText = isAbraham ? 'MASTER BARBER' : isAlejandro ? 'BARBERO' : isAngel ? 'BARBERO' : isJose ? 'BARBERO' : isMarko ? 'TATUADOR' : 'BARBERO';
+                       const tagsText = isAbraham ? 'Fade • Barba • Clásicos' : isAlejandro ? 'Corte • Barba • Diseños' : isAngel ? 'Fade • Corte • Barba' : isJose ? 'Corte • Barba • Clásicos' : isMarko ? 'Realismo • Black & Grey' : 'Corte • Barba';
+                       
+                       return (
+                         <div key={barber.id} className="shrink-0 px-3 animate-[premiumFadeUp_0.6s_cubic-bezier(0.16,1,0.3,1)_both]" style={{ width: `${100 / visibleCount}%`, animationDelay: `${idx * 60}ms` }}>
+                           <div className="flex flex-col items-center text-center relative group transition-all duration-300">
+                             <div className="w-full aspect-[4/5] rounded-2xl overflow-hidden mb-4 relative bg-[#0d0d11] border border-white/5 shadow-2xl">
+                               <BarberAvatar url={barber.image_url} name={barber.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" iconSize={40} />
+                               
+                               {/* Floating availability dot inside image */}
+                               <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-lg flex items-center gap-1.5 pointer-events-none">
+                                 <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${!(isAngel || isMarko) ? 'animate-pulse' : ''}`}></span>
+                                 <span className={`text-[8px] font-black ${availabilityColor} uppercase tracking-widest`}>{availabilityText}</span>
+                               </div>
+                             </div>
+                             <h4 className="text-base font-extrabold text-white mb-0.5 tracking-tight">{displayName}</h4>
+                             <span className="text-[10px] font-extrabold text-[#CBB79A] tracking-widest uppercase mb-1">{specialtyText}</span>
+                             <p className="text-[11px] text-white/40 mb-3.5 truncate w-full tracking-wide">{tagsText}</p>
+                             <button 
+                               onClick={() => { setSelectedBarber(barber); handleStartBooking(); }}
+                               className="text-[10px] font-black uppercase tracking-widest text-[#CBB79A] hover:text-white transition-all duration-300 cursor-pointer flex items-center gap-1 border-b border-[#CBB79A]/20 hover:border-white pb-0.5"
+                             >
+                               <span>Reservar Cita</span> <span>→</span>
+                             </button>
+                           </div>
+                         </div>
+                       );
                     })}
                   </div>
                 </div>
