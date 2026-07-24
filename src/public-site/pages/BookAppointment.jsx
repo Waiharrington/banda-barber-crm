@@ -1518,7 +1518,7 @@ export default function BookAppointment() {
             {/* SECTION: ELIGE TU SERVICIO */}
             <div className="w-full text-center" id="servicios">
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">EXPERIENCIA EXCLUSIVA</span>
-              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-12">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight uppercase font-sans mb-12">
                 ELIGE TU <span className="text-[#CBB79A]">SERVICIO</span>
               </h2>
 
@@ -1636,7 +1636,7 @@ export default function BookAppointment() {
             {/* SECTION: NUESTROS ARTISTAS / EL EQUIPO */}
             <div className="w-full text-center reveal-item" id="equipo">
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">EL EQUIPO</span>
-              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">
                 NUESTROS <span className="text-[#CBB79A]">ARTISTAS</span>
               </h2>
               
@@ -1764,9 +1764,9 @@ export default function BookAppointment() {
                 <div className="flex-1 p-8 lg:p-12 text-left space-y-6 flex flex-col justify-center">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CLUB INFANTIL</span>
-                    <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">
+                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight uppercase font-sans mb-4 leading-none">
                       CORTES QUE HACEN<br />
-                      <span className="text-[#CBB79A]">FELICES A LOS MÁS PEQUEÑOS</span>
+                      <span className="text-[#CBB79A]">FELICES A LOS PEQUEÑOS</span>
                     </h2>
                     <p className="text-white/80 text-[15px] leading-relaxed">
                       En Panda Barber los niños son parte de nuestra familia. Nuestros barberos saben exactamente cómo crear una experiencia divertida, cómoda y especial para ellos.
@@ -1841,7 +1841,7 @@ export default function BookAppointment() {
                   <div className="flex-1 p-8 lg:p-12 text-left space-y-8 flex flex-col justify-center">
                     <div className="space-y-3">
                       <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block">TALENTO DESTACADO</span>
-                      <h3 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans">
+                      <h3 className="text-4xl lg:text-5xl font-extrabold text-white tracking-tight uppercase font-sans">
                         {topBarber.name}
                       </h3>
                       <div className="flex items-center gap-2">
@@ -1949,7 +1949,7 @@ export default function BookAppointment() {
                 <div className="flex-1 p-8 lg:p-12 text-left space-y-6 flex flex-col justify-center">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CULTURA, ESTILO Y HOSPITALIDAD</span>
-                    <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">EXPERIENCIA <span className="text-[#CBB79A]">PANDA</span></h2>
+                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">EXPERIENCIA <span className="text-[#CBB79A]">PANDA</span></h2>
                     <p className="text-white/80 text-[15px] leading-relaxed">
                       En <strong className="text-[#CBB79A] font-semibold">Panda Barber Studio</strong> redefinimos la experiencia clásica de barbería. Fusionamos el arte del corte urbano y la tinta en un club social exclusivo diseñado para tu comodidad y relax.
                     </p>
@@ -1997,7 +1997,7 @@ export default function BookAppointment() {
               {/* Left Column: Why Choose Us (Redesigned as premium cards) */}
               <div className="lg:col-span-6 flex flex-col justify-center text-left">
                 <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">¿POR QUÉ ELEGIR</span>
-                <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-8">
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight uppercase font-sans mb-8">
                   <span className="text-[#CBB79A]">PANDA BARBER?</span>
                 </h2>
                 
@@ -2125,7 +2125,7 @@ export default function BookAppointment() {
             <div className="w-full text-center space-y-8 pt-8 reveal-item">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">SÍGUENOS EN REDES</span>
-                <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-3">INSTAGRAM <span className="text-[#CBB79A]">FEED</span></h2>
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight uppercase font-sans mb-3">INSTAGRAM <span className="text-[#CBB79A]">FEED</span></h2>
                 <a 
                   href="https://www.instagram.com/pandabarberestudio/" 
                   target="_blank" 
