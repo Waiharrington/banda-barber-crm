@@ -2799,9 +2799,9 @@ export default function BookAppointment() {
                           return (
                             <>
                               {/* Immersive Cinematic Hero Video/Photo Header */}
-                              <div className="relative h-[700px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d]">
+                              <div className="relative h-[700px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d] profile-video-hero">
                                 {getBarberVideo(expandedBarber.name) ? (
-                                  <div className="w-full h-full relative">
+                                  <div className="w-full h-full relative profile-video-inner">
                                     <video
                                       autoPlay
                                       loop
@@ -2864,7 +2864,7 @@ export default function BookAppointment() {
                               {(() => {
                                 const stats = getBarberStats(expandedBarber);
                                 return (
-                                  <div className="grid grid-cols-2 gap-3 mb-6">
+                                  <div className="grid grid-cols-2 gap-3 mb-6 profile-stats-enter">
                                     {[
                                       { icon: <Scissors size={18} />, value: stats.services_count, label: 'Servicios' },
                                       { icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>, value: stats.happy_clients, label: 'Clientes felices' },
@@ -2882,7 +2882,7 @@ export default function BookAppointment() {
                               })()}
 
                               {/* Editorial Quote Section */}
-                              <div className="relative bg-white/[0.02] border border-white/5 rounded-2xl p-5 mb-6 overflow-hidden">
+                              <div className="relative bg-white/[0.02] border border-white/5 rounded-2xl p-5 mb-6 overflow-hidden profile-bio-enter">
                                 <span className="absolute -right-2 -bottom-8 text-8xl font-serif text-white/[0.04] pointer-events-none select-none">”</span>
                                 <h4 className="font-extrabold text-sm text-[var(--champagne)] uppercase tracking-widest mb-3">Sobre Mí</h4>
                                 <p className="text-[15px] text-white/80 leading-relaxed italic font-medium relative z-10">
@@ -2891,7 +2891,7 @@ export default function BookAppointment() {
                               </div>
 
                               {/* Recent Works Gallery */}
-                              <div className="mb-6">
+                              <div className="mb-6 profile-gallery-enter">
                                 <h4 className="font-extrabold text-base text-white mb-3 tracking-tight">Trabajos recientes</h4>
                                 {portfolioLoading ? (
                                   <div className="flex gap-3 overflow-hidden">

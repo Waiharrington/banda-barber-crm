@@ -1323,6 +1323,50 @@
   100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
 }
 
+/* ---- Cinematic Profile Entry Animations ---- */
+
+/* The entire hero video container: fades in and unblurs from black */
+.profile-video-hero {
+  animation: profileHeroReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes profileHeroReveal {
+  0% { opacity: 0; clip-path: inset(0 0 100% 0); }
+  60% { clip-path: inset(0 0 0% 0); }
+  100% { opacity: 1; clip-path: inset(0 0 0% 0); }
+}
+
+/* Video/image inside hero: subtle zoom from 1.08 to 1.0 like a cinematic reveal */
+.profile-video-inner {
+  animation: profileVideoZoom 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+@keyframes profileVideoZoom {
+  0% { transform: scale(1.08); opacity: 0; filter: brightness(0) blur(6px); }
+  30% { opacity: 1; filter: brightness(0.85) blur(0px); }
+  100% { transform: scale(1); opacity: 1; filter: brightness(0.85) blur(0px); }
+}
+
+/* Stats grid: slide up and fade in with a slight delay after video */
+.profile-stats-enter {
+  animation: profileFadeSlideUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both;
+}
+
+/* Sobre Mí bio: fades in after stats */
+.profile-bio-enter {
+  animation: profileFadeSlideUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both;
+}
+
+/* Gallery / trabajos recientes: fades in last */
+.profile-gallery-enter {
+  animation: profileFadeSlideUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.75s both;
+}
+
+@keyframes profileFadeSlideUp {
+  0%   { opacity: 0; transform: translateY(22px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 .collapsed-card-reveal {
   animation: collapsedReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
