@@ -2723,16 +2723,28 @@ export default function BookAppointment() {
                           return (
                             <>
                               {/* Immersive Cinematic Hero Video/Photo Header */}
-                              <div className="relative w-full aspect-[3/4] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d]">
+                              <div className="relative w-full h-[480px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d]">
                                 {getBarberVideo(expandedBarber.name) ? (
                                   <div className="w-full h-full relative">
-                                      {/* Crisp foreground video filling edge to edge */}
+                                      {/* Blurred background video to fill empty space elegantly */}
                                       <video
                                         autoPlay
                                         loop
                                         muted
                                         playsInline
-                                        className="w-full h-full object-cover object-center relative z-10"
+                                        className="absolute inset-0 w-full h-full object-cover opacity-35 select-none pointer-events-none"
+                                        style={{ filter: 'blur(20px) brightness(0.6)' }}
+                                      >
+                                        <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
+                                      </video>
+
+                                      {/* Crisp foreground video in its exact original aspect ratio */}
+                                      <video
+                                        autoPlay
+                                        loop
+                                        muted
+                                        playsInline
+                                        className="relative w-full h-full object-contain z-10"
                                         style={{ filter: 'brightness(0.9)' }}
                                       >
                                         <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
