@@ -568,6 +568,7 @@ export default function BookAppointment() {
   const [expandedBarber, setExpandedBarber] = useState(null);
   const [expandedBarberPortfolio, setExpandedBarberPortfolio] = useState([]);
   const [barberSearchQuery, setBarberSearchQuery] = useState('');
+  const [profileSourceStep, setProfileSourceStep] = useState(1);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const [activeLightboxImage, setActiveLightboxImage] = useState(null);
   const [toast, setToast] = useState(null);
@@ -1836,6 +1837,7 @@ export default function BookAppointment() {
                                 }}
                                 onClick={() => {
                                   if (isBookable) {
+                                    setProfileSourceStep(1);
                                     setStep(2);
                                     setExpandedBarber(barber);
                                     setShowWelcome(false);
@@ -1845,6 +1847,7 @@ export default function BookAppointment() {
                                       { id: 'ab3', image_url: abrahamWork3 },
                                       { id: 'ab4', image_url: abrahamWork4 }
                                     ]);
+                                    setPortfolioLoading(false);
                                     scrollToTop();
                                   }
                                 }}
@@ -2836,9 +2839,18 @@ export default function BookAppointment() {
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0e] via-[#0a0a0e]/30 to-transparent z-[2]"></div>
                                 <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0e]/50 via-transparent to-transparent z-[2]"></div>
 
-                                <button onClick={() => { setExpandedBarber(null); setExpandedBarberPortfolio([]); scrollToTop(); }} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center z-20 hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer">
-                                  <ChevronLeft size={20} className="text-white" />
-                                </button>
+                                <button onClick={() => {
+                                   setExpandedBarber(null);
+                                   setExpandedBarberPortfolio([]);
+                                   if (profileSourceStep === 1) {
+                                     handleReturnToWelcome();
+                                   } else {
+                                     setStep(2);
+                                   }
+                                   scrollToTop();
+                                 }} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center z-20 hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer">
+                                   <ChevronLeft size={20} className="text-white" />
+                                 </button>
                                 
                                 <div className="absolute top-4 right-4 flex gap-2 z-20">
                                   <button 
@@ -3105,6 +3117,7 @@ export default function BookAppointment() {
                                   <div
                                     key={barber.id}
                                     onClick={async () => {
+                                      setProfileSourceStep(2);
                                       setExpandedBarber(barber);
                                       setExpandedBarberPortfolio([
                                          { id: 'ab1', image_url: abrahamWork1 },
