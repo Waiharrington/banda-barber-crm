@@ -1518,8 +1518,8 @@ export default function BookAppointment() {
             {/* SECTION: ELIGE TU SERVICIO */}
             <div className="w-full text-center" id="servicios">
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">EXPERIENCIA EXCLUSIVA</span>
-              <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-12">
-                ELIGE TU SERVICIO
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-12">
+                ELIGE TU <span className="text-[#CBB79A]">SERVICIO</span>
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto">
@@ -1636,8 +1636,8 @@ export default function BookAppointment() {
             {/* SECTION: NUESTROS ARTISTAS / EL EQUIPO */}
             <div className="w-full text-center reveal-item" id="equipo">
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">EL EQUIPO</span>
-              <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">
-                NUESTROS ARTISTAS
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">
+                NUESTROS <span className="text-[#CBB79A]">ARTISTAS</span>
               </h2>
               
               {/* Category Filter Pills */}
@@ -1949,7 +1949,7 @@ export default function BookAppointment() {
                 <div className="flex-1 p-8 lg:p-12 text-left space-y-6 flex flex-col justify-center">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CULTURA, ESTILO Y HOSPITALIDAD</span>
-                    <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">EXPERIENCIA PANDA</h2>
+                    <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">EXPERIENCIA <span className="text-[#CBB79A]">PANDA</span></h2>
                     <p className="text-white/80 text-[15px] leading-relaxed">
                       En <strong className="text-[#CBB79A] font-semibold">Panda Barber Studio</strong> redefinimos la experiencia clásica de barbería. Fusionamos el arte del corte urbano y la tinta en un club social exclusivo diseñado para tu comodidad y relax.
                     </p>
@@ -1998,7 +1998,7 @@ export default function BookAppointment() {
               <div className="lg:col-span-6 flex flex-col justify-center text-left">
                 <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">¿POR QUÉ ELEGIR</span>
                 <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-8">
-                  PANDA BARBER?
+                  <span className="text-[#CBB79A]">PANDA BARBER?</span>
                 </h2>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2125,7 +2125,7 @@ export default function BookAppointment() {
             <div className="w-full text-center space-y-8 pt-8 reveal-item">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">SÍGUENOS EN REDES</span>
-                <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-3">INSTAGRAM FEED</h2>
+                <h2 className="text-3xl font-extrabold text-white tracking-tight uppercase font-sans mb-3">INSTAGRAM <span className="text-[#CBB79A]">FEED</span></h2>
                 <a 
                   href="https://www.instagram.com/pandabarberestudio/" 
                   target="_blank" 
