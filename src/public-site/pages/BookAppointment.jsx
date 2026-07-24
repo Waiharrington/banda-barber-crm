@@ -2824,7 +2824,11 @@ export default function BookAppointment() {
                                   </div>
                                 )}
                                 
-                                {/* Absolute overlay gradients for text cont                                <div className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center z-20 hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer">
+                                {/* Absolute overlay gradients for text contrast */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0e] via-[#0a0a0e]/30 to-transparent z-[2]"></div>
+                                <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0e]/50 via-transparent to-transparent z-[2]"></div>
+
+                                <button onClick={() => { setExpandedBarber(null); setExpandedBarberPortfolio([]); scrollToTop(); }} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center z-20 hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer">
                                   <ChevronLeft size={20} className="text-white" />
                                 </button>
                                 
