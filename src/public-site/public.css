@@ -2698,3 +2698,9 @@ input[type="date"] {
     transform: scale(1);
   }
 }
+
+/* Hide header menu and mobile nav during booking steps */
+body.hide-public-header header,
+body.hide-public-header nav {
+  display: none !important;
+}

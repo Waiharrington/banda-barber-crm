@@ -319,6 +319,18 @@ export default function BookAppointment() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Hide layout header during active booking wizard flow
+  useEffect(() => {
+    if (!showWelcome) {
+      document.body.classList.add('hide-public-header');
+    } else {
+      document.body.classList.remove('hide-public-header');
+    }
+    return () => {
+      document.body.classList.remove('hide-public-header');
+    };
+  }, [showWelcome]);
+
   // Scroll reveal observer system
   useEffect(() => {
     if (!showWelcome) return;
