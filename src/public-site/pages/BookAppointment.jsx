@@ -1894,7 +1894,7 @@ export default function BookAppointment() {
                         className="btn-outline py-3 px-8 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2"
                         style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
                       >
-                        <User size={13} /> VER SU PERFIL
+                        <User size={13} /> VER PERFIL
                       </button>
                     </div>
                   </div>
