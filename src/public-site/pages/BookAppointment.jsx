@@ -844,10 +844,7 @@ export default function BookAppointment() {
         ]);
         setServices(servicesData);
         
-        const filteredBarbers = staffData.filter(s => {
-          const r = (s.role?.split('|')[0] || '').toLowerCase().trim();
-          return r.includes('barber') || r.includes('barba') || r.includes('corte') || r.includes('artista') || r.includes('tatu') || r.includes('ink') || r.includes('style');
-        });
+        const filteredBarbers = staffData.filter(s => s.active !== false);
 
         // Ángel es el dueño y Moret Serrano va al lado (segundo en la vitrina)
         const sortedBarbers = [...filteredBarbers].sort((a, b) => {
@@ -1620,7 +1617,7 @@ export default function BookAppointment() {
             <div className="w-full text-center reveal-item pt-16" id="equipo">
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">EL EQUIPO</span>
               <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-5">
-                NUESTROS <span className="text-[#CBB79A]">ARTISTAS</span>
+                NUESTRO <span className="text-[#CBB79A]">EQUIPO</span>
               </h2>
               
               {/* Category Filter Tabs (Apple Style Typography) */}
@@ -1691,8 +1688,8 @@ export default function BookAppointment() {
                        const dotColor = (isAngel || isMarko) ? 'bg-white/30' : 'bg-emerald-400';
                        
                        const displayName = isAbraham ? 'Abraham Diaz' : isAlejandro ? 'Alejandro Ramirez' : barber.name;
-                       const specialtyText = isAbraham ? 'MASTER BARBER' : isAlejandro ? 'BARBERO' : isAngel ? 'BARBERO' : isJose ? 'BARBERO' : isMarko ? 'TATUADOR' : 'BARBERO';
-                       const tagsText = isAbraham ? 'Fade • Barba • Clásicos' : isAlejandro ? 'Corte • Barba • Diseños' : isAngel ? 'Fade • Corte • Barba' : isJose ? 'Corte • Barba • Clásicos' : isMarko ? 'Realismo • Black & Grey' : 'Corte • Barba';
+                       const specialtyText = isAbraham ? 'MASTER BARBER' : isAlejandro ? 'BARBERO' : isAngel ? 'BARBERO' : isJose ? 'BARBERO' : isMarko ? 'TATUADOR' : (barber.role?.split('|')[0] || 'Estilista').trim().toUpperCase();
+                       const tagsText = isAbraham ? 'Fade • Barba • Clásicos' : isAlejandro ? 'Corte • Barba • Diseños' : isAngel ? 'Fade • Corte • Barba' : isJose ? 'Corte • Barba • Clásicos' : isMarko ? 'Realismo • Black & Grey' : (barber.role?.split('|')[1] || 'Estilo • Cuidado').trim();
                        
                        return (
                          <div key={barber.id} className="shrink-0 px-3 animate-[premiumFadeUp_0.6s_cubic-bezier(0.16,1,0.3,1)_both]" style={{ width: `${100 / visibleCount}%`, animationDelay: `${idx * 60}ms` }}>
