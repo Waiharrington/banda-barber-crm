@@ -223,6 +223,7 @@ export default function BookAppointment() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showExperienceModal, setShowExperienceModal] = useState(false);
   const [artistFilter, setArtistFilter] = useState('todos');
+  const [loadDeferredAssets, setLoadDeferredAssets] = useState(false);
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
@@ -309,6 +310,13 @@ export default function BookAppointment() {
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoadDeferredAssets(true);
+    }, 1500);
+    return () => clearTimeout(timer);
   }, []);
 
   // Scroll reveal observer system
@@ -1689,16 +1697,22 @@ export default function BookAppointment() {
               <div className="w-full bg-[#111115]/30 border border-white/[0.04] rounded-3xl overflow-hidden flex flex-col lg:flex-row items-stretch group hover:border-[rgba(203,183,154,0.12)] transition-all duration-500">
                 {/* Left side: Full-Bleed Video Banner */}
                 <div className="w-full lg:w-[45%] min-h-[380px] relative bg-black flex-shrink-0">
-                  <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="absolute inset-0 w-full h-full object-cover"
-                    style={{ filter: 'brightness(0.85)', objectPosition: 'center top' }}
-                  >
-                    <source src={pandaKidsVideo} type="video/mp4" />
-                  </video>
+                   {loadDeferredAssets ? (
+                    <video
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover animate-fade-in"
+                      style={{ filter: 'brightness(0.85)', objectPosition: 'center top' }}
+                    >
+                      <source src={pandaKidsVideo} type="video/mp4" />
+                    </video>
+                  ) : (
+                    <div className="absolute inset-0 bg-[#0d0d11]/80 flex items-center justify-center">
+                      <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest animate-pulse">Cargando experiencia...</span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/80 via-black/20 lg:via-transparent to-transparent lg:to-[#111115]/30 z-1" />
                   
                   {/* Floating badge inside video */}
@@ -1874,16 +1888,22 @@ export default function BookAppointment() {
               <div className="w-full bg-[#111115]/30 border border-white/[0.04] rounded-3xl overflow-hidden flex flex-col lg:flex-row items-stretch group hover:border-[rgba(203,183,154,0.12)] transition-all duration-500">
                 {/* Left side: Full-Bleed Video Panel */}
                 <div className="w-full lg:w-[45%] min-h-[380px] relative bg-black flex-shrink-0">
-                  <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="absolute inset-0 w-full h-full object-cover"
-                    style={{ filter: 'brightness(0.85)', objectPosition: 'center top' }}
-                  >
-                    <source src={heroVideo} type="video/mp4" />
-                  </video>
+                   {loadDeferredAssets ? (
+                    <video
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover animate-fade-in"
+                      style={{ filter: 'brightness(0.85)', objectPosition: 'center top' }}
+                    >
+                      <source src={heroVideo} type="video/mp4" />
+                    </video>
+                  ) : (
+                    <div className="absolute inset-0 bg-[#0d0d11]/80 flex items-center justify-center">
+                      <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest animate-pulse">Cargando experiencia...</span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/80 via-black/20 lg:via-transparent to-transparent lg:to-[#111115]/30 z-1" />
                   
                   {/* Floating badge inside video */}
@@ -3777,17 +3797,19 @@ export default function BookAppointment() {
 
           {/* Video banner inside modal */}
           <div className="w-full h-44 md:h-56 rounded-2xl overflow-hidden relative border border-white/[0.05] bg-black">
-            <video
-              ref={modalVideoRef}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-              style={{ filter: 'brightness(0.85)', objectPosition: 'center top' }}
-            >
-              <source src={heroVideo} type="video/mp4" />
-            </video>
+            {showExperienceModal && (
+              <video
+                ref={modalVideoRef}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover animate-fade-in"
+                style={{ filter: 'brightness(0.85)', objectPosition: 'center top' }}
+              >
+                <source src={heroVideo} type="video/mp4" />
+              </video>
+            )}
           </div>
 
           {/* Description details */}
