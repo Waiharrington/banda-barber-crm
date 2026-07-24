@@ -1224,7 +1224,7 @@ export default function BookAppointment() {
         </div>
 
         {/* Centered content container positioned vertically centered relative to full-screen photo backgrounds */}
-        <div className="w-full max-w-[1200px] mx-auto flex flex-col justify-center items-start gap-6 lg:gap-8 relative z-20 my-auto px-6 lg:px-16 text-left">
+        <div className="w-full max-w-[1440px] mx-auto flex flex-col justify-center items-start gap-6 lg:gap-8 relative z-20 my-auto px-6 lg:px-12 text-left">
           
           {/* Trust/Reputation Badge */}
           <div className="flex items-center gap-2 reveal-item delay-100">
@@ -1440,7 +1440,7 @@ export default function BookAppointment() {
 
           {/* Stats Bar */}
           <div className="w-full bg-[#07070a] border-y border-[rgba(203,183,154,0.1)] py-8 px-6 lg:px-16 relative z-20">
-            <div className="max-w-[1200px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 items-center justify-items-center">
+            <div className="max-w-[1440px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 items-center justify-items-center">
               {/* Stat 1 */}
               <div className="flex items-center gap-4 w-full md:justify-center md:border-r md:border-white/5 px-4 reveal-item delay-100">
                 <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A]">
@@ -1485,7 +1485,7 @@ export default function BookAppointment() {
           </div>
 
           {/* Vertical Flow Sections Container */}
-          <div className="w-full max-w-[1200px] mx-auto px-6 py-16 space-y-24 relative z-10">
+          <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-8 py-16 space-y-24 relative z-10">
             
             {/* SECTION: ELIGE TU SERVICIO */}
             <div className="w-full text-center" id="servicios">
