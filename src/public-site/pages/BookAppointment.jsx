@@ -2723,7 +2723,7 @@ export default function BookAppointment() {
                           return (
                             <>
                               {/* Immersive Cinematic Hero Video/Photo Header */}
-                              <div className="relative h-[320px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d]">
+                              <div className="relative h-[480px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d]">
                                 {getBarberVideo(expandedBarber.name) ? (
                                   <div className="w-full h-full relative">
                                     <video
@@ -2731,13 +2731,13 @@ export default function BookAppointment() {
                                       loop
                                       muted
                                       playsInline
-                                      className="w-full h-full object-cover object-top"
+                                      className="w-full h-full object-contain"
                                       style={{ filter: 'brightness(0.85)' }}
                                     >
                                       <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
                                     </video>
                                     {/* Real-time status pill */}
-                                    <div className="absolute bottom-16 left-4 z-20 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full flex items-center gap-1.5 pointer-events-none">
+                                    <div className="absolute bottom-20 left-4 z-20 bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full flex items-center gap-1.5 pointer-events-none">
                                       <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
                                       <span className="text-[9px] font-black text-white uppercase tracking-widest">En Acción</span>
                                     </div>
