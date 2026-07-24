@@ -2119,17 +2119,24 @@ export default function BookAppointment() {
                   </div>
 
                   {/* Actions area */}
-                  <div className="border-t border-white/[0.05] pt-6 mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="relative z-10 border-t border-white/[0.05] pt-6 mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
                         <Phone size={14} className="text-[#CBB79A]" />
-                        <span className="text-white/70 text-xs font-extrabold">+58 424-2259724</span>
+                        <a
+                          href="tel:+584242259724"
+                          onClick={e => e.stopPropagation()}
+                          className="text-white/70 text-xs font-extrabold hover:text-[#CBB79A] transition-colors"
+                        >
+                          +58 424-2259724
+                        </a>
                       </div>
                       <a
                         href="https://www.instagram.com/pandabarberestudio/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-white/40 hover:text-[#CBB79A] transition-colors"
+                        onClick={e => { e.stopPropagation(); window.open('https://www.instagram.com/pandabarberestudio/', '_blank'); }}
+                        className="flex items-center gap-1.5 text-white/40 hover:text-[#CBB79A] transition-colors cursor-pointer"
                         aria-label="Instagram"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -2141,15 +2148,13 @@ export default function BookAppointment() {
                       </a>
                     </div>
 
-                    <a 
-                      href="https://google.com/maps/place/Panda+Barber+Estudio/data=!4m2!3m1!1s0x0:0x219ca2f89dc85e8a?sa=X&ved=1t:2428&ictx=111" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={e => { e.stopPropagation(); window.open('https://google.com/maps/place/Panda+Barber+Estudio/data=!4m2!3m1!1s0x0:0x219ca2f89dc85e8a?sa=X&ved=1t:2428&ictx=111', '_blank'); }}
                       className="btn-gold py-2.5 px-6 rounded-xl text-[10px] uppercase tracking-wider font-extrabold flex items-center gap-1.5 cursor-pointer"
                       style={{ borderRadius: '10px' }}
                     >
                       <Compass size={13} /> VER EN GOOGLE MAPS
-                    </a>
+                    </button>
                   </div>
                 </div>
               </div>
