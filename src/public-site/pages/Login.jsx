@@ -47,17 +47,7 @@ export default function Login() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      minHeight: '100dvh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingTop: 'calc(60px + env(safe-area-inset-top))',
-      paddingBottom: 'calc(60px + env(safe-area-inset-bottom))',
-      paddingLeft: '16px',
-      paddingRight: '16px'
-    }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 16px' }}>
       <div style={{ width: '100%', maxWidth: 420 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <h1 className="section-title">
