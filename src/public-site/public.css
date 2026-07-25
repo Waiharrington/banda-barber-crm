@@ -41,6 +41,7 @@
   }
 
   html, body {
+    background-color: #050506; /* Fallback sólido: evita franja blanca en iOS overscroll / safe area */
     background: 
       radial-gradient(ellipse 80% 60% at 10% -10%, rgba(203,183,154,0.04) 0%, transparent 60%),
       radial-gradient(ellipse 60% 80% at 90% 110%, rgba(100,80,60,0.06) 0%, transparent 60%),

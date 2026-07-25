@@ -768,7 +768,10 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
         @media (max-width: 768px), (orientation: portrait) {
           .l-root {
             padding: 0 !important;
-            height: 100dvh !important;
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
           }
           .l-frame {
             border: none !important;
