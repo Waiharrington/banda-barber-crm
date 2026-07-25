@@ -273,6 +273,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           position: relative;
           width: 100vw;
           height: 100vh;
+          height: 100dvh;
           overflow: hidden;
           font-family: 'Inter', sans-serif;
           display: flex;
@@ -767,6 +768,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
         @media (max-width: 768px), (orientation: portrait) {
           .l-root {
             padding: 0 !important;
+            height: 100dvh !important;
           }
           .l-frame {
             border: none !important;
@@ -824,10 +826,10 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            padding: 10px 16px !important;
+            padding: 10px 16px env(safe-area-inset-bottom) !important;
             gap: 0;
             overflow: hidden !important;
-            height: 100vh;
+            height: 100dvh !important;
             box-sizing: border-box;
           }
 

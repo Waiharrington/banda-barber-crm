@@ -3581,7 +3581,7 @@ export default function BookAppointment() {
                     
 
                     {/* Big Gold CONTINUAR Button */}
-                    <div className="pt-2">
+                    <div className="pt-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -4023,7 +4023,7 @@ export default function BookAppointment() {
             </div>
 
             {/* Footer Navigation Buttons — hidden when barber profile is expanded or when in Step 3 (which has its own button) */}
-            <div ref={nextBtnRef} className={`mt-8 pb-10 ${(step === 2 && expandedBarber) || step === 3 ? 'hidden' : ''}`}>
+            <div ref={nextBtnRef} className={`mt-8 ${(step === 2 && expandedBarber) || step === 3 ? 'hidden' : ''}`} style={{ paddingBottom: 'calc(2.5rem + env(safe-area-inset-bottom))' }}>
               {step < 5 ? (
                 <button
                   onClick={(e) => { 
