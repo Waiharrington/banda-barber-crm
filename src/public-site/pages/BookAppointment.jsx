@@ -1903,7 +1903,11 @@ export default function BookAppointment() {
                                     className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 z-[1] pointer-events-none group-hover:opacity-100 ${
                                       activeTeamCardId === barber.id ? 'opacity-100' : 'opacity-0'
                                     }`}
-                                    style={{ objectPosition: 'center top' }}
+                                    style={{
+                                      objectPosition: barber.name.toLowerCase().includes('abraham') 
+                                        ? 'center 15%' 
+                                        : 'center center'
+                                    }}
                                   />
                                 )}
 
