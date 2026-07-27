@@ -432,18 +432,6 @@ export default function BookAppointment() {
     const saved = localStorage.getItem('bookingState');
     return saved ? JSON.parse(saved).step : 1;
   });
-  const [portfolioFilter, setPortfolioFilter] = useState('Todos');
-  const filteredPortfolio = useMemo(() => {
-    if (portfolioFilter === 'Todos') return expandedBarberPortfolio;
-    return expandedBarberPortfolio.filter(photo => {
-      const idNum = photo.id || 0;
-      if (portfolioFilter === 'Cortes') return idNum % 3 === 0;
-      if (portfolioFilter === 'Barba') return idNum % 3 === 1;
-      if (portfolioFilter === 'Clásicos') return idNum % 4 === 0;
-      if (portfolioFilter === 'Diseños') return idNum % 4 === 1;
-      return true;
-    });
-  }, [expandedBarberPortfolio, portfolioFilter]);
   const [stepDirection, setStepDirection] = useState('enter');
   const [stepKey, setStepKey] = useState(0);
   const [services, setServices] = useState([]);
@@ -794,6 +782,18 @@ export default function BookAppointment() {
   };
   const [expandedBarber, setExpandedBarber] = useState(null);
   const [expandedBarberPortfolio, setExpandedBarberPortfolio] = useState([]);
+  const [portfolioFilter, setPortfolioFilter] = useState('Todos');
+  const filteredPortfolio = useMemo(() => {
+    if (portfolioFilter === 'Todos') return expandedBarberPortfolio;
+    return expandedBarberPortfolio.filter(photo => {
+      const idNum = photo.id || 0;
+      if (portfolioFilter === 'Cortes') return idNum % 3 === 0;
+      if (portfolioFilter === 'Barba') return idNum % 3 === 1;
+      if (portfolioFilter === 'Clásicos') return idNum % 4 === 0;
+      if (portfolioFilter === 'Diseños') return idNum % 4 === 1;
+      return true;
+    });
+  }, [expandedBarberPortfolio, portfolioFilter]);
   const [activeTeamCardId, setActiveTeamCardId] = useState(null);
   const isTouchDevice = useMemo(() => (
     typeof window !== 'undefined' && window.matchMedia('(hover: none), (pointer: coarse)').matches
