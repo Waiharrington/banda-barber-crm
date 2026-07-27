@@ -42,7 +42,7 @@ import PandaDatePicker from '../../components/PandaDatePicker';
 // Import background images and logo
 import bgDesktop from '../../assets/barbershop_desktop.png';
 import bgMobile from '../../assets/barbershop_mobile.png';
-import logo from '../../assets/logo.png';
+import logo from '../../assets/logo_full.png';
 import pandaImg from '../../assets/panda_logo_nobg.png';
 import heroVideo from '../../assets/hero_video.mp4';
 import bearBody from '../../assets/oso_saludando.png';
