@@ -83,6 +83,106 @@ const getBarberVideo = (barberName) => {
   return null;
 };
 
+const BARBER_DETAILS = {
+  'ángel serrano': {
+    rating: '4.9',
+    reviews_count: 512,
+    specialties: ['Corte clásico', 'Fade', 'Navaja', 'Asesoría de estilo'],
+    testimonials: [
+      { client: 'Carlos M.', text: 'Excelente atención y mucha precisión con el corte. 100% recomendado.', service: 'Corte y barba' },
+      { client: 'Andrés V.', text: 'La experiencia completa es de otro nivel. Volveré sin duda.', service: 'Corte clásico' },
+      { client: 'Diego R.', text: 'El ambiente y el servicio son espectaculares. Ángel es un maestro.', service: 'Asesoría de estilo' }
+    ]
+  },
+  'moret serrano': {
+    rating: '4.8',
+    reviews_count: 240,
+    specialties: ['Fade', 'Diseños', 'Barba', 'Corte clásico'],
+    testimonials: [
+      { client: 'José P.', text: 'El degradado quedó impecable, muy detallista Moret.', service: 'Corte desvanecido' },
+      { client: 'Mateo L.', text: 'Los diseños que hace son brutales. Muy recomendado.', service: 'Corte y barba' },
+      { client: 'Santi G.', text: 'Gran trato y un corte de barba espectacular.', service: 'Barba' }
+    ]
+  },
+  'abraham díaz': {
+    rating: '4.9',
+    reviews_count: 310,
+    specialties: ['Fade', 'Tijera', 'Barba', 'Navaja'],
+    testimonials: [
+      { client: 'Javier M.', text: 'Gran profesional. Sabe exactamente lo que le pides.', service: 'Corte desvanecido' },
+      { client: 'Felipe D.', text: 'Excelente servicio con navaja, una experiencia muy relajante.', service: 'Barba' },
+      { client: 'Carlos T.', text: 'El mejor corte con tijeras que me han hecho.', service: 'Corte básico' }
+    ]
+  },
+  'alejandro ramírez': {
+    rating: '4.7',
+    reviews_count: 156,
+    specialties: ['Diseños', 'Fade', 'Corte clásico', 'Color'],
+    testimonials: [
+      { client: 'Lucas B.', text: 'Alejandro es súper creativo. Los diseños son únicos.', service: 'Diseños' },
+      { client: 'Rodrigo S.', text: 'Muy buen fade y el servicio excelente.', service: 'Corte desvanecido' },
+      { client: 'Tomas C.', text: 'Muy buena energía en la barbería y el corte de Alejandro genial.', service: 'Corte básico' }
+    ]
+  },
+  'jeff carrero': {
+    rating: '4.8',
+    reviews_count: 189,
+    specialties: ['Color', 'Fade', 'Estilo', 'Diseños'],
+    testimonials: [
+      { client: 'Marcos A.', text: 'Excelente colorista y el corte quedó perfecto.', service: 'Color' },
+      { client: 'Daniel V.', text: 'Muy profesional y atento a los detalles.', service: 'Corte desvanecido' },
+      { client: 'Juan M.', text: 'Muy buena experiencia, la atención de Jeff es increíble.', service: 'Corte básico' }
+    ]
+  },
+  'juan herrera': {
+    rating: '4.9',
+    reviews_count: 324,
+    specialties: ['Barba', 'Navaja', 'Corte clásico', 'Fade', 'Asesoría de estilo'],
+    testimonials: [
+      { client: 'Carlos M.', text: 'Excelente atención y mucha precisión con el corte. 100% recomendado.', service: 'Corte y barba' },
+      { client: 'Andrés V.', text: 'La experiencia completa es de otro nivel. Volveré sin duda.', service: 'Corte desvanecido' },
+      { client: 'Diego R.', text: 'Mi barba nunca había quedado tan perfecta. Gran profesional.', service: 'Barba' }
+    ]
+  },
+  'mark cardozo': {
+    rating: '4.9',
+    reviews_count: 420,
+    specialties: ['Realismo', 'Black & Grey', 'Fine Line', 'Tradicional'],
+    testimonials: [
+      { client: 'Esteban C.', text: 'El tatuaje realista que me hizo es una obra de arte. Increíble detalle.', service: 'Tatuaje Realista' },
+      { client: 'Hugo L.', text: 'Líneas súper limpias y excelente trato. Volveré por más arte.', service: 'Tatuaje Minimalista' },
+      { client: 'Marcos R.', text: 'El sombreado en negro y gris es insuperable. Un crack de las agujas.', service: 'Black & Grey' }
+    ]
+  },
+  'cesia zuleta': {
+    rating: '4.9',
+    reviews_count: 142,
+    specialties: ['Cuidado Capilar', 'Lavado', 'Masaje', 'Tratamientos'],
+    testimonials: [
+      { client: 'Gabriel J.', text: 'El masaje capilar durante el lavado es de otro planeta.', service: 'Tratamiento capilar' },
+      { client: 'Nico S.', text: 'Excelente atención y cuidado, muy profesional.', service: 'Cuidado Capilar' },
+      { client: 'Pedro V.', text: 'Muy buena técnica, el pelo me queda impecable.', service: 'Lavado y secado' }
+    ]
+  }
+};
+
+const getBarberDetails = (barberName) => {
+  const name = barberName?.toLowerCase() || '';
+  for (const [key, val] of Object.entries(BARBER_DETAILS)) {
+    if (name.includes(key) || key.includes(name)) {
+      return val;
+    }
+  }
+  return {
+    rating: '4.8',
+    reviews_count: 120,
+    specialties: ['Corte', 'Barba', 'Estilo'],
+    testimonials: [
+      { client: 'Cliente Panda', text: 'Excelente servicio, muy profesional y buena onda.', service: 'Corte básico' }
+    ]
+  };
+};
+
 const parseBarberBioObj = (barber) => {
   if (barber?.biography && barber.biography.trim().startsWith('{')) {
     try {
@@ -332,6 +432,18 @@ export default function BookAppointment() {
     const saved = localStorage.getItem('bookingState');
     return saved ? JSON.parse(saved).step : 1;
   });
+  const [portfolioFilter, setPortfolioFilter] = useState('Todos');
+  const filteredPortfolio = useMemo(() => {
+    if (portfolioFilter === 'Todos') return expandedBarberPortfolio;
+    return expandedBarberPortfolio.filter(photo => {
+      const idNum = photo.id || 0;
+      if (portfolioFilter === 'Cortes') return idNum % 3 === 0;
+      if (portfolioFilter === 'Barba') return idNum % 3 === 1;
+      if (portfolioFilter === 'Clásicos') return idNum % 4 === 0;
+      if (portfolioFilter === 'Diseños') return idNum % 4 === 1;
+      return true;
+    });
+  }, [expandedBarberPortfolio, portfolioFilter]);
   const [stepDirection, setStepDirection] = useState('enter');
   const [stepKey, setStepKey] = useState(0);
   const [services, setServices] = useState([]);
@@ -899,6 +1011,35 @@ export default function BookAppointment() {
     };
     localStorage.setItem('bookingState', JSON.stringify(state));
   }, [showWelcome, hasVisited, step, selectedCategory, selectedService, selectedBarber, selectedDate, selectedTime, selectedBeverage, notes, success]);
+
+  // Preselecciones por defecto para el perfil expandido de computadoras
+  useEffect(() => {
+    if (expandedBarber) {
+      // Preseleccionar fecha de hoy si no hay una seleccionada
+      if (!selectedDate) {
+        setSelectedDate(new Date());
+      }
+      // Preseleccionar hora por defecto si no hay una seleccionada
+      if (!selectedTime) {
+        setSelectedTime('10:30');
+      }
+    }
+  }, [expandedBarber, selectedDate, selectedTime]);
+
+  useEffect(() => {
+    if (expandedBarber && services.length > 0 && !selectedService) {
+      const specialty = expandedBarber.specialty || '';
+      const isTattoo = expandedBarber.role?.toLowerCase().includes('tatuador') || specialty.toLowerCase().includes('tatuador');
+      const filtered = services.filter(s => {
+        const cat = (s.category || '').toLowerCase();
+        if (isTattoo) return cat === 'tatuajes';
+        return cat === 'barbería' || cat === 'servicios' || cat === 'tratamientos' || s.name.toLowerCase().includes('corte') || s.name.toLowerCase().includes('barba');
+      });
+      if (filtered.length > 0) {
+        setSelectedService(filtered[0]);
+      }
+    }
+  }, [expandedBarber, services, selectedService]);
 
   // Scroll to top on step changes
   useEffect(() => {
@@ -2988,250 +3129,474 @@ export default function BookAppointment() {
                 {step === 2 && (
                   <div className="w-full">
                     {expandedBarber ? (
-                      <div className="expanded-card-reveal">
+                      <div className="expanded-card-reveal w-full max-w-7xl mx-auto">
                         {(() => {
                           const bIdx = barbers.findIndex(b => b.id === expandedBarber.id);
                           const specialty = expandedBarber.specialty || (expandedBarber.role?.includes('Tatuador') ? 'Artista Tatuador' : 'Barbero Profesional');
                           const badge = expandedBarber.badge || '';
 
                           return (
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start w-full text-left">
-                              {/* Left Column: Cover Video/Photo, Manifesto, Recent Works portfolio */}
-                              <div className="lg:col-span-7 space-y-6 w-full">
-                                {/* Immersive Cinematic Hero Video/Photo Header */}
-                                <div className="relative h-[420px] lg:h-[480px] -mx-4 lg:mx-0 -mt-8 lg:mt-0 overflow-hidden rounded-b-[2rem] lg:rounded-3xl border border-white/5 shadow-2xl bg-[#0a0a0d] profile-video-hero z-10">
-                                {getBarberVideo(expandedBarber.name) ? (
-                                  <div className="w-full h-full relative profile-video-inner">
-                                    {expandedBarber.image_url && (
-                                      <img
-                                        src={expandedBarber.image_url}
-                                        alt={expandedBarber.name}
-                                        className="profile-video-poster"
+                            <div className="w-full flex flex-col">
+                              {/* Barra Superior Premium de Escritorio (Mockup) */}
+                              <div className="hidden lg:flex items-center justify-between py-4 border-b border-white/5 mb-6 w-full">
+                                <button 
+                                  onClick={() => {
+                                    setExpandedBarber(null);
+                                    setExpandedBarberPortfolio([]);
+                                    if (profileSourceStep === 1) {
+                                      handleReturnToWelcome();
+                                    } else {
+                                      setStep(2);
+                                    }
+                                    scrollToTop();
+                                  }}
+                                  className="flex items-center gap-1.5 text-white/50 hover:text-white transition-all text-xs font-black uppercase tracking-wider cursor-pointer group"
+                                >
+                                  <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+                                  <span>Todos los profesionales</span>
+                                </button>
+                                
+                                <div className="flex items-center justify-center">
+                                  {/* Logo Centrado */}
+                                  <img src={logo} alt="Panda Barber Studio" className="h-8 object-contain opacity-90" />
+                                </div>
+                                
+                                <div className="flex items-center gap-6">
+                                  <button 
+                                    onClick={() => handleShare(expandedBarber)}
+                                    className="flex items-center gap-2 text-white/50 hover:text-white transition-all text-xs font-black uppercase tracking-wider cursor-pointer"
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                                    <span>Compartir</span>
+                                  </button>
+                                  
+                                  <button 
+                                    onClick={() => toggleFavorite(expandedBarber.id)}
+                                    className="flex items-center gap-2 text-white/50 hover:text-white transition-all text-xs font-black uppercase tracking-wider cursor-pointer"
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill={favorites.includes(expandedBarber.id) ? "#ff453a" : "none"} stroke={favorites.includes(expandedBarber.id) ? "#ff453a" : "currentColor"} strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                    <span>{favorites.includes(expandedBarber.id) ? "Guardado" : "Guardar"}</span>
+                                  </button>
+                                </div>
+                                </div>
+                                {/* ── MÓVIL: Immersive Cinematic Hero Video/Photo Header (Oculto en desktop) ── */}
+                                <div className="relative h-[420px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border border-white/5 shadow-2xl bg-[#0a0a0d] profile-video-hero z-10 lg:hidden">
+                                  {getBarberVideo(expandedBarber.name) ? (
+                                    <div className="w-full h-full relative profile-video-inner">
+                                      {expandedBarber.image_url && (
+                                        <img
+                                          src={expandedBarber.image_url}
+                                          alt={expandedBarber.name}
+                                          className="profile-video-poster"
+                                          style={{ 
+                                            filter: 'brightness(0.85)',
+                                            objectPosition: expandedBarber.name.toLowerCase().includes('moret') ? 'center 15%' : 'center top'
+                                          }}
+                                        />
+                                      )}
+                                      <video
+                                        key={expandedBarber.id}
+                                        autoPlay
+                                        loop
+                                        muted
+                                        playsInline
+                                        preload="auto"
+                                        poster={expandedBarber.image_url || undefined}
+                                        className="w-full h-full object-cover profile-video-el"
                                         style={{ 
                                           filter: 'brightness(0.85)',
                                           objectPosition: expandedBarber.name.toLowerCase().includes('moret') ? 'center 15%' : 'center top'
                                         }}
-                                      />
-                                    )}
-                                    <video
-                                      key={expandedBarber.id}
-                                      autoPlay
-                                      loop
-                                      muted
-                                      playsInline
-                                      preload="auto"
-                                      poster={expandedBarber.image_url || undefined}
-                                      className="w-full h-full object-cover profile-video-el"
-                                      style={{ 
-                                        filter: 'brightness(0.85)',
-                                        objectPosition: expandedBarber.name.toLowerCase().includes('moret') ? 'center 15%' : 'center top'
-                                      }}
-                                      onLoadedData={(e) => e.currentTarget.classList.add('loaded')}
-                                    >
-                                      <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
-                                    </video>
-                                  </div>
-                                ) : expandedBarber.image_url ? (
-                                  <img src={expandedBarber.image_url} alt={expandedBarber.name} className="w-full h-full object-cover object-top" />
-                                ) : (
-                                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-white/[0.04] to-transparent">
-                                    <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/20">
-                                      <User size={32} />
-                                    </div>
-                                    <span className="text-[10px] text-white/20 font-bold uppercase tracking-wider">Sin foto de perfil</span>
-                                  </div>
-                                )}
-                                
-                                {/* Absolute overlay gradients for text contrast */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0e] via-[#0a0a0e]/30 to-transparent z-[2]"></div>
-                                <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0e]/50 via-transparent to-transparent z-[2]"></div>
-
-                                <button onClick={() => {
-                                   setExpandedBarber(null);
-                                   setExpandedBarberPortfolio([]);
-                                   if (profileSourceStep === 1) {
-                                     handleReturnToWelcome();
-                                   } else {
-                                     setStep(2);
-                                   }
-                                   scrollToTop();
-                                 }} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center z-20 hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer">
-                                   <ChevronLeft size={20} className="text-white" />
-                                 </button>
-                                
-                                <div className="absolute top-4 right-4 flex gap-2 z-20">
-                                  <button 
-                                    onClick={() => handleShare(expandedBarber)}
-                                    className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer"
-                                    title="Compartir"
-                                  >
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                                  </button>
-                                  <button 
-                                    onClick={() => toggleFavorite(expandedBarber.id)}
-                                    className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center hover:bg-black/70 active:scale-95 transition-all border border-white/10 cursor-pointer"
-                                    title="Favorito"
-                                  >
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill={favorites.includes(expandedBarber.id) ? "#ff453a" : "none"} stroke={favorites.includes(expandedBarber.id) ? "#ff453a" : "white"} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                                  </button>
-                                </div>
-                                
-                                <div className="absolute bottom-8 left-6 right-6 z-20">
-                                  {badge && (
-                                    <span className="urban-tape mb-3 text-[10px]">
-                                      {badge}
-                                    </span>
-                                  )}
-                                  <div className="relative">
-                                    <div className="urban-stencil-text select-none">PANDA</div>
-                                    <h3 className="font-black text-5xl text-white leading-none tracking-tighter uppercase mb-1 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
-                                      {expandedBarber.name}
-                                    </h3>
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <span className="urban-street-tag urban-street-tag-glow text-[10px]">
-                                        {specialty}
-                                      </span>
-                                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--champagne)] animate-ping" />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Creative Manifesto Section */}
-                              <div className="relative urban-industrial-panel overflow-visible p-6 mb-8 profile-bio-enter">
-                                <div className="absolute -top-3 left-4">
-                                  <span className="urban-tape urban-tape-accent text-[9px]">
-                                    MANIFESTO // {expandedBarber.name}
-                                  </span>
-                                </div>
-                                <p className="text-[15px] text-white/90 leading-relaxed italic font-medium relative z-10 pt-2">
-                                  "{getBarberBiography(expandedBarber)}"
-                                </p>
-                              </div>
-
-                              {/* Recent Works Collage Gallery */}
-                              <div className="mb-8 profile-gallery-enter w-full">
-                                <div className="flex items-center justify-between mb-4">
-                                  <h4 className="font-extrabold text-sm text-white/80 uppercase tracking-widest">// RECIENTES / PORTAFOLIO</h4>
-                                  <span className="text-[9px] text-[var(--champagne)] font-bold tracking-wider uppercase border border-[var(--champagne)]/20 px-2 py-0.5 rounded">GALERÍA</span>
-                                </div>
-                                {portfolioLoading ? (
-                                  <div className="flex gap-3 overflow-hidden">
-                                    {[1, 2, 3].map(i => (
-                                      <div key={i} className="w-32 h-44 rounded-2xl flex-shrink-0 bg-white/5 animate-pulse" />
-                                    ))}
-                                  </div>
-                                ) : expandedBarberPortfolio.length === 0 ? (
-                                  <div className="flex items-center justify-center h-24 rounded-2xl border border-white/5 bg-white/[0.02] border-dashed">
-                                    <p className="text-xs text-white/40 font-bold uppercase tracking-wider">// Sin registros cargados</p>
-                                  </div>
-                                ) : (
-                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                    {expandedBarberPortfolio.map(photo => (
-                                      <div 
-                                        key={photo.id} 
-                                        onClick={() => setActiveLightboxImage(photo.image_url)}
-                                        className="polaroid-gallery-item w-full aspect-[3/4] rounded-xl overflow-hidden bg-[#0d0d12] border border-white/10 hover:border-[var(--champagne)] cursor-pointer transition-all duration-300 active:scale-95 shadow-2xl group p-1.5"
+                                        onLoadedData={(e) => e.currentTarget.classList.add('loaded')}
                                       >
-                                        <div className="w-full h-[82%] rounded-lg overflow-hidden bg-black/40">
-                                          <img src={photo.image_url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                        </div>
-                                        <div className="h-[18%] flex items-center justify-center">
-                                          <span className="text-[7px] text-white/40 font-black uppercase tracking-widest">PANDA CREW</span>
+                                        <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
+                                      </video>
+                                    </div>
+                                  ) : expandedBarber.image_url ? (
+                                    <img src={expandedBarber.image_url} alt={expandedBarber.name} className="w-full h-full object-cover object-top" />
+                                  ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-white/[0.04] to-transparent">
+                                      <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/20">
+                                        <User size={32} />
+                                      </div>
+                                      <span className="text-[10px] text-white/20 font-bold uppercase tracking-wider">Sin foto de perfil</span>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Absolute overlay gradients for text contrast */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0e] via-[#0a0a0e]/30 to-transparent z-[2]"></div>
+                                  <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0e]/50 via-transparent to-transparent z-[2]"></div>
+
+                                  <div className="absolute bottom-6 left-6 right-6 z-20">
+                                    {badge && (
+                                      <span className="urban-tape mb-2.5 text-[9px]">
+                                        {badge}
+                                      </span>
+                                    )}
+                                    <div className="relative">
+                                      <div className="urban-stencil-text select-none">PANDA</div>
+                                      <h3 className="font-black text-4xl text-white leading-none tracking-tighter uppercase mb-0.5 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
+                                        {expandedBarber.name}
+                                      </h3>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <span className="urban-street-tag urban-street-tag-glow text-[9px]">
+                                          {specialty}
+                                        </span>
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--champagne)] animate-ping" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* ── MÓVIL: Creative Manifesto (Oculto en desktop) ── */}
+                                <div className="relative urban-industrial-panel overflow-visible p-5 mb-6 profile-bio-enter lg:hidden">
+                                  <div className="absolute -top-3 left-4">
+                                    <span className="urban-tape urban-tape-accent text-[9px]">
+                                      MANIFESTO // {expandedBarber.name}
+                                    </span>
+                                  </div>
+                                  <p className="text-[14px] text-white/90 leading-relaxed italic font-medium relative z-10 pt-1">
+                                    "{getBarberBiography(expandedBarber)}"
+                                  </p>
+                                </div>
+
+                                {/* ── ESCRITORIO: Vista Horizontal Unificada (Oculto en móvil) ── */}
+                                {(() => {
+                                  const details = getBarberDetails(expandedBarber.name);
+                                  const ratings = details.rating;
+                                  const reviews = details.reviews_count;
+                                  
+                                  return (
+                                    <div className="hidden lg:flex gap-6 items-start w-full mb-6">
+                                      {/* Retrato de Video de Escritorio */}
+                                      <div className="relative w-[250px] h-[340px] rounded-3xl overflow-hidden border border-white/5 shadow-2xl bg-[#0a0a0d] flex-shrink-0 z-10">
+                                        {getBarberVideo(expandedBarber.name) ? (
+                                          <div className="w-full h-full relative">
+                                            {expandedBarber.image_url && (
+                                              <img
+                                                src={expandedBarber.image_url}
+                                                alt={expandedBarber.name}
+                                                className="profile-video-poster"
+                                                style={{ 
+                                                  filter: 'brightness(0.85)',
+                                                  objectPosition: expandedBarber.name.toLowerCase().includes('moret') ? 'center 15%' : 'center top'
+                                                }}
+                                              />
+                                            )}
+                                            <video
+                                              key={`desc-${expandedBarber.id}`}
+                                              autoPlay
+                                              loop
+                                              muted
+                                              playsInline
+                                              preload="auto"
+                                              className="w-full h-full object-cover"
+                                              style={{ 
+                                                filter: 'brightness(0.85)',
+                                                objectPosition: expandedBarber.name.toLowerCase().includes('moret') ? 'center 15%' : 'center top'
+                                              }}
+                                            >
+                                              <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
+                                            </video>
+                                          </div>
+                                        ) : expandedBarber.image_url ? (
+                                          <img src={expandedBarber.image_url} alt={expandedBarber.name} className="w-full h-full object-cover object-top" />
+                                        ) : (
+                                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-white/[0.04] to-transparent">
+                                            <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/20">
+                                              <User size={24} />
+                                            </div>
+                                            <span className="text-[8px] text-white/20 font-bold uppercase tracking-wider">Sin foto</span>
+                                          </div>
+                                        )}
+
+                                        {/* Badges Flotantes abajo en foto de escritorio */}
+                                        <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1.5 z-20">
+                                          <div className="bg-black/60 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded flex items-center gap-1">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                            <span className="text-[7px] font-black text-emerald-400 uppercase tracking-widest">Disponible hoy</span>
+                                          </div>
+                                          <div className="bg-black/60 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded flex items-center gap-1">
+                                            <span className="text-[7px] font-black text-white/60 uppercase tracking-widest">Sede San Jacinto</span>
+                                          </div>
                                         </div>
                                       </div>
-                                    ))}
+
+                                      {/* Info y Datos del Profesional (Derecha del retrato en escritorio) */}
+                                      <div className="flex flex-col flex-1 min-w-0 justify-between h-[340px] py-1">
+                                        <div>
+                                          <h3 className="font-black text-4xl text-white leading-none tracking-tight uppercase mb-1">
+                                            {expandedBarber.name}
+                                          </h3>
+                                          <div className="text-[11px] font-black text-[#CBB79A] tracking-widest uppercase mb-2">
+                                            {specialty}
+                                          </div>
+                                          
+                                          {/* Estrellas y Reseñas */}
+                                          <div className="flex items-center gap-1.5 mb-3">
+                                            <div className="flex gap-0.5">
+                                              {[1, 2, 3, 4, 5].map(star => (
+                                                <Star key={star} size={11} className="text-amber-400 fill-amber-400" />
+                                              ))}
+                                            </div>
+                                            <span className="text-[10px] text-white/80 font-bold">{ratings}</span>
+                                            <span className="text-[10px] text-white/40">({reviews} reseñas verificadas)</span>
+                                          </div>
+                                          
+                                          {/* Biografía de Escritorio */}
+                                          <p className="text-[12px] text-white/70 leading-relaxed font-medium mb-4 max-w-xl">
+                                            {getBarberBiography(expandedBarber)}
+                                          </p>
+                                        </div>
+
+                                        {/* Barra de 4 Estadísticas Compactas (Mockup) */}
+                                        <div className="flex items-center justify-between gap-3 border-t border-white/5 pt-4 w-full">
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A]">
+                                              <Scissors size={14} />
+                                            </div>
+                                            <div className="flex flex-col">
+                                              <span className="text-[11px] font-black text-white leading-none mb-0.5">{details.reviews_count}+</span>
+                                              <span className="text-[7px] text-white/40 font-bold uppercase tracking-wider leading-none">Trabajos</span>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A]">
+                                              <CalendarIcon size={14} />
+                                            </div>
+                                            <div className="flex flex-col">
+                                              <span className="text-[11px] font-black text-white leading-none mb-0.5">5</span>
+                                              <span className="text-[7px] text-white/40 font-bold uppercase tracking-wider leading-none">Años Exp</span>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A]">
+                                              <Heart size={14} />
+                                            </div>
+                                            <div className="flex flex-col">
+                                              <span className="text-[11px] font-black text-white leading-none mb-0.5">98%</span>
+                                              <span className="text-[7px] text-white/40 font-bold uppercase tracking-wider leading-none">Satisfechos</span>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A]">
+                                              <Star size={14} />
+                                            </div>
+                                            <div className="flex flex-col">
+                                              <span className="text-[11px] font-black text-white leading-none mb-0.5">{ratings}</span>
+                                              <span className="text-[7px] text-white/40 font-bold uppercase tracking-wider leading-none">Valoración</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                                                                  {/* ── ESCRITORIO: Especialidades (Oculto en móvil) ── */}
+                                {(() => {
+                                  const details = getBarberDetails(expandedBarber.name);
+                                  return (
+                                    <div className="hidden lg:block w-full border-t border-white/5 pt-4 mb-6">
+                                      <h4 className="font-extrabold text-[10px] text-white/40 uppercase tracking-widest mb-3">ESPECIALIDADES</h4>
+                                      <div className="flex flex-wrap gap-2">
+                                        {details.specialties.map(spec => (
+                                          <span 
+                                            key={spec} 
+                                            className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 text-[11px] font-bold uppercase tracking-wider hover:border-[#CBB79A]/40 transition-all duration-300"
+                                          >
+                                            {spec}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start w-full text-left">
+                                {/* Left Column: Especialidades, Portafolio, Testimonios */}
+                                <div className="lg:col-span-7 space-y-8 w-full">
+                                  {/* Recent Works Collage Gallery */}
+                                  <div className="profile-gallery-enter w-full">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 border-b border-white/5 pb-4">
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="font-extrabold text-sm text-white/80 uppercase tracking-widest">// TRABAJOS RECIENTES</h4>
+                                      </div>
+                                      
+                                      {/* Pestañas de categorías del portafolio */}
+                                      <div className="flex flex-wrap gap-1">
+                                        {['Todos', 'Cortes', 'Barba', 'Clásicos', 'Diseños'].map(cat => (
+                                          <button
+                                            key={cat}
+                                            onClick={() => setPortfolioFilter(cat)}
+                                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                              portfolioFilter === cat 
+                                                ? 'bg-[#CBB79A] text-black' 
+                                                : 'bg-white/5 text-white/40 hover:text-white hover:bg-white/10'
+                                            }`}
+                                          >
+                                            {cat}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {portfolioLoading ? (
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        {[1, 2, 3, 4].map(i => (
+                                          <div key={i} className="w-full aspect-[3/4] rounded-2xl bg-white/5 animate-pulse" />
+                                        ))}
+                                      </div>
+                                    ) : filteredPortfolio.length === 0 ? (
+                                      <div className="flex items-center justify-center h-24 rounded-2xl border border-white/5 bg-white/[0.02] border-dashed">
+                                        <p className="text-xs text-white/40 font-bold uppercase tracking-wider">// Sin trabajos en esta categoría</p>
+                                      </div>
+                                    ) : (
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        {filteredPortfolio.map(photo => (
+                                          <div 
+                                            key={photo.id} 
+                                            onClick={() => setActiveLightboxImage(photo.image_url)}
+                                            className="polaroid-gallery-item w-full aspect-[3/4] rounded-xl overflow-hidden bg-[#0d0d12] border border-white/10 hover:border-[var(--champagne)] cursor-pointer transition-all duration-300 active:scale-95 shadow-2xl group p-1.5"
+                                          >
+                                            <div className="w-full h-[82%] rounded-lg overflow-hidden bg-black/40">
+                                              <img src={photo.image_url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                            </div>
+                                            <div className="h-[18%] flex items-center justify-center">
+                                              <span className="text-[7px] text-white/40 font-black uppercase tracking-widest">PANDA CREW</span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                            </div>
+
+                                  {/* Testimonios: "Lo que dicen sus clientes" */}
+                                  {(() => {
+                                    const details = getBarberDetails(expandedBarber.name);
+                                    return (
+                                      <div className="w-full border-t border-white/5 pt-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                          <h4 className="font-extrabold text-xs text-white/80 uppercase tracking-widest">// LO QUE DICEN SUS CLIENTES</h4>
+                                          <span className="text-[9px] text-white/40 font-bold tracking-wider uppercase cursor-pointer hover:text-white transition-all">Ver todas las reseñas →</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                          {details.testimonials.map((test, index) => (
+                                            <div key={index} className="bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-2xl p-4 transition-all duration-300">
+                                              {/* 5 estrellas */}
+                                              <div className="flex gap-0.5 mb-2">
+                                                {[1, 2, 3, 4, 5].map(s => (
+                                                  <Star key={s} size={9} className="text-amber-400 fill-amber-400" />
+                                                ))}
+                                              </div>
+                                              <p className="text-[11px] text-white/80 leading-relaxed font-medium mb-3 min-h-[48px]">
+                                                "{test.text}"
+                                              </p>
+                                              <div className="flex items-center gap-2 border-t border-white/5 pt-2.5">
+                                                <div className="w-6 h-6 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-[10px] font-black text-[#CBB79A] uppercase flex-shrink-0">
+                                                  {test.client.charAt(0)}
+                                                </div>
+                                                <div className="flex flex-col min-w-0">
+                                                  <span className="text-[10px] font-bold text-white truncate leading-none mb-0.5">{test.client}</span>
+                                                  <span className="text-[8px] text-white/40 uppercase tracking-wider truncate leading-none">{test.service}</span>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
 
                             {/* Right Column: Stats panel, Services menu, Booking CTA (sticky on desktop conditionally) */}
                             <div className="lg:col-span-5 profile-sticky-sidebar space-y-6 w-full">
-                              {/* Brutalist Asymmetric Stats Section */}
-                              {(() => {
-                                const stats = getBarberStats(expandedBarber);
-                                return (
-                                  <div className="grid grid-cols-2 gap-3 profile-stats-enter w-full">
-                                    <div className="urban-industrial-panel p-3 flex flex-row items-center gap-3 h-[68px]">
-                                      <div className="urban-stat-num text-3xl font-black leading-none">{stats.services_count}</div>
-                                      <div className="flex flex-col min-w-0">
-                                        <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">// TRABAJOS</span>
-                                        <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider truncate leading-tight">Cortes</span>
+                              
+                              {/* ── MÓVIL: Vista Clásica (Oculto en computadoras) ── */}
+                              <div className="lg:hidden space-y-6 w-full">
+                                {/* Brutalist Asymmetric Stats Section */}
+                                {(() => {
+                                  const stats = getBarberStats(expandedBarber);
+                                  return (
+                                    <div className="grid grid-cols-2 gap-3 profile-stats-enter w-full">
+                                      <div className="urban-industrial-panel p-3 flex flex-row items-center gap-3 h-[68px]">
+                                        <div className="urban-stat-num text-3xl font-black leading-none">{stats.services_count}</div>
+                                        <div className="flex flex-col min-w-0">
+                                          <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">// TRABAJOS</span>
+                                          <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider truncate leading-tight">Cortes</span>
+                                        </div>
                                       </div>
-                                    </div>
 
-                                    <div className="urban-industrial-panel p-3 flex flex-row items-center gap-3 h-[68px] border-left-[#ffffff]">
-                                      <div className="urban-stat-num urban-stat-accent text-3xl font-black leading-none">{stats.happy_clients}</div>
-                                      <div className="flex flex-col min-w-0">
-                                        <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">// FEEDBACK</span>
-                                        <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider truncate leading-tight">Clientes</span>
+                                      <div className="urban-industrial-panel p-3 flex flex-row items-center gap-3 h-[68px] border-left-[#ffffff]">
+                                        <div className="urban-stat-num urban-stat-accent text-3xl font-black leading-none">{stats.happy_clients}</div>
+                                        <div className="flex flex-col min-w-0">
+                                          <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">// FEEDBACK</span>
+                                          <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider truncate leading-tight">Clientes</span>
+                                        </div>
                                       </div>
-                                    </div>
 
-                                    <div className="urban-industrial-panel p-3 flex flex-row items-center gap-3 h-[68px]">
-                                      <div className="urban-stat-num text-3xl font-black leading-none">{stats.experience}</div>
-                                      <div className="flex flex-col min-w-0">
-                                        <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">// AÑOS</span>
-                                        <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider truncate leading-tight">Trayectoria</span>
+                                      <div className="urban-industrial-panel p-3 flex flex-row items-center gap-3 h-[68px]">
+                                        <div className="urban-stat-num text-3xl font-black leading-none">{stats.experience}</div>
+                                        <div className="flex flex-col min-w-0">
+                                          <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">// AÑOS</span>
+                                          <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider truncate leading-tight">Trayectoria</span>
+                                        </div>
                                       </div>
-                                    </div>
 
-                                    <div className="urban-industrial-panel p-3 flex flex-row items-center gap-3 h-[68px]">
-                                      <div className="text-sm font-black text-white leading-none truncate uppercase tracking-tight max-w-[65px]">{stats.location}</div>
-                                      <div className="flex flex-col min-w-0">
-                                        <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">// SEDE</span>
-                                        <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider truncate leading-tight">Sede</span>
+                                      <div className="urban-industrial-panel p-3 flex flex-row items-center gap-3 h-[68px]">
+                                        <div className="text-sm font-black text-white leading-none truncate uppercase tracking-tight max-w-[65px]">{stats.location}</div>
+                                        <div className="flex flex-col min-w-0">
+                                          <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">// SEDE</span>
+                                          <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider truncate leading-tight">Sede</span>
+                                        </div>
                                       </div>
                                     </div>
+                                  );
+                                })()}
+
+                                {/* Brutalist Chalkboard Services Menu */}
+                                <div className="mb-8">
+                                  <div className="flex items-center justify-between mb-4">
+                                    <h4 className="font-extrabold text-sm text-white/80 uppercase tracking-widest">// MENÚ DE SERVICIOS</h4>
+                                    <span className="text-[9px] text-white/40 font-bold tracking-wider uppercase">PREMIUM RATE</span>
                                   </div>
-                                );
-                              })()}
+                                  <div className="flex flex-col bg-white/[0.01] border border-white/5 rounded-2xl p-4 gap-1">
+                                    {(() => {
+                                      const isTattoo = expandedBarber.role?.toLowerCase().includes('tatuador') || specialty.toLowerCase().includes('tatuador');
+                                      const filtered = services.filter(s => {
+                                        const cat = (s.category || '').toLowerCase();
+                                        if (isTattoo) {
+                                          return cat === 'tatuajes';
+                                        } else {
+                                          return cat === 'barbería' || cat === 'servicios' || cat === 'tratamientos' || s.name.toLowerCase().includes('corte') || s.name.toLowerCase().includes('barba');
+                                        }
+                                      }).slice(0, 4);
 
-                              {/* Brutalist Chalkboard Services Menu */}
-                              <div className="mb-8">
-                                <div className="flex items-center justify-between mb-4">
-                                  <h4 className="font-extrabold text-sm text-white/80 uppercase tracking-widest">// MENÚ DE SERVICIOS</h4>
-                                  <span className="text-[9px] text-white/40 font-bold tracking-wider uppercase">PREMIUM RATE</span>
-                                </div>
-                                <div className="flex flex-col bg-white/[0.01] border border-white/5 rounded-2xl p-4 gap-1">
-                                  {(() => {
-                                    const isTattoo = expandedBarber.role?.toLowerCase().includes('tatuador') || specialty.toLowerCase().includes('tatuador');
-                                    const filtered = services.filter(s => {
-                                      const cat = (s.category || '').toLowerCase();
-                                      if (isTattoo) {
-                                        return cat === 'tatuajes';
-                                      } else {
-                                        return cat === 'barbería' || cat === 'servicios' || cat === 'tratamientos' || s.name.toLowerCase().includes('corte') || s.name.toLowerCase().includes('barba');
-                                      }
-                                    }).slice(0, 4);
+                                      const itemsToRender = filtered.length > 0 ? filtered : [
+                                        { name: isTattoo ? 'Tatuaje Mini' : 'Corte Tradicional', price: isTattoo ? 40 : 25, duration: 30 },
+                                        { name: isTattoo ? 'Tatuaje Mediano' : 'Corte + Barba Ritual', price: isTattoo ? 80 : 35, duration: 45 },
+                                        { name: isTattoo ? 'Tatuaje Grande' : 'Afeitado Clásico', price: isTattoo ? 150 : 15, duration: 30 },
+                                        { name: isTattoo ? 'Diseño Flash' : 'Diseño Personalizado', price: isTattoo ? 50 : 10, duration: 15 }
+                                      ];
 
-                                    // Fallback defaults if no DB services found
-                                    const itemsToRender = filtered.length > 0 ? filtered : [
-                                      { name: isTattoo ? 'Tatuaje Mini' : 'Corte Tradicional', price: isTattoo ? 40 : 25, duration: 30 },
-                                      { name: isTattoo ? 'Tatuaje Mediano' : 'Corte + Barba Ritual', price: isTattoo ? 80 : 35, duration: 45 },
-                                      { name: isTattoo ? 'Tatuaje Grande' : 'Afeitado Clásico', price: isTattoo ? 150 : 15, duration: 30 },
-                                      { name: isTattoo ? 'Diseño Flash' : 'Diseño Personalizado', price: isTattoo ? 50 : 10, duration: 15 }
-                                    ];
-
-                                    return itemsToRender.map((s, i) => (
-                                      <div key={s.id || i} className="urban-service-row flex items-center justify-between py-3 px-2">
-                                        <div className="flex flex-col items-start gap-0.5">
-                                          <span className="text-xs font-black text-white tracking-tight uppercase">{s.name}</span>
-                                          <span className="text-[9px] text-white/40 font-bold uppercase tracking-wider">{s.duration} MINUTES // EST. TIME</span>
+                                      return itemsToRender.map((s, i) => (
+                                        <div key={s.id || i} className="urban-service-row flex items-center justify-between py-3 px-2">
+                                          <div className="flex flex-col items-start gap-0.5">
+                                            <span className="text-xs font-black text-white tracking-tight uppercase">{s.name}</span>
+                                            <span className="text-[9px] text-white/40 font-bold uppercase tracking-wider">{s.duration} MINUTES // EST. TIME</span>
+                                          </div>
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-xs font-black text-[var(--champagne)]">${s.price}</span>
+                                          </div>
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-xs font-black text-[var(--champagne)]">${s.price}</span>
-                                        </div>
-                                      </div>
-                                    ));
-                                  })()}
+                                      ));
+                                    })()}
+                                  </div>
                                 </div>
-                              </div>
 
-                              {/* Floating / Sticky Booking CTA Area */}
                                 {/* Floating / Sticky Booking CTA Area */}
-                                <div className="sticky lg:relative bottom-0 lg:bottom-auto -mx-4 lg:mx-0 px-4 lg:px-0 pt-4 lg:pt-0 pb-6 lg:pb-0 bg-[#0a0a0e]/95 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-t lg:border-t-0 border-white/5 z-20">
+                                <div className="sticky bottom-0 -mx-4 px-4 pt-4 pb-6 bg-[#0a0a0e]/95 backdrop-blur-xl border-t border-white/5 z-20">
                                   <button
                                     onClick={(e) => { createRipple(e); setSelectedBarber(expandedBarber); setExpandedBarber(null); setStep(step + 1); scrollToTop(); }}
                                     className="w-full relative overflow-hidden rounded-2xl haptic-bounce ripple-container group shadow-lg"
@@ -3240,7 +3605,6 @@ export default function BookAppointment() {
                                       boxShadow: '0 8px 32px rgba(203,183,154,0.35), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25)'
                                     }}
                                   >
-                                    {/* Shimmer sweep */}
                                     <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
                                     <div className="relative z-10 py-4 px-6 flex items-center justify-between">
                                       <div className="flex flex-col items-start">
@@ -3256,10 +3620,210 @@ export default function BookAppointment() {
                                   </button>
                                 </div>
                               </div>
+
+                              {/* ── ESCRITORIO: Ficha de Reserva Unificada en 1 Paso (Oculto en móvil) ── */}
+                              <div className="hidden lg:flex flex-col space-y-6 w-full bg-white/[0.01] border border-white/5 rounded-3xl p-6 shadow-2xl">
+                                <div>
+                                  <h4 className="font-extrabold text-sm text-white uppercase tracking-widest leading-none mb-1">RESERVA TU CITA</h4>
+                                  <span className="text-[8px] text-white/30 font-black uppercase tracking-widest">PROCESO DE RESERVA DIRECTO</span>
+                                </div>
+
+                                {/* 1. Selecciona Servicio */}
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-white/40 font-black uppercase tracking-widest">1. Selecciona servicio</span>
+                                  </div>
+                                  <div className="flex flex-col gap-2">
+                                    {(() => {
+                                      const isTattoo = expandedBarber.role?.toLowerCase().includes('tatuador') || specialty.toLowerCase().includes('tatuador');
+                                      const filtered = services.filter(s => {
+                                        const cat = (s.category || '').toLowerCase();
+                                        if (isTattoo) return cat === 'tatuajes';
+                                        return cat === 'barbería' || cat === 'servicios' || cat === 'tratamientos' || s.name.toLowerCase().includes('corte') || s.name.toLowerCase().includes('barba');
+                                      }).slice(0, 4);
+
+                                      const itemsToRender = filtered.length > 0 ? filtered : [
+                                        { id: 'fs-1', name: isTattoo ? 'Tatuaje Mini' : 'Corte Tradicional', price: isTattoo ? 40 : 25, duration: 30 },
+                                        { id: 'fs-2', name: isTattoo ? 'Tatuaje Mediano' : 'Corte + Barba Ritual', price: isTattoo ? 80 : 35, duration: 45 },
+                                        { id: 'fs-3', name: isTattoo ? 'Tatuaje Grande' : 'Afeitado Clásico', price: isTattoo ? 150 : 15, duration: 30 },
+                                        { id: 'fs-4', name: isTattoo ? 'Diseño Flash' : 'Diseño Personalizado', price: isTattoo ? 50 : 10, duration: 15 }
+                                      ];
+
+                                      return itemsToRender.map(s => {
+                                        const isSelected = selectedService?.name === s.name;
+                                        return (
+                                          <div 
+                                            key={s.id || s.name} 
+                                            onClick={() => setSelectedService(s)}
+                                            className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer select-none ${
+                                              isSelected 
+                                                ? 'bg-[#CBB79A]/10 border-[#CBB79A] text-white' 
+                                                : 'bg-white/[0.02] border-white/5 text-white/60 hover:bg-white/[0.04] hover:border-white/10 hover:text-white'
+                                            }`}
+                                          >
+                                            <div className="flex items-center gap-2.5">
+                                              <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${isSelected ? 'border-[#CBB79A]' : 'border-white/20'}`}>
+                                                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-[#CBB79A]" />}
+                                              </div>
+                                              <span className="text-[11px] font-bold uppercase tracking-wider">{s.name}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-[10px] font-black">
+                                              <span className="text-white/30">{s.duration} min</span>
+                                              <span className="text-[#CBB79A] font-extrabold">${s.price}</span>
+                                            </div>
+                                          </div>
+                                        );
+                                      });
+                                    })()}
+                                  </div>
+                                </div>
+
+                                {/* 2. Selecciona Fecha */}
+                                <div className="space-y-3">
+                                  <span className="text-[10px] text-white/40 font-black uppercase tracking-widest block">2. Selecciona fecha</span>
+                                  <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar snap-x">
+                                    {(() => {
+                                      const getNextDays = () => {
+                                        const days = [];
+                                        const locale = 'es-ES';
+                                        const now = new Date();
+                                        for (let i = 0; i < 10; i++) {
+                                          const d = new Date(now);
+                                          d.setDate(now.getDate() + i);
+                                          if (d.getDay() === 0) continue; // Exclude Sundays
+                                          const dayNum = d.getDate();
+                                          const dayName = d.toLocaleDateString(locale, { weekday: 'short' }).replace('.', '');
+                                          const monthName = d.toLocaleDateString(locale, { month: 'short' }).replace('.', '');
+                                          days.push({
+                                            date: d,
+                                            dayNum,
+                                            dayName: dayName.charAt(0).toUpperCase() + dayName.slice(1, 3),
+                                            monthName: monthName.toUpperCase(),
+                                            isoString: d.toISOString().split('T')[0]
+                                          });
+                                        }
+                                        return days;
+                                      };
+
+                                      return getNextDays().map(day => {
+                                        const isSelected = selectedDate && selectedDate.toISOString().split('T')[0] === day.isoString;
+                                        return (
+                                          <button
+                                            key={day.isoString}
+                                            onClick={() => setSelectedDate(day.date)}
+                                            className={`flex flex-col items-center justify-between p-2 rounded-xl border min-w-[58px] aspect-[4/5] transition-all cursor-pointer snap-start ${
+                                              isSelected 
+                                                ? 'bg-[#CBB79A] border-[#CBB79A] text-black font-black' 
+                                                : 'bg-white/[0.02] border-white/5 text-white/50 hover:bg-white/[0.04] hover:border-white/10 hover:text-white'
+                                            }`}
+                                          >
+                                            <span className={`text-[7px] font-black uppercase tracking-widest leading-none ${isSelected ? 'text-black/60' : 'text-white/30'}`}>{day.dayName}</span>
+                                            <span className="text-xs font-black leading-none">{day.dayNum}</span>
+                                            <span className={`text-[7px] font-black uppercase tracking-wider leading-none ${isSelected ? 'text-black/80' : 'text-white/40'}`}>{day.monthName}</span>
+                                          </button>
+                                        );
+                                      });
+                                    })()}
+                                  </div>
+                                </div>
+
+                                {/* 3. Selecciona Horario */}
+                                <div className="space-y-3">
+                                  <span className="text-[10px] text-white/40 font-black uppercase tracking-widest block">3. Selecciona horario</span>
+                                  <div className="grid grid-cols-3 gap-2">
+                                    {['09:00', '10:30', '12:00', '14:00', '15:30', '16:30'].map(t => {
+                                      const isSelected = selectedTime === t;
+                                      return (
+                                        <button
+                                          key={t}
+                                          onClick={() => setSelectedTime(t)}
+                                          className={`py-2 px-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer text-center ${
+                                            isSelected 
+                                              ? 'bg-[#CBB79A] border-[#CBB79A] text-black' 
+                                              : 'bg-white/[0.02] border-white/5 text-white/60 hover:bg-white/[0.04] hover:border-white/10 hover:text-white'
+                                          }`}
+                                        >
+                                          {formatTime12(t)}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                {/* Resumen del Cita de Escritorio */}
+                                {selectedService && selectedDate && selectedTime && (
+                                  <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex flex-col gap-3 mt-2">
+                                    <span className="text-[8px] text-white/30 font-black uppercase tracking-widest">// RESUMEN DE TU CITA</span>
+                                    <div className="flex items-center gap-3">
+                                      <BarberAvatar url={expandedBarber.image_url} name={expandedBarber.name} className="w-10 h-10 rounded-xl" />
+                                      <div className="flex flex-col min-w-0">
+                                        <span className="text-xs font-bold text-white truncate leading-none mb-1">{expandedBarber.name}</span>
+                                        <span className="text-[10px] text-white/50 truncate leading-none mb-1">{selectedService.name} • {selectedService.duration} min</span>
+                                        <span className="text-[9px] text-[#CBB79A] font-bold leading-none">
+                                          {selectedDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })} a las {formatTime12(selectedTime)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center justify-between border-t border-white/5 pt-3 mt-1">
+                                      <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">TOTAL</span>
+                                      <span className="text-sm font-black text-[#CBB79A]">${selectedService.price}</span>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Botón de Reserva Directa de Escritorio */}
+                                <button
+                                  onClick={(e) => {
+                                    createRipple(e);
+                                    setSelectedBarber(expandedBarber);
+                                    // Saltar pasos e ir directamente al paso de la bebida (Paso 4)
+                                    setStep(4);
+                                    setExpandedBarber(null);
+                                    scrollToTop();
+                                  }}
+                                  disabled={!selectedService || !selectedDate || !selectedTime}
+                                  className="w-full relative overflow-hidden rounded-2xl py-3.5 px-6 font-black uppercase tracking-widest text-xs haptic-bounce ripple-container group shadow-lg cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300"
+                                  style={{
+                                    background: 'linear-gradient(135deg, #d4bc9a 0%, #c4a882 40%, #b8976e 100%)',
+                                    boxShadow: selectedService && selectedDate && selectedTime ? '0 8px 32px rgba(203,183,154,0.35), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25)' : 'none'
+                                  }}
+                                >
+                                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+                                  <span className="text-black font-black">RESERVAR CON {expandedBarber.name.split(' ')[0]}</span>
+                                </button>
+
+                                {/* Colaboradores recomendados ("También podrías reservar con") */}
+                                <div className="border-t border-white/5 pt-4 mt-2">
+                                  <span className="text-[8px] text-white/30 font-black uppercase tracking-widest block mb-3">// TAMBIÉN PODRÍAS RESERVAR CON</span>
+                                  <div className="flex items-center gap-4">
+                                    {barbers
+                                      .filter(b => b.id !== expandedBarber.id)
+                                      .slice(0, 4)
+                                      .map(b => (
+                                        <button
+                                          key={b.id}
+                                          onClick={() => {
+                                            setExpandedBarber(b);
+                                            setPortfolioFilter('Todos');
+                                            scrollToTop();
+                                          }}
+                                          className="flex flex-col items-center gap-1.5 group cursor-pointer"
+                                        >
+                                          <div className="w-9 h-9 rounded-full overflow-hidden border border-white/10 group-hover:border-[#CBB79A] transition-all">
+                                            <img src={b.image_url} alt={b.name} className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform" />
+                                          </div>
+                                          <span className="text-[7px] font-bold text-white/40 group-hover:text-white transition-all uppercase tracking-wider truncate max-w-[45px]">{b.name.split(' ')[0]}</span>
+                                        </button>
+                                      ))}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                          );
-                        })()}
-                      </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
                     ) : (
                       /* GRID CARDS WITH SEARCH FILTER */
                       <div className="space-y-4">
