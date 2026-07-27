@@ -342,6 +342,102 @@ export default function BookAppointment() {
   const timeSlotsRef = useRef(null);
   const bookingSummaryRef = useRef(null);
 
+  // Soporte de Swipe (deslizar con el dedo / arrastrar con el mouse) para el carrusel de equipo
+  const touchStartX = useRef(null);
+  const touchEndX = useRef(null);
+  const mouseStartX = useRef(null);
+  const isMouseDown = useRef(false);
+  const minSwipeDistance = 50;
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    const filteredCount = barbers.filter(barber => {
+      if (artistFilter === 'todos') return true;
+      const r = (barber.role?.split('|')[0] || '').toLowerCase().trim();
+      if (artistFilter === 'barberos') return r.includes('barber') || r.includes('corte') || r.includes('barba');
+      if (artistFilter === 'tatuadores') return r.includes('tatu') || r.includes('ink') || r.includes('artista');
+      return true;
+    }).length;
+
+    const maxIndex = Math.max(0, filteredCount - visibleCount);
+
+    if (isLeftSwipe) {
+      if (barberStartIndex < maxIndex) {
+        pauseTeamCarousel();
+        setBarberStartIndex(prev => Math.min(maxIndex, prev + 1));
+      }
+    } else if (isRightSwipe) {
+      if (barberStartIndex > 0) {
+        pauseTeamCarousel();
+        setBarberStartIndex(prev => Math.max(0, prev - 1));
+      }
+    }
+    
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
+  const handleMouseDown = (e) => {
+    // Solo si no es un clic en un botón o elemento interactivo
+    if (e.target.closest('button') || e.target.closest('a')) return;
+    mouseStartX.current = e.clientX;
+    isMouseDown.current = true;
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isMouseDown.current) return;
+  };
+
+  const handleMouseUp = (e) => {
+    if (!isMouseDown.current || mouseStartX.current === null) return;
+    const distance = mouseStartX.current - e.clientX;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    const filteredCount = barbers.filter(barber => {
+      if (artistFilter === 'todos') return true;
+      const r = (barber.role?.split('|')[0] || '').toLowerCase().trim();
+      if (artistFilter === 'barberos') return r.includes('barber') || r.includes('corte') || r.includes('barba');
+      if (artistFilter === 'tatuadores') return r.includes('tatu') || r.includes('ink') || r.includes('artista');
+      return true;
+    }).length;
+
+    const maxIndex = Math.max(0, filteredCount - visibleCount);
+
+    if (isLeftSwipe) {
+      if (barberStartIndex < maxIndex) {
+        pauseTeamCarousel();
+        setBarberStartIndex(prev => Math.min(maxIndex, prev + 1));
+      }
+    } else if (isRightSwipe) {
+      if (barberStartIndex > 0) {
+        pauseTeamCarousel();
+        setBarberStartIndex(prev => Math.max(0, prev - 1));
+      }
+    }
+
+    isMouseDown.current = false;
+    mouseStartX.current = null;
+  };
+
+  const handleMouseLeave = () => {
+    isMouseDown.current = false;
+    mouseStartX.current = null;
+  };
+
   // Programmatically trigger play on modal video to bypass autoplay policies
   useEffect(() => {
     if (showExperienceModal && modalVideoRef.current) {
@@ -1819,7 +1915,16 @@ export default function BookAppointment() {
                   <ChevronRight size={20} />
                 </button>
  
-                 <div className="overflow-hidden w-full">
+                 <div 
+                   className="overflow-hidden w-full touch-pan-y cursor-grab active:cursor-grabbing select-none"
+                   onTouchStart={handleTouchStart}
+                   onTouchMove={handleTouchMove}
+                   onTouchEnd={handleTouchEnd}
+                   onMouseDown={handleMouseDown}
+                   onMouseMove={handleMouseMove}
+                   onMouseUp={handleMouseUp}
+                   onMouseLeave={handleMouseLeave}
+                 >
                    <div 
                      className="flex transition-transform duration-500 ease-in-out"
                      style={{ transform: `translateX(-${barberStartIndex * (100 / visibleCount)}%)` }}
