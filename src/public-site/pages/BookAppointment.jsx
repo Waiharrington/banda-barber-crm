@@ -978,8 +978,25 @@ export default function BookAppointment() {
           return !nameLower.includes('administrador') && !nameLower.includes('admin') && !roleLower.includes('admin') && !roleLower.includes('administrador');
         });
 
-        // Ángel es el dueño y Moret Serrano va al lado (segundo en la vitrina)
+        // Orden específico: Ángel de primero, Moret de segundo, el resto de barberos/tatuadores juntos, y asistentes de lavado de últimas.
         const sortedBarbers = [...filteredBarbers].sort((a, b) => {
+          const isLavaristA = (a.role || '').toLowerCase().includes('lavado') || 
+                              (a.role || '').toLowerCase().includes('lavarista') || 
+                              (a.role || '').toLowerCase().includes('asistente') ||
+                              (a.specialty || '').toLowerCase().includes('lavado') ||
+                              (a.specialty || '').toLowerCase().includes('lavarista') ||
+                              a.name.toLowerCase().includes('cesia');
+                              
+          const isLavaristB = (b.role || '').toLowerCase().includes('lavado') || 
+                              (b.role || '').toLowerCase().includes('lavarista') || 
+                              (b.role || '').toLowerCase().includes('asistente') ||
+                              (b.specialty || '').toLowerCase().includes('lavado') ||
+                              (b.specialty || '').toLowerCase().includes('lavarista') ||
+                              b.name.toLowerCase().includes('cesia');
+
+          if (isLavaristA && !isLavaristB) return 1;
+          if (!isLavaristA && isLavaristB) return -1;
+
           if (a.name === 'Ángel Serrano') return -1;
           if (b.name === 'Ángel Serrano') return 1;
           if (a.name === 'Moret Serrano') return -1;
