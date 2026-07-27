@@ -2949,7 +2949,7 @@ export default function BookAppointment() {
 
         {/* ── INTERACTIVE WIZARD FLOW SCREEN (STEPS 1-6) ── */}
         {(!showWelcome || isTransitioning) && !success && (
-          <div className={`w-full max-w-xl mx-auto px-4 pb-28 lg:pb-16 flex flex-col flex-1 relative z-10 lg:pt-10 pt-8 ${step === 2 && expandedBarber ? 'pt-0' : ''}`}>
+          <div className={`w-full mx-auto px-4 pb-28 md:pb-16 flex flex-col flex-1 relative z-10 md:pt-10 pt-8 ${step === 2 && expandedBarber ? 'max-w-7xl pt-0 px-4 md:px-8' : 'max-w-xl'}`}>
             
             {/* Wizard Header: PASO X DE 6 with title/subtitle and back button */}
             {!(step === 2 && expandedBarber) && (
@@ -3138,7 +3138,7 @@ export default function BookAppointment() {
                           return (
                             <div className="w-full flex flex-col">
                               {/* Barra Superior Premium de Escritorio (Mockup) */}
-                              <div className="hidden lg:flex items-center justify-between py-4 border-b border-white/5 mb-6 w-full">
+                              <div className="hidden md:flex items-center justify-between py-4 border-b border-white/5 mb-6 w-full">
                                 <button 
                                   onClick={() => {
                                     setExpandedBarber(null);
@@ -3180,7 +3180,7 @@ export default function BookAppointment() {
                                 </div>
                                 </div>
                                 {/* ── MÓVIL: Immersive Cinematic Hero Video/Photo Header (Oculto en desktop) ── */}
-                                <div className="relative h-[420px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border border-white/5 shadow-2xl bg-[#0a0a0d] profile-video-hero z-10 lg:hidden">
+                                <div className="relative h-[420px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border border-white/5 shadow-2xl bg-[#0a0a0d] profile-video-hero z-10 md:hidden">
                                   {getBarberVideo(expandedBarber.name) ? (
                                     <div className="w-full h-full relative profile-video-inner">
                                       {expandedBarber.image_url && (
@@ -3249,7 +3249,7 @@ export default function BookAppointment() {
                                 </div>
 
                                 {/* ── MÓVIL: Creative Manifesto (Oculto en desktop) ── */}
-                                <div className="relative urban-industrial-panel overflow-visible p-5 mb-6 profile-bio-enter lg:hidden">
+                                <div className="relative urban-industrial-panel overflow-visible p-5 mb-6 profile-bio-enter md:hidden">
                                   <div className="absolute -top-3 left-4">
                                     <span className="urban-tape urban-tape-accent text-[9px]">
                                       MANIFESTO // {expandedBarber.name}
@@ -3267,7 +3267,7 @@ export default function BookAppointment() {
                                   const reviews = details.reviews_count;
                                   
                                   return (
-                                    <div className="hidden lg:flex gap-6 items-start w-full mb-6">
+                                    <div className="hidden md:flex gap-6 items-start w-full mb-6">
                                       {/* Retrato de Video de Escritorio */}
                                       <div className="relative w-[250px] h-[340px] rounded-3xl overflow-hidden border border-white/5 shadow-2xl bg-[#0a0a0d] flex-shrink-0 z-10">
                                         {getBarberVideo(expandedBarber.name) ? (
@@ -3399,7 +3399,7 @@ export default function BookAppointment() {
                                 {(() => {
                                   const details = getBarberDetails(expandedBarber.name);
                                   return (
-                                    <div className="hidden lg:block w-full border-t border-white/5 pt-4 mb-6">
+                                    <div className="hidden md:block w-full border-t border-white/5 pt-4 mb-6">
                                       <h4 className="font-extrabold text-[10px] text-white/40 uppercase tracking-widest mb-3">ESPECIALIDADES</h4>
                                       <div className="flex flex-wrap gap-2">
                                         {details.specialties.map(spec => (
@@ -3414,9 +3414,9 @@ export default function BookAppointment() {
                                     </div>
                                   );
                                 })()}
-                              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start w-full text-left">
+                              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-start w-full text-left">
                                 {/* Left Column: Especialidades, Portafolio, Testimonios */}
-                                <div className="lg:col-span-7 space-y-8 w-full">
+                                <div className="md:col-span-7 space-y-8 w-full">
                                   {/* Recent Works Collage Gallery */}
                                   <div className="profile-gallery-enter w-full">
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 border-b border-white/5 pb-4">
@@ -3511,10 +3511,10 @@ export default function BookAppointment() {
                                 </div>
 
                             {/* Right Column: Stats panel, Services menu, Booking CTA (sticky on desktop conditionally) */}
-                            <div className="lg:col-span-5 profile-sticky-sidebar space-y-6 w-full">
+                            <div className="md:col-span-5 profile-sticky-sidebar space-y-6 w-full">
                               
                               {/* ── MÓVIL: Vista Clásica (Oculto en computadoras) ── */}
-                              <div className="lg:hidden space-y-6 w-full">
+                              <div className="md:hidden space-y-6 w-full">
                                 {/* Brutalist Asymmetric Stats Section */}
                                 {(() => {
                                   const stats = getBarberStats(expandedBarber);
@@ -3622,7 +3622,7 @@ export default function BookAppointment() {
                               </div>
 
                               {/* ── ESCRITORIO: Ficha de Reserva Unificada en 1 Paso (Oculto en móvil) ── */}
-                              <div className="hidden lg:flex flex-col space-y-6 w-full bg-white/[0.01] border border-white/5 rounded-3xl p-6 shadow-2xl">
+                              <div className="hidden md:flex flex-col space-y-6 w-full bg-white/[0.01] border border-white/5 rounded-3xl p-6 shadow-2xl">
                                 <div>
                                   <h4 className="font-extrabold text-sm text-white uppercase tracking-widest leading-none mb-1">RESERVA TU CITA</h4>
                                   <span className="text-[8px] text-white/30 font-black uppercase tracking-widest">PROCESO DE RESERVA DIRECTO</span>
