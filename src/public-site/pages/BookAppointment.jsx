@@ -3126,12 +3126,12 @@ export default function BookAppointment() {
                                     <p className="text-xs text-white/40 font-bold uppercase tracking-wider">// Sin registros cargados</p>
                                   </div>
                                 ) : (
-                                  <div className="flex gap-4 overflow-x-auto pb-4 pt-1 hide-scrollbar snap-x snap-mandatory px-2">
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                     {expandedBarberPortfolio.map(photo => (
                                       <div 
                                         key={photo.id} 
                                         onClick={() => setActiveLightboxImage(photo.image_url)}
-                                        className="polaroid-gallery-item w-32 h-44 rounded-xl overflow-hidden flex-shrink-0 bg-[#0d0d12] border border-white/10 hover:border-[var(--champagne)] cursor-pointer transition-all duration-300 active:scale-95 shadow-2xl group snap-start p-1.5"
+                                        className="polaroid-gallery-item w-full aspect-[3/4] rounded-xl overflow-hidden bg-[#0d0d12] border border-white/10 hover:border-[var(--champagne)] cursor-pointer transition-all duration-300 active:scale-95 shadow-2xl group p-1.5"
                                       >
                                         <div className="w-full h-[82%] rounded-lg overflow-hidden bg-black/40">
                                           <img src={photo.image_url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
@@ -3152,36 +3152,36 @@ export default function BookAppointment() {
                               {(() => {
                                 const stats = getBarberStats(expandedBarber);
                                 return (
-                                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 profile-stats-enter w-full">
-                                    <div className="urban-industrial-panel p-4 lg:p-3 flex flex-col justify-between h-[115px] lg:h-[88px]">
-                                      <span className="text-[10px] lg:text-[8px] text-white/40 font-black uppercase tracking-widest leading-none">// TRABAJOS</span>
-                                      <div>
-                                        <div className="urban-stat-num text-3xl lg:text-[1.5rem] lg:leading-none">{stats.services_count}</div>
-                                        <span className="text-[9px] lg:text-[7px] text-white/60 font-bold uppercase tracking-wider block truncate">Cortes</span>
+                                  <div className="grid grid-cols-2 gap-3 profile-stats-enter w-full">
+                                    <div className="urban-industrial-panel p-3 flex flex-row items-center gap-3 h-[68px]">
+                                      <div className="urban-stat-num text-3xl font-black leading-none">{stats.services_count}</div>
+                                      <div className="flex flex-col min-w-0">
+                                        <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">// TRABAJOS</span>
+                                        <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider truncate leading-tight">Cortes</span>
                                       </div>
                                     </div>
 
-                                    <div className="urban-industrial-panel p-4 lg:p-3 flex flex-col justify-between h-[115px] lg:h-[88px] border-left-[#ffffff]">
-                                      <span className="text-[10px] lg:text-[8px] text-white/40 font-black uppercase tracking-widest leading-none">// FEEDBACK</span>
-                                      <div>
-                                        <div className="urban-stat-num urban-stat-accent text-3xl lg:text-[1.5rem] lg:leading-none">{stats.happy_clients}</div>
-                                        <span className="text-[9px] lg:text-[7px] text-white/60 font-bold uppercase tracking-wider block truncate">Clientes</span>
+                                    <div className="urban-industrial-panel p-3 flex flex-row items-center gap-3 h-[68px] border-left-[#ffffff]">
+                                      <div className="urban-stat-num urban-stat-accent text-3xl font-black leading-none">{stats.happy_clients}</div>
+                                      <div className="flex flex-col min-w-0">
+                                        <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">// FEEDBACK</span>
+                                        <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider truncate leading-tight">Clientes</span>
                                       </div>
                                     </div>
 
-                                    <div className="urban-industrial-panel p-4 lg:p-3 flex flex-col justify-between h-[115px] lg:h-[88px]">
-                                      <span className="text-[10px] lg:text-[8px] text-white/40 font-black uppercase tracking-widest leading-none">// EXPERIENCIA</span>
-                                      <div>
-                                        <div className="urban-stat-num text-3xl lg:text-[1.5rem] lg:leading-none">{stats.experience}</div>
-                                        <span className="text-[9px] lg:text-[7px] text-white/60 font-bold uppercase tracking-wider block truncate">Trayectoria</span>
+                                    <div className="urban-industrial-panel p-3 flex flex-row items-center gap-3 h-[68px]">
+                                      <div className="urban-stat-num text-3xl font-black leading-none">{stats.experience}</div>
+                                      <div className="flex flex-col min-w-0">
+                                        <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">// AÑOS</span>
+                                        <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider truncate leading-tight">Trayectoria</span>
                                       </div>
                                     </div>
 
-                                    <div className="urban-industrial-panel p-4 lg:p-3 flex flex-col justify-between h-[115px] lg:h-[88px]">
-                                      <span className="text-[10px] lg:text-[8px] text-white/40 font-black uppercase tracking-widest leading-none">// UBICACIÓN</span>
-                                      <div>
-                                        <div className="text-sm lg:text-[10px] font-black text-white leading-tight truncate uppercase tracking-tight">{stats.location}</div>
-                                        <span className="text-[9px] lg:text-[7px] text-white/60 font-bold uppercase tracking-wider block truncate">Sede</span>
+                                    <div className="urban-industrial-panel p-3 flex flex-row items-center gap-3 h-[68px]">
+                                      <div className="text-sm font-black text-white leading-none truncate uppercase tracking-tight max-w-[65px]">{stats.location}</div>
+                                      <div className="flex flex-col min-w-0">
+                                        <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-none mb-0.5">// SEDE</span>
+                                        <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider truncate leading-tight">Sede</span>
                                       </div>
                                     </div>
                                   </div>
