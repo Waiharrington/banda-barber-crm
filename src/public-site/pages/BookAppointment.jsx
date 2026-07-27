@@ -2749,7 +2749,7 @@ export default function BookAppointment() {
 
             {/* Content - No wrapper card */}
             <div className="flex flex-col flex-1 relative z-10">
-              <div key={step} className="transition-step-container w-full h-full flex flex-col justify-between flex-1 wizard-content-enter pt-4">
+              <div key={step} className={`transition-step-container w-full ${step === 2 && expandedBarber ? 'block' : 'h-full flex flex-col justify-between flex-1'} wizard-content-enter pt-4`}>
                 
                 {/* STEP 1: Categories & Services (Accordion) */}
                 {step === 1 && (
