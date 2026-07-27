@@ -281,7 +281,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           justify-content: center;
           background-color: #050506;
           padding: 24px;
-          padding-top: env(safe-area-inset-top, 24px);
+          padding-top: calc(24px + env(safe-area-inset-top, 0px));
         }
 
         /* ── CONTENEDOR CON BORDE DORADO (MARCO) ── */
@@ -1699,14 +1699,14 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
               gap: 3px;
             }
             .panda-feat-title {
-              font-size: clamp(11px, 1.5vh, 14.5px);
+              font-size: clamp(12.5px, 1.6vh, 15px);
               font-weight: 700;
               color: #ffffff;
               margin: 0;
               text-align: left;
             }
             .panda-feat-desc {
-              font-size: clamp(9.5px, 1.2vh, 12.5px);
+              font-size: clamp(11px, 1.3vh, 13px);
               color: rgba(255, 255, 255, 0.45);
               margin: 0;
               text-align: left;
