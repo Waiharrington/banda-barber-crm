@@ -2873,9 +2873,11 @@ export default function BookAppointment() {
                           const badge = expandedBarber.badge || '';
 
                           return (
-                            <>
-                              {/* Immersive Cinematic Hero Video/Photo Header */}
-                              <div className="relative h-[700px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border-b border-white/5 shadow-2xl bg-[#0a0a0d] profile-video-hero">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start w-full text-left">
+                              {/* Left Column: Cover Video/Photo, Manifesto, Recent Works portfolio */}
+                              <div className="lg:col-span-7 space-y-6 w-full">
+                                {/* Immersive Cinematic Hero Video/Photo Header */}
+                                <div className="relative h-[480px] lg:h-[550px] -mx-4 lg:mx-0 -mt-8 lg:mt-0 overflow-hidden rounded-b-[2rem] lg:rounded-3xl border border-white/5 shadow-2xl bg-[#0a0a0d] profile-video-hero z-10">
                                 {getBarberVideo(expandedBarber.name) ? (
                                   <div className="w-full h-full relative profile-video-inner">
                                     {expandedBarber.image_url && (
@@ -2967,11 +2969,62 @@ export default function BookAppointment() {
                                 </div>
                               </div>
 
+                              {/* Creative Manifesto Section */}
+                              <div className="relative urban-industrial-panel overflow-visible p-6 mb-8 profile-bio-enter">
+                                <div className="absolute -top-3 left-4">
+                                  <span className="urban-tape urban-tape-accent text-[9px]">
+                                    MANIFESTO // {expandedBarber.name}
+                                  </span>
+                                </div>
+                                <p className="text-[15px] text-white/90 leading-relaxed italic font-medium relative z-10 pt-2">
+                                  "{getBarberBiography(expandedBarber)}"
+                                </p>
+                              </div>
+
+                              {/* Recent Works Collage Gallery */}
+                              <div className="mb-8 profile-gallery-enter w-full">
+                                <div className="flex items-center justify-between mb-4">
+                                  <h4 className="font-extrabold text-sm text-white/80 uppercase tracking-widest">// RECIENTES / PORTAFOLIO</h4>
+                                  <span className="text-[9px] text-[var(--champagne)] font-bold tracking-wider uppercase border border-[var(--champagne)]/20 px-2 py-0.5 rounded">GALERÍA</span>
+                                </div>
+                                {portfolioLoading ? (
+                                  <div className="flex gap-3 overflow-hidden">
+                                    {[1, 2, 3].map(i => (
+                                      <div key={i} className="w-32 h-44 rounded-2xl flex-shrink-0 bg-white/5 animate-pulse" />
+                                    ))}
+                                  </div>
+                                ) : expandedBarberPortfolio.length === 0 ? (
+                                  <div className="flex items-center justify-center h-24 rounded-2xl border border-white/5 bg-white/[0.02] border-dashed">
+                                    <p className="text-xs text-white/40 font-bold uppercase tracking-wider">// Sin registros cargados</p>
+                                  </div>
+                                ) : (
+                                  <div className="flex gap-4 overflow-x-auto pb-4 pt-1 hide-scrollbar snap-x snap-mandatory px-2">
+                                    {expandedBarberPortfolio.map(photo => (
+                                      <div 
+                                        key={photo.id} 
+                                        onClick={() => setActiveLightboxImage(photo.image_url)}
+                                        className="polaroid-gallery-item w-32 h-44 rounded-xl overflow-hidden flex-shrink-0 bg-[#0d0d12] border border-white/10 hover:border-[var(--champagne)] cursor-pointer transition-all duration-300 active:scale-95 shadow-2xl group snap-start p-1.5"
+                                      >
+                                        <div className="w-full h-[82%] rounded-lg overflow-hidden bg-black/40">
+                                          <img src={photo.image_url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                        </div>
+                                        <div className="h-[18%] flex items-center justify-center">
+                                          <span className="text-[7px] text-white/40 font-black uppercase tracking-widest">PANDA CREW</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Right Column: Stats panel, Services menu, Booking CTA (sticky on desktop) */}
+                            <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-6 w-full">
                               {/* Brutalist Asymmetric Stats Section */}
                               {(() => {
                                 const stats = getBarberStats(expandedBarber);
                                 return (
-                                  <div className="grid grid-cols-2 gap-4 mb-8 profile-stats-enter">
+                                  <div className="grid grid-cols-2 gap-4 profile-stats-enter w-full">
                                     <div className="urban-industrial-panel p-5 flex flex-col justify-between h-[115px]">
                                       <span className="text-[10px] text-white/40 font-black uppercase tracking-widest leading-none">// TRABAJOS</span>
                                       <div>
@@ -3006,54 +3059,6 @@ export default function BookAppointment() {
                                   </div>
                                 );
                               })()}
-
-                              {/* Creative Manifesto Section */}
-                              <div className="relative urban-industrial-panel overflow-visible p-6 mb-8 profile-bio-enter">
-                                <div className="absolute -top-3 left-4">
-                                  <span className="urban-tape urban-tape-accent text-[9px]">
-                                    MANIFESTO // {expandedBarber.name}
-                                  </span>
-                                </div>
-                                <p className="text-[15px] text-white/90 leading-relaxed italic font-medium relative z-10 pt-2">
-                                  "{getBarberBiography(expandedBarber)}"
-                                </p>
-                              </div>
-
-                              {/* Recent Works Collage Gallery */}
-                              <div className="mb-8 profile-gallery-enter">
-                                <div className="flex items-center justify-between mb-4">
-                                  <h4 className="font-extrabold text-sm text-white/80 uppercase tracking-widest">// RECIENTES / PORTAFOLIO</h4>
-                                  <span className="text-[9px] text-[var(--champagne)] font-bold tracking-wider uppercase border border-[var(--champagne)]/20 px-2 py-0.5 rounded">GALERÍA</span>
-                                </div>
-                                {portfolioLoading ? (
-                                  <div className="flex gap-3 overflow-hidden">
-                                    {[1, 2, 3].map(i => (
-                                      <div key={i} className="w-32 h-44 rounded-2xl flex-shrink-0 bg-white/5 animate-pulse" />
-                                    ))}
-                                  </div>
-                                ) : expandedBarberPortfolio.length === 0 ? (
-                                  <div className="flex items-center justify-center h-24 rounded-2xl border border-white/5 bg-white/[0.02] border-dashed">
-                                    <p className="text-xs text-white/40 font-bold uppercase tracking-wider">// Sin registros cargados</p>
-                                  </div>
-                                ) : (
-                                  <div className="flex gap-4 overflow-x-auto pb-4 pt-1 hide-scrollbar snap-x snap-mandatory px-2">
-                                    {expandedBarberPortfolio.map(photo => (
-                                      <div 
-                                        key={photo.id} 
-                                        onClick={() => setActiveLightboxImage(photo.image_url)}
-                                        className="polaroid-gallery-item w-32 h-44 rounded-xl overflow-hidden flex-shrink-0 bg-[#0d0d12] border border-white/10 hover:border-[var(--champagne)] cursor-pointer transition-all duration-300 active:scale-95 shadow-2xl group snap-start p-1.5"
-                                      >
-                                        <div className="w-full h-[82%] rounded-lg overflow-hidden bg-black/40">
-                                          <img src={photo.image_url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                        </div>
-                                        <div className="h-[18%] flex items-center justify-center">
-                                          <span className="text-[7px] text-white/40 font-black uppercase tracking-widest">PANDA CREW</span>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
 
                               {/* Brutalist Chalkboard Services Menu */}
                               <div className="mb-8">
@@ -3097,31 +3102,33 @@ export default function BookAppointment() {
                               </div>
 
                               {/* Floating / Sticky Booking CTA Area */}
-                              <div className="sticky bottom-0 -mx-4 px-4 pt-4 pb-6 bg-[#0a0a0e]/95 backdrop-blur-xl border-t border-white/5 z-20">
-                                <button
-                                  onClick={(e) => { createRipple(e); setSelectedBarber(expandedBarber); setExpandedBarber(null); setStep(step + 1); scrollToTop(); }}
-                                  className="w-full relative overflow-hidden rounded-2xl haptic-bounce ripple-container group shadow-lg"
-                                  style={{
-                                    background: 'linear-gradient(135deg, #d4bc9a 0%, #c4a882 40%, #b8976e 100%)',
-                                    boxShadow: '0 8px 32px rgba(203,183,154,0.35), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25)'
-                                  }}
-                                >
-                                  {/* Shimmer sweep */}
-                                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-                                  <div className="relative z-10 py-4 px-6 flex items-center justify-between">
-                                    <div className="flex flex-col items-start">
-                                      <span className="text-black/50 text-[9px] font-black uppercase tracking-[0.2em] leading-none mb-1">Reservar con</span>
-                                      <span className="text-black font-black text-lg leading-none tracking-tight">{expandedBarber.name}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-9 h-9 rounded-full bg-black/15 flex items-center justify-center">
-                                        <Check size={18} className="text-black" strokeWidth={3} />
+                                {/* Floating / Sticky Booking CTA Area */}
+                                <div className="sticky lg:relative bottom-0 lg:bottom-auto -mx-4 lg:mx-0 px-4 lg:px-0 pt-4 lg:pt-0 pb-6 lg:pb-0 bg-[#0a0a0e]/95 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-t lg:border-t-0 border-white/5 z-20">
+                                  <button
+                                    onClick={(e) => { createRipple(e); setSelectedBarber(expandedBarber); setExpandedBarber(null); setStep(step + 1); scrollToTop(); }}
+                                    className="w-full relative overflow-hidden rounded-2xl haptic-bounce ripple-container group shadow-lg"
+                                    style={{
+                                      background: 'linear-gradient(135deg, #d4bc9a 0%, #c4a882 40%, #b8976e 100%)',
+                                      boxShadow: '0 8px 32px rgba(203,183,154,0.35), 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25)'
+                                    }}
+                                  >
+                                    {/* Shimmer sweep */}
+                                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+                                    <div className="relative z-10 py-4 px-6 flex items-center justify-between">
+                                      <div className="flex flex-col items-start">
+                                        <span className="text-black/50 text-[9px] font-black uppercase tracking-[0.2em] leading-none mb-1">Reservar con</span>
+                                        <span className="text-black font-black text-lg leading-none tracking-tight">{expandedBarber.name}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-9 h-9 rounded-full bg-black/15 flex items-center justify-center">
+                                          <Check size={18} className="text-black" strokeWidth={3} />
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                </button>
+                                  </button>
+                                </div>
                               </div>
-                            </>
+                            </div>
                           );
                         })()}
                       </div>
