@@ -1381,14 +1381,14 @@ export default function BookAppointment() {
           {/* Hero Welcome content */}
           <div className="w-full flex flex-col gap-5 lg:gap-6" style={{ maxWidth: isDesktop ? '650px' : '100%' }}>
             <div className="reveal-item delay-200">
-              <span className="text-[10px] lg:text-[13px] font-black uppercase tracking-[0.35em] text-[#CBB79A] block mb-1">BIENVENIDO A</span>
-              <h1 className="text-[40px] sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white leading-[0.95] mb-1 font-sans">PANDA BARBER</h1>
-              <h1 className="text-[40px] sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-[#CBB79A] leading-[0.95] mb-2 font-sans">STUDIO</h1>
+              <span className="text-[10px] lg:text-[13px] font-black uppercase tracking-[0.35em] text-[#CBB79A] block mb-1 animate-float-subtle">BIENVENIDO A</span>
+              <h1 className="text-[40px] sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[0.95] mb-1 font-sans animate-text-shimmer">PANDA BARBER</h1>
+              <h1 className="text-[40px] sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[0.95] mb-2 font-sans animate-text-shimmer-gold">STUDIO</h1>
             </div>
 
             <div className="flex flex-col gap-2.5 reveal-item delay-300">
               <p className="text-white text-sm sm:text-xl lg:text-[22px] font-extrabold leading-snug font-sans tracking-wide">
-                Tu estilo comienza con el <span className="whitespace-nowrap">profesional correcto.</span>
+                Tu estilo comienza con el <span className="whitespace-nowrap text-[#CBB79A] animate-text-glow-breath">profesional correcto.</span>
               </p>
               <p className="text-white/60 text-sm sm:text-lg lg:text-[17px] leading-relaxed font-normal font-sans max-w-[580px] lg:max-w-[480px]">
                 Barbería y tatuajes en un espacio creado para cuidar cada detalle de tu{'\u00A0'}imagen.
