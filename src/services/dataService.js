@@ -970,9 +970,10 @@ export const dataService = {
 
   // Inventory Movements
   async logInventoryMovement(movement) {
+    _cacheInvalidate('inventory_movements');
     const { data, error } = await supabase
       .from('inventory_movements')
-      .insert([movement])
+      .insert([{ created_at: new Date().toISOString(), ...movement }])
       .select()
       .single();
     if (error) throw error;
@@ -1031,9 +1032,10 @@ export const dataService = {
       staff(id, name, image_url),
       appointment_staff(*, staff(name, role))
     `)
-      .gte('scheduled_at', startDate)
-      .lt('scheduled_at', endDate)
-      .order('scheduled_at', { ascending: true });
+      .or(
+        `and(scheduled_at.gte.${startDate},scheduled_at.lt.${endDate}),and(scheduled_at.is.null,created_at.gte.${startDate},created_at.lt.${endDate})`
+      )
+      .order('scheduled_at', { ascending: true, nullsFirst: false });
 
     if (error) throw error;
     return _asArray(data).map(_normalizeAppointment);
@@ -1303,6 +1305,8 @@ export const dataService = {
       currency: 'EUR',
       metadata: {
         appointment_id: paymentRecord.appointmentId || null,
+        appointment_ids: paymentRecord.appointmentIds || [],
+        service_count: paymentRecord.appointments?.length || 0,
         client_id: paymentRecord.clientId || null,
         mixed_payment: paymentRecord.isMixed,
         cash_usd: Number(paymentRecord.cashUsd),

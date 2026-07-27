@@ -1,9 +1,10 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import CheckoutPOS from './CheckoutPOS';
 import NewClientModal from './NewClientModal';
 import NewAppointmentModal from './NewAppointmentModal';
 const ReceptionModule = lazy(() => import('./ReceptionModule'));
+const PersonnelModule = lazy(() => import('./PersonnelModule'));
 import { 
   TrendingUp, 
   Users, 
@@ -110,6 +111,10 @@ const DashboardModule = ({
   const [quoteIndex, setQuoteIndex] = useState(0);
   const { showToast } = useNotifs();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [activeSearchIndex, setActiveSearchIndex] = useState(-1);
+  const searchContainerRef = useRef(null);
 
   useEffect(() => {
     const updateUnread = () => {
@@ -123,6 +128,18 @@ const DashboardModule = ({
     return () => {
       window.removeEventListener('panda_new_notification', updateUnread);
     };
+  }, []);
+
+  useEffect(() => {
+    const handleOutsideSearch = event => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setIsSearchOpen(false);
+        setActiveSearchIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideSearch);
+    return () => document.removeEventListener('mousedown', handleOutsideSearch);
   }, []);
   
   const formatCurrency = (amount) => {
@@ -145,6 +162,113 @@ const DashboardModule = ({
   const secondPlace = sortedStaff[1] || { name: 'Sin datos', stats: { monthlyIncome: 0 }, image_url: '' };
   const thirdPlace = sortedStaff[2] || { name: 'Sin datos', stats: { monthlyIncome: 0 }, image_url: '' };
   const [realtimeAppointments, setRealtimeAppointments] = useState([]);
+  const [attendanceQueue, setAttendanceQueue] = useState([]);
+
+  const normalizeSearchValue = value => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+  const searchTerm = normalizeSearchValue(globalSearch);
+  const searchableAppointments = [
+    ...(dbData?.todayAppointments || []),
+    ...(dbData?.appointments || [])
+  ].filter((appointment, index, appointments) =>
+    appointments.findIndex(item => String(item.id) === String(appointment.id)) === index
+  );
+
+  const globalSearchResults = searchTerm.length < 2
+    ? []
+    : [
+        ...(dbData?.clients || [])
+          .filter(client => normalizeSearchValue([
+            client.name,
+            client.phone,
+            client.id_card
+          ].filter(Boolean).join(' ')).includes(searchTerm))
+          .map(client => ({
+            id: `client-${client.id}`,
+            type: 'client',
+            title: client.name || 'Cliente',
+            subtitle: [client.phone, client.id_card].filter(Boolean).join(' · ') || 'Ficha de cliente',
+            data: client
+          })),
+        ...searchableAppointments
+          .filter(appointment => normalizeSearchValue([
+            appointment.clients?.name,
+            appointment.services?.name,
+            appointment.staff?.name,
+            appointment.status
+          ].filter(Boolean).join(' ')).includes(searchTerm))
+          .map(appointment => ({
+            id: `appointment-${appointment.id}`,
+            type: 'appointment',
+            title: appointment.clients?.name || 'Cita',
+            subtitle: [
+              appointment.services?.name || 'Servicio',
+              appointment.staff?.name,
+              appointment.status
+            ].filter(Boolean).join(' · '),
+            data: appointment
+          })),
+        ...staffList
+          .filter(member => normalizeSearchValue([
+            member.name,
+            member.role,
+            member.phone,
+            member.id_card
+          ].filter(Boolean).join(' ')).includes(searchTerm))
+          .map(member => ({
+            id: `staff-${member.id}`,
+            type: 'staff',
+            title: member.name || 'Personal',
+            subtitle: member.role || 'Miembro del equipo',
+            data: member
+          }))
+      ].slice(0, 8);
+
+  const selectGlobalSearchResult = result => {
+    if (!result) return;
+
+    if (result.type === 'client') {
+      onNavigate?.('clients', { clientId: result.data.id });
+    } else if (result.type === 'appointment') {
+      onNavigate?.('scheduling', { appointmentId: result.data.id });
+    } else {
+      onNavigate?.('personnel', { staffId: result.data.id });
+    }
+
+    setGlobalSearch('');
+    setIsSearchOpen(false);
+    setActiveSearchIndex(-1);
+  };
+
+  const handleGlobalSearchKeyDown = event => {
+    if (event.key === 'Escape') {
+      setIsSearchOpen(false);
+      setActiveSearchIndex(-1);
+      event.currentTarget.blur();
+      return;
+    }
+
+    if (globalSearchResults.length === 0) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setIsSearchOpen(true);
+      setActiveSearchIndex(index => (index + 1) % globalSearchResults.length);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setIsSearchOpen(true);
+      setActiveSearchIndex(index =>
+        index <= 0 ? globalSearchResults.length - 1 : index - 1
+      );
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      selectGlobalSearchResult(globalSearchResults[activeSearchIndex >= 0 ? activeSearchIndex : 0]);
+    }
+  };
 
   // --- Real Database Metrics Calculations ---
   const todayStr = new Date().toISOString().split('T')[0];
@@ -158,7 +282,21 @@ const DashboardModule = ({
   const totalChairs = 7;
   const ocupacionPercent = Math.round((occupiedChairsCount / totalChairs) * 100);
 
-  const inasistenciasCount = stats?.noShowsToday ?? 0;
+  const activeBarbers = staffList.filter(member => {
+    const role = String(member.role || '').toLowerCase();
+    return member.active !== false
+      && !role.includes('archived')
+      && (role.includes('barbero') || role.includes('barber'));
+  });
+  const checkedInBarberIds = new Set(
+    attendanceQueue
+      .filter(entry => entry.status !== 'ABSENT')
+      .map(entry => String(entry.staff_id))
+  );
+  const barbersPendingArrival = activeBarbers.filter(
+    member => !checkedInBarberIds.has(String(member.id))
+  );
+  const pendingBarbersCount = barbersPendingArrival.length;
 
   const realUpcomingAppointments = (dbData?.todayAppointments || [])
     .filter(a => a.status === 'Agendado')
@@ -243,14 +381,19 @@ const DashboardModule = ({
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [showCheckoutPopup, setShowCheckoutPopup] = useState(false);
+  const [showAttendancePopup, setShowAttendancePopup] = useState(false);
   const [showReceptionPopup, setShowReceptionPopup] = useState(false);
   const [showSchedulePopup, setShowSchedulePopup] = useState(false);
 
   useEffect(() => {
     const fetchChairData = async () => {
       try {
-        const activeApps = await dataService.getAppointmentsByState(['En Silla', 'Agendado']);
+        const [activeApps, queue] = await Promise.all([
+          dataService.getAppointmentsByState(['En Silla', 'Agendado']),
+          dataService.getTurnQueue().catch(() => [])
+        ]);
         setRealtimeAppointments(activeApps || []);
+        setAttendanceQueue(queue || []);
       } catch (e) {
         console.error("Error fetching realtime chair data:", e);
       }
@@ -551,13 +694,21 @@ const DashboardModule = ({
           {/* Search, Dropdown & + Nueva cita */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {/* Search Input Bar */}
-            <div style={{
+            <div ref={searchContainerRef} style={{
               position: 'relative',
-              width: '260px'
+              width: '260px',
+              zIndex: 120
             }}>
               <input 
                 type="text" 
                 placeholder="Buscar citas, clientes, barberos..." 
+                value={globalSearch}
+                onChange={(event) => {
+                  setGlobalSearch(event.target.value);
+                  setIsSearchOpen(true);
+                  setActiveSearchIndex(-1);
+                }}
+                onKeyDown={handleGlobalSearchKeyDown}
                 style={{
                   width: '100%',
                   padding: '9px 12px 9px 36px',
@@ -570,6 +721,7 @@ const DashboardModule = ({
                   transition: 'all 0.2s ease'
                 }}
                 onFocus={(e) => {
+                  setIsSearchOpen(true);
                   e.target.style.backgroundColor = 'rgba(255,255,255,0.07)';
                   e.target.style.borderColor = 'rgba(203, 183, 154, 0.3)';
                 }}
@@ -592,6 +744,118 @@ const DashboardModule = ({
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
+              {isSearchOpen && searchTerm.length >= 2 && (
+                <div
+                  role="listbox"
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    left: 0,
+                    right: 0,
+                    padding: '6px',
+                    borderRadius: '12px',
+                    background: '#18181b',
+                    border: '1px solid rgba(203, 183, 154, 0.2)',
+                    boxShadow: '0 18px 45px rgba(0,0,0,0.55)',
+                    maxHeight: '340px',
+                    overflowY: 'auto'
+                  }}
+                >
+                  {globalSearchResults.length > 0 ? globalSearchResults.map((result, index) => {
+                    const ResultIcon = result.type === 'client'
+                      ? User
+                      : result.type === 'appointment'
+                        ? Calendar
+                        : ScissorsIcon;
+                    const typeLabel = result.type === 'client'
+                      ? 'Cliente'
+                      : result.type === 'appointment'
+                        ? 'Cita'
+                        : 'Equipo';
+                    const isActive = index === activeSearchIndex;
+
+                    return (
+                      <button
+                        key={result.id}
+                        type="button"
+                        role="option"
+                        aria-selected={isActive}
+                        onMouseEnter={() => setActiveSearchIndex(index)}
+                        onClick={() => selectGlobalSearchResult(result)}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '9px 10px',
+                          border: 'none',
+                          borderRadius: '9px',
+                          background: isActive ? 'rgba(203, 183, 154, 0.12)' : 'transparent',
+                          color: 'white',
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <span style={{
+                          width: '30px',
+                          height: '30px',
+                          flexShrink: 0,
+                          display: 'grid',
+                          placeItems: 'center',
+                          borderRadius: '8px',
+                          color: 'var(--champagne)',
+                          background: 'rgba(203, 183, 154, 0.09)',
+                          border: '1px solid rgba(203, 183, 154, 0.14)'
+                        }}>
+                          <ResultIcon size={15} />
+                        </span>
+                        <span style={{ minWidth: 0, flex: 1 }}>
+                          <span style={{
+                            display: 'block',
+                            fontSize: '12px',
+                            fontWeight: 750,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {result.title}
+                          </span>
+                          <span style={{
+                            display: 'block',
+                            marginTop: '2px',
+                            fontSize: '10px',
+                            color: 'rgba(255,255,255,0.46)',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {result.subtitle}
+                          </span>
+                        </span>
+                        <span style={{
+                          flexShrink: 0,
+                          fontSize: '8px',
+                          fontWeight: 800,
+                          letterSpacing: '0.5px',
+                          textTransform: 'uppercase',
+                          color: 'rgba(203, 183, 154, 0.7)'
+                        }}>
+                          {typeLabel}
+                        </span>
+                      </button>
+                    );
+                  }) : (
+                    <div style={{
+                      padding: '18px 12px',
+                      textAlign: 'center',
+                      fontSize: '11px',
+                      color: 'rgba(255,255,255,0.45)'
+                    }}>
+                      No se encontraron coincidencias
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Rate Toggle Card */}
@@ -823,17 +1087,23 @@ const DashboardModule = ({
               </div>
             </div>
 
-            {/* KPI Card 5: No-Shows */}
+            {/* KPI Card 5: Staff pending arrival */}
             <div className="glass-card" style={{ padding: '8px 10px', borderRadius: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '76px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.7 }}>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.5px' }}>INASISTENCIAS</span>
+                <span style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.5px' }}>POR LLEGAR</span>
                 <UserX size={13} color="rgba(255,255,255,0.6)" />
               </div>
-              <div style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: '1px 0' }}>
-                {inasistenciasCount}
+              <div
+                style={{ fontSize: '18px', fontWeight: '900', color: 'white', margin: '1px 0' }}
+                title={barbersPendingArrival.length > 0 ? barbersPendingArrival.map(member => member.name).join(', ') : 'Todos los barberos activos están presentes'}
+              >
+                {pendingBarbersCount}
               </div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
-                {renderComparison(inasistenciasCount, stats?.noShowsYesterday, 'vs ayer')}
+                <span style={{ fontSize: '7px' }}>●</span>
+                {pendingBarbersCount === 0
+                  ? 'Todos presentes'
+                  : `${activeBarbers.length - pendingBarbersCount} de ${activeBarbers.length} presentes`}
               </div>
             </div>
           </div>
@@ -895,10 +1165,21 @@ const DashboardModule = ({
                     onClick={() => {
                       if (chair.isOccupied) {
                         setCheckoutChairModal(chair);
+                      } else if (chair.status === 'Disponible') {
+                        setShowCheckoutPopup(true);
                       } else {
                         setSelectedChair(chair);
                       }
                     }}
+                    role={isAvailable ? 'button' : undefined}
+                    tabIndex={isAvailable ? 0 : undefined}
+                    onKeyDown={(event) => {
+                      if (isAvailable && (event.key === 'Enter' || event.key === ' ')) {
+                        event.preventDefault();
+                        setShowCheckoutPopup(true);
+                      }
+                    }}
+                    title={isAvailable ? 'Abrir Caja para una venta directa' : undefined}
                     style={{
                       backgroundColor: 'rgba(0,0,0,0.15)',
                       border: `1.5px solid ${chair.statusColor || 'rgba(255,255,255,0.04)'}`,
@@ -1041,7 +1322,12 @@ const DashboardModule = ({
                         }}>
                           <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.5)', fontWeight: '600' }}>{chair.info}</span>
                           <button 
-                            onClick={onOpenSale}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setShowCheckoutPopup(true);
+                            }}
+                            aria-label="Abrir Caja para una venta directa"
+                            title="Abrir Caja"
                             style={{
                               width: '16px',
                               height: '16px',
@@ -1291,7 +1577,7 @@ const DashboardModule = ({
               {[
                 { label: 'Nueva Cita', action: () => setShowSchedulePopup(true), icon: Plus },
                 { label: 'Cliente', action: () => setShowNewClientModal(true), icon: User },
-                { label: 'Cobro POS', action: () => setShowCheckoutPopup(true), icon: ShoppingBag },
+                { label: 'Asistencia', action: () => setShowAttendancePopup(true), icon: CheckCircle2 },
                 { label: 'Recepción', action: () => setShowReceptionPopup(true), icon: ClipboardList }
               ].map((act, idx) => {
                 const ActIcon = act.icon;
@@ -2133,6 +2419,57 @@ const DashboardModule = ({
           if (onRefresh) onRefresh();
         }}
       />
+
+      {/* Modal: Control de Asistencia */}
+      <AnimatedModal isOpen={showAttendancePopup}>
+        {(overlayClass, cardClass) => (
+          showAttendancePopup && (
+            <div className={`${overlayClass} modal-centered-overlay`}>
+              <div className={`${cardClass} modal-popup-fullmodule`}>
+                <button
+                  onClick={() => {
+                    setShowAttendancePopup(false);
+                    const refreshAttendance = async () => {
+                      const queue = await dataService.getTurnQueue().catch(() => []);
+                      setAttendanceQueue(queue || []);
+                    };
+                    refreshAttendance();
+                    if (onRefresh) onRefresh();
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '20px',
+                    backgroundColor: 'rgba(0,0,0,0.6)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    color: 'white',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 99
+                  }}
+                  title="Cerrar"
+                  aria-label="Cerrar control de asistencia"
+                >
+                  <X size={18} />
+                </button>
+                <Suspense fallback={<div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando asistencia...</div>}>
+                  <PersonnelModule
+                    isMobile={isMobile}
+                    inventory={dbData?.inventory || []}
+                    initialTab="attendance"
+                    attendanceOnly
+                  />
+                </Suspense>
+              </div>
+            </div>
+          )
+        )}
+      </AnimatedModal>
 
       {/* Modal: Cobro POS Popup */}
       <AnimatedModal isOpen={showCheckoutPopup}>

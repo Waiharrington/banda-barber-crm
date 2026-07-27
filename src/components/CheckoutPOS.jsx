@@ -40,6 +40,21 @@ import { normalizeForSearch } from '../utils/stringUtils';
 import { useScrollLock } from '../hooks/useScrollLock';
 import ReceiptTicket from './ReceiptTicket';
 
+const parseEuroAmount = (value) => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const normalized = String(value ?? '')
+    .trim()
+    .replace(/[^\d,.-]/g, '')
+    .replace(',', '.');
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? amount : 0;
+};
+
+const formatEuroAmount = (value) => parseEuroAmount(value).toLocaleString('es-VE', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2
+});
+
 const CartSellerSelect = ({ value, onChange, options }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const containerRef = React.useRef(null);
@@ -1095,7 +1110,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
         service_id: selectedServiceForBarber.id,
         staff_id: barberId,
         status: 'En Silla',
-        total_price: selectedServiceForBarber.price
+        total_price: parseEuroAmount(selectedServiceForBarber.price)
       });
       
       // MIGRAR ITEMS EN CART (Extras o Productos) A LA NUEVA CITA
@@ -2773,8 +2788,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                       <Scissors size={15} color="var(--gold-primary)" />
                     </div>
                     <div style={{ fontWeight: '800', fontSize: '14px', color: 'white', marginBottom: '6px', lineHeight: '1.3' }}>{service.name}</div>
-                    <div style={{ fontWeight: '900', fontSize: '20px', color: 'var(--gold-primary)' }}>€${service.price}</div>
-                    {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>≈ {Math.round(service.price * rates.usd).toLocaleString()} Bs.</div>}
+                    <div style={{ fontWeight: '900', fontSize: '20px', color: 'var(--gold-primary)' }}>€{formatEuroAmount(service.price)}</div>
                   </button>
                 ))}
               </div>
@@ -2788,7 +2802,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
       {/* Barber Select Modal */}
       <AnimatedModal isOpen={showBarberModal}>
         {(overlayClass, cardClass) => (
-          <div className={overlayClass.replace('global-modal-overlay', '')} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div className={overlayClass.replace('global-modal-overlay', '')} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', zIndex: 20000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
             <div className={cardClass.replace('global-modal-card', '')} style={{ width: '100%', maxWidth: '380px', borderRadius: '28px', border: '1px solid rgba(255, 255, 255, 0.25)', background: 'linear-gradient(160deg, rgba(30,30,32,0.98) 0%, rgba(20,20,22,0.99) 100%)', boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset', overflow: 'hidden' }}>
               {/* Gradient Accent Bar */}
               <div style={{ height: '5px', background: 'linear-gradient(90deg, #ffffff 0%, #cbb79a 50%, #ffffff 100%)', width: '100%' }}></div>

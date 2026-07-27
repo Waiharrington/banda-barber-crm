@@ -4,6 +4,20 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    detectSessionInUrl: false
+  },
+  db: { schema: 'pandabarber' }
+});
+
+export const publicSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storageKey: 'sb-panda-public-auth-token',
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
+  },
   db: { schema: 'pandabarber' }
 });
 

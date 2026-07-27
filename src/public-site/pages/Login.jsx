@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
 import { publicService } from '../services/publicService';
 
@@ -9,6 +9,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,7 +28,15 @@ export default function Login() {
         localStorage.setItem('panda_public_client', JSON.stringify(client));
       }
       localStorage.setItem('panda_public_session', JSON.stringify(result.session));
-      navigate('/perfil');
+      const shouldStartBooking = location.state?.startBooking
+        || localStorage.getItem('panda_login_return_to_booking') === 'true';
+      if (shouldStartBooking) {
+        localStorage.removeItem('panda_login_return_to_booking');
+        localStorage.removeItem('bookingState');
+        navigate('/agendar', { replace: true, state: { startBooking: true } });
+      } else {
+        navigate('/perfil');
+      }
     } catch (e) {
       console.error('Login error:', e);
       setError(e.message || 'Credenciales incorrectas.');
@@ -39,8 +48,14 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     setError('');
     try {
+      localStorage.setItem('panda_google_login_pending', 'true');
+      if (location.state?.startBooking) {
+        localStorage.setItem('panda_login_return_to_booking', 'true');
+        localStorage.removeItem('bookingState');
+      }
       await publicService.signInWithGoogle();
     } catch (e) {
+      localStorage.removeItem('panda_google_login_pending');
       console.error('Google login error:', e);
       setError('Error al iniciar sesión con Google');
     }

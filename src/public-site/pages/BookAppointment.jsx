@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -290,6 +290,7 @@ function BarberAvatar({ url, name, className = "w-10 h-10 rounded-xl", iconSize 
 
 export default function BookAppointment() {
   const navigate = useNavigate();
+  const location = useLocation();
   const videoRef = useRef(null);
   const modalVideoRef = useRef(null);
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -334,6 +335,7 @@ export default function BookAppointment() {
   });
   const [stepDirection, setStepDirection] = useState('enter');
   const [stepKey, setStepKey] = useState(0);
+  const autoStartHandledRef = useRef(null);
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
   const [barberStartIndex, setBarberStartIndex] = useState(0);
@@ -755,7 +757,9 @@ export default function BookAppointment() {
   const [imgErrors, setImgErrors] = useState({});
   
   // Auth state at step 6
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() =>
+    Boolean(localStorage.getItem('panda_public_client'))
+  );
   const [loggedInClient, setLoggedInClient] = useState(null);
   const [authTab, setAuthTab] = useState('register'); // 'register' or 'login'
   const [showPassword, setShowPassword] = useState(false);
@@ -856,6 +860,29 @@ export default function BookAppointment() {
       setIsTransitioning(false);
     }, 750);
   };
+
+  useEffect(() => {
+    const bookingRequestId = location.state?.bookingRequestId || 'default';
+    if (
+      !location.state?.startBooking
+      || loading
+      || autoStartHandledRef.current === bookingRequestId
+    ) {
+      return;
+    }
+
+    autoStartHandledRef.current = bookingRequestId;
+    localStorage.removeItem('bookingState');
+    setStep(1);
+    setShowWelcome(true);
+
+    const transitionTimer = setTimeout(() => {
+      handleStartBooking();
+      navigate(location.pathname, { replace: true, state: {} });
+    }, 180);
+
+    return () => clearTimeout(transitionTimer);
+  }, [location.state, location.pathname, loading, navigate]);
 
   const handleReturnToWelcome = () => {
     setVideoBlocked(false);
@@ -1408,19 +1435,19 @@ export default function BookAppointment() {
 
             <button
               onClick={() => {
-                setIsTransitioning(true);
-                setStep(6);
-                setAuthTab('login');
-                setShowWelcome(false);
-                scrollToTop();
-                setTimeout(() => {
-                  setIsTransitioning(false);
-                }, 750);
+                if (isLoggedIn || localStorage.getItem('panda_public_client')) {
+                  navigate('/perfil');
+                  return;
+                }
+
+                localStorage.removeItem('bookingState');
+                localStorage.setItem('panda_login_return_to_booking', 'true');
+                navigate('/login', { state: { startBooking: true } });
               }}
               className="btn-outline w-full sm:w-auto py-4 px-8 rounded-xl text-[12px] lg:text-[13px] uppercase tracking-widest font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer"
               style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.15)', color: '#fff' }}
             >
-              <User size={15} /> <span>Ya soy cliente</span>
+              <User size={15} /> <span>{isLoggedIn ? 'Mi perfil' : 'Ya soy cliente'}</span>
             </button>
           </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNotifs } from '../context/NotificationContext';
 import { 
@@ -35,10 +35,28 @@ import AnimatedModal from './AnimatedModal';
 import { formatName, normalizeForSearch } from '../utils/stringUtils';
 import { useDialog } from '../context/DialogContext';
 import { useScrollLock } from '../hooks/useScrollLock';
+import { useAuth } from '../context/AuthContext';
 
 const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
   const { showToast } = useNotifs();
   const { confirm } = useDialog();
+  const { user } = useAuth();
+  const roleName = String(user?.role || '').split('|')[0].toLowerCase();
+  const isAssistant = roleName.includes('asistente') || roleName.includes('lavado');
+  const isServiceProfessional = !isAssistant && (roleName.includes('barbero') || roleName.includes('tatuador'));
+  const canManageClientAdminActions = !isServiceProfessional;
+  const visibleClients = useMemo(() => {
+    const clientList = Array.isArray(clients) ? clients : [];
+    if (!isServiceProfessional || !user?.id) return clientList;
+
+    return clientList.filter(client => (
+      Array.isArray(client.appointments)
+      && client.appointments.some(appointment => (
+        String(appointment.staff_id) === String(user.id)
+        && ['Completado', 'En Silla', 'Por Pagar'].includes(appointment.status)
+      ))
+    ));
+  }, [clients, isServiceProfessional, user?.id]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
   const [showMessageModal, setShowMessageModal] = useState(false);
@@ -61,13 +79,13 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
   const [defaultBdayMessage, setDefaultBdayMessage] = useState(getInitialBdayMessage());
 
   useEffect(() => {
-    if (initialClientId && clients.length > 0) {
-      const client = clients.find(c => c.id == initialClientId);
+    if (initialClientId && visibleClients.length > 0) {
+      const client = visibleClients.find(c => c.id == initialClientId);
       if (client) setSelectedClient(client);
     }
     // Fetch all coupons for the "Con Cupones" filter
     dataService.getCoupons().then(c => setAllCoupons(c || [])).catch(console.error);
-  }, [initialClientId, clients]);
+  }, [initialClientId, visibleClients]);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newClient, setNewClient] = useState({ 
@@ -87,10 +105,10 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
   // Sync selected client when global list updates (Crucial for persistence visibility)
   useEffect(() => {
     if (selectedClient) {
-      const updated = clients.find(c => c.id === selectedClient.id);
-      if (updated) setSelectedClient(updated);
+      const updated = visibleClients.find(c => c.id === selectedClient.id);
+      setSelectedClient(updated || null);
     }
-  }, [clients]);
+  }, [visibleClients]);
 
   const handleDeleteClient = async (id, name) => {
     if (!await confirm(`¿Estás seguro de eliminar a ${name}? Esta acción no se puede deshacer.`)) return;
@@ -109,6 +127,10 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
   };
 
   const handleAddClient = async () => {
+    if (!canManageClientAdminActions) {
+      showToast('Tu perfil no tiene permiso para registrar clientes.', 'warning');
+      return;
+    }
     if (!newClient.name || !newClient.origin) {
       showToast('Completa el nombre y el origen del cliente.', 'error');
       return;
@@ -226,7 +248,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                 </button>
               </div>
 
-              <button 
+              {canManageClientAdminActions && <button
                 className="btn-gold" 
                 onClick={() => setShowMessageModal(true)} 
                 style={{ 
@@ -247,9 +269,9 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
               >
                 <MessageCircle size={18} /> {!isMobile && "Mensaje Cumpleaños"}
                 {isMobile && "Cumpleaños"}
-              </button>
+              </button>}
 
-              <button className="btn-gold" onClick={() => setShowAddForm(!showAddForm)} style={{ 
+              {canManageClientAdminActions && <button className="btn-gold" onClick={() => setShowAddForm(!showAddForm)} style={{
                 borderRadius: '12px', 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -261,11 +283,11 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                 whiteSpace: 'nowrap'
               }}>
                 <Plus size={18} /> {showAddForm ? 'Cancelar' : 'Nuevo Cliente'}
-              </button>
+              </button>}
             </div>
           </div>
 
-          {showAddForm && (
+          {canManageClientAdminActions && showAddForm && (
             <div className="glass-card animate-fade-in" style={{ marginBottom: '40px', padding: '32px', borderRadius: '24px' }}>
               <h3 style={{ marginBottom: '24px', fontSize: '20px' }}>Alta de Cliente</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
@@ -362,14 +384,18 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
             <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
               <Loader2 className="animate-spin" size={40} color="var(--gold-primary)" />
             </div>
-          ) : clients.length === 0 ? (
+          ) : visibleClients.length === 0 ? (
             <div className="glass-card" style={{ textAlign: 'center', padding: '80px', borderStyle: 'dashed' }}>
               <User size={48} color="var(--bg-tertiary)" style={{ marginBottom: '20px' }} />
-              <p style={{ color: 'var(--text-muted)' }}>Archivo vacío. Agrega a tu primer cliente.</p>
+              <p style={{ color: 'var(--text-muted)' }}>
+                {isServiceProfessional
+                  ? 'Todavía no tienes clientes atendidos registrados.'
+                  : 'Archivo vacío. Agrega a tu primer cliente.'}
+              </p>
             </div>
           ) : (viewMode === 'grid' || viewMode === 'coupons') ? (
             <div style={{ display: 'grid', gap: '16px' }}>
-              {clients.filter(c => {
+              {visibleClients.filter(c => {
                   const term = normalizeForSearch(searchTerm);
                   const normalizedName = normalizeForSearch(c.name || '');
                   const nameMatches = normalizedName.split(' ').some(w => w.startsWith(term));
@@ -455,7 +481,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {clients
+                  {visibleClients
                     .filter(c => {
                       const term = normalizeForSearch(searchTerm);
                       const normalizedName = normalizeForSearch(c.name || '');
@@ -530,7 +556,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
       )}
       
       {/* Custom styled modal overlay to edit default birthday message */}
-      {createPortal(
+      {canManageClientAdminActions && createPortal(
         <div style={{
           position: 'fixed',
           top: 0,
