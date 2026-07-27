@@ -77,7 +77,7 @@ const getBarberVideo = (barberName) => {
   if (name.includes('juan')) return videoJuan;
   if (name.includes('moret')) return videoMoret;
   if (name.includes('alejandro')) return videoAlejandro;
-  if (name.includes('marko') || name.includes('marco')) return videoMarko;
+  if (name.includes('marko') || name.includes('marco') || name.includes('mark') || name.includes('cardozo')) return videoMarko;
   if (name.includes('abraham')) return videoAbraham;
   if (name.includes('ángel') || name.includes('angel')) return videoAngel;
   return null;
