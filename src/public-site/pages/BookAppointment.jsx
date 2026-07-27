@@ -780,7 +780,18 @@ export default function BookAppointment() {
       setShowInlineEdit(false);
     }, 300);
   };
-  const [expandedBarber, setExpandedBarber] = useState(null);
+  const [expandedBarber, setExpandedBarber] = useState(() => {
+    const saved = localStorage.getItem('bookingState');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.expandedBarber || null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
   const [expandedBarberPortfolio, setExpandedBarberPortfolio] = useState([]);
   const [portfolioFilter, setPortfolioFilter] = useState('Todos');
   const filteredPortfolio = useMemo(() => {
@@ -1007,10 +1018,23 @@ export default function BookAppointment() {
       selectedDate: selectedDate?.toISOString() || null,
       selectedTime,
       selectedBeverage,
-      notes
+      notes,
+      expandedBarber
     };
     localStorage.setItem('bookingState', JSON.stringify(state));
-  }, [showWelcome, hasVisited, step, selectedCategory, selectedService, selectedBarber, selectedDate, selectedTime, selectedBeverage, notes, success]);
+  }, [showWelcome, hasVisited, step, selectedCategory, selectedService, selectedBarber, selectedDate, selectedTime, selectedBeverage, notes, success, expandedBarber]);
+
+  // Restore portfolio images if expandedBarber is loaded from localStorage on mount
+  useEffect(() => {
+    if (expandedBarber && expandedBarberPortfolio.length === 0) {
+      setExpandedBarberPortfolio([
+        { id: 'ab1', image_url: abrahamWork1 },
+        { id: 'ab2', image_url: abrahamWork2 },
+        { id: 'ab3', image_url: abrahamWork3 },
+        { id: 'ab4', image_url: abrahamWork4 }
+      ]);
+    }
+  }, [expandedBarber]);
 
   // Preselecciones por defecto para el perfil expandido de computadoras
   useEffect(() => {
@@ -1094,7 +1118,7 @@ export default function BookAppointment() {
     }, 750);
   };
 
-  const handleReturnToWelcome = () => {
+  const handleReturnToWelcome = (scrollToEquipo = false) => {
     setVideoBlocked(false);
     localStorage.removeItem('bookingState');
     setShowWelcome(true);
@@ -1106,6 +1130,15 @@ export default function BookAppointment() {
     setOpenCategory(null);
     setExpandedBarber(null);
     setActiveTeamCardId(null);
+
+    if (scrollToEquipo) {
+      setTimeout(() => {
+        const eq = document.getElementById('equipo');
+        if (eq) {
+          eq.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 150);
+    }
   };
 
   // Step transition - instant (no animation)
@@ -3144,7 +3177,7 @@ export default function BookAppointment() {
                                     setExpandedBarber(null);
                                     setExpandedBarberPortfolio([]);
                                     if (profileSourceStep === 1) {
-                                      handleReturnToWelcome();
+                                      handleReturnToWelcome(true);
                                     } else {
                                       setStep(2);
                                     }
@@ -3181,6 +3214,25 @@ export default function BookAppointment() {
                                 </div>
                                 {/* ── MÓVIL: Immersive Cinematic Hero Video/Photo Header (Oculto en desktop) ── */}
                                 <div className="relative h-[420px] -mx-4 -mt-8 mb-6 overflow-hidden rounded-b-[2rem] border border-white/5 shadow-2xl bg-[#0a0a0d] profile-video-hero z-10 md:hidden">
+                                  {/* Botón Volver Flotante en Móvil */}
+                                  <button
+                                    onClick={() => {
+                                      setExpandedBarber(null);
+                                      setExpandedBarberPortfolio([]);
+                                      if (profileSourceStep === 1) {
+                                        handleReturnToWelcome(true);
+                                      } else {
+                                        setStep(2);
+                                      }
+                                      scrollToTop();
+                                    }}
+                                    className="absolute top-6 left-6 z-[30] w-10 h-10 rounded-full bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 hover:text-white cursor-pointer active:scale-95 transition-all md:hidden"
+                                    aria-label="Volver"
+                                    type="button"
+                                  >
+                                    <ChevronLeft size={20} />
+                                  </button>
+
                                   {getBarberVideo(expandedBarber.name) ? (
                                     <div className="w-full h-full relative profile-video-inner">
                                       {expandedBarber.image_url && (
