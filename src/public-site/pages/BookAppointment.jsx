@@ -1904,7 +1904,7 @@ export default function BookAppointment() {
                                       activeTeamCardId === barber.id ? 'opacity-100' : 'opacity-0'
                                     }`}
                                     style={{
-                                      objectPosition: barber.name.toLowerCase().includes('abraham') 
+                                      objectPosition: barber.name.toLowerCase().includes('moret') 
                                         ? 'center 15%' 
                                         : 'center center'
                                     }}
