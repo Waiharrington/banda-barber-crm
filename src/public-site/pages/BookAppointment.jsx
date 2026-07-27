@@ -3419,26 +3419,9 @@ export default function BookAppointment() {
                                 <div className="md:col-span-7 space-y-8 w-full">
                                   {/* Recent Works Collage Gallery */}
                                   <div className="profile-gallery-enter w-full">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 border-b border-white/5 pb-4">
+                                    <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
                                       <div className="flex items-center gap-2">
                                         <h4 className="font-extrabold text-sm text-white/80 uppercase tracking-widest">// TRABAJOS RECIENTES</h4>
-                                      </div>
-                                      
-                                      {/* Pestañas de categorías del portafolio */}
-                                      <div className="flex flex-wrap gap-1">
-                                        {['Todos', 'Cortes', 'Barba', 'Clásicos', 'Diseños'].map(cat => (
-                                          <button
-                                            key={cat}
-                                            onClick={() => setPortfolioFilter(cat)}
-                                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                                              portfolioFilter === cat 
-                                                ? 'bg-[#CBB79A] text-black' 
-                                                : 'bg-white/5 text-white/40 hover:text-white hover:bg-white/10'
-                                            }`}
-                                          >
-                                            {cat}
-                                          </button>
-                                        ))}
                                       </div>
                                     </div>
 
@@ -3448,13 +3431,13 @@ export default function BookAppointment() {
                                           <div key={i} className="w-full aspect-[3/4] rounded-2xl bg-white/5 animate-pulse" />
                                         ))}
                                       </div>
-                                    ) : filteredPortfolio.length === 0 ? (
+                                    ) : expandedBarberPortfolio.length === 0 ? (
                                       <div className="flex items-center justify-center h-24 rounded-2xl border border-white/5 bg-white/[0.02] border-dashed">
-                                        <p className="text-xs text-white/40 font-bold uppercase tracking-wider">// Sin trabajos en esta categoría</p>
+                                        <p className="text-xs text-white/40 font-bold uppercase tracking-wider">// Sin trabajos recientes</p>
                                       </div>
                                     ) : (
                                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                        {filteredPortfolio.map(photo => (
+                                        {expandedBarberPortfolio.map(photo => (
                                           <div 
                                             key={photo.id} 
                                             onClick={() => setActiveLightboxImage(photo.image_url)}
