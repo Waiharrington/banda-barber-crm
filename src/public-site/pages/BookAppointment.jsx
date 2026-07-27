@@ -2999,7 +2999,7 @@ export default function BookAppointment() {
                               {/* Left Column: Cover Video/Photo, Manifesto, Recent Works portfolio */}
                               <div className="lg:col-span-7 space-y-6 w-full">
                                 {/* Immersive Cinematic Hero Video/Photo Header */}
-                                <div className="relative h-[480px] lg:h-[550px] -mx-4 lg:mx-0 -mt-8 lg:mt-0 overflow-hidden rounded-b-[2rem] lg:rounded-3xl border border-white/5 shadow-2xl bg-[#0a0a0d] profile-video-hero z-10">
+                                <div className="relative h-[420px] lg:h-[480px] -mx-4 lg:mx-0 -mt-8 lg:mt-0 overflow-hidden rounded-b-[2rem] lg:rounded-3xl border border-white/5 shadow-2xl bg-[#0a0a0d] profile-video-hero z-10">
                                 {getBarberVideo(expandedBarber.name) ? (
                                   <div className="w-full h-full relative profile-video-inner">
                                     {expandedBarber.image_url && (
@@ -3007,7 +3007,10 @@ export default function BookAppointment() {
                                         src={expandedBarber.image_url}
                                         alt={expandedBarber.name}
                                         className="profile-video-poster"
-                                        style={{ filter: 'brightness(0.85)' }}
+                                        style={{ 
+                                          filter: 'brightness(0.85)',
+                                          objectPosition: expandedBarber.name.toLowerCase().includes('moret') ? 'center 15%' : 'center top'
+                                        }}
                                       />
                                     )}
                                     <video
@@ -3019,7 +3022,10 @@ export default function BookAppointment() {
                                       preload="auto"
                                       poster={expandedBarber.image_url || undefined}
                                       className="w-full h-full object-cover profile-video-el"
-                                      style={{ filter: 'brightness(0.85)' }}
+                                      style={{ 
+                                        filter: 'brightness(0.85)',
+                                        objectPosition: expandedBarber.name.toLowerCase().includes('moret') ? 'center 15%' : 'center top'
+                                      }}
                                       onLoadedData={(e) => e.currentTarget.classList.add('loaded')}
                                     >
                                       <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
@@ -3140,42 +3146,42 @@ export default function BookAppointment() {
                               </div>
                             </div>
 
-                            {/* Right Column: Stats panel, Services menu, Booking CTA (sticky on desktop) */}
-                            <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-6 w-full">
+                            {/* Right Column: Stats panel, Services menu, Booking CTA (sticky on desktop conditionally) */}
+                            <div className="lg:col-span-5 profile-sticky-sidebar space-y-6 w-full">
                               {/* Brutalist Asymmetric Stats Section */}
                               {(() => {
                                 const stats = getBarberStats(expandedBarber);
                                 return (
-                                  <div className="grid grid-cols-2 gap-4 profile-stats-enter w-full">
-                                    <div className="urban-industrial-panel p-5 flex flex-col justify-between h-[115px]">
-                                      <span className="text-[10px] text-white/40 font-black uppercase tracking-widest leading-none">// TRABAJOS</span>
+                                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 profile-stats-enter w-full">
+                                    <div className="urban-industrial-panel p-4 lg:p-3 flex flex-col justify-between h-[115px] lg:h-[88px]">
+                                      <span className="text-[10px] lg:text-[8px] text-white/40 font-black uppercase tracking-widest leading-none">// TRABAJOS</span>
                                       <div>
-                                        <div className="urban-stat-num">{stats.services_count}</div>
-                                        <span className="text-[9px] text-white/60 font-bold uppercase tracking-wider">Cortes completados</span>
+                                        <div className="urban-stat-num text-3xl lg:text-[1.5rem] lg:leading-none">{stats.services_count}</div>
+                                        <span className="text-[9px] lg:text-[7px] text-white/60 font-bold uppercase tracking-wider block truncate">Cortes</span>
                                       </div>
                                     </div>
 
-                                    <div className="urban-industrial-panel p-5 flex flex-col justify-between h-[115px] border-left-[#ffffff]">
-                                      <span className="text-[10px] text-white/40 font-black uppercase tracking-widest leading-none">// FEEDBACK</span>
+                                    <div className="urban-industrial-panel p-4 lg:p-3 flex flex-col justify-between h-[115px] lg:h-[88px] border-left-[#ffffff]">
+                                      <span className="text-[10px] lg:text-[8px] text-white/40 font-black uppercase tracking-widest leading-none">// FEEDBACK</span>
                                       <div>
-                                        <div className="urban-stat-num urban-stat-accent">{stats.happy_clients}</div>
-                                        <span className="text-[9px] text-white/60 font-bold uppercase tracking-wider">Clientes felices</span>
+                                        <div className="urban-stat-num urban-stat-accent text-3xl lg:text-[1.5rem] lg:leading-none">{stats.happy_clients}</div>
+                                        <span className="text-[9px] lg:text-[7px] text-white/60 font-bold uppercase tracking-wider block truncate">Clientes</span>
                                       </div>
                                     </div>
 
-                                    <div className="urban-industrial-panel p-5 flex flex-col justify-between h-[115px]">
-                                      <span className="text-[10px] text-white/40 font-black uppercase tracking-widest leading-none">// EXPERIENCIA</span>
+                                    <div className="urban-industrial-panel p-4 lg:p-3 flex flex-col justify-between h-[115px] lg:h-[88px]">
+                                      <span className="text-[10px] lg:text-[8px] text-white/40 font-black uppercase tracking-widest leading-none">// EXPERIENCIA</span>
                                       <div>
-                                        <div className="urban-stat-num">{stats.experience}</div>
-                                        <span className="text-[9px] text-white/60 font-bold uppercase tracking-wider">Años de trayectoria</span>
+                                        <div className="urban-stat-num text-3xl lg:text-[1.5rem] lg:leading-none">{stats.experience}</div>
+                                        <span className="text-[9px] lg:text-[7px] text-white/60 font-bold uppercase tracking-wider block truncate">Trayectoria</span>
                                       </div>
                                     </div>
 
-                                    <div className="urban-industrial-panel p-5 flex flex-col justify-between h-[115px]">
-                                      <span className="text-[10px] text-white/40 font-black uppercase tracking-widest leading-none">// UBICACIÓN</span>
+                                    <div className="urban-industrial-panel p-4 lg:p-3 flex flex-col justify-between h-[115px] lg:h-[88px]">
+                                      <span className="text-[10px] lg:text-[8px] text-white/40 font-black uppercase tracking-widest leading-none">// UBICACIÓN</span>
                                       <div>
-                                        <div className="text-sm font-black text-white leading-tight truncate uppercase tracking-tight">{stats.location}</div>
-                                        <span className="text-[9px] text-white/60 font-bold uppercase tracking-wider">Sede oficial</span>
+                                        <div className="text-sm lg:text-[10px] font-black text-white leading-tight truncate uppercase tracking-tight">{stats.location}</div>
+                                        <span className="text-[9px] lg:text-[7px] text-white/60 font-bold uppercase tracking-wider block truncate">Sede</span>
                                       </div>
                                     </div>
                                   </div>

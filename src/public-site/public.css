@@ -2990,4 +2990,11 @@ body.hide-public-header nav {
   }
 }
 
+@media (min-width: 1024px) and (min-height: 800px) {
+  .profile-sticky-sidebar {
+    position: sticky !important;
+    top: 6rem !important;
+  }
+}
+
 
