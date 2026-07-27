@@ -1906,7 +1906,7 @@ export default function BookAppointment() {
                                     style={{
                                       objectPosition: barber.name.toLowerCase().includes('moret') 
                                         ? 'center 15%' 
-                                        : 'center center'
+                                        : 'center top'
                                     }}
                                   />
                                 )}
