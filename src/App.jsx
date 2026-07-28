@@ -394,14 +394,16 @@ function App() {
       const currentMonthStartISO = currentMonthStart.toISOString();
       const dashboardStartISO = previousMonthStart.toISOString();
 
-      const [t, ext, inv, apps, recentApps, fullClients] = await Promise.all([
+      const [t, ext, retailInventory, toolsInventory, apps, recentApps, fullClients] = await Promise.all([
         dataService.getTransactions(dashboardStartISO),
         dataService.getExtras(),
-        dataService.getInventory(),
+        dataService.getInventory('barbershop'),
+        dataService.getInventory('tools'),
         dataService.getAppointmentsByState(['Completado'], dashboardStartISO),
         dataService.getAppointmentsInRange(yesterdayStart.toISOString(), tomorrowStart.toISOString()),
         dataService.getClients() // Full client data with visit counts
       ]);
+      const inv = [...asArray(retailInventory), ...asArray(toolsInventory)];
 
       const st = await dataService.getStaff();
       const operationalTransactions = t.filter(tr => !isImportedHistoricalTransaction(tr));
@@ -410,8 +412,32 @@ function App() {
         const timestamp = new Date(value).getTime();
         return timestamp >= start.getTime() && timestamp < end.getTime();
       };
-      const todayApps = recentApps.filter(app => inRange(app.scheduled_at, todayStart, tomorrowStart));
-      const yesterdayApps = recentApps.filter(app => inRange(app.scheduled_at, yesterdayStart, todayStart));
+      const getAppointmentOperationalDate = app => app.scheduled_at || app.created_at;
+      const todayApps = recentApps.filter(app =>
+        inRange(getAppointmentOperationalDate(app), todayStart, tomorrowStart)
+      );
+      const yesterdayApps = recentApps.filter(app =>
+        inRange(getAppointmentOperationalDate(app), yesterdayStart, todayStart)
+      );
+      const getTransactionAppointmentIds = transaction => {
+        const ids = [
+          transaction.metadata?.appointment_id,
+          ...(Array.isArray(transaction.metadata?.appointment_ids)
+            ? transaction.metadata.appointment_ids
+            : [])
+        ];
+        return ids.filter(Boolean).map(String);
+      };
+      const countOperationalAppointments = (rangeApps, rangeTransactions) => {
+        const appointmentIds = new Set(rangeApps.map(app => String(app.id)));
+
+        rangeTransactions
+          .filter(transaction => transaction.type === 'income')
+          .flatMap(getTransactionAppointmentIds)
+          .forEach(id => appointmentIds.add(id));
+
+        return appointmentIds.size;
+      };
       
       const staffWithStats = st.map(barber => {
         // Historical Appts logic (services and extras)
@@ -453,7 +479,7 @@ function App() {
         clients: fullClients, // Now with real visit counts
         staff: staffWithStats, 
         extras: ext || [], 
-        inventory: inv?.filter(i => i.is_for_sale !== false) || [],
+        inventory: inv,
         appointments: apps.filter(app =>
           inRange(app.completed_at || app.scheduled_at || app.created_at, currentMonthStart, tomorrowStart)
         ),
@@ -466,6 +492,9 @@ function App() {
         inRange(client.created_at, start, end)
       ).length;
       const todayTransactions = operationalTransactions.filter(trans => inRange(trans.created_at, todayStart, tomorrowStart));
+      const yesterdayTransactions = operationalTransactions.filter(trans => inRange(trans.created_at, yesterdayStart, todayStart));
+      const todayAppointmentCount = countOperationalAppointments(todayApps, todayTransactions);
+      const yesterdayAppointmentCount = countOperationalAppointments(yesterdayApps, yesterdayTransactions);
       const computedStats = {
         income: incomeInRange(todayStart, tomorrowStart),
         yesterdayIncome: incomeInRange(yesterdayStart, todayStart),
@@ -475,8 +504,8 @@ function App() {
         previousMonthIncome: incomeInRange(previousMonthStart, currentMonthStart),
         expenses: todayTransactions.filter(tr => tr.type === 'expense').reduce((acc, tr) => acc + Number(tr.amount), 0),
         clients: fullClients.length,
-        appointments: todayApps.length,
-        yesterdayAppointments: yesterdayApps.length,
+        appointments: todayAppointmentCount,
+        yesterdayAppointments: yesterdayAppointmentCount,
         newClientsToday: clientsCreatedInRange(todayStart, tomorrowStart),
         newClientsYesterday: clientsCreatedInRange(yesterdayStart, todayStart),
         clientsThisWeek: clientsCreatedInRange(currentWeekStart, tomorrowStart),
@@ -627,7 +656,7 @@ function App() {
       case 'finance': return <div className="p-container"><FinanceModule isMobile={isMobile} currency={currency} rates={effectiveRates} staff={dbData.staff} /></div>;
       case 'reports': return <div className="p-container"><ReportsModule isMobile={isMobile} rates={effectiveRates} staff={dbData.staff} /></div>;
       case 'clients': return <div className="p-container"><ClientModule isMobile={isMobile} clients={dbData.clients} onRefresh={fetchInitialData} initialClientId={tabParams.clientId} /></div>;
-      case 'personnel': return <div className="p-container"><PersonnelModule isMobile={isMobile} inventory={dbData.inventory || []} /></div>;
+      case 'personnel': return <div className="p-container"><PersonnelModule isMobile={isMobile} inventory={dbData.inventory || []} initialStaffId={tabParams.staffId} onDataRefresh={fetchSecondaryData} /></div>;
       case 'history': return <div className="p-container"><HistoryModule isMobile={isMobile} rates={effectiveRates} onNavigate={handleTabChange} /></div>;
       case 'settings': return <div className="p-container"><SettingsModule isMobile={isMobile} clients={dbData.clients} onRefresh={fetchInitialData} /></div>;
       case 'my-profile':
@@ -708,7 +737,7 @@ function App() {
         display: 'flex',
         flexDirection: 'column',
         flex: 1, 
-        marginLeft: isMobile ? '0' : (isModalOpen ? '0' : (isCollapsed ? '80px' : '260px')), 
+        marginLeft: isMobile ? '0' : (isCollapsed ? '80px' : '260px'),
         padding: 'var(--spacing-xl)', 
         paddingBottom: activeTab === 'dashboard' ? '12px' : '80px',
         height: '100vh',

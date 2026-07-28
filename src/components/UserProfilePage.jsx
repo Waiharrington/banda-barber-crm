@@ -23,12 +23,15 @@ import {
   Target,
   Pencil,
   Check,
-  X
+  X,
+  History,
+  Minus
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import { useDialog } from '../context/DialogContext';
+import PersonalInventoryHistoryModal from './PersonalInventoryHistoryModal';
 
 const asArray = (value) => Array.isArray(value) ? value : [];
 
@@ -53,8 +56,31 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
   // Inventory/Tools State
   const [tools, setTools] = useState([]);
   const [showAddTool, setShowAddTool] = useState(false);
-  const [newTool, setNewTool] = useState({ name: '', brand: '', ownership: 'Propia', status: 'Operativa', inventory_id: '' });
+  const [newTool, setNewTool] = useState({
+    name: '',
+    brand: '',
+    ownership: 'Propia',
+    status: 'Operativa',
+    inventory_id: '',
+    item_type: 'Herramienta',
+    quantity: 1
+  });
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showInventoryHistory, setShowInventoryHistory] = useState(false);
+  const [adjustingToolId, setAdjustingToolId] = useState(null);
+
+  const logPersonalInventoryMovement = async (tool, action, amount, type, productId = tool.inventory_id || null) => {
+    try {
+      await dataService.logInventoryMovement({
+        product_id: productId,
+        type,
+        amount,
+        reason: `[PERSONAL:${staffMember.id}] ${action}|${tool.name}`
+      });
+    } catch (error) {
+      console.error('Error logging personal inventory movement:', error);
+    }
+  };
 
   useEffect(() => {
     if (staffMember) {
@@ -106,61 +132,127 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
   };
 
   const handleAddTool = async () => {
+    const quantity = Math.max(1, Number.parseInt(newTool.quantity, 10) || 1);
+    let adjustedInventoryItem = null;
     if (newTool.ownership === 'Propia') {
-      if (!newTool.name || !newTool.brand) {
-        showToast('Ingresa nombre y marca', 'warning');
+      if (!newTool.name.trim()) {
+        showToast('Ingresa el nombre del artículo', 'warning');
         return;
       }
     } else {
       if (!newTool.inventory_id) {
-        showToast('Selecciona una herramienta del inventario', 'warning');
+        showToast('Selecciona un artículo del inventario', 'warning');
         return;
       }
     }
 
     try {
       setLoading(true);
-      let toolToAdd = { ...newTool, id: Date.now().toString(), date_added: new Date().toISOString() };
+      let toolToAdd = {
+        ...newTool,
+        quantity,
+        id: Date.now().toString(),
+        date_added: new Date().toISOString()
+      };
 
       if (newTool.ownership === 'Asignada') {
         const invItem = inventory.find(i => i.id === newTool.inventory_id);
         if (invItem) {
+          const availableStock = Number(invItem.stock || 0);
+          if (availableStock < quantity) {
+            showToast(`Solo hay ${availableStock} unidad(es) disponibles`, 'warning');
+            return;
+          }
           toolToAdd.name = invItem.name;
-          toolToAdd.brand = invItem.category;
-          await dataService.updateInventoryItem(invItem.id, { staff_id: staffMember.id });
+          toolToAdd.brand = invItem.brand || invItem.category || '';
+          await dataService.updateStock(invItem.id, availableStock - quantity);
+          adjustedInventoryItem = invItem;
         }
       }
 
       const updatedTools = [...tools, toolToAdd];
       await dataService.updateStaffTools(staffMember.id, updatedTools);
       setTools(updatedTools);
-      setNewTool({ name: '', brand: '', ownership: 'Propia', status: 'Operativa', inventory_id: '' });
+      await logPersonalInventoryMovement(
+        toolToAdd,
+        toolToAdd.ownership === 'Asignada' ? 'ASIGNACION' : 'REGISTRO',
+        quantity,
+        toolToAdd.ownership === 'Asignada' ? 'exit' : 'entry'
+      );
+      setNewTool({
+        name: '',
+        brand: '',
+        ownership: 'Propia',
+        status: 'Operativa',
+        inventory_id: '',
+        item_type: 'Herramienta',
+        quantity: 1
+      });
       setShowAddTool(false);
-      showToast('Herramienta asignada con éxito');
-      if (onUpdate) onUpdate();
+      showToast('Artículo registrado con éxito');
+      if (onUpdate) {
+        try {
+          await onUpdate();
+        } catch (refreshError) {
+          console.error('Error refreshing profile data:', refreshError);
+        }
+      }
     } catch (error) {
       console.error('Error saving tool:', error);
-      showToast('Error al guardar herramienta', 'error');
+      if (adjustedInventoryItem) {
+        try {
+          await dataService.updateStock(adjustedInventoryItem.id, Number(adjustedInventoryItem.stock || 0));
+        } catch (rollbackError) {
+          console.error('Error restoring inventory stock:', rollbackError);
+        }
+      }
+      showToast('Error al guardar el artículo', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const handleRemoveTool = async (toolId) => {
-    if (!await confirm('¿Seguro que deseas eliminar esta herramienta del inventario personal?')) return;
+    if (!await confirm('¿Seguro que deseas eliminar este artículo del inventario personal?')) return;
     try {
       setLoading(true);
       const toolToRemove = tools.find(t => t.id === toolId);
       
-      if (toolToRemove && toolToRemove.inventory_id) {
-        await dataService.updateInventoryItem(toolToRemove.inventory_id, { staff_id: null });
+      if (toolToRemove?.inventory_id) {
+        if (toolToRemove.quantity == null) {
+          await dataService.updateInventoryItem(toolToRemove.inventory_id, { staff_id: null });
+        } else {
+          const invItem = inventory.find(item => item.id === toolToRemove.inventory_id);
+          if (invItem) {
+            await dataService.updateStock(
+              invItem.id,
+              Number(invItem.stock || 0) + Math.max(1, Number(toolToRemove.quantity) || 1)
+            );
+          }
+        }
       }
 
       const updatedTools = tools.filter(t => t.id !== toolId);
       await dataService.updateStaffTools(staffMember.id, updatedTools);
       setTools(updatedTools);
-      showToast('Herramienta removida y regresada al inventario general');
-      if (onUpdate) onUpdate();
+      if (toolToRemove) {
+        await logPersonalInventoryMovement(
+          toolToRemove,
+          toolToRemove.inventory_id ? 'DEVOLUCION' : 'RETIRO',
+          Math.max(1, Number(toolToRemove.quantity) || 1),
+          toolToRemove.inventory_id ? 'entry' : 'exit'
+        );
+      }
+      showToast(toolToRemove?.inventory_id
+        ? 'Artículo removido y devuelto al inventario general'
+        : 'Artículo removido del perfil');
+      if (onUpdate) {
+        try {
+          await onUpdate();
+        } catch (refreshError) {
+          console.error('Error refreshing profile data:', refreshError);
+        }
+      }
     } catch (error) {
       showToast('Error al eliminar', 'error');
     } finally {
@@ -168,9 +260,77 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
     }
   };
 
-  const availableInventoryTools = asArray(inventory).filter(i => 
-    (i.category === 'Herramienta' || i.category === 'Accesorios') && !i.staff_id
+  const isToolInventoryItem = item => (
+    item.inventory_type === 'tools'
+    || ['herramienta', 'herramientas', 'accesorios', 'uso interno']
+      .includes(String(item.category || '').toLowerCase())
   );
+  const availableInventoryTools = asArray(inventory).filter(item => {
+    const matchesType = newTool.item_type === 'Herramienta'
+      ? isToolInventoryItem(item)
+      : !isToolInventoryItem(item);
+    return matchesType && Number(item.stock || 0) > 0 && !item.staff_id;
+  });
+
+  const handleAdjustPersonalProduct = async (toolId, amount) => {
+    const tool = tools.find(item => item.id === toolId);
+    if (!tool || (tool.item_type || 'Herramienta') !== 'Producto') return;
+
+    const currentQuantity = Math.max(0, Number(tool.quantity) || 0);
+    if (amount < 0 && currentQuantity === 0) {
+      showToast('Este producto ya está agotado.', 'warning');
+      return;
+    }
+
+    let adjustedInventoryItem = null;
+    try {
+      setAdjustingToolId(toolId);
+      if (amount > 0 && tool.inventory_id) {
+        const invItem = inventory.find(item => item.id === tool.inventory_id);
+        if (!invItem || Number(invItem.stock || 0) < 1) {
+          showToast('No quedan unidades disponibles en el almacén.', 'warning');
+          return;
+        }
+        await dataService.updateStock(invItem.id, Number(invItem.stock) - 1);
+        adjustedInventoryItem = invItem;
+      }
+
+      const nextQuantity = Math.max(0, currentQuantity + amount);
+      const updatedTools = tools.map(item => item.id === toolId
+        ? { ...item, quantity: nextQuantity, status: nextQuantity === 0 ? 'Agotado' : 'Disponible' }
+        : item);
+      await dataService.updateStaffTools(staffMember.id, updatedTools);
+      setTools(updatedTools);
+      await logPersonalInventoryMovement(
+        tool,
+        amount < 0 ? 'CONSUMO' : 'REPOSICION',
+        1,
+        amount < 0 || tool.inventory_id ? 'exit' : 'entry',
+        amount > 0 ? tool.inventory_id || null : null
+      );
+      showToast(amount < 0 ? `Registrado: gastaste 1 ${tool.name}` : `Se repuso 1 ${tool.name}`);
+
+      if (onUpdate) {
+        try {
+          await onUpdate();
+        } catch (refreshError) {
+          console.error('Error refreshing profile data:', refreshError);
+        }
+      }
+    } catch (error) {
+      console.error('Error adjusting personal inventory:', error);
+      if (adjustedInventoryItem) {
+        try {
+          await dataService.updateStock(adjustedInventoryItem.id, Number(adjustedInventoryItem.stock || 0));
+        } catch (rollbackError) {
+          console.error('Error restoring inventory stock:', rollbackError);
+        }
+      }
+      showToast('No se pudo actualizar la cantidad.', 'error');
+    } finally {
+      setAdjustingToolId(null);
+    }
+  };
 
   // Parse Role & Permissions
   const roleRaw = staffMember?.role || 'ASISTENTE';
@@ -732,6 +892,25 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                   <Wrench size={18} color="var(--gold-primary)" />
                   <h4 style={{ fontSize: '15px', fontWeight: '900', color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Inventario Personal</h4>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  onClick={() => setShowInventoryHistory(true)}
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '10px',
+                    color: 'white',
+                    padding: '8px 11px',
+                    fontSize: '11px',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <History size={12} /> Historial
+                </button>
                 <button
                   onClick={() => setShowAddTool(!showAddTool)}
                   style={{
@@ -751,6 +930,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                 >
                   <Plus size={12} /> {showAddTool ? 'Cerrar' : 'Asignar'}
                 </button>
+                </div>
               </div>
 
               {/* Add Tool Form */}
@@ -758,8 +938,36 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                 <div className="animate-scale-in" style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255,0.2)' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <div style={{ display: 'flex', gap: '10px' }}>
+                      {['Herramienta', 'Producto'].map(itemType => (
+                        <button
+                          key={itemType}
+                          type="button"
+                          onClick={() => setNewTool({
+                            ...newTool,
+                            item_type: itemType,
+                            inventory_id: '',
+                            status: itemType === 'Producto' ? 'Disponible' : 'Operativa'
+                          })}
+                          style={{
+                            flex: 1,
+                            height: '34px',
+                            borderRadius: '8px',
+                            border: newTool.item_type === itemType ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.08)',
+                            backgroundColor: newTool.item_type === itemType ? 'rgba(197,168,128,0.16)' : 'rgba(255,255,255,0.04)',
+                            color: newTool.item_type === itemType ? 'var(--gold-primary)' : 'rgba(255,255,255,0.65)',
+                            fontSize: '11px',
+                            fontWeight: '900',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {itemType}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '10px' }}>
                       <button 
-                        onClick={() => setNewTool({ ...newTool, ownership: 'Propia' })}
+                        onClick={() => setNewTool({ ...newTool, ownership: 'Propia', inventory_id: '' })}
                         style={{ 
                           flex: 1, 
                           height: '34px', 
@@ -776,7 +984,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                         Propia
                       </button>
                       <button 
-                        onClick={() => setNewTool({ ...newTool, ownership: 'Asignada' })}
+                        onClick={() => setNewTool({ ...newTool, ownership: 'Asignada', inventory_id: '' })}
                         style={{ 
                           flex: 1, 
                           height: '34px', 
@@ -798,14 +1006,14 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                       <>
                         <input 
                           type="text" 
-                          placeholder="Nombre (Ej: Clipper Magic Clip)" 
+                          placeholder={newTool.item_type === 'Producto' ? 'Nombre (Ej: Laca profesional)' : 'Nombre (Ej: Clipper Magic Clip)'}
                           value={newTool.name}
                           onChange={e => setNewTool({ ...newTool, name: e.target.value })}
                           className="custom-form-input"
                         />
                         <input 
                           type="text" 
-                          placeholder="Marca/Detalles (Ej: Wahl)" 
+                          placeholder={newTool.item_type === 'Producto' ? 'Marca/Detalles (opcional)' : 'Marca/Modelo (opcional)'}
                           value={newTool.brand}
                           onChange={e => setNewTool({ ...newTool, brand: e.target.value })}
                           className="custom-form-input"
@@ -833,8 +1041,8 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                         >
                           <span style={{ color: newTool.inventory_id ? 'white' : 'rgba(255, 255, 255, 0.4)' }}>
                             {newTool.inventory_id 
-                              ? availableInventoryTools.find(t => t.id === newTool.inventory_id)?.name + ` (Ref: €${availableInventoryTools.find(t => t.id === newTool.inventory_id)?.price})`
-                              : 'Selecciona una herramienta...'}
+                              ? `${availableInventoryTools.find(t => t.id === newTool.inventory_id)?.name} · Stock: ${availableInventoryTools.find(t => t.id === newTool.inventory_id)?.stock}`
+                              : `Selecciona ${newTool.item_type === 'Producto' ? 'un producto' : 'una herramienta'}...`}
                           </span>
                           <ChevronDown size={16} color="var(--gold-primary)" style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
                         </button>
@@ -858,7 +1066,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                           }}>
                             {availableInventoryTools.length === 0 ? (
                               <div style={{ padding: '12px 14px', color: 'rgba(255, 255, 255, 0.4)', fontSize: '13px', textAlign: 'center' }}>
-                                No hay herramientas disponibles en stock
+                                No hay {newTool.item_type.toLowerCase()}s disponibles en stock
                               </div>
                             ) : (
                               availableInventoryTools.map(t => (
@@ -886,7 +1094,7 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                                     e.currentTarget.style.color = newTool.inventory_id === t.id ? 'var(--gold-primary)' : 'white';
                                   }}
                                 >
-                                  {t.name} (Ref: ${t.price})
+                                  {t.name} · Stock: {t.stock}
                                 </div>
                               ))
                             )}
@@ -894,6 +1102,23 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                         )}
                       </div>
                     )}
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <label style={{ color: 'rgba(255,255,255,0.55)', fontSize: '11px', fontWeight: '800', minWidth: '70px' }}>
+                        CANTIDAD
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max={newTool.ownership === 'Asignada'
+                          ? availableInventoryTools.find(item => item.id === newTool.inventory_id)?.stock
+                          : undefined}
+                        value={newTool.quantity}
+                        onChange={event => setNewTool({ ...newTool, quantity: event.target.value })}
+                        className="custom-form-input"
+                        style={{ width: '110px' }}
+                      />
+                    </div>
 
                     <button 
                       onClick={handleAddTool}
@@ -917,31 +1142,86 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '350px', overflowY: 'auto', paddingRight: '4px' }}>
                 {tools.length === 0 ? (
                   <div style={{ padding: '30px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '16px' }}>
-                    Ninguna herramienta registrada en este perfil.
+                    Ningún artículo registrado en este perfil.
                   </div>
                 ) : (
-                  tools.map(tool => (
+                  tools.map(tool => {
+                    const itemType = tool.item_type || 'Herramienta';
+                    const resolvedStatus = tool.status || (itemType === 'Producto' ? 'Disponible' : 'Operativa');
+                    const isHealthy = ['Operativa', 'Disponible'].includes(resolvedStatus);
+                    return (
                     <div 
                       key={tool.id} 
                       className="inventory-tool-row"
                     >
-                      <div>
-                        <div style={{ fontWeight: '800', fontSize: '13px', color: 'white' }}>{tool.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {itemType === 'Producto'
+                          ? <Package size={16} color="var(--gold-primary)" />
+                          : <Wrench size={16} color="var(--gold-primary)" />}
+                        <div>
+                        <div style={{ fontWeight: '800', fontSize: '13px', color: 'white' }}>
+                          {tool.name} <span style={{ color: 'var(--gold-primary)', fontSize: '11px' }}>× {tool.quantity || 1}</span>
+                        </div>
                         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
-                          {tool.brand} • <span style={{ color: tool.ownership === 'Propia' ? 'var(--gold-primary)' : '#30d158', fontWeight: '800' }}>{tool.ownership}</span>
+                          {itemType}{tool.brand ? ` · ${tool.brand}` : ''} · <span style={{ color: tool.ownership === 'Propia' ? 'var(--gold-primary)' : '#30d158', fontWeight: '800' }}>{tool.ownership}</span>
+                        </div>
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {itemType === 'Producto' && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <button
+                              onClick={() => handleAdjustPersonalProduct(tool.id, -1)}
+                              disabled={adjustingToolId === tool.id || Number(tool.quantity || 0) <= 0}
+                              title="Registrar que gastaste una unidad"
+                              style={{
+                                height: '29px',
+                                padding: '0 9px',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255,159,10,0.25)',
+                                background: 'rgba(255,159,10,0.1)',
+                                color: '#ffb340',
+                                fontSize: '10px',
+                                fontWeight: '900',
+                                cursor: Number(tool.quantity || 0) > 0 ? 'pointer' : 'not-allowed',
+                                opacity: Number(tool.quantity || 0) > 0 ? 1 : 0.45,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <Minus size={11} /> Gasté 1
+                            </button>
+                            <button
+                              onClick={() => handleAdjustPersonalProduct(tool.id, 1)}
+                              disabled={adjustingToolId === tool.id}
+                              title="Reponer una unidad"
+                              style={{
+                                width: '29px',
+                                height: '29px',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(48,209,88,0.22)',
+                                background: 'rgba(48,209,88,0.1)',
+                                color: '#30d158',
+                                cursor: 'pointer',
+                                display: 'grid',
+                                placeItems: 'center'
+                              }}
+                            >
+                              <Plus size={12} />
+                            </button>
+                          </div>
+                        )}
                         <span style={{ 
                           fontSize: '10px', 
                           fontWeight: '900', 
-                          color: tool.status === 'Operativa' ? '#30d158' : '#ff453a', 
-                          backgroundColor: tool.status === 'Operativa' ? 'rgba(48,209,88,0.1)' : 'rgba(255,69,58,0.1)', 
-                          border: tool.status === 'Operativa' ? '1px solid rgba(48,209,88,0.2)' : '1px solid rgba(255,69,58,0.2)',
+                          color: isHealthy ? '#30d158' : '#ff453a',
+                          backgroundColor: isHealthy ? 'rgba(48,209,88,0.1)' : 'rgba(255,69,58,0.1)',
+                          border: isHealthy ? '1px solid rgba(48,209,88,0.2)' : '1px solid rgba(255,69,58,0.2)',
                           padding: '3px 8px', 
                           borderRadius: '6px' 
                         }}>
-                          {tool.status.toUpperCase()}
+                          {resolvedStatus.toUpperCase()}
                         </span>
                         <button 
                           onClick={() => handleRemoveTool(tool.id)}
@@ -970,12 +1250,18 @@ const UserProfilePage = ({ staffMember, inventory = [], onUpdate, isMobile }) =>
                         </button>
                       </div>
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
 
           </div>
+          <PersonalInventoryHistoryModal
+            isOpen={showInventoryHistory}
+            onClose={() => setShowInventoryHistory(false)}
+            staffId={staffMember.id}
+          />
         </>
       )}
 

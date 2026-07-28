@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Menu, X, Scissors, Phone, MapPin, Calendar, User } from 'lucide-react';
 import { publicService } from '../services/publicService';
 import logo from '../../assets/logo_full.png';
@@ -10,6 +10,7 @@ export default function PublicLayout() {
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const googleCallbackHandledRef = useRef(false);
 
   useEffect(() => {
     const handleScroll = (e) => {
@@ -31,21 +32,50 @@ export default function PublicLayout() {
   }, [location]);
 
   useEffect(() => {
-    const { data: authListener } = publicService.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        try {
-          const client = await publicService.getClientByUserId(session.user.id);
-          if (!client) {
-            navigate('/completar-registro');
-          } else {
-            localStorage.setItem('panda_public_client', JSON.stringify(client));
-            setIsLoggedIn(true);
-          }
-        } catch (e) {
-          console.error('Error fetching client after login:', e);
+    const completeGoogleLogin = async session => {
+      if (
+        !session?.user
+        || localStorage.getItem('panda_google_login_pending') !== 'true'
+        || googleCallbackHandledRef.current
+      ) {
+        return;
+      }
+
+      googleCallbackHandledRef.current = true;
+      try {
+        const client = await publicService.getClientByUserId(session.user.id);
+        localStorage.removeItem('panda_google_login_pending');
+
+        if (!client) {
+          navigate('/completar-registro', { replace: true });
+          return;
         }
+
+        localStorage.setItem('panda_public_client', JSON.stringify(client));
+        setIsLoggedIn(true);
+        if (localStorage.getItem('panda_login_return_to_booking') === 'true') {
+          localStorage.removeItem('panda_login_return_to_booking');
+          localStorage.removeItem('bookingState');
+          navigate('/agendar', { replace: true, state: { startBooking: true } });
+        } else {
+          navigate('/perfil', { replace: true });
+        }
+      } catch (e) {
+        googleCallbackHandledRef.current = false;
+        console.error('Error fetching client after login:', e);
+      }
+    };
+
+    const { data: authListener } = publicService.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        completeGoogleLogin(session);
       }
     });
+
+    publicService.getSession()
+      .then(completeGoogleLogin)
+      .catch(error => console.error('Error restoring Google session:', error));
+
     return () => {
       authListener?.subscription?.unsubscribe();
     };
@@ -102,7 +132,12 @@ export default function PublicLayout() {
                 <Link to="/perfil" className="btn-outline flex items-center gap-2" style={{ padding: '8px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', tracking: '0.15em', borderRadius: '100px' }}>
                   <User size={13} /> Mi Perfil
                 </Link>
-                <Link to="/agendar" className="btn-gold flex items-center gap-2" style={{ padding: '8px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', tracking: '0.15em', borderRadius: '100px' }}>
+                <Link
+                  to="/agendar"
+                  state={{ startBooking: true, bookingRequestId: Date.now() }}
+                  className="btn-gold flex items-center gap-2"
+                  style={{ padding: '8px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', tracking: '0.15em', borderRadius: '100px' }}
+                >
                   <Calendar size={13} /> Reservar
                 </Link>
               </>
@@ -165,6 +200,9 @@ export default function PublicLayout() {
               <Link
                 key={link.path}
                 to={link.path}
+                state={link.path === '/agendar'
+                  ? { startBooking: true, bookingRequestId: Date.now() }
+                  : undefined}
                 onClick={() => setMenuOpen(false)}
                 style={{
                   padding: '12px 16px',
@@ -186,7 +224,13 @@ export default function PublicLayout() {
                   <Link to="/perfil" onClick={() => setMenuOpen(false)} className="btn-outline" style={{ padding: '12px 0', fontSize: 14, textAlign: 'center', borderRadius: 'var(--radius-pill)' }}>
                     Mi Perfil
                   </Link>
-                  <Link to="/agendar" onClick={() => setMenuOpen(false)} className="btn-gold" style={{ padding: '12px 0', fontSize: 14, textAlign: 'center', borderRadius: 'var(--radius-pill)' }}>
+                  <Link
+                    to="/agendar"
+                    state={{ startBooking: true, bookingRequestId: Date.now() }}
+                    onClick={() => setMenuOpen(false)}
+                    className="btn-gold"
+                    style={{ padding: '12px 0', fontSize: 14, textAlign: 'center', borderRadius: 'var(--radius-pill)' }}
+                  >
                     Reservar
                   </Link>
                 </>

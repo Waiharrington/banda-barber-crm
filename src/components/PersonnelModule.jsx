@@ -208,13 +208,13 @@ const rolePresets = {
   'Asistente de Lavado': ['dashboard', 'history']
 };
 
-const PersonnelModule = ({ isMobile, inventory = [] }) => {
+const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', attendanceOnly = false, initialStaffId = null, onDataRefresh }) => {
   const { showToast } = useNotifs();
   const { user, refreshUser } = useAuth();
   const { confirm } = useDialog();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('management'); // 'management' | 'attendance'
+  const [activeTab, setActiveTab] = useState(attendanceOnly ? 'attendance' : initialTab); // 'management' | 'attendance'
   const [personnelView, setPersonnelView] = useState('cards'); // 'cards' | 'table' — vista de Gestión de Personal
   const [turnQueue, setTurnQueue] = useState([]);
   const [reportsData, setReportsData] = useState({});
@@ -234,6 +234,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
   const [showForm, setShowForm] = useState(false);
   const [isFormExiting, setIsFormExiting] = useState(false);
   const [profileModalData, setProfileModalData] = useState(null);
+  const openedInitialStaffRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ 
@@ -322,6 +323,19 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
       }
     }
   }, [staff]);
+
+  useEffect(() => {
+    if (!initialStaffId || staff.length === 0 || openedInitialStaffRef.current === String(initialStaffId)) {
+      return;
+    }
+
+    const selectedStaff = staff.find(member => String(member.id) === String(initialStaffId));
+    if (selectedStaff) {
+      openedInitialStaffRef.current = String(initialStaffId);
+      setActiveTab('management');
+      setProfileModalData(selectedStaff);
+    }
+  }, [initialStaffId, staff]);
 
 
   const [exchangeRate, setExchangeRate] = useState(58); // Default
@@ -997,7 +1011,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
 
   return (
     <div className="animate-fade-in team-module-animated" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
-      <div style={{
+      {!attendanceOnly && <div style={{
         display: 'flex',
         flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between',
@@ -1077,10 +1091,10 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
             </button>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Sub-navigation Tabs */}
-      <div style={{
+      {!attendanceOnly && <div style={{
         display: 'flex',
         gap: '8px',
         marginBottom: '32px',
@@ -1158,7 +1172,7 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         >
           <BarChart2 size={isMobile ? 14 : 16} /> {isMobile ? 'Reportes' : 'Reportes de Desempeño'}
         </button>
-      </div>
+      </div>}
 
       <div style={{ position: 'relative', marginBottom: '24px', maxWidth: isMobile ? '100%' : '360px' }}>
         <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
@@ -2571,7 +2585,12 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                   </span>
                   <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.06)' }} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns, gap }}>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns,
+                  gap,
+                  justifyContent: attendanceOnly && !isMobile ? 'start' : undefined
+                }}>
                   {g.items.map(entry => renderCard(entry, big))}
                 </div>
               </div>
@@ -2648,7 +2667,15 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
                 <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No hay nadie con ese nombre.</p>
               </div>
             ) : (
-              renderGroupedGrid(isMobile ? '1fr 1fr' : 'repeat(auto-fill, minmax(280px, 1fr))', isMobile ? '12px' : '20px', false)
+              renderGroupedGrid(
+                isMobile
+                  ? '1fr 1fr'
+                  : attendanceOnly
+                    ? 'repeat(auto-fill, minmax(210px, 240px))'
+                    : 'repeat(auto-fill, minmax(280px, 1fr))',
+                isMobile ? '12px' : attendanceOnly ? '16px' : '20px',
+                false
+              )
             )}
 
             <AnimatedModal isOpen={kioskMode}>
@@ -2919,7 +2946,10 @@ const PersonnelModule = ({ isMobile, inventory = [] }) => {
         onClose={() => setProfileModalData(null)}
         staffMember={profileModalData}
         inventory={inventory}
-        onUpdate={fetchStaff}
+        onUpdate={async () => {
+          await fetchStaff();
+          if (onDataRefresh) await onDataRefresh();
+        }}
       />
 
       <RoleManagerModal 

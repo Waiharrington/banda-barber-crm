@@ -1,4 +1,97 @@
-import { supabase, authClient } from '../../lib/supabase';
+import { publicSupabase as supabase, authClient } from '../../lib/supabase';
+
+const normalizeIdCard = value => {
+  const raw = String(value || '').trim().toUpperCase();
+  const digits = raw.replace(/\D/g, '');
+  return digits || raw.replace(/[^A-Z0-9]/g, '');
+};
+
+const normalizePhone = value => String(value || '').replace(/\D/g, '');
+
+const findExistingClientRecord = async ({ id_card, email, phone }) => {
+  const { data: clients, error } = await authClient
+    .from('clients')
+    .select('*, appointments(id)');
+
+  if (error) throw error;
+
+  const normalizedId = normalizeIdCard(id_card);
+  if (normalizedId) {
+    const identityMatches = (clients || []).filter(client =>
+      normalizeIdCard(client.id_card) === normalizedId
+    );
+
+    if (identityMatches.length > 0) {
+      return identityMatches.sort((a, b) => {
+        const linkedDifference = Number(Boolean(b.auth_user_id)) - Number(Boolean(a.auth_user_id));
+        if (linkedDifference !== 0) return linkedDifference;
+
+        const historyDifference = (b.appointments?.length || 0) - (a.appointments?.length || 0);
+        if (historyDifference !== 0) return historyDifference;
+
+        return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+      })[0];
+    }
+  }
+
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  if (normalizedEmail) {
+    const emailMatch = (clients || []).find(client =>
+      String(client.email || '').trim().toLowerCase() === normalizedEmail
+    );
+    if (emailMatch) return emailMatch;
+  }
+
+  const normalizedPhone = normalizePhone(phone);
+  if (normalizedPhone) {
+    return (clients || []).find(client =>
+      normalizePhone(client.phone) === normalizedPhone
+    ) || null;
+  }
+
+  return null;
+};
+
+const findRelatedClientRecords = async clientId => {
+  const { data: clients, error } = await authClient
+    .from('clients')
+    .select('id, id_card, points, auth_user_id');
+
+  if (error) throw error;
+
+  const currentClient = (clients || []).find(client => String(client.id) === String(clientId));
+  if (!currentClient) return [];
+
+  const normalizedId = normalizeIdCard(currentClient.id_card);
+  if (!normalizedId) return [currentClient];
+
+  return (clients || []).filter(client =>
+    normalizeIdCard(client.id_card) === normalizedId
+  );
+};
+
+const linkClientRecord = async (existing, userId, incoming) => {
+  if (existing.auth_user_id && String(existing.auth_user_id) !== String(userId)) {
+    throw new Error('Esta cédula ya está vinculada a otra cuenta. Contacta a la barbería.');
+  }
+
+  const { data, error } = await authClient
+    .from('clients')
+    .update({
+      auth_user_id: userId,
+      name: existing.name || incoming.name,
+      phone: existing.phone || incoming.phone,
+      email: existing.email || incoming.email || null,
+      birth_date: existing.birth_date || incoming.birth_date || null,
+      status: existing.status || 'Activo'
+    })
+    .eq('id', existing.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
 
 export const publicService = {
   // Get active services
@@ -86,15 +179,17 @@ export const publicService = {
     }
 
     // Step 2: Check if client record already exists (by phone or email)
-    const { data: existing } = await authClient
-      .from('clients')
-      .select()
-      .or(`phone.eq.${phone},id_card.eq.${id_card}`)
-      .maybeSingle();
+    const existing = await findExistingClientRecord({ id_card, email, phone });
 
     if (existing) {
       // Client record already exists — return it
-      return { user: { id: userId }, client: existing };
+      const linkedClient = await linkClientRecord(existing, userId, {
+        name,
+        phone,
+        email,
+        birth_date
+      });
+      return { user: { id: userId }, client: linkedClient, linkedExisting: true };
     }
 
     // Step 3: Insert new client record using service role (bypasses RLS)
@@ -116,6 +211,7 @@ export const publicService = {
         id_card,
         email: email || null,
         birth_date: birth_date || null,
+        auth_user_id: userId,
         points: 0,
         status: 'Activo'
       })
@@ -144,7 +240,7 @@ export const publicService = {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin
+        redirectTo: `${window.location.origin}/`
       }
     });
     if (error) throw error;
@@ -182,22 +278,15 @@ export const publicService = {
   // Complete Google registration (create client record)
   async completeGoogleRegistration({ user_id, name, email, phone, id_card }) {
     // Check if client already exists
-    const { data: existing } = await supabase
-      .from('clients')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle();
+    const existing = await findExistingClientRecord({ id_card, email, phone });
 
     if (existing) {
       // Update existing client
-      const { data, error } = await supabase
-        .from('clients')
-        .update({ phone, id_card, name })
-        .eq('id', existing.id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      return linkClientRecord(existing, user_id, {
+        name,
+        email,
+        phone
+      });
     }
 
     // Create new client
@@ -253,10 +342,14 @@ export const publicService = {
 
   // Get client appointments
   async getClientAppointments(clientId) {
-    const { data, error } = await supabase
+    const relatedClients = await findRelatedClientRecords(clientId);
+    const relatedClientIds = relatedClients.map(client => client.id);
+    if (relatedClientIds.length === 0) return [];
+
+    const { data, error } = await authClient
       .from('appointments')
       .select('*, services(name, price), staff(name)')
-      .eq('client_id', clientId)
+      .in('client_id', relatedClientIds)
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
@@ -290,13 +383,8 @@ export const publicService = {
 
   // Get client points
   async getClientPoints(clientId) {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('points')
-      .eq('id', clientId)
-      .single();
-    if (error) throw error;
-    return data?.points || 0;
+    const relatedClients = await findRelatedClientRecords(clientId);
+    return relatedClients.reduce((total, client) => total + Number(client.points || 0), 0);
   },
 
   // Get top clients of the month

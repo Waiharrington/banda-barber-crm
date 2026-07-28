@@ -42,7 +42,13 @@ export default function CompleteRegistration() {
         if (existingClient) {
           // Already registered, save and redirect
           localStorage.setItem('panda_public_client', JSON.stringify(existingClient));
-          navigate('/perfil');
+          if (localStorage.getItem('panda_login_return_to_booking') === 'true') {
+            localStorage.removeItem('panda_login_return_to_booking');
+            localStorage.removeItem('bookingState');
+            navigate('/agendar', { replace: true, state: { startBooking: true } });
+          } else {
+            navigate('/perfil');
+          }
           return;
         }
       } catch (e) {
@@ -77,7 +83,13 @@ export default function CompleteRegistration() {
         id_card: form.id_card,
       });
       localStorage.setItem('panda_public_client', JSON.stringify(client));
-      navigate('/perfil');
+      if (localStorage.getItem('panda_login_return_to_booking') === 'true') {
+        localStorage.removeItem('panda_login_return_to_booking');
+        localStorage.removeItem('bookingState');
+        navigate('/agendar', { replace: true, state: { startBooking: true } });
+      } else {
+        navigate('/perfil');
+      }
     } catch (e) {
       console.error('Registration error:', e);
       setError(e.message || 'Error al completar el registro');
