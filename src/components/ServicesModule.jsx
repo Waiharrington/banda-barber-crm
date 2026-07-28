@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Plus, Search, Edit2, Trash2, Clock, Scissors, Rocket,
   Droplets, Zap, Check, X, Loader2,
-  Settings, DollarSign, LayoutList, Star, Crown,
+  Settings, LayoutList, Star, Crown,
   LayoutGrid, Table, Eye, Info, Pencil,
   Sparkles, Smile, Heart, Wind, Palette,
   Brush, Flower2, UserRound, Waves, Feather
@@ -336,19 +336,8 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
     insumo_cost: 0,
     variable_cost: 0.50,
     included_items: [],
-    commission_barber: 40,
-    commission_washer: 0,
-    commission_cashier: 0,
-    commission_receptionist: 0,
     is_tattoo: false
   });
-
-  const totalCommissions = 
-    (Number(newService.commission_barber) || 0) + 
-    (Number(newService.commission_washer) || 0) + 
-    (Number(newService.commission_cashier) || 0) + 
-    (Number(newService.commission_receptionist) || 0);
-  const netMargin = (Number(newService.price) || 0) - ((Number(newService.price) || 0) * totalCommissions / 100);
 
   const handleEditClick = (service) => {
     setIsEditing(true);
@@ -362,10 +351,6 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
       duration: service.duration || 30,
       description: service.description || '',
       included_items: service.included_items || [],
-      commission_barber: service.commission_barber !== undefined ? service.commission_barber : 40,
-      commission_washer: service.commission_washer || 0,
-      commission_cashier: service.commission_cashier || 0,
-      commission_receptionist: service.commission_receptionist || 0,
       is_tattoo: service.is_tattoo || false
     });
     setShowAddForm(true);
@@ -394,10 +379,6 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
         variable_cost: 0.50,
         description: '',
         included_items: [],
-        commission_barber: 40,
-        commission_washer: 0,
-        commission_cashier: 0,
-        commission_receptionist: 0,
         is_tattoo: false
       });
       setIsEditing(false);
@@ -534,10 +515,6 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                 variable_cost: 0.50,
                 description: '',
                 included_items: [],
-                commission_barber: 40,
-                commission_washer: 0,
-                commission_cashier: 0,
-                commission_receptionist: 0,
                 is_tattoo: false
               });
               setShowAddForm(true);
@@ -752,7 +729,6 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                     <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Categoría</th>
                     <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Duración</th>
                     <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Precio</th>
-                    <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Comisiones (%)</th>
                     <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Acciones</th>
                   </tr>
                 </thead>
@@ -774,13 +750,6 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                       <td style={{ padding: '16px 24px' }}>
                         <div style={{ fontWeight: '800', color: 'var(--text-primary)' }}>${service.price}</div>
                         {rates?.usd > 0 && <div style={{ fontSize: '11px', color: 'var(--gold-primary)' }}>{Math.round(service.price * rates.usd).toLocaleString()} Bs.</div>}
-                      </td>
-                      <td style={{ padding: '16px 24px' }}>
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          <span title="Comisión del Barbero" style={{ fontSize: '11px', color: '#32d74b', fontWeight: '700' }}>
-                            Barbero: {service.commission_barber}%
-                          </span>
-                        </div>
                       </td>
                       <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -931,7 +900,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                         <div style={{ position: 'relative', width: '80px' }}>
-                          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '800' }}>€</span>
+                          <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '11px', fontWeight: '800' }}>$</span>
                           <input 
                             className="form-input"
                             type="number"
@@ -982,7 +951,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   <div style={{ width: '90px', flexShrink: 0 }}>
                     <label style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '0.5px' }}>PRECIO</label>
                     <div style={{ position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '12px', fontWeight: '800' }}>€</span>
+                      <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gold-primary)', fontSize: '12px', fontWeight: '800' }}>$</span>
                       <input className="form-input" type="number" step="0.01" value={newExtraPrice} onChange={e => setNewExtraPrice(e.target.value)} style={{ height: '44px', paddingLeft: '24px', fontSize: '13px', fontWeight: '800', width: '100%' }} />
                     </div>
                   </div>
@@ -1039,10 +1008,6 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '10px' }}>
                     <Clock size={14} color="var(--gold-primary)" />
                     <strong>Duración:</strong> {selectedServiceDetail.duration || 30} min
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '10px' }}>
-                    <Scissors size={14} color="var(--gold-primary)" />
-                    <strong>Comisión:</strong> {selectedServiceDetail.commission_barber}%
                   </div>
                 </div>
 
@@ -1437,7 +1402,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
 
                       <div className="modal-grid-2col">
                         <div className="form-group">
-                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>PRECIO (€)</label>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>PRECIO ($)</label>
                           {(newService.category || '').toLowerCase().includes('tatuaj') ? (
                             <div style={{ 
                               display: 'flex', alignItems: 'center', gap: '8px', 
@@ -1449,7 +1414,7 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                             </div>
                           ) : (
                             <div className="premium-price-input-container">
-                              <span className="price-currency-symbol">€</span>
+                              <span className="price-currency-symbol">$</span>
                               <input 
                                 className="price-input-field" 
                                 type="number" 
@@ -1486,104 +1451,6 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         />
                       </div>
 
-                      {/* Commissions Distribution */}
-                      {(() => {
-                        const isTattoo = (newService.category || '').toLowerCase().includes('tatuaj');
-                        return (
-                      <div className="modal-commissions">
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '16px', letterSpacing: '1px' }}>
-                          <DollarSign size={14} /> DISTRIBUCIÓN DE INGRESOS (%)
-                        </label>
-                        
-                        <div className="commissions-fields-grid" style={{ marginBottom: '16px' }}>
-                          <div className="form-group">
-                            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>COMISIÓN {isTattoo ? 'TATUADOR' : 'BARBERO'} (%)</label>
-                            <input 
-                              className="form-input" 
-                              type="number" 
-                              placeholder="40"
-                              value={newService.commission_barber === 0 ? '' : newService.commission_barber} 
-                              onChange={e => setNewService({...newService, commission_barber: e.target.value === '' ? 0 : Number(e.target.value)})} 
-                              style={{ width: '100%', fontSize: '15px', fontWeight: '800', height: '48px', color: 'var(--gold-primary)' }} 
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>GANANCIA BARBERÍA (%)</label>
-                            <input 
-                              className="form-input" 
-                              type="number" 
-                              readOnly
-                              value={100 - (Number(newService.commission_barber) || 0)} 
-                              style={{ width: '100%', fontSize: '15px', fontWeight: '800', height: '48px', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-tertiary)', cursor: 'not-allowed' }} 
-                            />
-                          </div>
-                        </div>
-                        
-                        {/* Business Net Margin Indicator */}
-                        {(newService.price > 0) && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
-                            
-                            {/* Row 1: Ganancia Real Barbería */}
-                            <div style={{ 
-                              padding: '12px 16px', 
-                              borderRadius: '14px', 
-                              background: 'rgba(50, 215, 75, 0.08)', 
-                              border: '1px solid rgba(50, 215, 75, 0.25)',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center'
-                            }}>
-                              <div>
-                                <div style={{ fontSize: '9px', fontWeight: '800', color: '#32d74b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                  Ganancia Real Barbería
-                                </div>
-                                <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)', marginTop: '2px' }}>
-                                  ${((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)).toFixed(2)}
-                                </div>
-                              </div>
-                              {rates?.usd > 0 && (
-                                <div style={{ textAlign: 'right' }}>
-                                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
-                                  <div style={{ fontSize: '13px', fontWeight: '800', color: '#32d74b', marginTop: '2px' }}>
-                                    {Math.round(((Number(newService.price) || 0) - ((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0) / 100)) * rates.usd).toLocaleString()} Bs.
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Row 2: Pago Real Barbero */}
-                            <div style={{ 
-                              padding: '12px 16px', 
-                              borderRadius: '14px', 
-                              background: 'var(--bg-tertiary)', 
-                              border: '1px solid var(--border-color)',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center'
-                            }}>
-                              <div>
-                                <div style={{ fontSize: '9px', fontWeight: '800', color: 'var(--gold-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                  Pago Real {isTattoo ? 'Tatuador' : 'Barbero'}
-                                </div>
-                                <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)', marginTop: '2px' }}>
-                                  ${(((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0)) / 100).toFixed(2)}
-                                </div>
-                              </div>
-                              {rates?.usd > 0 && (
-                                <div style={{ textAlign: 'right' }}>
-                                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: '700' }}>EQUIVALENTE BS.</div>
-                                  <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--gold-primary)', marginTop: '2px' }}>
-                                    {Math.round((((Number(newService.price) || 0) * (Number(newService.commission_barber) || 0)) / 100) * rates.usd).toLocaleString()} Bs.
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                          </div>
-                        )}
-                      </div>
-                      )})()}
                     </div>
 
                     {/* Right Column: Checklist */}

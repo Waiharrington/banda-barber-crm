@@ -57,7 +57,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
             appointments!inner (
               *,
               clients(id, name, phone, id_card, work_gallery),
-              services(name, price, included_items, commission_barber, commission_washer, commission_cashier, commission_receptionist),
+              services(name, price, included_items),
               appointment_extras(id, price, service_extras(name)),
               appointment_products(id, quantity, price, inventory(id, name))
             )

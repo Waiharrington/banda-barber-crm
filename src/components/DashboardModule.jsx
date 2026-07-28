@@ -22,7 +22,6 @@ import {
   ArrowRight,
   ShoppingBag,
   Scissors as ScissorsIcon,
-  ClipboardList,
   Circle,
   RefreshCw,
   Gift,
@@ -1166,7 +1165,7 @@ const DashboardModule = ({
                       if (chair.isOccupied) {
                         setCheckoutChairModal(chair);
                       } else if (chair.status === 'Disponible') {
-                        setShowCheckoutPopup(true);
+                        setShowReceptionPopup(true);
                       } else {
                         setSelectedChair(chair);
                       }
@@ -1176,10 +1175,10 @@ const DashboardModule = ({
                     onKeyDown={(event) => {
                       if (isAvailable && (event.key === 'Enter' || event.key === ' ')) {
                         event.preventDefault();
-                        setShowCheckoutPopup(true);
+                        setShowReceptionPopup(true);
                       }
                     }}
-                    title={isAvailable ? 'Abrir Caja para una venta directa' : undefined}
+                    title={isAvailable ? 'Abrir Recepción' : undefined}
                     style={{
                       backgroundColor: 'rgba(0,0,0,0.15)',
                       border: `1.5px solid ${chair.statusColor || 'rgba(255,255,255,0.04)'}`,
@@ -1324,10 +1323,10 @@ const DashboardModule = ({
                           <button 
                             onClick={(event) => {
                               event.stopPropagation();
-                              setShowCheckoutPopup(true);
+                              setShowReceptionPopup(true);
                             }}
-                            aria-label="Abrir Caja para una venta directa"
-                            title="Abrir Caja"
+                            aria-label="Abrir Recepción"
+                            title="Abrir Recepción"
                             style={{
                               width: '16px',
                               height: '16px',
@@ -1578,7 +1577,7 @@ const DashboardModule = ({
                 { label: 'Nueva Cita', action: () => setShowSchedulePopup(true), icon: Plus },
                 { label: 'Cliente', action: () => setShowNewClientModal(true), icon: User },
                 { label: 'Asistencia', action: () => setShowAttendancePopup(true), icon: CheckCircle2 },
-                { label: 'Recepción', action: () => setShowReceptionPopup(true), icon: ClipboardList }
+                { label: 'Caja', action: () => setShowCheckoutPopup(true), icon: CreditCard }
               ].map((act, idx) => {
                 const ActIcon = act.icon;
                 return (

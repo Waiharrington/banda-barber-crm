@@ -246,6 +246,7 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
     email: '',
     username: '',
     permissions: rolePresets['Barbero'],
+    commission_pct: 60,
     washing_rate: 0,
     birth_date: '',
     password: '',
@@ -519,6 +520,7 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
       email: person.email || '',
       username: person.username || '',
       permissions: perms,
+      commission_pct: person.commission_pct ?? 60,
       washing_rate: person.washing_rate || 0,
       birth_date: person.birth_date || '',
       password: '',
@@ -553,6 +555,7 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
         email: '',
         username: '',
         permissions: rolePresets['Barbero'],
+        commission_pct: 60,
         washing_rate: 0,
         roles: ['Barbero'],
         birth_date: '',
@@ -655,6 +658,12 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
       showToast('La contraseña debe tener al menos 6 caracteres.', 'error');
       return;
     }
+    const usesServiceCommission = formData.roles.some(role => /barber|tatu/i.test(role));
+    const serviceCommission = Number(formData.commission_pct);
+    if (usesServiceCommission && (!Number.isFinite(serviceCommission) || serviceCommission < 0 || serviceCommission > 100)) {
+      showToast('El porcentaje por servicio debe estar entre 0% y 100%.', 'error');
+      return;
+    }
     try {
       setLoading(true);
       
@@ -690,7 +699,7 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
         address: formData.address,
         email: formData.email ? formData.email.trim().toLowerCase() : null,
         username: formData.username || formData.email?.split('@')[0] || '',
-        commission_pct: 40,
+        commission_pct: usesServiceCommission ? serviceCommission : Number(formData.commission_pct ?? 0),
         washing_rate: formData.washing_rate || 0,
         birth_date: formData.birth_date || null,
         specialty: formData.specialty || '',
@@ -701,8 +710,11 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
 
       if (isEditing) {
         const personObj = staff.find(s => s.id === editingId);
-        if (personObj && personObj.auth_user_id && formData.password) {
-          await dataService.updateAuthUserPassword(personObj.auth_user_id, formData.password);
+        if (personObj?.auth_user_id) {
+          await dataService.updateAuthUserCredentials(personObj.auth_user_id, {
+            email: submissionData.email,
+            password: formData.password || undefined
+          });
         } else if (personObj && !personObj.auth_user_id && formData.email && formData.password) {
           const authUser = await dataService.createAuthUser(formData.email, formData.password);
           submissionData.auth_user_id = authUser.id;
@@ -911,7 +923,7 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
           amount: amountUsd,
           type: 'expense',
           category: 'Pago Nómina',
-          currency: 'EUR',
+          currency: 'USD',
           exchange_rate: earnings.rate,
           metadata: {
             staffId: staffId,
@@ -1079,6 +1091,7 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
                   email: '',
                   username: '',
                   permissions: rolePresets['Barbero'],
+                  commission_pct: 60,
                   washing_rate: 0,
                   birth_date: '',
                   password: ''
@@ -1388,10 +1401,35 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
                   />
                 </div>
 
+                {formData.roles.some(role => /barber|tatu/i.test(role)) && (
+                  <div className="form-group animate-slide-right">
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>
+                      PORCENTAJE POR SERVICIO (%)
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <TrendingUp size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                      <input
+                        className="form-input"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        placeholder="60"
+                        value={formData.commission_pct}
+                        onChange={e => setFormData({ ...formData, commission_pct: e.target.value })}
+                        style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(255, 255, 255,0.3)' }}
+                      />
+                    </div>
+                    <div style={{ marginTop: '7px', fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                      Se aplica a cualquier servicio realizado por este profesional.
+                    </div>
+                  </div>
+                )}
+
                 {formData.roles.includes('Asistente de Lavado') && (
                   <div className="form-group animate-slide-right">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>TARIFA POR LAVADO (€)</label>
+                      <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>TARIFA POR LAVADO ($)</label>
                       {formData.washing_rate > 0 && (
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
                           ≈ {(formData.washing_rate * exchangeRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs.
@@ -2126,10 +2164,35 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
                           />
                         </div>
 
+                        {formData.roles.some(role => /barber|tatu/i.test(role)) && (
+                          <div className="form-group animate-slide-right">
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>
+                              PORCENTAJE POR SERVICIO (%)
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                              <TrendingUp size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--gold-primary)' }} />
+                              <input
+                                className="form-input"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="1"
+                                placeholder="60"
+                                value={formData.commission_pct}
+                                onChange={e => setFormData({ ...formData, commission_pct: e.target.value })}
+                                style={{ width: '100%', height: '50px', paddingLeft: '48px', border: '1px solid rgba(255, 255, 255,0.3)' }}
+                              />
+                            </div>
+                            <div style={{ marginTop: '7px', fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                              Se aplica a cualquier servicio realizado por este profesional.
+                            </div>
+                          </div>
+                        )}
+
                         {formData.roles.includes('Asistente de Lavado') && (
                           <div className="form-group animate-slide-right">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                              <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>TARIFA POR LAVADO (€)</label>
+                              <label style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)', letterSpacing: '1px' }}>TARIFA POR LAVADO ($)</label>
                               {formData.washing_rate > 0 && (
                                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>
                                   ≈ {(formData.washing_rate * exchangeRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs.
