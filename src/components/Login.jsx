@@ -281,7 +281,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           justify-content: center;
           background-color: #050506;
           padding: 24px;
-          padding-top: env(safe-area-inset-top, 24px);
+          padding-top: calc(24px + env(safe-area-inset-top, 0px));
         }
 
         /* ── CONTENEDOR CON BORDE DORADO (MARCO) ── */
@@ -362,7 +362,7 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           max-height: 100%;
           padding: clamp(14px, 2.8vh, 30px) 40px;
           box-sizing: border-box;
-          overflow: hidden;
+          overflow: visible;
         }
 
         /* ── LEFT SIDE ── */
@@ -454,31 +454,31 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
         .l-card {
           flex-shrink: 1;
           min-height: 0;
-          width: 410px;
+          width: 420px;
           background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
           border: 1px solid var(--border-color);
           border-radius: 24px;
-          padding: clamp(24px, 5vh, 48px) 36px clamp(20px, 4vh, 40px) 36px; /* Más espacio arriba y a los lados, se comprime en pantallas bajas */
+          padding: clamp(28px, 5.5vh, 52px) 40px clamp(24px, 4.5vh, 44px) 40px;
           box-shadow: 0 50px 100px rgba(0, 0, 0, 0.95), inset 0 1px 0px rgba(255,255,255,0.10);
           display: flex;
           flex-direction: column;
           gap: clamp(10px, 1.8vh, 16px);
         }
         .l-card-title {
-          font-size: clamp(16px, 2.3vh, 21px);
+          font-size: clamp(20px, 2.8vh, 26px);
           font-weight: 800;
           color: #fff;
           text-align: center;
-          margin-top: clamp(2px, 0.8vh, 6px); /* Baja el título un poco para alejarlo del borde superior */
+          margin-top: clamp(2px, 0.8vh, 6px);
           margin-bottom: clamp(2px, 0.8vh, 6px);
           letter-spacing: 0.5px;
         }
         .l-card-title span { color: var(--champagne); text-shadow: 0 0 10px rgba(203, 183, 154, 0.35); }
         .l-card-sub {
-          font-size: clamp(11px, 1.6vh, 13.5px);
-          color: rgba(255,255,255,0.40);
+          font-size: clamp(13px, 1.8vh, 15px);
+          color: rgba(255,255,255,0.45);
           text-align: center;
-          margin-bottom: clamp(14px, 3.2vh, 28px); /* Reducido de 44px para balancear el espacio central */
+          margin-bottom: clamp(14px, 3.2vh, 28px);
         }
 
         /* ── INPUTS ── */
@@ -490,10 +490,10 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           position: absolute;
           top: 10px;
           left: 54px;
-          font-size: 9px;
+          font-size: 10px;
           font-weight: 800;
           letter-spacing: 1px;
-          color: #8c8c8c; /* Dorado envejecido/apagado */
+          color: #8c8c8c;
           text-transform: uppercase;
           pointer-events: none;
           z-index: 1;
@@ -1699,14 +1699,14 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
               gap: 3px;
             }
             .panda-feat-title {
-              font-size: clamp(11px, 1.5vh, 14.5px);
+              font-size: clamp(12.5px, 1.6vh, 15px);
               font-weight: 700;
               color: #ffffff;
               margin: 0;
               text-align: left;
             }
             .panda-feat-desc {
-              font-size: clamp(9.5px, 1.2vh, 12.5px);
+              font-size: clamp(11px, 1.3vh, 13px);
               color: rgba(255, 255, 255, 0.45);
               margin: 0;
               text-align: left;
