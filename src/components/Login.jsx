@@ -273,13 +273,15 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
           position: relative;
           width: 100vw;
           height: 100vh;
+          height: 100dvh;
           overflow: hidden;
           font-family: 'Inter', sans-serif;
           display: flex;
           align-items: center;
           justify-content: center;
           background-color: #050506;
-          padding: 24px; /* Margen negro alrededor del marco */
+          padding: 24px;
+          padding-top: env(safe-area-inset-top, 24px);
         }
 
         /* ── CONTENEDOR CON BORDE DORADO (MARCO) ── */
@@ -314,10 +316,10 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
         }
         .l-bg-mobile-container {
           position: absolute;
-          top: 0;
+          top: calc(-1 * env(safe-area-inset-top, 0px));
           left: 0;
           width: 100%;
-          height: var(--mobile-split, 45%);
+          height: calc(var(--mobile-split, 45%) + env(safe-area-inset-top, 0px));
           overflow: hidden;
           opacity: 0;
           pointer-events: none;
@@ -767,17 +769,20 @@ const mobFeaturesSecureGap = ${mobFeaturesSecureGap};`;
         @media (max-width: 768px), (orientation: portrait) {
           .l-root {
             padding: 0 !important;
+            padding-top: 0 !important;
           }
           .l-frame {
             border: none !important;
             border-radius: 0 !important;
             box-shadow: none !important;
+            overflow: visible !important;
           }
           .l-bg-desktop { opacity: 0; pointer-events: none; }
           .l-bg-mobile-container { 
             opacity: 1 !important; 
             pointer-events: auto !important; 
-            height: var(--mobile-split, 52%) !important; 
+            top: calc(-1 * env(safe-area-inset-top, 0px)) !important;
+            height: calc(var(--mobile-split, 52%) + env(safe-area-inset-top, 0px)) !important; 
             -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(0, 0, 0, 0) 100%) !important;
             mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 50%, rgba(0, 0, 0, 0) 100%) !important;
           }
