@@ -856,7 +856,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                               {editingExtraPriceId === ex.id ? (
                                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                  <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>€</span>
+                                  <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>$</span>
                                   <input 
                                     type="number"
                                     autoFocus
@@ -1273,7 +1273,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 {editingExtraPriceId === ex.id ? (
                                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                    <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>€</span>
+                                    <span style={{ position: 'absolute', left: '6px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>$</span>
                                     <input 
                                       type="number"
                                       autoFocus

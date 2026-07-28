@@ -6,3 +6,5 @@ COMMENT ON COLUMN pandabarber.clients.origin IS
 
 CREATE INDEX IF NOT EXISTS clients_origin_idx
 ON pandabarber.clients (origin);
+
+NOTIFY pgrst, 'reload schema';

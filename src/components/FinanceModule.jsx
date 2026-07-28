@@ -149,12 +149,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       avgServiceTime: 45, 
       extraCosts: [],
       customLabels: {
-        rent: 'Alquiler (€)',
-        services: 'Servicios (€)',
-        payroll: 'Nómina Fija (€)',
-        software: 'Software (€)',
-        marketing: 'Marketing (€)',
-        tax: 'Impuestos (€)',
+        rent: 'Alquiler ($)',
+        services: 'Servicios ($)',
+        payroll: 'Nómina Fija ($)',
+        software: 'Software ($)',
+        marketing: 'Marketing ($)',
+        tax: 'Impuestos ($)',
         workstations: 'Sillas Activas',
         avgServiceTime: 'Tiempo Prom. (min)'
       }
@@ -205,10 +205,10 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
     paymentAmountBs: 0,
     isAbono: false,
     file: null,
-    paymentMethod: 'Efectivo (€)'
+    paymentMethod: 'Efectivo ($)'
   });
   const [payrollDetail, setPayrollDetail] = useState({ isOpen: false, staff: null, transactions: [] });
-  const [valeModal, setValeModal] = useState({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo (€)' });
+  const [valeModal, setValeModal] = useState({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo ($)' });
 
   useScrollLock(
     isEditingCosts || 
@@ -234,14 +234,14 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       setLoading(true);
       const amountBs = Number(valeModal.amountBs);
       const amountUsd = amountBs / (rates?.usd || 550);
-      const chosenMethod = valeModal.paymentMethod || 'Efectivo (€)';
+      const chosenMethod = valeModal.paymentMethod || 'Efectivo ($)';
       
       const newTx = {
         description: `ADELANTO VALE - Barbero: ${valeModal.staff.name} (${chosenMethod})`,
         amount: amountUsd,
         type: 'expense',
         category: 'Vales Barberos',
-        currency: 'EUR',
+        currency: 'USD',
         exchange_rate: rates?.usd || 550,
         metadata: {
           staffId: valeModal.staff.id,
@@ -255,7 +255,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
 
       showToast(`Vale de ${amountBs} Bs registrado con éxito para ${valeModal.staff.name} en ${chosenMethod}`, 'success');
-      setValeModal({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo (€)' });
+      setValeModal({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo ($)' });
       fetchTransactions();
     } catch (err) {
       console.error(err);
@@ -317,14 +317,14 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       setLoading(true);
       const finalAmountBs = payrollModal.isAbono ? payrollModal.paymentAmountBs : (payrollModal.earnedBs - payrollModal.deductionBs);
       const amountUsd = finalAmountBs / (rates?.usd || 550); 
-      const chosenMethod = payrollModal.paymentMethod || 'Efectivo (€)';
+      const chosenMethod = payrollModal.paymentMethod || 'Efectivo ($)';
       
       const newTx = {
         description: `Pago Nómina: ${payrollModal.staff.name}${payrollModal.isAbono ? ' (Abono)' : ''} (Descuento Asist. ${payrollModal.isAbono ? 0 : payrollModal.deductionBs}Bs) [${chosenMethod}]`,
         amount: amountUsd,
         type: 'expense',
         category: 'Pago Nómina',
-        currency: 'EUR',
+        currency: 'USD',
         exchange_rate: rates?.usd || 550,
         metadata: {
           staffId: payrollModal.staff.id,
@@ -404,7 +404,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           type: 'prompt',
           title: 'Monto de la Operación',
           message: `¿Cuánto es el monto para: "${desc}"?`,
-          placeholder: 'Monto en € (USD)',
+          placeholder: 'Monto en USD',
           step: 2,
           tempData: { type, desc },
           onConfirm: async (amount) => {
@@ -419,7 +419,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 amount: parseFloat(amount),
                 type: type,
                 category: type === 'income' ? 'Ingreso Manual' : 'Gasto Manual',
-                currency: 'EUR',
+                currency: 'USD',
                 exchange_rate: 1
               });
               fetchTransactions();
@@ -479,17 +479,22 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   meta.staffInvolved?.[0]?.name || 
                   "N/A";
     
-    let paymentMethod = meta.paymentMethod || "Efectivo (€)";
+    let paymentMethod = meta.paymentMethod || "Efectivo ($)";
     if (!meta.paymentMethod) {
       const transferAmount = Number(meta.transfer_bs || meta.transferBs || 0);
       const isMixed = meta.mixed_payment || meta.isMixed;
+      const usdMethod = meta.method_usd || 'Efectivo';
+      const bsMethod = meta.method_bs || 'Pago Móvil / Transferencia';
       
       if (transferAmount > 0) {
-        paymentMethod = isMixed ? "Mixto ($ + Bs)" : "Pago Móvil / Transferencia";
+        paymentMethod = isMixed ? `Mixto (${usdMethod} + ${bsMethod})` : bsMethod;
       } else if (isMixed) {
         paymentMethod = "Mixto ($ + Bs)";
+      } else if (meta.method_usd) {
+        paymentMethod = meta.method_usd;
       }
     }
+    const paymentReference = meta.payment_reference_bs || meta.paymentReferenceBs || '';
     
     // Lavado: check if any staff member is involved with washing logic or if it's in meta
     let didWash = meta.didWash ? 'Si' : 'No';
@@ -497,10 +502,10 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       didWash = 'Si';
     }
 
-    return { clientName, serviceName, barbero, paymentMethod, didWash };
+    return { clientName, serviceName, barbero, paymentMethod, paymentReference, didWash };
   };
 
-  const formatCurrency = (amount, currencySymbol = '€') => {
+  const formatCurrency = (amount, currencySymbol = '$') => {
     return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -526,6 +531,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
       zinli: 0,
       pago_movil: 0,
       cash_bs: 0,
+      punto_venta: 0,
       transferencia: 0
     };
 
@@ -548,10 +554,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
           if (bsMethod.includes('pago') || bsMethod.includes('móvil') || bsMethod.includes('movil')) balances.pago_movil += bsVal;
           else if (bsMethod.includes('efectivo')) balances.cash_bs += bsVal;
+          else if (bsMethod.includes('punto')) balances.punto_venta += bsVal;
           else balances.transferencia += bsVal;
         } else {
-          if (meta.method_usd) {
-            const usdMethod = meta.method_usd.toLowerCase();
+          const bsValStored = Number(meta.transfer_bs || meta.transferBs || 0);
+          if (bsValStored <= 0) {
+            const usdMethod = (meta.method_usd || 'Efectivo').toLowerCase();
             const usdVal = Number(t.amount || 0);
 
             if (usdMethod.includes('zelle')) balances.zelle += usdVal;
@@ -560,11 +568,11 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             else balances.cash_usd += usdVal;
           } else {
             const bsMethod = (meta.method_bs || 'Pago Móvil').toLowerCase();
-            const rate = Number(t.exchange_rate || rates?.usd || 550);
-            const bsVal = Number(meta.transfer_bs || (t.amount || 0) * rate);
+            const bsVal = bsValStored;
 
             if (bsMethod.includes('pago') || bsMethod.includes('móvil') || bsMethod.includes('movil')) balances.pago_movil += bsVal;
             else if (bsMethod.includes('efectivo')) balances.cash_bs += bsVal;
+            else if (bsMethod.includes('punto')) balances.punto_venta += bsVal;
             else balances.transferencia += bsVal;
           }
         }
@@ -580,6 +588,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
         else if (method.includes('efectivo ($)') || method === 'efectivo' || method.includes('$')) balances.cash_usd -= usdVal;
         else if (method.includes('pago') || method.includes('móvil') || method.includes('movil')) balances.pago_movil -= bsVal;
         else if (method.includes('efectivo (bs)') || method.includes('efectivo (ves)')) balances.cash_bs -= bsVal;
+        else if (method.includes('punto')) balances.punto_venta -= bsVal;
         else balances.transferencia -= bsVal;
       }
     });
@@ -612,9 +621,24 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   const cashCloseCashUsd = cashCloseTransactions.reduce((acc, t) => (
     acc + Number(t.metadata?.cash_usd || t.metadata?.cashUsd || 0)
   ), 0);
-  const cashCloseTransferBs = cashCloseTransactions.reduce((acc, t) => (
-    acc + Number(t.metadata?.transfer_bs || t.metadata?.transferBs || 0)
-  ), 0);
+  const cashClosePagoMovilBs = cashCloseTransactions.reduce((acc, t) => {
+    const method = (t.metadata?.method_bs || '').toLowerCase();
+    return method.includes('pago') || method.includes('móvil') || method.includes('movil')
+      ? acc + Number(t.metadata?.transfer_bs || t.metadata?.transferBs || 0)
+      : acc;
+  }, 0);
+  const cashClosePuntoVentaBs = cashCloseTransactions.reduce((acc, t) => {
+    const method = (t.metadata?.method_bs || '').toLowerCase();
+    return method.includes('punto')
+      ? acc + Number(t.metadata?.transfer_bs || t.metadata?.transferBs || 0)
+      : acc;
+  }, 0);
+  const cashCloseCashBs = cashCloseTransactions.reduce((acc, t) => {
+    const method = (t.metadata?.method_bs || '').toLowerCase();
+    return method.includes('efectivo')
+      ? acc + Number(t.metadata?.transfer_bs || t.metadata?.transferBs || 0)
+      : acc;
+  }, 0);
   const cashCloseCommissionDebtUsd = cashCloseTransactions.reduce((acc, t) => {
     if (t.type !== 'income') return acc;
     return acc + (t.metadata?.staffInvolved?.reduce((sum, s) => sum + Number(s.commissionEarned || 0), 0) || 0);
@@ -1090,10 +1114,17 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ ${(accountBalances.cash_bs / (rates?.usd || 550)).toFixed(2)} USD</span>
           </div>
           <div style={{ padding: '16px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.04)' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '800' }}>TRANSFERENCIA (BS) 🏛️</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '800' }}>PUNTO DE VENTA (BS) 💳</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)', marginTop: '6px' }}>{accountBalances.punto_venta.toLocaleString('es-VE')} Bs</div>
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ ${(accountBalances.punto_venta / (rates?.usd || 550)).toFixed(2)} USD</span>
+          </div>
+          {accountBalances.transferencia !== 0 && (
+          <div style={{ padding: '16px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.04)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '800' }}>TRANSFERENCIAS HISTÓRICAS (BS) 🏛️</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)', marginTop: '6px' }}>{accountBalances.transferencia.toLocaleString('es-VE')} Bs</div>
             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>≈ ${(accountBalances.transferencia / (rates?.usd || 550)).toFixed(2)} USD</span>
           </div>
+          )}
         </div>
       </section>
 
@@ -1159,9 +1190,9 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(190px, 1fr))', gap: '20px' }}>
           <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
-            <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>EFECTIVO (€)</div>
+            <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>EFECTIVO ($)</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: '#32d74b' }}>
               {formatCurrency(cashCloseCashUsd * (rates?.usd || 550), '')} <span style={{fontSize: '12px'}}>BS</span>
             </div>
@@ -1172,10 +1203,28 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
             <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>PAGO MÓVIL (BS)</div>
             <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)' }}>
-              {formatCurrency(cashCloseTransferBs, '')} <span style={{fontSize: '12px'}}>BS</span>
+              {formatCurrency(cashClosePagoMovilBs, '')} <span style={{fontSize: '12px'}}>BS</span>
             </div>
             <div style={{ fontSize: '11px', color: 'white', marginTop: '4px' }}>
-              REF: ${formatCurrency(cashCloseTransferBs / (rates?.usd || 550), '')}
+              REF: ${formatCurrency(cashClosePagoMovilBs / (rates?.usd || 550), '')}
+            </div>
+          </div>
+          <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>PUNTO DE VENTA (BS)</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+              {formatCurrency(cashClosePuntoVentaBs, '')} <span style={{fontSize: '12px'}}>BS</span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'white', marginTop: '4px' }}>
+              REF: ${formatCurrency(cashClosePuntoVentaBs / (rates?.usd || 550), '')}
+            </div>
+          </div>
+          <div style={{ padding: '20px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '20px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '4px' }}>EFECTIVO (BS)</div>
+            <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--gold-primary)' }}>
+              {formatCurrency(cashCloseCashBs, '')} <span style={{fontSize: '12px'}}>BS</span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'white', marginTop: '4px' }}>
+              REF: ${formatCurrency(cashCloseCashBs / (rates?.usd || 550), '')}
             </div>
           </div>
           <div style={{ padding: '20px', backgroundColor: 'rgba(255,69,58,0.05)', borderRadius: '20px' }}>
@@ -1390,6 +1439,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
             {filteredTransactions.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No hay transacciones registradas que coincidan.</div>
             ) : filteredTransactions.map((t, idx) => {
+              const { paymentMethod, paymentReference } = parseTxExcel(t);
               const txDate = new Date(t.created_at);
               const currentTxDateStr = txDate.toLocaleDateString();
               const prevTxDateStr = idx > 0 ? new Date(filteredTransactions[idx-1].created_at).toLocaleDateString() : null;
@@ -1482,8 +1532,8 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   <div style={{ fontSize: '11px', color: 'white', marginTop: '2px', fontWeight: '800', whiteSpace: 'nowrap' }}>
                     ${t.amount.toFixed(2)} USD
                   </div>
-                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px', letterSpacing: '0.5px', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}>
-                    REF
+                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.2px', background: 'rgba(255,255,255,0.05)', padding: '3px 6px', borderRadius: '4px', fontWeight: '700', maxWidth: '150px', textAlign: 'right' }}>
+                    {paymentMethod}{paymentReference ? ` · Ref. ${paymentReference}` : ''}
                   </div>
                 </div>
               </div>
@@ -1512,7 +1562,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     <td colSpan="7" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>No hay transacciones registradas que coincidan.</td>
                   </tr>
                 ) : filteredTransactions.map((t, idx) => {
-                  const { clientName, serviceName, barbero, paymentMethod, didWash } = parseTxExcel(t);
+                  const { clientName, serviceName, barbero, paymentMethod, paymentReference, didWash } = parseTxExcel(t);
                   const isExpanded = selectedTxId === t.id;
                   
                   const txDate = new Date(t.created_at);
@@ -1561,6 +1611,11 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                         </td>
                         <td style={{ padding: '16px' }}>
                           <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>{paymentMethod}</span>
+                          {paymentReference && (
+                            <div style={{ marginTop: '4px', fontSize: '10px', color: 'var(--gold-primary)', fontWeight: '800' }}>
+                              Ref. {paymentReference}
+                            </div>
+                          )}
                         </td>
                         <td style={{ padding: '16px', textAlign: 'center' }}>
                           <span style={{ 
@@ -1709,9 +1764,15 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                                         <span style={{ fontSize: '11px', fontWeight: '800' }}>${formatCurrency(t.metadata?.cash_usd || t.metadata?.cashUsd || (t.type === 'income' && !(t.metadata?.transfer_bs || t.metadata?.transferBs) ? t.amount : 0), '')}</span>
                                       </div>
                                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Pago Móvil (Bs):</span>
+                                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{t.metadata?.method_bs || 'Pago Móvil'} (Bs):</span>
                                         <span style={{ fontSize: '11px', fontWeight: '800' }}>{formatCurrency(t.metadata?.transfer_bs || t.metadata?.transferBs || 0, '')} BS</span>
                                       </div>
+                                      {(t.metadata?.payment_reference_bs || t.metadata?.paymentReferenceBs) && (
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', paddingTop: '6px', borderTop: '1px dashed rgba(255,255,255,0.08)' }}>
+                                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Referencia:</span>
+                                          <span style={{ fontSize: '11px', fontWeight: '900', color: 'var(--gold-primary)' }}>{t.metadata?.payment_reference_bs || t.metadata?.paymentReferenceBs}</span>
+                                        </div>
+                                      )}
                                     </div>
 
                                     <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
@@ -2013,7 +2074,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                             isOpen: true,
                             staff: st,
                             amountBs: '',
-                            paymentMethod: 'Efectivo (€)',
+                            paymentMethod: 'Efectivo ($)',
                             maxBalance: st.balanceBs
                           });
                         }}
@@ -2033,7 +2094,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                           paymentAmountBs: Math.round(st.balanceBs / 2),
                           isAbono: true,
                           file: null,
-                          paymentMethod: 'Efectivo (€)'
+                          paymentMethod: 'Efectivo ($)'
                         });
                       }}
                       disabled={st.balanceBs <= 0}
@@ -2052,7 +2113,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                           paymentAmountBs: st.balanceBs,
                           isAbono: false,
                           file: null,
-                          paymentMethod: 'Efectivo (€)'
+                          paymentMethod: 'Efectivo ($)'
                         });
                       }}
                       disabled={st.balanceBs <= 0}
@@ -2336,12 +2397,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 </div>
                 <form onSubmit={handleSaveCosts} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   {[
-                    { key: 'rent', defaultLabel: 'Alquiler (€)' },
-                    { key: 'services', defaultLabel: 'Servicios (€)' },
-                    { key: 'payroll', defaultLabel: 'Nómina Fija (€)' },
-                    { key: 'software', defaultLabel: 'Software (€)' },
-                    { key: 'marketing', defaultLabel: 'Marketing (€)' },
-                    { key: 'tax', defaultLabel: 'Impuestos (€)' },
+                    { key: 'rent', defaultLabel: 'Alquiler ($)' },
+                    { key: 'services', defaultLabel: 'Servicios ($)' },
+                    { key: 'payroll', defaultLabel: 'Nómina Fija ($)' },
+                    { key: 'software', defaultLabel: 'Software ($)' },
+                    { key: 'marketing', defaultLabel: 'Marketing ($)' },
+                    { key: 'tax', defaultLabel: 'Impuestos ($)' },
                     { key: 'workstations', defaultLabel: 'Sillas Activas' },
                     { key: 'avgServiceTime', defaultLabel: 'Tiempo Prom. (min)' },
                   ].map(field => (
@@ -2360,7 +2421,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                         />
                       </div>
                       <div style={{ flex: 1.5 }}>
-                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{field.key === 'workstations' || field.key === 'avgServiceTime' ? 'Valor' : 'Monto (€)'}</label>
+                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{field.key === 'workstations' || field.key === 'avgServiceTime' ? 'Valor' : 'Monto ($)'}</label>
                         <input 
                           type="number" 
                           disabled={isCostsLocked}
@@ -2392,7 +2453,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                         />
                       </div>
                       <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Monto (€)</label>
+                        <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Monto ($)</label>
                         <input 
                           type="number" 
                           value={cost.value} 
@@ -2450,7 +2511,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                 <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '24px' }}>Configuración <span className="text-gold">Sueldo Asistente</span></h3>
                 <form onSubmit={handleSaveAssistantConfig} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Monto Semanal del Salario (USD €)</label>
+                    <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Monto Semanal del Salario (USD)</label>
                     <input 
                       type="number" 
                       step="any"
@@ -2460,7 +2521,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     />
                   </div>
                   <div>
-                    <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>Aporte Semanal por Barbero (USD €)</h4>
+                    <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>Aporte Semanal por Barbero (USD)</h4>
                     {eligibleBarbers.map(s => (
                       <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <div>
@@ -2470,7 +2531,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ color: 'var(--text-muted)' }}>€</span>
+                          <span style={{ color: 'var(--text-muted)' }}>$</span>
                           <input 
                             type="number" 
                             step="any"
@@ -2541,7 +2602,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       value={payrollModal.paymentMethod} 
                       onChange={(val) => setPayrollModal({...payrollModal, paymentMethod: val})} 
                       options={[
-                        { value: 'Efectivo (€)', label: 'Efectivo (€)' },
+                        { value: 'Efectivo ($)', label: 'Efectivo ($)' },
                         { value: 'Zelle', label: 'Zelle' },
                         { value: 'Pago Móvil', label: 'Pago Móvil' },
                         { value: 'Efectivo (Bs)', label: 'Efectivo (Bs)' },
@@ -2619,7 +2680,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                       value={valeModal.paymentMethod} 
                       onChange={(val) => setValeModal({...valeModal, paymentMethod: val})} 
                       options={[
-                        { value: 'Efectivo (€)', label: 'Efectivo (€)' },
+                        { value: 'Efectivo ($)', label: 'Efectivo ($)' },
                         { value: 'Zelle', label: 'Zelle' },
                         { value: 'Pago Móvil', label: 'Pago Móvil' },
                         { value: 'Efectivo (Bs)', label: 'Efectivo (Bs)' },
@@ -2631,7 +2692,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
                   <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
                     <button 
-                      onClick={() => setValeModal({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo (€)' })} 
+                      onClick={() => setValeModal({ isOpen: false, staff: null, amountBs: '', paymentMethod: 'Efectivo ($)' })}
                       style={{ flex: 1, padding: '14px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', fontWeight: '700', cursor: 'pointer' }}
                     >
                       Cancelar

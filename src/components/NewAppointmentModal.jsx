@@ -401,7 +401,7 @@ const NewAppointmentModal = ({ isOpen, onClose, onSuccess, rates }) => {
                         placeholder="Selecciona servicio" 
                         value={newApp.serviceId} 
                         onChange={(val) => setNewApp({ ...newApp, serviceId: val })} 
-                        options={services.map(s => ({ label: `${s.name} (€${s.price})`, value: s.id }))} 
+                        options={services.map(s => ({ label: `${s.name} ($${s.price})`, value: s.id }))}
                       />
                     </div>
 
@@ -459,7 +459,7 @@ const NewAppointmentModal = ({ isOpen, onClose, onSuccess, rates }) => {
                                 }}
                               >
                                 {isSelected && <Check size={12} strokeWidth={3} />}
-                                <span>{ex.name} (+€{ex.price})</span>
+                                <span>{ex.name} (+${ex.price})</span>
                               </button>
                             );
                           })}
@@ -472,7 +472,7 @@ const NewAppointmentModal = ({ isOpen, onClose, onSuccess, rates }) => {
                       <div>
                         <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '800', letterSpacing: '0.5px' }}>TOTAL ESTIMADO</div>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap', marginTop: '2px' }}>
-                          <span style={{ fontSize: '22px', fontWeight: '950', color: 'var(--gold-primary)' }}>€{totalEstimated.toFixed(2)}</span>
+                          <span style={{ fontSize: '22px', fontWeight: '950', color: 'var(--gold-primary)' }}>${totalEstimated.toFixed(2)}</span>
                           <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)' }}>
                             (Ref: {(totalEstimated * activeRate).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs.)
                           </span>

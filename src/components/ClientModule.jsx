@@ -1954,7 +1954,7 @@ const VisitDetailModal = ({ isOpen, visit, onClose, gallery = [] }) => {
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Servicio Base</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: '700', fontSize: '14px' }}>€${visit.service_price}</div>
+                    <div style={{ fontWeight: '700', fontSize: '14px' }}>$${visit.service_price}</div>
                     <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{servicePriceBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
                   </div>
                 </div>
@@ -1964,7 +1964,7 @@ const VisitDetailModal = ({ isOpen, visit, onClose, gallery = [] }) => {
                   visit.payment_metadata.extras.map((ex, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>+ {ex.name}</div>
-                      <div style={{ fontWeight: '600', fontSize: '13px' }}>€${ex.price}</div>
+                      <div style={{ fontWeight: '600', fontSize: '13px' }}>$${ex.price}</div>
                     </div>
                   ))
                 )}
@@ -1974,7 +1974,7 @@ const VisitDetailModal = ({ isOpen, visit, onClose, gallery = [] }) => {
                   visit.payment_metadata.products_sold.map((p, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>{p.name} (x{p.quantity})</div>
-                      <div style={{ fontWeight: '600', fontSize: '13px' }}>€${(p.price * p.quantity).toFixed(2)}</div>
+                      <div style={{ fontWeight: '600', fontSize: '13px' }}>$${(p.price * p.quantity).toFixed(2)}</div>
                     </div>
                   ))
                 )}
@@ -1984,7 +1984,7 @@ const VisitDetailModal = ({ isOpen, visit, onClose, gallery = [] }) => {
               <div style={{ marginTop: '10px', paddingTop: '16px', borderTop: '2px solid rgba(255, 255, 255,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <div>
                   <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>TOTAL A PAGAR</label>
-                  <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--gold-primary)', lineHeight: '1' }}>€${visit.amount}</div>
+                  <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--gold-primary)', lineHeight: '1' }}>$${visit.amount}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
@@ -2059,7 +2059,7 @@ const HistoryItem = ({ date, service, price, onClick }) => (
       <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{date}</div>
     </div>
     <div style={{ textAlign: 'right' }}>
-      <div style={{ fontWeight: '800', color: 'var(--gold-primary)', fontSize: '16px' }}>€${price}</div>
+      <div style={{ fontWeight: '800', color: 'var(--gold-primary)', fontSize: '16px' }}>$${price}</div>
       <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: '700' }}>VER DETALLE</div>
     </div>
   </div>

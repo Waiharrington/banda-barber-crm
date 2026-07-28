@@ -270,18 +270,31 @@ export const dataService = {
     }
   },
 
-  async updateAuthUserPassword(authUserId, password) {
+  async updateAuthUserCredentials(authUserId, { email, password } = {}) {
     const isServiceKeyPresent = !!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
     if (isServiceKeyPresent && authClient?.auth?.admin) {
+      const updates = {};
+      const normalizedEmail = String(email || '').trim().toLowerCase();
+      if (normalizedEmail) {
+        updates.email = normalizedEmail;
+        updates.email_confirm = true;
+      }
+      if (password) updates.password = password;
+      if (Object.keys(updates).length === 0) return null;
+
       const { data, error } = await authClient.auth.admin.updateUserById(
         authUserId,
-        { password }
+        updates
       );
       if (error) throw error;
       return data.user;
     } else {
-      throw new Error("Se requiere la clave de servicio de Supabase para restablecer contraseñas.");
+      throw new Error("Se requiere la clave de servicio de Supabase para actualizar las credenciales.");
     }
+  },
+
+  async updateAuthUserPassword(authUserId, password) {
+    return this.updateAuthUserCredentials(authUserId, { password });
   },
 
   async deleteAuthUser(authUserId) {
@@ -452,7 +465,6 @@ export const dataService = {
     _cacheInvalidate('services');
     const allowedColumns = [
       'name', 'price', 'duration', 'active', 'category',
-      'commission_barber', 'commission_washer', 'commission_cashier', 'commission_receptionist',
       'included_items'
     ];
     const filtered = {};
@@ -475,7 +487,6 @@ export const dataService = {
     _cacheInvalidate('services');
     const allowedColumns = [
       'name', 'price', 'duration', 'active', 'category',
-      'commission_barber', 'commission_washer', 'commission_cashier', 'commission_receptionist',
       'included_items'
     ];
     const filtered = {};
@@ -873,7 +884,7 @@ export const dataService = {
         appointments (
           *,
           clients(name, phone, id_card, work_gallery),
-          services(name, price, included_items, commission_barber, commission_washer, commission_cashier, commission_receptionist),
+          services(name, price, included_items),
           appointment_extras(id, price, service_extras(name)),
           appointment_products(id, quantity, price, inventory(id, name))
         )
@@ -1001,7 +1012,7 @@ export const dataService = {
     let query = supabase.from('appointments').select(`
       *, 
       clients(id, name, phone, id_card, work_gallery), 
-      services(name, price, included_items, commission_barber, commission_washer, commission_cashier, commission_receptionist),
+      services(name, price, included_items),
       staff(id, name, email, role, username, image_url, commission_pct, washing_rate),
       appointment_extras(id, price, service_extras(id, name)),
       appointment_products(id, quantity, price, inventory(id, name)),
@@ -1195,7 +1206,8 @@ export const dataService = {
         id,
         status,
         total_price,
-        services(price, commission_barber),
+        services(price),
+        staff(commission_pct),
         appointment_extras(price),
         appointment_products(quantity, price, inventory(id, name, commission_pct)),
         appointment_staff(staff_id, commission_earned, product_commission, tip_amount)
@@ -1223,7 +1235,7 @@ export const dataService = {
         earningsUsd += Number(myStaffRecord.commission_earned || 0) + Number(myStaffRecord.product_commission || 0) + Number(myStaffRecord.tip_amount || 0);
         tipsUsd += Number(myStaffRecord.tip_amount || 0);
       } else {
-        const pct = app.services?.commission_barber ?? 40;
+        const pct = Number(app.staff?.commission_pct ?? 60);
         const serviceComm = sPrice * (pct / 100);
         const productsComm = app.appointment_products?.reduce((sum, pr) => {
           const pCommPct = typeof pr.inventory?.commission_pct === 'number' ? pr.inventory.commission_pct : 10;
@@ -1302,7 +1314,7 @@ export const dataService = {
       type: 'income',
       category: 'Ventas Panda',
       exchange_rate: Number(paymentRecord.fixedRate),
-      currency: 'EUR',
+      currency: 'USD',
       metadata: {
         appointment_id: paymentRecord.appointmentId || null,
         appointment_ids: paymentRecord.appointmentIds || [],
@@ -1314,6 +1326,7 @@ export const dataService = {
         tips_total: Number(paymentRecord.totalTips),
         method_usd: paymentRecord.methodUsd,
         method_bs: paymentRecord.methodBs,
+        payment_reference_bs: paymentRecord.paymentReferenceBs || null,
         products_sold: paymentRecord.products || [],
         extras: paymentRecord.extras || [],
         staffInvolved: paymentRecord.staffInvolved || [],

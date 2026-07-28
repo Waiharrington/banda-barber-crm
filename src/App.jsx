@@ -104,7 +104,7 @@ function App() {
 
   // Multi-currency State
 
-  const [currency, setCurrency] = useState('EUR'); 
+  const [currency, setCurrency] = useState('USD');
   const [rates, setRates] = useState({ bcv: 0, euro: 0, updated_at: null });
   
   // Active Rate Toggle (EURO or BCV) - persisted
@@ -598,7 +598,7 @@ function App() {
   const handleSeedData = async () => {
     if (!await confirm('¿Quieres cargar datos de prueba para ver el CRM funcionando?')) return;
     try {
-      await dataService.addStaff({ name: 'Marco Silva', role: 'Barbero Principal', commission_pct: 40 });
+      await dataService.addStaff({ name: 'Marco Silva', role: 'Barbero Principal', commission_pct: 60 });
       await dataService.addService({ name: 'Corte Panda Deluxe', price: 80, category: 'Barbería' });
       await dataService.addClient({ name: 'Carlos Demo', phone: '555-0123', hair_type: 'Normal' });
       await alert('Datos de demo cargados!');

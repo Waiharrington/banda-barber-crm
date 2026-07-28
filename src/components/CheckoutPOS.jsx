@@ -40,7 +40,7 @@ import { normalizeForSearch } from '../utils/stringUtils';
 import { useScrollLock } from '../hooks/useScrollLock';
 import ReceiptTicket from './ReceiptTicket';
 
-const parseEuroAmount = (value) => {
+const parseUsdAmount = (value) => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
   const normalized = String(value ?? '')
     .trim()
@@ -50,7 +50,7 @@ const parseEuroAmount = (value) => {
   return Number.isFinite(amount) ? amount : 0;
 };
 
-const formatEuroAmount = (value) => parseEuroAmount(value).toLocaleString('es-VE', {
+const formatUsdAmount = (value) => parseUsdAmount(value).toLocaleString('es-VE', {
   minimumFractionDigits: 0,
   maximumFractionDigits: 2
 });
@@ -216,6 +216,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
   const [cashUsd, setCashUsd] = useState(0);
   const [methodUsd, setMethodUsd] = useState('Efectivo');
   const [methodBs, setMethodBs] = useState('Pago Móvil');
+  const [paymentReferenceBs, setPaymentReferenceBs] = useState('');
   const [selectedWasherId, setSelectedWasherId] = useState('');
   const [isWasherDropdownOpen, setIsWasherDropdownOpen] = useState(false);
   const [openTipDropdownId, setOpenTipDropdownId] = useState(null);
@@ -401,7 +402,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
             id: (Date.now() + idx).toString(),
             staffId: staffId,
             amount: 0,
-            currency: 'EUR'
+            currency: 'USD'
           };
         });
 
@@ -754,6 +755,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
       setTips([]);
       setCashUsd(0);
       setPaymentMode('full_bs');
+      setMethodBs('Pago Móvil');
+      setPaymentReferenceBs('');
       setDirectSaleIdSearch('');
       setDirectSaleSearchResults([]);
       showToast('Venta directa cancelada', 'info');
@@ -779,6 +782,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
           showToast("Orden cancelada correctamente", "success");
           setSelectedApp(null);
           setSelectedClient(null);
+          setMethodBs('Pago Móvil');
+          setPaymentReferenceBs('');
           await loadData();
         } catch (e) {
           console.error(e);
@@ -797,6 +802,19 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
     }
     if (!selectedApp && cart.length === 0) {
       showToast("Agrega al menos un producto al carrito", "warning");
+      return;
+    }
+
+    const hasBsPayment = paymentMode === 'full_bs' || (paymentMode === 'mixed' && Number(remainingBs) > 0);
+    const referenceRequired = hasBsPayment && ['Pago Móvil', 'Punto de venta'].includes(methodBs);
+    const normalizedBsReference = paymentReferenceBs.trim();
+
+    if (referenceRequired && !normalizedBsReference) {
+      showToast(`Ingresa la referencia de ${methodBs}.`, "warning");
+      return;
+    }
+    if (hasBsPayment && methodBs === 'Pago Móvil' && !/^\d{4}$/.test(normalizedBsReference)) {
+      showToast("La referencia de Pago Móvil debe tener exactamente 4 dígitos.", "warning");
       return;
     }
 
@@ -845,7 +863,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
           let appliedWashes = 0;
           totalAppsInCheckout.forEach(app => {
             if (!app.staff_id) return;
-            const role = app.staff?.role;
+            const role = (app.staff?.role || '').split('|')[0].toLowerCase();
             let price = app.total_price !== undefined && app.total_price !== null && Number(app.total_price) > 0 ? Number(app.total_price) : (app.services?.price || 0);
             let grossBase = price;
 
@@ -855,12 +873,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
               appliedWashes++;
             }
 
-            let pct = 40;
-            if (role === 'Barbero') pct = app.services?.commission_barber ?? 40;
-            else if (role === 'Asistente de Lavado') pct = app.services?.commission_washer ?? 10;
-            else if (role === 'Caja') pct = app.services?.commission_cashier ?? 0;
-            else if (role === 'Recepcionista') pct = app.services?.commission_receptionist ?? 0;
-            else pct = app.staff?.commission_pct ?? 40;
+            const isServiceProfessional = role.includes('barber') || role.includes('tatu');
+            const pct = isServiceProfessional ? Number(app.staff?.commission_pct ?? 60) : 0;
 
             const comm = grossBase * (pct / 100);
             const tipVal = tips.filter(t => t.staffId === app.staff_id).reduce((acc, t) => {
@@ -879,6 +893,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                 staffId: app.staff_id,
                 name: app.staff?.name || 'Barbero',
                 role: app.staff?.role || 'Barbero',
+                commissionPct: pct,
                 commissionEarned: comm,
                 commissionBs: comm * fixedRate,
                 productCommissionEarned: 0,
@@ -975,7 +990,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
           };
         }),
         methodUsd: methodUsd,
-        methodBs: methodBs
+        methodBs: methodBs,
+        paymentReferenceBs: referenceRequired ? normalizedBsReference : null
       };
 
       await dataService.processFinalPayment(paymentData);
@@ -983,14 +999,14 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
       // Enviar notificación Push y agregar a historial local
       let paymentDetail = '';
       if (paymentMode === 'full_usd') {
-        paymentDetail = `por un total de €${Number(paymentData.totalUsd).toFixed(2)} EUR (${methodUsd})`;
+        paymentDetail = `por un total de $${Number(paymentData.totalUsd).toFixed(2)} USD (${methodUsd})`;
       } else if (paymentMode === 'full_bs') {
         const amountBs = Number(paymentData.totalUsd) * Number(paymentData.fixedRate);
         paymentDetail = `por un total de ${amountBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs. (${methodBs})`;
       } else {
         const cashPart = Number(cashUsd);
         const transferPart = Number(paymentData.transferBs);
-        paymentDetail = `por un total mixto de €${cashPart.toFixed(2)} EUR (${methodUsd}) y ${transferPart.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs. (${methodBs})`;
+        paymentDetail = `por un total mixto de $${cashPart.toFixed(2)} USD (${methodUsd}) y ${transferPart.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs. (${methodBs})`;
       }
 
       notificationService.sendNotification(
@@ -1053,7 +1069,10 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
         ],
         paymentMethods: [
           ...(paymentMode === 'full_usd' || paymentMode === 'mixed' ? [{ method: methodUsd, amount: cashUsd }] : []),
-          ...(paymentMode === 'full_bs' || paymentMode === 'mixed' ? [{ method: methodBs + ' (Bs)', amount: Number(paymentData.transferBs) / fixedRate }] : [])
+          ...(paymentMode === 'full_bs' || paymentMode === 'mixed' ? [{
+            method: `${methodBs} (Bs)${paymentData.paymentReferenceBs ? ` · Ref. ${paymentData.paymentReferenceBs}` : ''}`,
+            amount: Number(paymentData.transferBs) / fixedRate
+          }] : [])
         ],
         subtotal: servicePrice + productsTotal + extrasTotal,
         discount: couponDiscount,
@@ -1110,7 +1129,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
         service_id: selectedServiceForBarber.id,
         staff_id: barberId,
         status: 'En Silla',
-        total_price: parseEuroAmount(selectedServiceForBarber.price)
+        total_price: parseUsdAmount(selectedServiceForBarber.price)
       });
       
       // MIGRAR ITEMS EN CART (Extras o Productos) A LA NUEVA CITA
@@ -1430,7 +1449,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
                           <span style={{ fontWeight: '700', color: 'var(--gold-primary)' }}>{(totalUsd * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</span>
-                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: €{Number(totalUsd).toFixed(2)}</span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: ${Number(totalUsd).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -1615,7 +1634,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                   </div>
                 </div>
                 <div style={{ textAlign: isMobile ? 'left' : 'right', display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: isMobile ? 'center' : 'flex-end', gap: '8px', flexShrink: 0 }}>
-                  <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '900', whiteSpace: 'nowrap' }}>TASA MANUAL (€)</label>
+                  <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '900', whiteSpace: 'nowrap' }}>TASA MANUAL ($)</label>
                   <input 
                     type="number" 
                     step="0.01"
@@ -1747,7 +1766,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                                   <span style={{ fontWeight: '800', fontSize: isMobile ? '12px' : '14px', color: 'white' }}>
                                     {isMobile ? `${Math.round(sPrice * fixedRate).toLocaleString('es-VE')} Bs.` : `${(sPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`}
                                   </span>
-                                  <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: €{Number(sPrice).toFixed(2)}</span>
+                                  <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: ${Number(sPrice).toFixed(2)}</span>
                                 </div>
                                 <Edit3 size={12} color="var(--gold-primary)" style={{ opacity: 0.8 }} />
                               </div>
@@ -1819,7 +1838,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                       <span style={{ fontWeight: '800', fontSize: isMobile ? '12px' : '14px', color: 'white' }}>
                         {isMobile ? `${Math.round(p.price * p.quantity * fixedRate).toLocaleString('es-VE')} Bs.` : `${(p.price * p.quantity * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`}
                       </span>
-                      <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: €{(p.price * p.quantity).toFixed(2)}</span>
+                      <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: ${(p.price * p.quantity).toFixed(2)}</span>
                     </div>
                   </div>
                 ))}
@@ -1868,7 +1887,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                             <span style={{ fontWeight: '800', fontSize: isMobile ? '12px' : '14px' }}>
                               {isMobile ? `${Math.round(extra.price * fixedRate).toLocaleString('es-VE')} Bs.` : `${(extra.price * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.`}
                             </span>
-                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: €{Number(extra.price).toFixed(2)}</span>
+                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ref: ${Number(extra.price).toFixed(2)}</span>
                           </div>
                           <Edit3 size={12} color="var(--gold-primary)" style={{ opacity: 0.8 }} />
                         </div>
@@ -1942,7 +1961,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                             {selectedWasherId 
                               ? (() => {
                                   const washer = allStaff.find(s => s.id === selectedWasherId);
-                                  return washer ? `${washer.name} (€${washer.washing_rate || 0}/lavado) - Disponible` : 'Seleccionar Asistente de Lavado';
+                                  return washer ? `${washer.name} ($${washer.washing_rate || 0}/lavado) - Disponible` : 'Seleccionar Asistente de Lavado';
                                 })()
                               : 'Seleccionar Asistente de Lavado'
                             }
@@ -2023,7 +2042,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                                     onMouseLeave={e => e.currentTarget.style.backgroundColor = selectedWasherId === s.id ? 'rgba(255, 255, 255, 0.1)' : 'transparent'}
                                   >
                                     <span style={{ fontWeight: selectedWasherId === s.id ? '800' : '500' }}>{s.name}</span>
-                                    <span style={{ fontSize: '11px', color: 'var(--gold-primary)' }}>€${s.washing_rate || 0}/lavado</span>
+                                    <span style={{ fontSize: '11px', color: 'var(--gold-primary)' }}>$${s.washing_rate || 0}/lavado</span>
                                   </div>
                                 ))
                               }
@@ -2047,7 +2066,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                       <TrendingUp size={14} color="var(--gold-primary)" /> PROPINAS
                     </span>
                     <button 
-                      onClick={() => setTips([...tips, { id: Date.now().toString(), staffId: allStaff[0]?.id || '', amount: 0, currency: 'EUR' }])}
+                      onClick={() => setTips([...tips, { id: Date.now().toString(), staffId: allStaff[0]?.id || '', amount: 0, currency: 'USD' }])}
                       style={{ background: 'rgba(255, 255, 255,0.1)', border: 'none', color: 'var(--gold-primary)', borderRadius: '8px', padding: '4px 8px', fontSize: '10px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
                       <Plus size={12} /> AGREGAR PROPINA
@@ -2163,12 +2182,12 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                           )}
                         </div>
                         
-                        {/* Currency Selector (EUR/BS Toggle) */}
+                        {/* Currency Selector (USD/BS Toggle) */}
                         <button
                           type="button"
                           onClick={() => {
                             const newTips = [...tips];
-                            newTips[idx].currency = newTips[idx].currency === 'BS' ? 'EUR' : 'BS';
+                            newTips[idx].currency = newTips[idx].currency === 'BS' ? 'USD' : 'BS';
                             setTips(newTips);
                           }}
                           style={{ 
@@ -2187,7 +2206,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                             transition: 'all 0.2s ease'
                           }}
                         >
-                          {t.currency === 'BS' ? 'Bs' : '€'}
+                          {t.currency === 'BS' ? 'Bs' : '$'}
                         </button>
                         
                         <div style={{ position: 'relative', width: '80px' }}>
@@ -2376,7 +2395,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                   <span style={{ fontSize: isMobile ? '13px' : '16px', fontWeight: '900' }}>TOTAL A PAGAR</span>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '950', color: 'var(--gold-primary)' }}>{formatCurrency(totalBs)} Bs.</div>
-                    <div style={{ fontSize: isMobile ? '11px' : '13px', color: 'var(--text-muted)' }}>Ref: €{formatCurrency(totalUsd)}</div>
+                    <div style={{ fontSize: isMobile ? '11px' : '13px', color: 'var(--text-muted)' }}>Ref: ${formatCurrency(totalUsd)}</div>
                   </div>
                 </div>
               </div>
@@ -2386,7 +2405,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                   <button 
                     onClick={() => { setPaymentMode('full_usd'); setCashUsd(totalUsd); }}
                     style={{ flex: 1, height: '38px', borderRadius: '10px', border: paymentMode === 'full_usd' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)', background: paymentMode === 'full_usd' ? 'rgba(255, 255, 255,0.1)' : 'none', color: paymentMode === 'full_usd' ? 'var(--gold-primary)' : 'white', fontWeight: '800', cursor: 'pointer', fontSize: '9px' }}
-                  >TODO EN €</button>
+                  >TODO EN $</button>
                   <button 
                     onClick={() => { setPaymentMode('full_bs'); setCashUsd(0); }}
                     style={{ flex: 1, height: '38px', borderRadius: '10px', border: paymentMode === 'full_bs' ? '2px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.1)', background: paymentMode === 'full_bs' ? 'rgba(255, 255, 255,0.1)' : 'none', color: paymentMode === 'full_bs' ? 'var(--gold-primary)' : 'white', fontWeight: '800', cursor: 'pointer', fontSize: '9px' }}
@@ -2399,7 +2418,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
 
                 {paymentMode === 'full_usd' && (
                   <div className="animate-slide-up" style={{ padding: '16px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '16px', marginBottom: '12px' }}>
-                    <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>MÉTODO DE PAGO (€)</label>
+                    <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>MÉTODO DE PAGO ($)</label>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       {['Efectivo', 'Zelle', 'Binance', 'Zinli'].map(m => (
                         <button 
@@ -2420,21 +2439,45 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                     </div>
                     <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>MÉTODO DE PAGO (BS)</label>
                     <div style={{ display: 'flex', gap: '6px' }}>
-                      {['Pago Móvil', 'Efectivo', 'Transferencia'].map(m => (
+                      {['Pago Móvil', 'Efectivo', 'Punto de venta'].map(m => (
                         <button 
                           key={m}
-                          onClick={() => setMethodBs(m)}
+                          onClick={() => {
+                            if (m !== methodBs) setPaymentReferenceBs('');
+                            setMethodBs(m);
+                          }}
                           style={{ flex: 1, padding: '8px', borderRadius: '10px', border: methodBs === m ? '1.5px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)', background: methodBs === m ? 'rgba(255, 255, 255,0.1)' : 'rgba(255,255,255,0.02)', color: methodBs === m ? 'var(--gold-primary)' : 'white', fontSize: '9px', fontWeight: '700', cursor: 'pointer' }}
                         >{m}</button>
                       ))}
                     </div>
+                    {['Pago Móvil', 'Punto de venta'].includes(methodBs) && (
+                      <div style={{ marginTop: '12px' }}>
+                        <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '7px', display: 'block' }}>
+                          {methodBs === 'Pago Móvil' ? 'ÚLTIMOS 4 DÍGITOS DE LA REFERENCIA' : 'REFERENCIA DEL PUNTO DE VENTA'}
+                        </label>
+                        <input
+                          type="text"
+                          inputMode={methodBs === 'Pago Móvil' ? 'numeric' : 'text'}
+                          maxLength={methodBs === 'Pago Móvil' ? 4 : 40}
+                          value={paymentReferenceBs}
+                          onChange={(e) => {
+                            const value = methodBs === 'Pago Móvil'
+                              ? e.target.value.replace(/\D/g, '').slice(0, 4)
+                              : e.target.value.slice(0, 40);
+                            setPaymentReferenceBs(value);
+                          }}
+                          placeholder={methodBs === 'Pago Móvil' ? 'Ej. 4821' : 'Ej. 00123456'}
+                          style={{ width: '100%', height: '40px', padding: '0 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: 'white', fontSize: '12px', fontWeight: '700' }}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {paymentMode === 'mixed' && (
                   <div className="animate-slide-up" style={{ padding: '16px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>1. PAGO EN EUROS (€)</label>
+                      <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>1. PAGO EN DÓLARES ($)</label>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
                         <input 
                           type="number" 
@@ -2459,15 +2502,39 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                         <div style={{ fontWeight: '900', color: 'var(--gold-primary)', fontSize: '16px' }}>{formatCurrency(remainingBs)} BS</div>
                         <div style={{ display: 'flex', flex: 1.5, gap: '4px', flexWrap: 'wrap', marginLeft: '10px' }}>
-                          {['Pago Móvil', 'Efectivo', 'Transfe'].map(m => (
+                          {['Pago Móvil', 'Efectivo', 'Punto de venta'].map(m => (
                             <button 
                               key={m}
-                              onClick={() => setMethodBs(m === 'Transfe' ? 'Transferencia' : m)}
-                              style={{ flex: '1 0 45%', padding: '6px', borderRadius: '8px', border: (methodBs === m || (m==='Transfe' && methodBs==='Transferencia')) ? '1.5px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)', background: (methodBs === m || (m==='Transfe' && methodBs==='Transferencia')) ? 'rgba(255, 255, 255,0.1)' : 'rgba(255,255,255,0.02)', color: (methodBs === m || (m==='Transfe' && methodBs==='Transferencia')) ? 'var(--gold-primary)' : 'white', fontSize: '9px', fontWeight: '700', cursor: 'pointer' }}
+                              onClick={() => {
+                                if (m !== methodBs) setPaymentReferenceBs('');
+                                setMethodBs(m);
+                              }}
+                              style={{ flex: '1 0 45%', padding: '6px', borderRadius: '8px', border: methodBs === m ? '1.5px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)', background: methodBs === m ? 'rgba(255, 255, 255,0.1)' : 'rgba(255,255,255,0.02)', color: methodBs === m ? 'var(--gold-primary)' : 'white', fontSize: '9px', fontWeight: '700', cursor: 'pointer' }}
                             >{m}</button>
                           ))}
                         </div>
                       </div>
+                      {['Pago Móvil', 'Punto de venta'].includes(methodBs) && (
+                        <div style={{ marginTop: '10px' }}>
+                          <label style={{ fontSize: '9px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '7px', display: 'block' }}>
+                            {methodBs === 'Pago Móvil' ? 'ÚLTIMOS 4 DÍGITOS DE LA REFERENCIA' : 'REFERENCIA DEL PUNTO DE VENTA'}
+                          </label>
+                          <input
+                            type="text"
+                            inputMode={methodBs === 'Pago Móvil' ? 'numeric' : 'text'}
+                            maxLength={methodBs === 'Pago Móvil' ? 4 : 40}
+                            value={paymentReferenceBs}
+                            onChange={(e) => {
+                              const value = methodBs === 'Pago Móvil'
+                                ? e.target.value.replace(/\D/g, '').slice(0, 4)
+                                : e.target.value.slice(0, 40);
+                              setPaymentReferenceBs(value);
+                            }}
+                            placeholder={methodBs === 'Pago Móvil' ? 'Ej. 4821' : 'Ej. 00123456'}
+                            style={{ width: '100%', height: '40px', padding: '0 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: 'white', fontSize: '12px', fontWeight: '700' }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -2620,7 +2687,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                           <div style={{ padding: '12px 14px 14px' }}>
                             <div style={{ fontWeight: '800', fontSize: '13px', color: 'white', marginBottom: '8px', lineHeight: '1.3' }}>{item.name}</div>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                              <span style={{ color: 'var(--gold-primary)', fontWeight: '900', fontSize: '18px' }}>€${item.price}</span>
+                              <span style={{ color: 'var(--gold-primary)', fontWeight: '900', fontSize: '18px' }}>$${item.price}</span>
                             </div>
                             {rates?.usd > 0 && <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>≈ {Math.round(item.price * rates.usd).toLocaleString()} Bs.</div>}
                           </div>
@@ -2729,7 +2796,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                         <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'transparent', border: '1px solid var(--gold-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 10px rgba(255, 255, 255,0.1)' }}>
                           <IconComponent size={20} color="var(--gold-primary)" strokeWidth={1.5} />
                         </div>
-                        <div style={{ fontWeight: '900', fontSize: '18px', color: 'var(--gold-primary)', background: 'rgba(255, 255, 255,0.1)', padding: '4px 10px', borderRadius: '10px' }}>€${extra.price}</div>
+                        <div style={{ fontWeight: '900', fontSize: '18px', color: 'var(--gold-primary)', background: 'rgba(255, 255, 255,0.1)', padding: '4px 10px', borderRadius: '10px' }}>$${extra.price}</div>
                       </div>
                       
                       <div style={{ width: '100%' }}>
@@ -2788,7 +2855,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                       <Scissors size={15} color="var(--gold-primary)" />
                     </div>
                     <div style={{ fontWeight: '800', fontSize: '14px', color: 'white', marginBottom: '6px', lineHeight: '1.3' }}>{service.name}</div>
-                    <div style={{ fontWeight: '900', fontSize: '20px', color: 'var(--gold-primary)' }}>€{formatEuroAmount(service.price)}</div>
+                    <div style={{ fontWeight: '900', fontSize: '20px', color: 'var(--gold-primary)' }}>${formatUsdAmount(service.price)}</div>
                   </button>
                 ))}
               </div>
@@ -2925,7 +2992,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{ textAlign: 'right' }}>
                               <div style={{ fontWeight: '700', color: 'var(--gold-primary)', fontSize: '13px' }}>{(tPrice * fixedRate).toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
-                              <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: €{Number(tPrice).toFixed(2)}</div>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Ref: ${Number(tPrice).toFixed(2)}</div>
                             </div>
                             <button 
                               onClick={() => {
@@ -3003,6 +3070,8 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                   setTips([]);
                   setCashUsd(0);
                   setPaymentMode('full_bs');
+                  setMethodBs('Pago Móvil');
+                  setPaymentReferenceBs('');
                 }}
                 style={{ width: '100%', padding: '16px', borderRadius: '14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontWeight: '800', cursor: 'pointer' }}
               >
