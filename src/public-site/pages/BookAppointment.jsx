@@ -3545,8 +3545,8 @@ export default function BookAppointment() {
                                     </div>
 
                                     {portfolioLoading ? (
-                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                        {[1, 2, 3, 4].map(i => (
+                                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                                        {[1, 2, 3, 4, 5].map(i => (
                                           <div key={i} className="w-full aspect-[3/4] rounded-2xl bg-white/5 animate-pulse" />
                                         ))}
                                       </div>
@@ -3555,7 +3555,7 @@ export default function BookAppointment() {
                                         <p className="text-xs text-white/40 font-bold uppercase tracking-wider">// Sin trabajos recientes</p>
                                       </div>
                                     ) : (
-                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                                         {expandedBarberPortfolio.map(photo => (
                                           <div 
                                             key={photo.id} 
