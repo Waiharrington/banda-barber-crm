@@ -247,14 +247,10 @@ const parseBarberBioObj = (barber) => {
 };
 
 const getBarberBiography = (barber) => {
-  const bioObj = parseBarberBioObj(barber);
-  if (bioObj && bioObj.bio) {
-    return bioObj.bio;
-  }
-  if (barber?.biography && !barber.biography.trim().startsWith('{') && barber.biography.trim().length > 10) {
-    return barber.biography;
-  }
   const name = barber?.name?.toLowerCase() || '';
+  if (name.includes('kevin')) {
+    return 'Especialista certificado en cuidado de barba y rituales clásicos de afeitado. Apasionado por la simetría facial y por diseñar el estilo de barba perfecto para cada tipo de rostro.';
+  }
   if (name.includes('ángel') || name.includes('angel')) {
     return 'Fundador de Panda Barber Studio. Con años de experiencia liderando tendencias, me especializo en cortes clásicos y el cuidado integral de la imagen masculina de la más alta calidad.';
   }
@@ -279,11 +275,17 @@ const getBarberBiography = (barber) => {
   if (name.includes('josé') || name.includes('jose')) {
     return 'Especialista en realismo y sombras en Black & Grey. Mi pasión es transformar historias y conceptos en piezas artísticas grabadas en la piel con el máximo detalle y cuidado técnico.';
   }
-  if (name.includes('kevin')) {
-    return 'Especialista certificado en cuidado de barba y rituales clásicos de afeitado. Apasionado por la simetría facial y por diseñar el estilo de barba perfecto para cada tipo de rostro.';
-  }
   if (name.includes('cesia')) {
     return 'Experta en tratamientos capilares, masajes relajantes y lavado capilar premium. Comprometida con brindarte un momento de confort y descanso absoluto antes y después de tu servicio.';
+  }
+
+  // Fallbacks for database overrides
+  const bioObj = parseBarberBioObj(barber);
+  if (bioObj && bioObj.bio) {
+    return bioObj.bio;
+  }
+  if (barber?.biography && !barber.biography.trim().startsWith('{') && barber.biography.trim().length > 10) {
+    return barber.biography;
   }
   return 'Especialista en fades, cortes modernos y cuidado integral. Enfocado en brindar una experiencia premium de barbería a través de detalles que definen tu personalidad.';
 };
