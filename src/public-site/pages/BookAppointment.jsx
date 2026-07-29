@@ -3914,10 +3914,21 @@ export default function BookAppointment() {
                                 {/* Colaboradores recomendados ("También podrías reservar con") */}
                                 <div className="border-t border-white/5 pt-4 mt-2">
                                   <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider block mb-3">TAMBIÉN PODRÍAS RESERVAR CON</span>
-                                  <div className="flex items-center gap-4">
+                                  <div className="flex items-center gap-3 overflow-x-auto pb-1.5 scrollbar-none w-full">
                                     {barbers
-                                      .filter(b => b.id !== expandedBarber.id)
-                                      .slice(0, 4)
+                                      .filter(b => {
+                                        if (b.id === expandedBarber.id) return false;
+                                        
+                                        // Match specialist type (Tatuador vs Barbero)
+                                        const expandedIsTatuador = (expandedBarber.role || '').toLowerCase().includes('tatu') || (expandedBarber.specialty || '').toLowerCase().includes('tatu');
+                                        const bIsTatuador = (b.role || '').toLowerCase().includes('tatu') || (b.specialty || '').toLowerCase().includes('tatu');
+                                        if (expandedIsTatuador !== bIsTatuador) return false;
+                                        
+                                        // Exclude assistants, admins, receptionists, baristas
+                                        const r = (b.role || '').toLowerCase();
+                                        const isAssistant = r.includes('lavado') || r.includes('asist') || r.includes('clean') || r.includes('barista') || r.includes('recep') || r.includes('admin') || b.name.toLowerCase().includes('admin');
+                                        return !isAssistant;
+                                      })
                                       .map(b => (
                                         <button
                                           key={b.id}
@@ -3926,7 +3937,7 @@ export default function BookAppointment() {
                                             setPortfolioFilter('Todos');
                                             scrollToTop();
                                           }}
-                                          className="flex flex-col items-center gap-1.5 group cursor-pointer"
+                                          className="flex flex-col items-center gap-1.5 group cursor-pointer flex-shrink-0"
                                         >
                                           <div className="w-9 h-9 rounded-full overflow-hidden border border-white/10 group-hover:border-[#CBB79A] transition-all">
                                             <img src={b.image_url} alt={b.name} className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform" />
