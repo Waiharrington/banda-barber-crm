@@ -2224,37 +2224,44 @@ export default function BookAppointment() {
                 NUESTRO <span className="text-[#CBB79A]">EQUIPO</span>
               </h2>
               
-              {/* Category Filter Pills (Apple Style Capsule Buttons) */}
-              <div className="flex items-center justify-center gap-3 mb-10">
+              {/* Categorías de Equipo con estilo de Barbería Premium */}
+              <div className="relative flex items-center p-1 bg-white/[0.03] border border-white/10 rounded-full w-[290px] sm:w-[360px] md:w-[420px] mx-auto mb-10 shadow-2xl backdrop-blur-md">
+                {/* Fondo deslizante con efecto de Barber Pole animado en dorado */}
+                <div 
+                  className="absolute top-[7.5%] h-[85%] w-[31%] rounded-full bg-gradient-to-r from-[#CBB79A] to-[#B39F82] shadow-lg transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] barber-pole-glow" 
+                  style={{ 
+                    left: artistFilter === 'todos' ? '1.5%' : artistFilter === 'barberos' ? '34.5%' : '67.5%' 
+                  }} 
+                />
+                
                 <button 
                   onClick={() => { setArtistFilter('todos'); setBarberStartIndex(0); }}
-                  className={`px-6 py-2.5 rounded-full text-xs lg:text-sm uppercase tracking-widest font-black transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
-                    artistFilter === 'todos' 
-                      ? 'bg-[#CBB79A] text-black shadow-lg shadow-[#CBB79A]/20' 
-                      : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#CBB79A]/50'
+                  className={`relative w-1/3 py-2.5 rounded-full text-[10px] sm:text-xs uppercase tracking-widest font-black transition-all duration-300 z-10 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
+                    artistFilter === 'todos' ? 'text-black font-extrabold' : 'text-white/60 hover:text-white'
                   }`}
                 >
-                  Todos
+                  <Sparkles size={13} className={artistFilter === 'todos' ? 'animate-pulse' : ''} />
+                  <span>Todos</span>
                 </button>
+                
                 <button 
                   onClick={() => { setArtistFilter('barberos'); setBarberStartIndex(0); }}
-                  className={`px-6 py-2.5 rounded-full text-xs lg:text-sm uppercase tracking-widest font-black transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
-                    artistFilter === 'barberos' 
-                      ? 'bg-[#CBB79A] text-black shadow-lg shadow-[#CBB79A]/20' 
-                      : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#CBB79A]/50'
+                  className={`relative w-1/3 py-2.5 rounded-full text-[10px] sm:text-xs uppercase tracking-widest font-black transition-all duration-300 z-10 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
+                    artistFilter === 'barberos' ? 'text-black font-extrabold' : 'text-white/60 hover:text-white'
                   }`}
                 >
-                  Barberos
+                  <Scissors size={13} className={artistFilter === 'barberos' ? 'animate-spin-slow' : ''} />
+                  <span>Barberos</span>
                 </button>
+                
                 <button 
                   onClick={() => { setArtistFilter('tatuadores'); setBarberStartIndex(0); }}
-                  className={`px-6 py-2.5 rounded-full text-xs lg:text-sm uppercase tracking-widest font-black transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
-                    artistFilter === 'tatuadores' 
-                      ? 'bg-[#CBB79A] text-black shadow-lg shadow-[#CBB79A]/20' 
-                      : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-[#CBB79A]/50'
+                  className={`relative w-1/3 py-2.5 rounded-full text-[10px] sm:text-xs uppercase tracking-widest font-black transition-all duration-300 z-10 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
+                    artistFilter === 'tatuadores' ? 'text-black font-extrabold' : 'text-white/60 hover:text-white'
                   }`}
                 >
-                  Tatuadores
+                  <PenTool size={13} className={artistFilter === 'tatuadores' ? 'animate-bounce' : ''} />
+                  <span>Tatuadores</span>
                 </button>
               </div>
 

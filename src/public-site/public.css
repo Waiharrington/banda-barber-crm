@@ -2994,6 +2994,34 @@ body.hide-public-header nav {
     position: sticky !important;
     top: 6rem !important;
   }
+}\n
+/* Golden Barber Pole slide glow and striped animation */
+@keyframes barberPoleStripes {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 0; }
 }
 
+.barber-pole-glow {
+  position: absolute;
+  background-image: linear-gradient(45deg, 
+    rgba(255, 255, 255, 0.15) 25%, 
+    transparent 25%, 
+    transparent 50%, 
+    rgba(255, 255, 255, 0.15) 50%, 
+    rgba(255, 255, 255, 0.15) 75%, 
+    transparent 75%, 
+    transparent
+  );
+  background-size: 20px 20px;
+  animation: barberPoleStripes 1.5s linear infinite;
+  box-shadow: 0 0 15px rgba(203, 183, 154, 0.4);
+}
 
+.animate-spin-slow {
+  animation: spin-slow 6s linear infinite;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
