@@ -2228,7 +2228,7 @@ export default function BookAppointment() {
               <div className="relative flex items-center p-1 bg-white/[0.03] border border-white/10 rounded-full w-[290px] sm:w-[360px] md:w-[420px] mx-auto mb-10 shadow-2xl backdrop-blur-md">
                 {/* Fondo deslizante con efecto de Barber Pole animado en dorado */}
                 <div 
-                  className="absolute top-[7.5%] h-[85%] w-[31%] rounded-full bg-gradient-to-r from-[#CBB79A] to-[#B39F82] shadow-lg transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] barber-pole-glow" 
+                  className="absolute top-[7.5%] h-[85%] w-[31%] rounded-full transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] barber-pole-glow" 
                   style={{ 
                     left: artistFilter === 'todos' ? '1.5%' : artistFilter === 'barberos' ? '34.5%' : '67.5%' 
                   }} 

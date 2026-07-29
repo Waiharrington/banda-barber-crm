@@ -3003,18 +3003,20 @@ body.hide-public-header nav {
 
 .barber-pole-glow {
   position: absolute;
-  background-image: linear-gradient(45deg, 
-    rgba(255, 255, 255, 0.15) 25%, 
-    transparent 25%, 
-    transparent 50%, 
-    rgba(255, 255, 255, 0.15) 50%, 
-    rgba(255, 255, 255, 0.15) 75%, 
-    transparent 75%, 
-    transparent
-  );
-  background-size: 20px 20px;
-  animation: barberPoleStripes 1.5s linear infinite;
-  box-shadow: 0 0 15px rgba(203, 183, 154, 0.4);
+  background-image: 
+    linear-gradient(45deg, 
+      rgba(255, 255, 255, 0.18) 25%, 
+      transparent 25%, 
+      transparent 50%, 
+      rgba(255, 255, 255, 0.18) 50%, 
+      rgba(255, 255, 255, 0.18) 75%, 
+      transparent 75%, 
+      transparent
+    ),
+    linear-gradient(to right, #CBB79A, #A69275);
+  background-size: 14px 14px, 100% 100%;
+  animation: barberPoleStripes 1.2s linear infinite;
+  box-shadow: 0 2px 12px rgba(203, 183, 154, 0.4);
 }
 
 .animate-spin-slow {
