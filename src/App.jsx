@@ -45,6 +45,7 @@ const CheckoutPOS = lazy(() => import('./components/CheckoutPOS'));
 const BarberPanel = lazy(() => import('./components/BarberPanel'));
 const SchedulingModule = lazy(() => import('./components/SchedulingModule'));
 const SettingsModule = lazy(() => import('./components/SettingsModule'));
+const asArray = (val) => Array.isArray(val) ? val : [];
 
 const ModuleFallback = () => (
   <div style={{ minHeight: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontWeight: 800 }}>

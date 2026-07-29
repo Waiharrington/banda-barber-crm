@@ -456,11 +456,13 @@ export const dataService = {
 
     if (!member) return;
 
-    // 2. Delete auth user if exists
+    // 2. Delete auth user if exists (run in background, do not block the UI)
     if (member.auth_user_id) {
       const isServiceKeyPresent = !!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
       if (isServiceKeyPresent && authClient?.auth?.admin) {
-        await authClient.auth.admin.deleteUser(member.auth_user_id);
+        authClient.auth.admin.deleteUser(member.auth_user_id).catch(err => {
+          console.error("Failed to delete auth user:", err);
+        });
       }
     }
 
