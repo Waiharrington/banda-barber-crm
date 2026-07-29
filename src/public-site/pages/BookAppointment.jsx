@@ -1269,7 +1269,7 @@ export default function BookAppointment() {
       setTimeout(() => {
         const eq = document.getElementById('equipo');
         if (eq) {
-          eq.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          eq.scrollIntoView({ behavior: 'auto', block: 'center' });
         }
       }, 150);
     }
