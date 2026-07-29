@@ -336,9 +336,10 @@ export const dataService = {
 
   async addStaff(member) {
     _cacheInvalidate('staff');
+    const newMember = { active: true, ...member };
     const { data, error } = await supabase
       .from('staff')
-      .insert([member])
+      .insert([newMember])
       .select(STAFF_PUBLIC_SELECT)
       .single();
     if (error) throw error;
