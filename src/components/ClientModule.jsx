@@ -537,7 +537,6 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
           client={selectedClient} 
           onBack={() => {
             setSelectedClient(null);
-            setShowCamera(false); // Reset camera state on back
           }} 
           onDelete={() => handleDeleteClient(selectedClient.id, selectedClient.name)}
           onUpdate={async (updates) => {
@@ -824,8 +823,20 @@ const RouletteModal = ({ isOpen, onClose, onFinish, prizes }) => {
   );
 };
 
+const getTransactionServiceName = (transaction) => {
+  const linkedServiceName = transaction?.service_name || transaction?.services?.name;
+  if (linkedServiceName) return linkedServiceName;
+
+  if (typeof transaction?.description === 'string' && transaction.description.trim()) {
+    return transaction.description.split(' - ')[0].replace('Servicio: ', '').trim() || 'Servicio';
+  }
+
+  return 'Servicio';
+};
+
 const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
   const { showToast } = useNotifs();
+  const { confirm } = useDialog();
   const [showCollage, setShowCollage] = useState(false);
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [photoA, setPhotoA] = useState(null);
@@ -836,7 +847,9 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
-  const [gallery, setGallery] = useState(client.work_gallery || []);
+  const [gallery, setGallery] = useState(
+    Array.isArray(client.work_gallery) ? client.work_gallery : []
+  );
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [pendingPhoto, setPendingPhoto] = useState(null);
   const [photoMeta, setPhotoMeta] = useState({ type: 'Normal', serviceId: null });
@@ -847,9 +860,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
 
 
   useEffect(() => {
-    if (client.work_gallery) {
-      setGallery(client.work_gallery);
-    }
+    setGallery(Array.isArray(client.work_gallery) ? client.work_gallery : []);
   }, [client.work_gallery]);
 
   const fileInputRef = useRef(null);
@@ -876,7 +887,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
       try {
         setLoadingHistory(true);
         const data = await dataService.getClientTransactions(client.id);
-        setHistory(data);
+        setHistory(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error(e);
       } finally {
@@ -1135,8 +1146,6 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
             )}
           </div>
 
-          <BirthdayBanner />
-          
           <div className="glass-card" style={{ marginBottom: '24px' }}>
             <h4 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Gift size={18} color="var(--gold-primary)" /> Premios y Cupones
@@ -1183,7 +1192,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
                         minute: '2-digit', 
                         hour12: true 
                       })} 
-                      service={h.service_name || h.description.split(' - ')[0].replace('Servicio: ', '')} 
+                      service={getTransactionServiceName(h)}
                       price={h.amount} 
                       onClick={() => setSelectedVisit(h)}
                     />
@@ -1795,7 +1804,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
                         minute: '2-digit', 
                         hour12: true 
                       }) : 'Fecha no registrada'} 
-                      service={h.service_name || h.description.split(' - ')[0].replace('Servicio: ', '')} 
+                      service={getTransactionServiceName(h)}
                       price={h.amount} 
                       onClick={() => setSelectedVisit(h)}
                     />
@@ -1883,7 +1892,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
                   options={[
                     { label: 'Ninguna', value: null },
                     ...history.map(h => ({ 
-                      label: `${new Date(h.created_at).toLocaleDateString()} - ${h.services?.name || h.description.split(' - ')[0].replace('Servicio: ', '')}`, 
+                      label: `${h.created_at ? new Date(h.created_at).toLocaleDateString() : 'Sin fecha'} - ${getTransactionServiceName(h)}`,
                       value: h.id 
                     }))
                   ]}
@@ -1954,7 +1963,7 @@ const VisitDetailModal = ({ isOpen, visit, onClose, gallery = [] }) => {
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Servicio Base</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: '700', fontSize: '14px' }}>$${visit.service_price}</div>
+                    <div style={{ fontWeight: '700', fontSize: '14px' }}>${visit.service_price}</div>
                     <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{servicePriceBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
                   </div>
                 </div>
@@ -1964,7 +1973,7 @@ const VisitDetailModal = ({ isOpen, visit, onClose, gallery = [] }) => {
                   visit.payment_metadata.extras.map((ex, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>+ {ex.name}</div>
-                      <div style={{ fontWeight: '600', fontSize: '13px' }}>$${ex.price}</div>
+                      <div style={{ fontWeight: '600', fontSize: '13px' }}>${ex.price}</div>
                     </div>
                   ))
                 )}
@@ -1974,7 +1983,7 @@ const VisitDetailModal = ({ isOpen, visit, onClose, gallery = [] }) => {
                   visit.payment_metadata.products_sold.map((p, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>{p.name} (x{p.quantity})</div>
-                      <div style={{ fontWeight: '600', fontSize: '13px' }}>$${(p.price * p.quantity).toFixed(2)}</div>
+                      <div style={{ fontWeight: '600', fontSize: '13px' }}>${(p.price * p.quantity).toFixed(2)}</div>
                     </div>
                   ))
                 )}
@@ -1984,7 +1993,7 @@ const VisitDetailModal = ({ isOpen, visit, onClose, gallery = [] }) => {
               <div style={{ marginTop: '10px', paddingTop: '16px', borderTop: '2px solid rgba(255, 255, 255,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <div>
                   <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>TOTAL A PAGAR</label>
-                  <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--gold-primary)', lineHeight: '1' }}>$${visit.amount}</div>
+                  <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--gold-primary)', lineHeight: '1' }}>${visit.amount}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>{totalBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} Bs.</div>
@@ -2059,7 +2068,7 @@ const HistoryItem = ({ date, service, price, onClick }) => (
       <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{date}</div>
     </div>
     <div style={{ textAlign: 'right' }}>
-      <div style={{ fontWeight: '800', color: 'var(--gold-primary)', fontSize: '16px' }}>$${price}</div>
+      <div style={{ fontWeight: '800', color: 'var(--gold-primary)', fontSize: '16px' }}>${price}</div>
       <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: '700' }}>VER DETALLE</div>
     </div>
   </div>

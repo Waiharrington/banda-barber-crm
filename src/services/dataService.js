@@ -244,9 +244,10 @@ export const dataService = {
       .from('staff')
       .select(STAFF_PUBLIC_SELECT)
       .eq('auth_user_id', authUserId)
+      .not('role', 'like', 'ARCHIVED|%')
       .maybeSingle();
     if (error) throw error;
-    if (!data || data.role?.startsWith('ARCHIVED|')) return null;
+    if (!data) return null;
     return _normalizeStaff(data);
   },
 
@@ -257,9 +258,10 @@ export const dataService = {
       .from('staff')
       .select(STAFF_PUBLIC_SELECT)
       .ilike('email', email.trim().toLowerCase())
+      .not('role', 'like', 'ARCHIVED|%')
       .maybeSingle();
     if (error) throw error;
-    if (!data || data.role?.startsWith('ARCHIVED|')) return null;
+    if (!data) return null;
     return _normalizeStaff(data);
   },
 
