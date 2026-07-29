@@ -143,9 +143,87 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
 
   return (
     <div className="sidebar animate-fade-in" style={sidebarStyle}>
+      <style>{`
+        /* Responsive adjustments for small screen heights */
+        @media (max-height: 820px) {
+          .logo-container-div {
+            margin-bottom: 6px !important;
+          }
+          .sidebar-logo-img {
+            max-width: 140px !important;
+            margin-top: 4px !important;
+          }
+          .sidebar-nav-btn {
+            padding: ${isCollapsed ? '6px 0' : '6px 10px'} !important;
+            gap: 8px !important;
+          }
+          .sidebar-nav-text {
+            font-size: 12.5px !important;
+          }
+          .sidebar-bottom-div {
+            gap: 5px !important;
+          }
+          .sidebar-profile-card {
+            padding: 6px 10px !important;
+            gap: 8px !important;
+          }
+          .sidebar-profile-avatar {
+            width: 28px !important;
+            height: 28px !important;
+          }
+          .sidebar-profile-name {
+            font-size: 11.5px !important;
+          }
+          .sidebar-profile-role {
+            font-size: 8.5px !important;
+          }
+          .sidebar-logout-btn {
+            padding: ${isCollapsed ? '6px 0' : '6px 10px'} !important;
+            font-size: 11px !important;
+          }
+        }
+
+        @media (max-height: 720px) {
+          .logo-container-div {
+            margin-bottom: 2px !important;
+          }
+          .sidebar-logo-img {
+            max-width: 115px !important;
+            margin-top: 2px !important;
+          }
+          .sidebar-nav-btn {
+            padding: ${isCollapsed ? '4px 0' : '4px 8px'} !important;
+            gap: 6px !important;
+          }
+          .sidebar-nav-text {
+            font-size: 11.5px !important;
+          }
+          .sidebar-bottom-div {
+            gap: 4px !important;
+          }
+          .sidebar-profile-card {
+            padding: 5px 8px !important;
+            gap: 6px !important;
+          }
+          .sidebar-profile-avatar {
+            width: 24px !important;
+            height: 24px !important;
+          }
+          .sidebar-profile-name {
+            font-size: 10.5px !important;
+          }
+          .sidebar-profile-role {
+            font-size: 8px !important;
+          }
+          .sidebar-logout-btn {
+            padding: ${isCollapsed ? '4px 0' : '4px 8px'} !important;
+            font-size: 10.5px !important;
+          }
+        }
+      `}</style>
 
       {!isMobile && (
-        <div className="logo-container" style={{ marginBottom: isCollapsed ? '12px' : '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', position: 'relative', zIndex: 2 }}>
+        <div className="logo-container logo-container-div" style={{ marginBottom: isCollapsed ? '12px' : '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', position: 'relative', zIndex: 2 }}>
           <button
             ref={toggleBtnRef}
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -175,6 +253,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
             <img
               src={sidebarLogo}
               alt="Panda Barber Studio"
+              className="sidebar-logo-img"
               style={{
                 width: '85%', height: 'auto', maxWidth: '185px', marginTop: '8px',
                 filter: 'drop-shadow(0 0 12px rgba(203,183,154,0.12)) brightness(1.05)'
@@ -215,6 +294,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
               ref={el => itemRefs.current[index] = el}
               onClick={() => setActiveTab(item.id)}
               onMouseEnter={() => setHoveredTab(item.id)}
+              className="sidebar-nav-btn"
               style={{
                 display: 'flex', alignItems: 'center', gap: '10px',
                 padding: isCollapsed ? '8px 0' : '8px 12px',
@@ -236,7 +316,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
                 <Icon size={17} strokeWidth={isActive ? 2.2 : 1.7} />
               </div>
               {!isCollapsed && (
-                <span style={{
+                <span className="sidebar-nav-text" style={{
                   fontSize: '13.5px',
                   letterSpacing: isActive ? '-0.2px' : '0',
                   color: isActive ? '#f8f8f8' : 'rgba(200,200,200,0.42)',
@@ -266,12 +346,13 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
       })()}
 
       {!isMobile && (
-        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', zIndex: 2 }}>
+        <div className="sidebar-bottom-div" style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', zIndex: 2 }}>
           
           {/* Premium Profile Card with Glassmorphism */}
           {!isCollapsed && (
             <div
               onClick={() => setActiveTab('my-profile')}
+              className="sidebar-profile-card"
               style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -294,7 +375,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
               }}
             >
               {/* Avatar with gold ring */}
-              <div style={{ 
+              <div className="sidebar-profile-avatar" style={{ 
                 width: '32px', height: '32px', borderRadius: '50%', 
                 background: 'linear-gradient(135deg, rgba(203,183,154,0.25) 0%, rgba(100,80,50,0.15) 100%)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -310,14 +391,14 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
                 )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ 
+                <div className="sidebar-profile-name" style={{ 
                   fontSize: '12.5px', fontWeight: '700', color: '#f5f5f5',
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   letterSpacing: '-0.2px',
                 }}>
                   {user?.name || 'Panda Barber'}
                 </div>
-                <div style={{ 
+                <div className="sidebar-profile-role" style={{ 
                   fontSize: '9.5px', color: 'var(--champagne)', fontWeight: '600',
                   opacity: 0.65, marginTop: '1px',
                   textTransform: 'uppercase', letterSpacing: '0.6px',
@@ -348,6 +429,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
               e.currentTarget.style.color = 'rgba(255, 80, 68, 0.7)';
               e.currentTarget.style.transform = 'translateY(0)';
             }}
+            className="sidebar-logout-btn"
             style={{
               width: '100%', display: 'flex', alignItems: 'center',
               justifyContent: isCollapsed ? 'center' : 'flex-start',
