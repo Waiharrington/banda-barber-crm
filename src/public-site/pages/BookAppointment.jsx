@@ -2066,8 +2066,8 @@ export default function BookAppointment() {
               <div className="flex items-center gap-5 w-full md:justify-center md:border-r md:border-white/5 px-6 reveal-item delay-100 animate-float-subtle" style={{ animationDelay: '0ms' }}>
                 <span className="text-[30px] font-light text-[#CBB79A]/40 font-sans tracking-tight leading-none select-none">01</span>
                 <div className="flex flex-col text-left">
-                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight shimmer-text-gold" style={{ animationDelay: '0s' }}>LEGACY</span>
-                  <span className="text-sm text-white/50 font-semibold">+8 años marcando la calle</span>
+                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight shimmer-text-gold" style={{ animationDelay: '0s' }}>LEGADO</span>
+                  <span className="text-xs text-white/50 font-medium">Estándar de distinción desde 2018</span>
                 </div>
               </div>
               {/* Stat 2 */}
@@ -2075,7 +2075,7 @@ export default function BookAppointment() {
                 <span className="text-[30px] font-light text-[#CBB79A]/40 font-sans tracking-tight leading-none select-none">02</span>
                 <div className="flex flex-col text-left">
                   <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight shimmer-text-gold" style={{ animationDelay: '1.2s' }}>EL TEMPLO</span>
-                  <span className="text-sm text-white/50 font-semibold">tu espacio, tu vibra</span>
+                  <span className="text-xs text-white/50 font-medium">Santuario de cuidado selectivo</span>
                 </div>
               </div>
               {/* Stat 3 */}
@@ -2083,15 +2083,15 @@ export default function BookAppointment() {
                 <span className="text-[30px] font-light text-[#CBB79A]/40 font-sans tracking-tight leading-none select-none">03</span>
                 <div className="flex flex-col text-left">
                   <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight shimmer-text-gold" style={{ animationDelay: '2.4s' }}>ART & INK</span>
-                  <span className="text-sm text-white/50 font-semibold">tinta y navaja de autor</span>
+                  <span className="text-xs text-white/50 font-medium">Diseño de autor y alta precisión</span>
                 </div>
               </div>
               {/* Stat 4 */}
               <div className="flex items-center gap-5 w-full md:justify-center px-6 reveal-item delay-400 animate-float-subtle" style={{ animationDelay: '900ms' }}>
                 <span className="text-[30px] font-light text-[#CBB79A]/40 font-sans tracking-tight leading-none select-none">04</span>
                 <div className="flex flex-col text-left">
-                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight shimmer-text-gold" style={{ animationDelay: '3.6s' }}>CULTURA</span>
-                  <span className="text-sm text-white/50 font-semibold">+15k de pura familia</span>
+                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight shimmer-text-gold" style={{ animationDelay: '3.6s' }}>EL CLUB</span>
+                  <span className="text-xs text-white/50 font-medium">El círculo selecto de caballeros</span>
                 </div>
               </div>
             </div>
