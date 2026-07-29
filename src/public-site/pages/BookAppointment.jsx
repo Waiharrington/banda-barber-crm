@@ -63,6 +63,14 @@ import abrahamWork2 from '../../assets/abraham_work2.png';
 import abrahamWork3 from '../../assets/abraham_work3.jpg';
 import abrahamWork4 from '../../assets/abraham_work4.jpg';
 
+const mockPortfolio = [
+  { id: 'ab1', image_url: abrahamWork1 },
+  { id: 'ab2', image_url: abrahamWork2 },
+  { id: 'ab3', image_url: abrahamWork3 },
+  { id: 'ab4', image_url: abrahamWork4 },
+  { id: 'ab5', image_url: barberiaCover }
+];
+
 import videoJeff from '../../assets/barber_video_jeff.mp4';
 import videoJuan from '../../assets/barber_video_juan.mp4';
 import videoMoret from '../../assets/barber_video_moret.mp4';
@@ -803,6 +811,24 @@ export default function BookAppointment() {
     return null;
   });
   const [expandedBarberPortfolio, setExpandedBarberPortfolio] = useState([]);
+
+  const loadExpandedPortfolio = async (barberId) => {
+    if (!barberId) return;
+    setPortfolioLoading(true);
+    try {
+      const data = await publicService.getStaffPortfolio(barberId);
+      if (data && data.length > 0) {
+        setExpandedBarberPortfolio(data.slice(0, 5));
+      } else {
+        setExpandedBarberPortfolio(mockPortfolio);
+      }
+    } catch (err) {
+      console.error("Error loading expanded barber portfolio:", err);
+      setExpandedBarberPortfolio(mockPortfolio);
+    } finally {
+      setPortfolioLoading(false);
+    }
+  };
   const [portfolioFilter, setPortfolioFilter] = useState('Todos');
   const filteredPortfolio = useMemo(() => {
     if (portfolioFilter === 'Todos') return expandedBarberPortfolio;
@@ -1039,12 +1065,7 @@ export default function BookAppointment() {
   // Restore portfolio images if expandedBarber is loaded from localStorage on mount
   useEffect(() => {
     if (expandedBarber && expandedBarberPortfolio.length === 0) {
-      setExpandedBarberPortfolio([
-        { id: 'ab1', image_url: abrahamWork1 },
-        { id: 'ab2', image_url: abrahamWork2 },
-        { id: 'ab3', image_url: abrahamWork3 },
-        { id: 'ab4', image_url: abrahamWork4 }
-      ]);
+      loadExpandedPortfolio(expandedBarber.id);
     }
   }, [expandedBarber]);
 
@@ -2216,13 +2237,7 @@ export default function BookAppointment() {
                                     setStep(2);
                                     setExpandedBarber(barber);
                                     setShowWelcome(false);
-                                    setExpandedBarberPortfolio([
-                                      { id: 'ab1', image_url: abrahamWork1 },
-                                      { id: 'ab2', image_url: abrahamWork2 },
-                                      { id: 'ab3', image_url: abrahamWork3 },
-                                      { id: 'ab4', image_url: abrahamWork4 }
-                                    ]);
-                                    setPortfolioLoading(false);
+                                    loadExpandedPortfolio(barber.id);
                                     setActiveTeamCardId(null);
                                     scrollToTop();
                                   };
@@ -2509,13 +2524,7 @@ export default function BookAppointment() {
                           setStep(2);
                           setExpandedBarber(topBarber);
                           setShowWelcome(false);
-                          setExpandedBarberPortfolio([
-                            { id: 'ab1', image_url: abrahamWork1 },
-                            { id: 'ab2', image_url: abrahamWork2 },
-                            { id: 'ab3', image_url: abrahamWork3 },
-                            { id: 'ab4', image_url: abrahamWork4 }
-                          ]);
-                          setPortfolioLoading(false);
+                          loadExpandedPortfolio(topBarber.id);
                           scrollToTop();
                         }}
                         className="btn-outline py-3 px-8 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2"
@@ -3532,20 +3541,7 @@ export default function BookAppointment() {
                                       <div className="flex items-center gap-2">
                                         <h4 className="font-extrabold text-sm text-white/80 uppercase tracking-widest">TRABAJOS RECIENTES</h4>
                                       </div>
-                                      <div className="hidden md:flex gap-1.5">
-                                        {['Todos', 'Cortes', 'Barba', 'Clásicos', 'Diseños'].map((cat, i) => (
-                                          <span 
-                                            key={cat} 
-                                            className={`px-3 py-1 rounded-full text-[10px] font-bold cursor-pointer transition-all ${
-                                              i === 0 
-                                                ? 'bg-[#CBB79A] text-black' 
-                                                : 'bg-white/5 border border-white/5 text-white/60 hover:text-white'
-                                            }`}
-                                          >
-                                            {cat}
-                                          </span>
-                                        ))}
-                                      </div>
+
                                     </div>
 
                                     {portfolioLoading ? (
@@ -4012,13 +4008,7 @@ export default function BookAppointment() {
                                     onClick={async () => {
                                       setProfileSourceStep(2);
                                       setExpandedBarber(barber);
-                                      setExpandedBarberPortfolio([
-                                         { id: 'ab1', image_url: abrahamWork1 },
-                                         { id: 'ab2', image_url: abrahamWork2 },
-                                         { id: 'ab3', image_url: abrahamWork3 },
-                                         { id: 'ab4', image_url: abrahamWork4 }
-                                       ]);
-                                      setPortfolioLoading(false);
+                                      loadExpandedPortfolio(barber.id);
                                       scrollToTop();
                                     }}
                                     className={`relative rounded-2xl border overflow-hidden transition-all duration-300 cursor-pointer text-left bg-[#131316] hover:border-white/15 active:scale-[0.98] collapsed-card-reveal flex flex-col ${
