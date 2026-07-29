@@ -382,12 +382,16 @@ function BarberAvatar({ url, name, className = "w-10 h-10 rounded-xl", iconSize 
     );
   }
 
+  const isAbraham = name?.toLowerCase().includes('abraham');
+  const positionClass = isAbraham ? '' : 'object-top';
+
   return (
     <img
       src={url}
       alt={name}
       onError={() => setError(true)}
-      className={`${className} object-cover object-top border border-white/10 flex-shrink-0`}
+      className={`${className} object-cover ${positionClass} border border-white/10 flex-shrink-0`}
+      style={isAbraham ? { objectPosition: 'center 18%' } : {}}
     />
   );
 }

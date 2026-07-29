@@ -9,7 +9,7 @@ import logo from '../assets/logo.png';
  * `initialAction` ('camera' | 'gallery'): si el llamador ya preguntó de dónde quiere la foto
  * (ej. un menú pequeño junto al avatar), salta directo a esa acción y omite la pantalla de elección.
  */
-const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass, initialAction }) => {
+const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass, initialAction, aspectRatio }) => {
   const cleanCardClass = cardClass ? cardClass.replace('global-modal-card', '') : '';
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -324,10 +324,10 @@ const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass, initialActio
       const sX = -position.x / scale;
       const sY = -position.y / scale;
 
-      // High-res output cuadrado (1:1) para coincidir con los avatares circulares/cuadrados
-      // usados en todo el CRM (personal, clientes, inventario) y evitar un doble recorte
+      // High-res output dynamic aspect ratio to match the crop viewport and prevent scaling distortions
+      const ratio = imgDetails.viewportWidth / imgDetails.viewportHeight;
       const targetW = 900;
-      const targetH = 900;
+      const targetH = Math.round(900 / ratio);
 
       cropCanvas.width = targetW;
       cropCanvas.height = targetH;
@@ -428,7 +428,7 @@ const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass, initialActio
         width: '100%',
         maxWidth: capturedImage ? '440px' : '340px',
         maxHeight: 'calc(100vh - 260px)',
-        aspectRatio: capturedImage ? '1/1' : '3/5',
+        aspectRatio: capturedImage ? (aspectRatio || '1/1') : '3/5',
         backgroundColor: '#050505',
         overflow: 'hidden',
         borderRadius: '40px',

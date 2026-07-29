@@ -2984,6 +2984,7 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
           <PandaCamera
             key={cameraKey}
             initialAction={photoAction}
+            aspectRatio="4/5"
             onClose={() => { setShowCamera(false); setPhotoAction(null); }}
             onCapture={(image) => {
               setFormData({ ...formData, image_url: image });
