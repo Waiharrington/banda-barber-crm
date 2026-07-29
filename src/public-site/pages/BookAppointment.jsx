@@ -960,16 +960,17 @@ export default function BookAppointment() {
 
   const handleShare = async (barber) => {
     if (!barber) return;
+    const shareUrl = window.location.origin + window.location.pathname + '#/agendar?barber=' + barber.id;
     const shareData = {
       title: `Panda Barber - ${barber.name}`,
       text: `¡Mira el perfil de ${barber.name} en Panda Barber y reserva tu cita!`,
-      url: window.location.href
+      url: shareUrl
     };
     try {
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
-        await navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(shareUrl);
         triggerToast('success', 'Enlace copiado al portapapeles');
       }
     } catch (err) {
@@ -1383,6 +1384,43 @@ export default function BookAppointment() {
             localStorage.removeItem('panda_draft_booking');
           } catch (e) {
             console.error('Error restoring draft booking:', e);
+          }
+        }
+        
+        // Read barber from URL query or hash query parameters to auto-expand profile
+        let barberIdFromUrl = null;
+        if (window.location.search) {
+          const urlParams = new URLSearchParams(window.location.search);
+          barberIdFromUrl = urlParams.get('barber');
+        }
+        if (!barberIdFromUrl && window.location.hash) {
+          const hash = window.location.hash;
+          const queryIndex = hash.indexOf('?');
+          if (queryIndex !== -1) {
+            const queryString = hash.substring(queryIndex + 1);
+            const urlParams = new URLSearchParams(queryString);
+            barberIdFromUrl = urlParams.get('barber');
+          }
+        }
+        if (barberIdFromUrl) {
+          const matchedBarber = filteredBarbers.find(b => b.id === barberIdFromUrl);
+          if (matchedBarber) {
+            setProfileSourceStep(1);
+            setStep(2);
+            setExpandedBarber(matchedBarber);
+            setShowWelcome(false);
+            setPortfolioLoading(true);
+            publicService.getStaffPortfolio(matchedBarber.id).then(data => {
+              if (data && data.length > 0) {
+                setExpandedBarberPortfolio(data.slice(0, 5));
+              } else {
+                setExpandedBarberPortfolio(mockPortfolio);
+              }
+              setPortfolioLoading(false);
+            }).catch(() => {
+              setExpandedBarberPortfolio(mockPortfolio);
+              setPortfolioLoading(false);
+            });
           }
         }
       } catch (e) {
