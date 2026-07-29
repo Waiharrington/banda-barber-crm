@@ -2083,7 +2083,7 @@ export default function BookAppointment() {
                 <span className="text-[30px] font-light text-[#CBB79A]/40 font-sans tracking-tight leading-none select-none">03</span>
                 <div className="flex flex-col text-left">
                   <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight shimmer-text-gold" style={{ animationDelay: '2.4s' }}>ARTE & CORTE</span>
-                  <span className="text-xs text-white/50 font-medium">Profesionales especializados en un solo lugar</span>
+                  <span className="text-xs text-white/50 font-medium">Especialistas en un solo lugar</span>
                 </div>
               </div>
               {/* Stat 4 */}
