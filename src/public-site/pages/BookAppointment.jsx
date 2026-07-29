@@ -87,7 +87,7 @@ const getBarberVideo = (barberName) => {
   if (name.includes('juan')) return videoJuan;
   if (name.includes('moret')) return videoMoret;
   if (name.includes('alejandro')) return videoAlejandro;
-  if (name.includes('marko') || name.includes('marco') || name.includes('mark') || name.includes('cardozo')) return videoMarko;
+  if (name.includes('mark') || name.includes('marco') || name.includes('mark') || name.includes('cardozo')) return videoMarko;
   if (name.includes('abraham')) return videoAbraham;
   if (name.includes('ángel') || name.includes('angel')) return videoAngel;
   if (name.includes('josé') || name.includes('jose') || name.includes('cordero')) return videoJose;
@@ -154,6 +154,16 @@ const BARBER_DETAILS = {
       { client: 'Sebastián L.', text: 'Juan es sumamente meticuloso. El afeitado clásico con navaja fue una maravilla.', service: 'Navaja clásica' },
       { client: 'Héctor P.', text: 'Gran atención al detalle, el fade y el perfilado de cejas quedaron perfectos.', service: 'Corte y cejas' },
       { client: 'Diego R.', text: 'Mi barba nunca había quedado tan perfecta. Gran profesional.', service: 'Barba' }
+    ]
+  },
+  'mark cardozo': {
+    rating: '4.9',
+    reviews_count: 420,
+    specialties: ['Realismo', 'Black & Grey', 'Fine Line', 'Tradicional'],
+    testimonials: [
+      { client: 'Fabián K.', text: 'Las líneas de Marko son de cirujano. Un trabajo minimalista impecable.', service: 'Fine Line' },
+      { client: 'Matías S.', text: 'Es mi tercer tatuaje con Marko y como siempre, el sombreado y el trato de 10.', service: 'Sombras' },
+      { client: 'René P.', text: 'Muy higiénico y profesional, te asesora genial con el tamaño y zona del tatuaje.', service: 'Tradicional' }
     ]
   },
   'marko cardozo': {
@@ -263,7 +273,7 @@ const getBarberBiography = (barber) => {
   if (name.includes('abraham')) {
     return 'Experto en cortes vanguardistas, perfiles limpios y cuidado capilar. Dedicado al 100% a la precisión milimétrica en cada fade y a la total satisfacción de quienes confían en mis manos.';
   }
-  if (name.includes('marko') || name.includes('marco')) {
+  if (name.includes('mark') || name.includes('marco')) {
     return 'Artista del tatuaje profesional. Combino mi pasión por la ilustración, el puntillismo y el realismo para plasmar arte único en tu piel con máxima precisión e higiene.';
   }
   if (name.includes('josé') || name.includes('jose')) {
@@ -312,7 +322,7 @@ const getBarberStats = (barber) => {
     defServices = '460+';
     defHappy = '98.8%';
     defExp = '6 años';
-  } else if (name.includes('marko') || name.includes('marco')) {
+  } else if (name.includes('mark') || name.includes('marco')) {
     defServices = '220+';
     defHappy = '99.2%';
     defExp = '5 años';
