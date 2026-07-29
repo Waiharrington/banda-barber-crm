@@ -1304,30 +1304,47 @@ export default function BookAppointment() {
           return !nameLower.includes('administrador') && !nameLower.includes('admin') && !roleLower.includes('admin') && !roleLower.includes('administrador');
         });
 
-        // Orden específico: Ángel de primero, Moret de segundo, el resto de barberos/tatuadores juntos, y asistentes de lavado de últimas.
+        // Orden específico: Barberos primero (Ángel, luego Moret, luego otros), Tatuadores en el medio (juntos), y Asistentes al final.
         const sortedBarbers = [...filteredBarbers].sort((a, b) => {
-          const isLavaristA = (a.role || '').toLowerCase().includes('lavado') || 
-                              (a.role || '').toLowerCase().includes('lavarista') || 
-                              (a.role || '').toLowerCase().includes('asistente') ||
-                              (a.specialty || '').toLowerCase().includes('lavado') ||
-                              (a.specialty || '').toLowerCase().includes('lavarista') ||
-                              a.name.toLowerCase().includes('cesia');
-                              
-          const isLavaristB = (b.role || '').toLowerCase().includes('lavado') || 
-                              (b.role || '').toLowerCase().includes('lavarista') || 
-                              (b.role || '').toLowerCase().includes('asistente') ||
-                              (b.specialty || '').toLowerCase().includes('lavado') ||
-                              (b.specialty || '').toLowerCase().includes('lavarista') ||
-                              b.name.toLowerCase().includes('cesia');
-
-          if (isLavaristA && !isLavaristB) return 1;
-          if (!isLavaristA && isLavaristB) return -1;
-
-          if (a.name === 'Ángel Serrano') return -1;
-          if (b.name === 'Ángel Serrano') return 1;
-          if (a.name === 'Moret Serrano') return -1;
-          if (b.name === 'Moret Serrano') return 1;
-          return 0;
+          const getGroupRank = (barber) => {
+            const role = (barber.role || '').toLowerCase();
+            const spec = (barber.specialty || '').toLowerCase();
+            const name = barber.name.toLowerCase();
+            
+            const isAsistente = role.includes('lavado') || 
+                                role.includes('lavarista') || 
+                                role.includes('asistente') ||
+                                spec.includes('lavado') ||
+                                spec.includes('lavarista') ||
+                                name.includes('cesia');
+            if (isAsistente) return 3;
+            
+            const isTatuador = role.includes('tatu') || 
+                               role.includes('ink') || 
+                               role.includes('artista') ||
+                               spec.includes('tatu') ||
+                               spec.includes('ink') ||
+                               spec.includes('artista');
+            if (isTatuador) return 2;
+            
+            return 1;
+          };
+          
+          const rankA = getGroupRank(a);
+          const rankB = getGroupRank(b);
+          
+          if (rankA !== rankB) {
+            return rankA - rankB;
+          }
+          
+          if (rankA === 1) {
+            if (a.name === 'Ángel Serrano') return -1;
+            if (b.name === 'Ángel Serrano') return 1;
+            if (a.name === 'Moret Serrano') return -1;
+            if (b.name === 'Moret Serrano') return 1;
+          }
+          
+          return a.name.localeCompare(b.name);
         });
         setBarbers(sortedBarbers);
         setTopClients(topClientsData || []);
