@@ -151,19 +151,49 @@ const BARBER_DETAILS = {
     reviews_count: 324,
     specialties: ['Barba', 'Navaja', 'Corte clásico', 'Fade', 'Asesoría de estilo'],
     testimonials: [
-      { client: 'Carlos M.', text: 'Excelente atención y mucha precisión con el corte. 100% recomendado.', service: 'Corte y barba' },
-      { client: 'Andrés V.', text: 'La experiencia completa es de otro nivel. Volveré sin duda.', service: 'Corte desvanecido' },
+      { client: 'Sebastián L.', text: 'Juan es sumamente meticuloso. El afeitado clásico con navaja fue una maravilla.', service: 'Navaja clásica' },
+      { client: 'Héctor P.', text: 'Gran atención al detalle, el fade y el perfilado de cejas quedaron perfectos.', service: 'Corte y cejas' },
       { client: 'Diego R.', text: 'Mi barba nunca había quedado tan perfecta. Gran profesional.', service: 'Barba' }
     ]
   },
-  'mark cardozo': {
+  'marko cardozo': {
     rating: '4.9',
     reviews_count: 420,
     specialties: ['Realismo', 'Black & Grey', 'Fine Line', 'Tradicional'],
     testimonials: [
-      { client: 'Esteban C.', text: 'El tatuaje realista que me hizo es una obra de arte. Increíble detalle.', service: 'Tatuaje Realista' },
-      { client: 'Hugo L.', text: 'Líneas súper limpias y excelente trato. Volveré por más arte.', service: 'Tatuaje Minimalista' },
-      { client: 'Marcos R.', text: 'El sombreado en negro y gris es insuperable. Un crack de las agujas.', service: 'Black & Grey' }
+      { client: 'Fabián K.', text: 'Las líneas de Marko son de cirujano. Un trabajo minimalista impecable.', service: 'Fine Line' },
+      { client: 'Matías S.', text: 'Es mi tercer tatuaje con Marko y como siempre, el sombreado y el trato de 10.', service: 'Sombras' },
+      { client: 'René P.', text: 'Muy higiénico y profesional, te asesora genial con el tamaño y zona del tatuaje.', service: 'Tradicional' }
+    ]
+  },
+  'josé cordero': {
+    rating: '4.9',
+    reviews_count: 380,
+    specialties: ['Realismo', 'Sombras', 'Black & Grey', 'Fine Line'],
+    testimonials: [
+      { client: 'Julián G.', text: 'El realismo de José es increíble, cuidó cada detalle del diseño de mi brazo.', service: 'Tatuaje Realista' },
+      { client: 'Franco M.', text: 'Excelente artista, el sombreado quedó perfecto y muy limpio todo el estudio.', service: 'Black & Grey' },
+      { client: 'Adrián L.', text: 'Muy buena vibra en la sesión y el trazo del tatuaje es finísimo.', service: 'Fine Line' }
+    ]
+  },
+  'kevin farías': {
+    rating: '4.8',
+    reviews_count: 215,
+    specialties: ['Barba', 'Rituales de Barba', 'Navaja', 'Corte desvanecido'],
+    testimonials: [
+      { client: 'Samuel D.', text: 'El degradado de barba y el ritual de toalla caliente con Kevin son espectaculares.', service: 'Ritual de Barba' },
+      { client: 'Gustavo F.', text: 'Kevin es un experto perfilando. Sabe qué estilo le favorece a tu rostro.', service: 'Perfilado de barba' },
+      { client: 'Bruno R.', text: 'Atención excelente, muy detallista con los bordes de la barba.', service: 'Corte y barba' }
+    ]
+  },
+  'kevin farias': {
+    rating: '4.8',
+    reviews_count: 215,
+    specialties: ['Barba', 'Rituales de Barba', 'Navaja', 'Corte desvanecido'],
+    testimonials: [
+      { client: 'Samuel D.', text: 'El degradado de barba y el ritual de toalla caliente con Kevin son espectaculares.', service: 'Ritual de Barba' },
+      { client: 'Gustavo F.', text: 'Kevin es un experto perfilando. Sabe qué estilo le favorece a tu rostro.', service: 'Perfilado de barba' },
+      { client: 'Bruno R.', text: 'Atención excelente, muy detallista con los bordes de la barba.', service: 'Corte y barba' }
     ]
   },
   'cesia zuleta': {
@@ -3649,9 +3679,8 @@ export default function BookAppointment() {
                                     const details = getBarberDetails(expandedBarber.name);
                                     return (
                                       <div className="w-full border-t border-white/5 pt-6">
-                                        <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center mb-4">
                                           <h4 className="font-extrabold text-xs text-white/80 uppercase tracking-widest">LO QUE DICEN SUS CLIENTES</h4>
-                                          <span className="text-[10px] text-[#CBB79A] font-bold cursor-pointer hover:underline transition-all">Ver todas las reseñas →</span>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                           {details.testimonials.map((test, index) => (
