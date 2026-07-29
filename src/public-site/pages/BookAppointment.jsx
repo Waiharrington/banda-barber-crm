@@ -2146,21 +2146,36 @@ export default function BookAppointment() {
               {/* Slider Component */}
               <div className="relative w-full px-12 group/slider">
                 {/* Nav buttons */}
-                <button
-                  onClick={() => { pauseTeamCarousel(); setBarberStartIndex(prev => Math.max(0, prev - 1)); }}
-                  disabled={barberStartIndex === 0}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/80 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-[#CBB79A]/50 transition-all disabled:opacity-0 disabled:pointer-events-none z-10 cursor-pointer shadow-lg"
-                >
-                  <ChevronLeft size={20} />
-                </button>
+                {(() => {
+                  const filteredCount = barbers.filter(barber => {
+                    if (artistFilter === 'todos') return true;
+                    const r = (barber.role?.split('|')[0] || '').toLowerCase().trim();
+                    if (artistFilter === 'barberos') return r.includes('barber') || r.includes('corte') || r.includes('barba');
+                    if (artistFilter === 'tatuadores') return r.includes('tatu') || r.includes('ink') || r.includes('artista');
+                    return true;
+                  }).length;
+                  const maxIndex = Math.max(0, filteredCount - visibleCount);
+                  
+                  return (
+                    <>
+                      <button
+                        onClick={() => { pauseTeamCarousel(); setBarberStartIndex(prev => Math.max(0, prev - 1)); }}
+                        disabled={barberStartIndex === 0}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/80 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-[#CBB79A]/50 transition-all disabled:opacity-0 disabled:pointer-events-none z-10 cursor-pointer shadow-lg"
+                      >
+                        <ChevronLeft size={20} />
+                      </button>
 
-                <button
-                  onClick={() => { pauseTeamCarousel(); setBarberStartIndex(prev => Math.min(Math.max(0, barbers.length - visibleCount), prev + 1)); }}
-                  disabled={barberStartIndex >= barbers.length - visibleCount}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/80 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-[#CBB79A]/50 transition-all disabled:opacity-0 disabled:pointer-events-none z-10 cursor-pointer shadow-lg"
-                >
-                  <ChevronRight size={20} />
-                </button>
+                      <button
+                        onClick={() => { pauseTeamCarousel(); setBarberStartIndex(prev => Math.min(maxIndex, prev + 1)); }}
+                        disabled={barberStartIndex >= maxIndex}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/80 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-[#CBB79A]/50 transition-all disabled:opacity-0 disabled:pointer-events-none z-10 cursor-pointer shadow-lg"
+                      >
+                        <ChevronRight size={20} />
+                      </button>
+                    </>
+                  );
+                })()}
  
                  <div 
                    className="overflow-hidden w-full touch-pan-y cursor-grab active:cursor-grabbing select-none"
