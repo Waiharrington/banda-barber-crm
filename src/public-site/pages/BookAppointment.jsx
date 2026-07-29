@@ -70,6 +70,8 @@ import videoAlejandro from '../../assets/barber_video_alejandro.mp4';
 import videoMarko from '../../assets/barber_video_marko.mp4';
 import videoAbraham from '../../assets/barber_video_abraham.mp4';
 import videoAngel from '../../assets/barber_video_angel.mp4';
+import videoJose from '../../assets/barber_video_jose.mp4';
+import videoKevin from '../../assets/barber_video_kevin.mp4';
 
 const getBarberVideo = (barberName) => {
   const name = barberName?.toLowerCase() || '';
@@ -80,6 +82,8 @@ const getBarberVideo = (barberName) => {
   if (name.includes('marko') || name.includes('marco') || name.includes('mark') || name.includes('cardozo')) return videoMarko;
   if (name.includes('abraham')) return videoAbraham;
   if (name.includes('ángel') || name.includes('angel')) return videoAngel;
+  if (name.includes('josé') || name.includes('jose') || name.includes('cordero')) return videoJose;
+  if (name.includes('kevin') || name.includes('farias') || name.includes('farías')) return videoKevin;
   return null;
 };
 
