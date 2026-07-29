@@ -2063,34 +2063,34 @@ export default function BookAppointment() {
           <div className="w-full bg-[#07070a] border-y border-[rgba(203,183,154,0.1)] py-8 px-6 lg:px-16 relative z-20">
             <div className="max-w-[1440px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 items-center justify-items-center">
               {/* Stat 1 */}
-              <div className="flex items-center gap-5 w-full md:justify-center md:border-r md:border-white/5 px-6 reveal-item delay-100">
+              <div className="flex items-center gap-5 w-full md:justify-center md:border-r md:border-white/5 px-6 reveal-item delay-100 animate-float-subtle" style={{ animationDelay: '0ms' }}>
                 <span className="text-[30px] font-light text-[#CBB79A]/40 font-sans tracking-tight leading-none select-none">01</span>
                 <div className="flex flex-col text-left">
-                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight">LEGACY</span>
+                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight shimmer-text-gold" style={{ animationDelay: '0s' }}>LEGACY</span>
                   <span className="text-sm text-white/50 font-semibold">+8 años marcando la calle</span>
                 </div>
               </div>
               {/* Stat 2 */}
-              <div className="flex items-center gap-5 w-full md:justify-center md:border-r md:border-white/5 px-6 reveal-item delay-200">
+              <div className="flex items-center gap-5 w-full md:justify-center md:border-r md:border-white/5 px-6 reveal-item delay-200 animate-float-subtle" style={{ animationDelay: '300ms' }}>
                 <span className="text-[30px] font-light text-[#CBB79A]/40 font-sans tracking-tight leading-none select-none">02</span>
                 <div className="flex flex-col text-left">
-                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight">EL TEMPLO</span>
+                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight shimmer-text-gold" style={{ animationDelay: '1.2s' }}>EL TEMPLO</span>
                   <span className="text-sm text-white/50 font-semibold">tu espacio, tu vibra</span>
                 </div>
               </div>
               {/* Stat 3 */}
-              <div className="flex items-center gap-5 w-full md:justify-center md:border-r md:border-white/5 px-6 reveal-item delay-300">
+              <div className="flex items-center gap-5 w-full md:justify-center md:border-r md:border-white/5 px-6 reveal-item delay-300 animate-float-subtle" style={{ animationDelay: '600ms' }}>
                 <span className="text-[30px] font-light text-[#CBB79A]/40 font-sans tracking-tight leading-none select-none">03</span>
                 <div className="flex flex-col text-left">
-                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight">ART & INK</span>
+                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight shimmer-text-gold" style={{ animationDelay: '2.4s' }}>ART & INK</span>
                   <span className="text-sm text-white/50 font-semibold">tinta y navaja de autor</span>
                 </div>
               </div>
               {/* Stat 4 */}
-              <div className="flex items-center gap-5 w-full md:justify-center px-6 reveal-item delay-400">
+              <div className="flex items-center gap-5 w-full md:justify-center px-6 reveal-item delay-400 animate-float-subtle" style={{ animationDelay: '900ms' }}>
                 <span className="text-[30px] font-light text-[#CBB79A]/40 font-sans tracking-tight leading-none select-none">04</span>
                 <div className="flex flex-col text-left">
-                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight">CULTURA</span>
+                  <span className="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-tight shimmer-text-gold" style={{ animationDelay: '3.6s' }}>CULTURA</span>
                   <span className="text-sm text-white/50 font-semibold">+15k de pura familia</span>
                 </div>
               </div>
