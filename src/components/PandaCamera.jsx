@@ -412,7 +412,6 @@ const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass, initialActio
         ) : (
           <div style={{ width: '40px' }} />
         )}
-        <img src={logo} alt="Panda Barber Studio" className="panda-cam-logo" style={{ filter: 'drop-shadow(0 0 12px rgba(203,183,154,0.35))' }} />
         <button
           onClick={onClose}
           className="panda-cam-icon-btn"
