@@ -66,8 +66,8 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
     const userRole = user?.role || '';
     const [roleName, customPerms] = userRole.split('|');
 
+    if (item.id === 'my-profile') return false; // Hides "Mi Perfil" from menu since bottom profile card is used
     if (roleName === 'Admin') return true;
-    if (item.id === 'my-profile') return true;
     
     if (roleName === 'Asistente de Lavado') {
       return ['dashboard', 'history', 'barber'].includes(item.id);
@@ -114,6 +114,8 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
       const activeIndex = menuItems.findIndex(item => item.id === displayedTab);
       if (activeIndex !== -1 && itemRefs.current[activeIndex]) {
         updateIndicator(itemRefs.current[activeIndex]);
+      } else {
+        setIndicatorStyle(prev => ({ ...prev, opacity: 0 }));
       }
     }, 20);
     return () => clearTimeout(timer);
@@ -145,79 +147,19 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
     <div className="sidebar animate-fade-in" style={sidebarStyle}>
       <style>{`
         /* Responsive adjustments for small screen heights */
-        @media (max-height: 820px) {
+        @media (max-height: 780px) {
           .logo-container-div {
             margin-bottom: 6px !important;
           }
           .sidebar-logo-img {
-            max-width: 140px !important;
+            max-width: 155px !important;
             margin-top: 4px !important;
           }
-          .sidebar-nav-btn {
-            padding: ${isCollapsed ? '6px 0' : '6px 10px'} !important;
-            gap: 8px !important;
-          }
-          .sidebar-nav-text {
-            font-size: 12.5px !important;
-          }
           .sidebar-bottom-div {
-            gap: 5px !important;
-          }
-          .sidebar-profile-card {
-            padding: 6px 10px !important;
-            gap: 8px !important;
-          }
-          .sidebar-profile-avatar {
-            width: 28px !important;
-            height: 28px !important;
-          }
-          .sidebar-profile-name {
-            font-size: 11.5px !important;
-          }
-          .sidebar-profile-role {
-            font-size: 8.5px !important;
-          }
-          .sidebar-logout-btn {
-            padding: ${isCollapsed ? '6px 0' : '6px 10px'} !important;
-            font-size: 11px !important;
-          }
-        }
-
-        @media (max-height: 720px) {
-          .logo-container-div {
-            margin-bottom: 2px !important;
-          }
-          .sidebar-logo-img {
-            max-width: 115px !important;
-            margin-top: 2px !important;
-          }
-          .sidebar-nav-btn {
-            padding: ${isCollapsed ? '4px 0' : '4px 8px'} !important;
             gap: 6px !important;
           }
-          .sidebar-nav-text {
-            font-size: 11.5px !important;
-          }
-          .sidebar-bottom-div {
-            gap: 4px !important;
-          }
           .sidebar-profile-card {
-            padding: 5px 8px !important;
-            gap: 6px !important;
-          }
-          .sidebar-profile-avatar {
-            width: 24px !important;
-            height: 24px !important;
-          }
-          .sidebar-profile-name {
-            font-size: 10.5px !important;
-          }
-          .sidebar-profile-role {
-            font-size: 8px !important;
-          }
-          .sidebar-logout-btn {
-            padding: ${isCollapsed ? '4px 0' : '4px 8px'} !important;
-            font-size: 10.5px !important;
+            padding: 8px 10px !important;
           }
         }
       `}</style>
