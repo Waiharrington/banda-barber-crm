@@ -266,6 +266,15 @@ const getBarberBiography = (barber) => {
   if (name.includes('marko') || name.includes('marco')) {
     return 'Artista del tatuaje profesional. Combino mi pasión por la ilustración, el puntillismo y el realismo para plasmar arte único en tu piel con máxima precisión e higiene.';
   }
+  if (name.includes('josé') || name.includes('jose')) {
+    return 'Especialista en realismo y sombras en Black & Grey. Mi pasión es transformar historias y conceptos en piezas artísticas grabadas en la piel con el máximo detalle y cuidado técnico.';
+  }
+  if (name.includes('kevin')) {
+    return 'Especialista certificado en cuidado de barba y rituales clásicos de afeitado. Apasionado por la simetría facial y por diseñar el estilo de barba perfecto para cada tipo de rostro.';
+  }
+  if (name.includes('cesia')) {
+    return 'Experta en tratamientos capilares, masajes relajantes y lavado capilar premium. Comprometida con brindarte un momento de confort y descanso absoluto antes y después de tu servicio.';
+  }
   return 'Especialista en fades, cortes modernos y cuidado integral. Enfocado en brindar una experiencia premium de barbería a través de detalles que definen tu personalidad.';
 };
 
@@ -273,7 +282,7 @@ const getBarberStats = (barber) => {
   const bioObj = parseBarberBioObj(barber);
   const name = barber?.name?.toLowerCase() || '';
   
-  // Custom default values based on employee to look more realistic
+  // Custom default values based on employee to look more realistic and unique
   let defServices = '324';
   let defHappy = '98%';
   let defExp = '5 años';
@@ -287,10 +296,38 @@ const getBarberStats = (barber) => {
     defServices = '520+';
     defHappy = '98%';
     defExp = '4 años';
-  } else if (name.includes('marko') || name.includes('marco')) {
-    defServices = '190+';
-    defHappy = '97%';
+  } else if (name.includes('abraham')) {
+    defServices = '310+';
+    defHappy = '98.5%';
+    defExp = '5 años';
+  } else if (name.includes('alejandro')) {
+    defServices = '280+';
+    defHappy = '96%';
     defExp = '3 años';
+  } else if (name.includes('jeff')) {
+    defServices = '340+';
+    defHappy = '97.5%';
+    defExp = '4 años';
+  } else if (name.includes('juan')) {
+    defServices = '460+';
+    defHappy = '98.8%';
+    defExp = '6 años';
+  } else if (name.includes('marko') || name.includes('marco')) {
+    defServices = '220+';
+    defHappy = '99.2%';
+    defExp = '5 años';
+  } else if (name.includes('josé') || name.includes('jose')) {
+    defServices = '410+';
+    defHappy = '98.6%';
+    defExp = '7 años';
+  } else if (name.includes('kevin')) {
+    defServices = '290+';
+    defHappy = '97.8%';
+    defExp = '3 años';
+  } else if (name.includes('cesia')) {
+    defServices = '640+';
+    defHappy = '99.5%';
+    defExp = '2 años';
   }
   
   return {
