@@ -2177,11 +2177,11 @@ export default function BookAppointment() {
                        const isAsistente = rawRole.toLowerCase().includes('lavado') || rawRole.toLowerCase().includes('asist') || rawRole.toLowerCase().includes('clean');
                        const isBookable = !isBarista && !isAsistente && !isRawRolePermissions && !rawRole.toLowerCase().includes('recep') && !rawRole.toLowerCase().includes('admin');
                        
-                       const specialtyText = isAbraham ? 'MASTER BARBER' : isAlejandro ? 'BARBERO' : isAngel ? 'BARBERO' : isJose ? 'BARBERO' : isMarko ? 'TATUADOR' : (isBarista ? 'BARISTA' : isAsistente ? 'ASISTENTE DE LAVADO' : (isRawRolePermissions ? 'ESTILISTA' : rawRole.toUpperCase()));
+                       const specialtyText = isAbraham ? 'MASTER BARBER' : isAlejandro ? 'BARBERO' : isAngel ? 'BARBERO' : isJose ? 'TATUADOR' : isMarko ? 'TATUADOR' : (isBarista ? 'BARISTA' : isAsistente ? 'ASISTENTE DE LAVADO' : (isRawRolePermissions ? 'ESTILISTA' : rawRole.toUpperCase()));
                        const cleanTags = (barber.role?.split('|')[1] || '').trim();
                        const isRawPermissions = cleanTags.includes(',') || cleanTags.includes('barber') || cleanTags.includes('schedule') || !cleanTags;
                        const defaultTags = isBarista ? 'Café • Bebidas • Experiencia' : (isAsistente ? 'Cuidado Capilar • Lavado • Confort' : (specialtyText.includes('TATUA') ? 'Realismo • Black & Grey' : (specialtyText.includes('MANICUR') || specialtyText.includes('UÑA') ? 'Manicura • Nails • Arte' : 'Corte • Barba • Estilo')));
-                       const tagsText = isAbraham ? 'Fade • Barba • Clásicos' : isAlejandro ? 'Corte • Barba • Diseños' : isAngel ? 'Fade • Corte • Barba' : isJose ? 'Corte • Barba • Clásicos' : isMarko ? 'Realismo • Black & Grey' : (isRawPermissions ? defaultTags : cleanTags);
+                       const tagsText = isAbraham ? 'Fade • Barba • Clásicos' : isAlejandro ? 'Corte • Barba • Diseños' : isAngel ? 'Fade • Corte • Barba' : isJose ? 'Realismo • Black & Grey' : isMarko ? 'Realismo • Black & Grey' : (isRawPermissions ? defaultTags : cleanTags);
                        
                        return (
                          <div key={barber.id} className="shrink-0 px-3 animate-[premiumFadeUp_0.6s_cubic-bezier(0.16,1,0.3,1)_both]" style={{ width: `${100 / visibleCount}%`, animationDelay: `${idx * 60}ms` }}>
