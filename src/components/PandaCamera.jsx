@@ -387,7 +387,7 @@ const PandaCamera = ({ onCapture, onClose, overlayClass, cardClass, initialActio
   }
 
   return (
-    <div className={overlayClass || 'animate-fade-in'} style={{
+    <div className={`${overlayClass || 'animate-fade-in'} modal-centered-overlay`} style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
       background: 'radial-gradient(circle at 50% 0%, rgba(203,183,154,0.08) 0%, rgba(0,0,0,0) 45%), linear-gradient(180deg, var(--bg-secondary) 0%, #050506 100%)',
