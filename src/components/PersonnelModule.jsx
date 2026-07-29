@@ -711,10 +711,33 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
       if (isEditing) {
         const personObj = staff.find(s => s.id === editingId);
         if (personObj?.auth_user_id) {
-          await dataService.updateAuthUserCredentials(personObj.auth_user_id, {
-            email: submissionData.email,
-            password: formData.password || undefined
-          });
+          try {
+            await dataService.updateAuthUserCredentials(personObj.auth_user_id, {
+              email: submissionData.email,
+              password: formData.password || undefined
+            });
+          } catch (authError) {
+            console.warn("Auth user update failed:", authError);
+            const isNotFoundError = 
+              authError.message?.toLowerCase().includes('not found') || 
+              authError.message?.toLowerCase().includes('exist') ||
+              authError.status === 404;
+              
+            if (isNotFoundError) {
+              if (formData.email && formData.password) {
+                try {
+                  const authUser = await dataService.createAuthUser(formData.email, formData.password);
+                  submissionData.auth_user_id = authUser.id;
+                } catch (createErr) {
+                  console.error("Failed to recreate auth user:", createErr);
+                }
+              } else {
+                submissionData.auth_user_id = null;
+              }
+            } else {
+              throw authError;
+            }
+          }
         } else if (personObj && !personObj.auth_user_id && formData.email && formData.password) {
           const authUser = await dataService.createAuthUser(formData.email, formData.password);
           submissionData.auth_user_id = authUser.id;

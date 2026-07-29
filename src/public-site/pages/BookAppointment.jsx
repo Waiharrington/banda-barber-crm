@@ -2139,7 +2139,20 @@ export default function BookAppointment() {
                      style={{ transform: `translateX(-${barberStartIndex * (100 / visibleCount)}%)` }}
                      key={artistFilter}
                    >
-                     {barbers.filter(barber => {
+                     {barbers.length === 0 ? (
+                      Array.from({ length: visibleCount }).map((_, idx) => (
+                        <div key={`skeleton-${idx}`} className="shrink-0 px-3" style={{ width: `${100 / visibleCount}%` }}>
+                          <div className="flex flex-col items-center text-center relative w-full animate-pulse">
+                            <div className="w-full aspect-[4/5] rounded-2xl bg-white/5 border border-white/5 mb-4" />
+                            <div className="h-5 w-32 bg-white/10 rounded mb-2" />
+                            <div className="h-3.5 w-24 bg-[#CBB79A]/10 rounded mb-2" />
+                            <div className="h-3 w-40 bg-white/5 rounded mb-4" />
+                            <div className="h-9 w-28 bg-white/5 border border-white/10 rounded-full" />
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      barbers.filter(barber => {
                        if (artistFilter === 'todos') return true;
                        const r = (barber.role?.split('|')[0] || '').toLowerCase().trim();
                        if (artistFilter === 'barberos') return r.includes('barber') || r.includes('corte') || r.includes('barba');
@@ -2301,7 +2314,8 @@ export default function BookAppointment() {
                            </div>
                          </div>
                        );
-                    })}
+                    })
+                    )}
                   </div>
                 </div>
               </div>
@@ -3220,7 +3234,7 @@ export default function BookAppointment() {
                                     }
                                     scrollToTop();
                                   }}
-                                  className="flex items-center gap-1.5 text-white/50 hover:text-white transition-all text-xs font-black uppercase tracking-wider cursor-pointer group"
+                                  className="flex items-center gap-1.5 text-white/60 hover:text-white transition-all text-sm font-medium cursor-pointer group"
                                 >
                                   <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
                                   <span>Todos los profesionales</span>
@@ -3228,13 +3242,13 @@ export default function BookAppointment() {
                                 
                                 <div className="flex items-center justify-center">
                                   {/* Logo Centrado */}
-                                  <img src={logo} alt="Panda Barber Studio" className="h-8 object-contain opacity-90" />
+                                  <img src={logo} alt="Panda Barber Studio" className="h-10 object-contain opacity-90" />
                                 </div>
                                 
                                 <div className="flex items-center gap-6">
                                   <button 
                                     onClick={() => handleShare(expandedBarber)}
-                                    className="flex items-center gap-2 text-white/50 hover:text-white transition-all text-xs font-black uppercase tracking-wider cursor-pointer"
+                                    className="flex items-center gap-2 text-white/60 hover:text-white transition-all text-sm font-medium cursor-pointer"
                                   >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                                     <span>Compartir</span>
@@ -3242,7 +3256,7 @@ export default function BookAppointment() {
                                   
                                   <button 
                                     onClick={() => toggleFavorite(expandedBarber.id)}
-                                    className="flex items-center gap-2 text-white/50 hover:text-white transition-all text-xs font-black uppercase tracking-wider cursor-pointer"
+                                    className="flex items-center gap-2 text-white/60 hover:text-white transition-all text-sm font-medium cursor-pointer"
                                   >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill={favorites.includes(expandedBarber.id) ? "#ff453a" : "none"} stroke={favorites.includes(expandedBarber.id) ? "#ff453a" : "currentColor"} strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                                     <span>{favorites.includes(expandedBarber.id) ? "Guardado" : "Guardar"}</span>
@@ -3279,7 +3293,11 @@ export default function BookAppointment() {
                                           className="profile-video-poster"
                                           style={{ 
                                             filter: 'brightness(0.85)',
-                                            objectPosition: expandedBarber.name.toLowerCase().includes('moret') ? 'center 15%' : 'center top'
+                                            objectPosition: expandedBarber.name.toLowerCase().includes('moret') 
+                                              ? 'center 15%' 
+                                              : expandedBarber.name.toLowerCase().includes('kevin')
+                                                ? 'center 28%'
+                                                : 'center top'
                                           }}
                                         />
                                       )}
@@ -3294,7 +3312,11 @@ export default function BookAppointment() {
                                         className="w-full h-full object-cover profile-video-el"
                                         style={{ 
                                           filter: 'brightness(0.85)',
-                                          objectPosition: expandedBarber.name.toLowerCase().includes('moret') ? 'center 15%' : 'center top'
+                                          objectPosition: expandedBarber.name.toLowerCase().includes('moret') 
+                                            ? 'center 15%' 
+                                            : expandedBarber.name.toLowerCase().includes('kevin')
+                                              ? 'center 28%'
+                                              : 'center top'
                                         }}
                                         onLoadedData={(e) => e.currentTarget.classList.add('loaded')}
                                       >
@@ -3349,7 +3371,10 @@ export default function BookAppointment() {
                                   </p>
                                 </div>
 
-                                {/* ── ESCRITORIO: Vista Horizontal Unificada (Oculto en móvil) ── */}
+                                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start w-full text-left">
+                                {/* Left Column: Especialidades, Portafolio, Testimonios */}
+                                <div className="md:col-span-8 space-y-8 w-full">
+{/* ── ESCRITORIO: Vista Horizontal Unificada (Oculto en móvil) ── */}
                                 {(() => {
                                   const details = getBarberDetails(expandedBarber.name);
                                   const ratings = details.rating;
@@ -3368,7 +3393,11 @@ export default function BookAppointment() {
                                                 className="profile-video-poster"
                                                 style={{ 
                                                   filter: 'brightness(0.85)',
-                                                  objectPosition: expandedBarber.name.toLowerCase().includes('moret') ? 'center 15%' : 'center top'
+                                                  objectPosition: expandedBarber.name.toLowerCase().includes('moret') 
+                                                    ? 'center 15%' 
+                                                    : expandedBarber.name.toLowerCase().includes('kevin')
+                                                      ? 'center 28%'
+                                                      : 'center top'
                                                 }}
                                               />
                                             )}
@@ -3379,11 +3408,16 @@ export default function BookAppointment() {
                                               muted
                                               playsInline
                                               preload="auto"
-                                              className="w-full h-full object-cover"
+                                              className="w-full h-full object-cover profile-video-el"
                                               style={{ 
                                                 filter: 'brightness(0.85)',
-                                                objectPosition: expandedBarber.name.toLowerCase().includes('moret') ? 'center 15%' : 'center top'
+                                                objectPosition: expandedBarber.name.toLowerCase().includes('moret') 
+                                                  ? 'center 15%' 
+                                                  : expandedBarber.name.toLowerCase().includes('kevin')
+                                                    ? 'center 28%'
+                                                    : 'center top'
                                               }}
+                                              onLoadedData={(e) => e.currentTarget.classList.add('loaded')}
                                             >
                                               <source src={getBarberVideo(expandedBarber.name)} type="video/mp4" />
                                             </video>
@@ -3438,46 +3472,30 @@ export default function BookAppointment() {
                                           </p>
                                         </div>
 
-                                        {/* Barra de 4 Estadísticas Compactas (Mockup) */}
-                                        <div className="flex items-center justify-between gap-3 border-t border-white/5 pt-4 w-full">
-                                          <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A]">
-                                              <Scissors size={14} />
-                                            </div>
-                                            <div className="flex flex-col">
-                                              <span className="text-[11px] font-black text-white leading-none mb-0.5">{details.reviews_count}+</span>
-                                              <span className="text-[7px] text-white/40 font-bold uppercase tracking-wider leading-none">Trabajos</span>
-                                            </div>
+                                        {/* Barra de 4 Estadísticas Compactas (Estilo vertical de Foto 2) */}
+                                        <div className="flex items-center justify-between border-t border-b border-white/5 py-4 w-full">
+                                          <div className="flex flex-col items-center text-center flex-1">
+                                            <Scissors size={20} className="text-[#CBB79A] mb-1.5" />
+                                            <span className="text-xl font-black text-white leading-none mb-1">{details.reviews_count}+</span>
+                                            <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-tight">SERVICIOS<br/>REALIZADOS</span>
                                           </div>
 
-                                          <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A]">
-                                              <CalendarIcon size={14} />
-                                            </div>
-                                            <div className="flex flex-col">
-                                              <span className="text-[11px] font-black text-white leading-none mb-0.5">5</span>
-                                              <span className="text-[7px] text-white/40 font-bold uppercase tracking-wider leading-none">Años Exp</span>
-                                            </div>
+                                          <div className="flex flex-col items-center text-center flex-1 border-l border-white/5">
+                                            <CalendarIcon size={20} className="text-[#CBB79A] mb-1.5" />
+                                            <span className="text-xl font-black text-white leading-none mb-1">5</span>
+                                            <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-tight">AÑOS<br/>DE EXPERIENCIA</span>
                                           </div>
 
-                                          <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A]">
-                                              <Heart size={14} />
-                                            </div>
-                                            <div className="flex flex-col">
-                                              <span className="text-[11px] font-black text-white leading-none mb-0.5">98%</span>
-                                              <span className="text-[7px] text-white/40 font-bold uppercase tracking-wider leading-none">Satisfechos</span>
-                                            </div>
+                                          <div className="flex flex-col items-center text-center flex-1 border-l border-white/5">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#CBB79A] mb-1.5"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                                            <span className="text-xl font-black text-white leading-none mb-1">98%</span>
+                                            <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-tight">CLIENTES<br/>SATISFECHOS</span>
                                           </div>
 
-                                          <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[#CBB79A]">
-                                              <Star size={14} />
-                                            </div>
-                                            <div className="flex flex-col">
-                                              <span className="text-[11px] font-black text-white leading-none mb-0.5">{ratings}</span>
-                                              <span className="text-[7px] text-white/40 font-bold uppercase tracking-wider leading-none">Valoración</span>
-                                            </div>
+                                          <div className="flex flex-col items-center text-center flex-1 border-l border-white/5">
+                                            <Star size={20} className="text-[#CBB79A] mb-1.5" />
+                                            <span className="text-xl font-black text-white leading-none mb-1">{ratings}</span>
+                                            <span className="text-[8px] text-white/40 font-black uppercase tracking-widest leading-tight">VALORACIÓN<br/>PROMEDIO</span>
                                           </div>
                                         </div>
                                       </div>
@@ -3489,7 +3507,7 @@ export default function BookAppointment() {
                                   const details = getBarberDetails(expandedBarber.name);
                                   return (
                                     <div className="hidden md:block w-full border-t border-white/5 pt-4 mb-6">
-                                      <h4 className="font-extrabold text-[10px] text-white/40 uppercase tracking-widest mb-3">ESPECIALIDADES</h4>
+                                      <h4 className="font-extrabold text-[9px] font-black uppercase tracking-widest text-white/40 mb-3">ESPECIALIDADES</h4>
                                       <div className="flex flex-wrap gap-2">
                                         {details.specialties.map(spec => (
                                           <span 
@@ -3503,14 +3521,26 @@ export default function BookAppointment() {
                                     </div>
                                   );
                                 })()}
-                              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-start w-full text-left">
-                                {/* Left Column: Especialidades, Portafolio, Testimonios */}
-                                <div className="md:col-span-7 space-y-8 w-full">
+                              
                                   {/* Recent Works Collage Gallery */}
                                   <div className="profile-gallery-enter w-full">
                                     <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
                                       <div className="flex items-center gap-2">
-                                        <h4 className="font-extrabold text-sm text-white/80 uppercase tracking-widest">// TRABAJOS RECIENTES</h4>
+                                        <h4 className="font-extrabold text-sm text-white/80 uppercase tracking-widest">TRABAJOS RECIENTES</h4>
+                                      </div>
+                                      <div className="hidden md:flex gap-1.5">
+                                        {['Todos', 'Cortes', 'Barba', 'Clásicos', 'Diseños'].map((cat, i) => (
+                                          <span 
+                                            key={cat} 
+                                            className={`px-3 py-1 rounded-full text-[10px] font-bold cursor-pointer transition-all ${
+                                              i === 0 
+                                                ? 'bg-[#CBB79A] text-black' 
+                                                : 'bg-white/5 border border-white/5 text-white/60 hover:text-white'
+                                            }`}
+                                          >
+                                            {cat}
+                                          </span>
+                                        ))}
                                       </div>
                                     </div>
 
@@ -3550,8 +3580,8 @@ export default function BookAppointment() {
                                     return (
                                       <div className="w-full border-t border-white/5 pt-6">
                                         <div className="flex items-center justify-between mb-4">
-                                          <h4 className="font-extrabold text-xs text-white/80 uppercase tracking-widest">// LO QUE DICEN SUS CLIENTES</h4>
-                                          <span className="text-[9px] text-white/40 font-bold tracking-wider uppercase cursor-pointer hover:text-white transition-all">Ver todas las reseñas →</span>
+                                          <h4 className="font-extrabold text-xs text-white/80 uppercase tracking-widest">LO QUE DICEN SUS CLIENTES</h4>
+                                          <span className="text-[10px] text-[#CBB79A] font-bold cursor-pointer hover:underline transition-all">Ver todas las reseñas →</span>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                           {details.testimonials.map((test, index) => (
@@ -3583,7 +3613,7 @@ export default function BookAppointment() {
                                 </div>
 
                             {/* Right Column: Stats panel, Services menu, Booking CTA (sticky on desktop conditionally) */}
-                            <div className="md:col-span-5 profile-sticky-sidebar space-y-6 w-full">
+                            <div className="md:col-span-4 profile-sticky-sidebar space-y-6 w-full">
                               
                               {/* ── MÓVIL: Vista Clásica (Oculto en computadoras) ── */}
                               <div className="md:hidden space-y-6 w-full">
@@ -3825,7 +3855,7 @@ export default function BookAppointment() {
                                 {/* Resumen del Cita de Escritorio */}
                                 {selectedService && selectedDate && selectedTime && (
                                   <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex flex-col gap-3 mt-2">
-                                    <span className="text-[8px] text-white/30 font-black uppercase tracking-widest">// RESUMEN DE TU CITA</span>
+                                    <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider mb-1 block">RESUMEN DE TU CITA</span>
                                     <div className="flex items-center gap-3">
                                       <BarberAvatar url={expandedBarber.image_url} name={expandedBarber.name} className="w-10 h-10 rounded-xl" />
                                       <div className="flex flex-col min-w-0">
@@ -3866,7 +3896,7 @@ export default function BookAppointment() {
 
                                 {/* Colaboradores recomendados ("También podrías reservar con") */}
                                 <div className="border-t border-white/5 pt-4 mt-2">
-                                  <span className="text-[8px] text-white/30 font-black uppercase tracking-widest block mb-3">// TAMBIÉN PODRÍAS RESERVAR CON</span>
+                                  <span className="text-[10px] text-white/40 font-bold uppercase tracking-wider block mb-3">TAMBIÉN PODRÍAS RESERVAR CON</span>
                                   <div className="flex items-center gap-4">
                                     {barbers
                                       .filter(b => b.id !== expandedBarber.id)
@@ -3884,7 +3914,7 @@ export default function BookAppointment() {
                                           <div className="w-9 h-9 rounded-full overflow-hidden border border-white/10 group-hover:border-[#CBB79A] transition-all">
                                             <img src={b.image_url} alt={b.name} className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform" />
                                           </div>
-                                          <span className="text-[7px] font-bold text-white/40 group-hover:text-white transition-all uppercase tracking-wider truncate max-w-[45px]">{b.name.split(' ')[0]}</span>
+                                          <span className="text-[8px] font-bold text-white/40 group-hover:text-white transition-all uppercase tracking-wider truncate max-w-[70px]">{b.name.split(' ')[0]}</span>
                                         </button>
                                       ))}
                                   </div>
@@ -3923,9 +3953,20 @@ export default function BookAppointment() {
 
                         {(() => {
                           const filtered = barbers.filter(b => {
+                            const r = (b.role || '').toLowerCase();
+                            const isTatuador = r.includes('tatu') || r.includes('ink') || r.includes('artista');
+                            
+                            const isBarista = r.includes('barista');
+                            const isAsistente = r.includes('lavado') || r.includes('asist') || r.includes('clean');
+                            const isRecep = r.includes('recep');
+                            const isAdmin = r.includes('admin') || r.includes('gestor') || b.name.toLowerCase().includes('admin');
+                            const isBookable = !isBarista && !isAsistente && !isRecep && !isAdmin;
+                            
+                            if (!isBookable) return false;
+                            
                             const roleMatches = selectedCategory === 'Tatuajes'
-                              ? b.role?.includes('Tatuador') || b.role?.includes('Artista')
-                              : b.role?.includes('Barbero');
+                              ? isTatuador
+                              : !isTatuador;
                             
                             if (!roleMatches) return false;
                             if (!barberSearchQuery) return true;
