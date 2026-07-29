@@ -729,12 +729,8 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
         if (formData.email) {
           const trimmedEmail = formData.email.trim().toLowerCase();
           
-          // Check staff table
-          const { data: existingStaff } = await supabase
-            .from('staff')
-            .select('id, name, role')
-            .ilike('email', trimmedEmail)
-            .maybeSingle();
+          // Check staff table using dataService (which runs via authClient)
+          const existingStaff = await dataService.getStaffByEmail(trimmedEmail);
           if (existingStaff) {
             if (existingStaff.role?.startsWith('ARCHIVED|')) {
               showToast(`El email ${formData.email} pertenece a un usuario archivado (${existingStaff.name}). Elimínalo primero desde Supabase.`, 'error');
@@ -762,11 +758,7 @@ const PersonnelModule = ({ isMobile, inventory = [], initialTab = 'management', 
         try {
           // Check if a trigger already created the staff record (common in Supabase)
           if (submissionData.auth_user_id) {
-            const { data: existingByAuth } = await supabase
-              .from('staff')
-              .select('id')
-              .eq('auth_user_id', submissionData.auth_user_id)
-              .maybeSingle();
+            const existingByAuth = await dataService.getStaffByAuthUserId(submissionData.auth_user_id);
             if (existingByAuth) {
               // Trigger already created it — update instead of insert
               await dataService.updateStaff(existingByAuth.id, submissionData);

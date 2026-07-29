@@ -250,9 +250,38 @@ export const dataService = {
     return _normalizeStaff(data);
   },
 
+  async getStaffByEmail(email) {
+    if (!email) return null;
+    const client = authClient || supabase;
+    const { data, error } = await client
+      .from('staff')
+      .select(STAFF_PUBLIC_SELECT)
+      .ilike('email', email.trim().toLowerCase())
+      .maybeSingle();
+    if (error) throw error;
+    if (!data || data.role?.startsWith('ARCHIVED|')) return null;
+    return _normalizeStaff(data);
+  },
+
+  async getAuthUserByEmail(email) {
+    const isServiceKeyPresent = !!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    if (isServiceKeyPresent && authClient?.auth?.admin) {
+      const { data: { users }, error } = await authClient.auth.admin.listUsers();
+      if (error) throw error;
+      return users.find(u => u.email?.toLowerCase() === email.trim().toLowerCase()) || null;
+    }
+    return null;
+  },
+
   async createAuthUser(email, password) {
     const isServiceKeyPresent = !!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
     if (isServiceKeyPresent && authClient?.auth?.admin) {
+      // First check if they already exist in auth.users
+      const existingUser = await this.getAuthUserByEmail(email);
+      if (existingUser) {
+        return existingUser;
+      }
+
       const { data, error } = await authClient.auth.admin.createUser({
         email: String(email || '').trim().toLowerCase(),
         password,
