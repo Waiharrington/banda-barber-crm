@@ -1403,46 +1403,63 @@ export default function BookAppointment() {
           return !nameLower.includes('administrador') && !nameLower.includes('admin') && !roleLower.includes('admin') && !roleLower.includes('administrador');
         });
 
-        // Orden específico: Barberos primero (Ángel, luego Moret, luego otros), Tatuadores en el medio (juntos), y Asistentes al final.
+        // ── ORDEN FIJO DEL EQUIPO (nunca cambia sin importar quién se agregue) ─────────
+        // Grupo 1: BARBEROS  → Ángel primero, Moret segundo, luego los demás por nombre
+        // Grupo 2: TATUADORES
+        // Grupo 3: BARISTA
+        // Grupo 4: ASISTENTE
+        // ────────────────────────────────────────────────────────────────────────────────
         const sortedBarbers = [...filteredBarbers].sort((a, b) => {
           const getGroupRank = (barber) => {
             const role = (barber.role || '').toLowerCase();
             const spec = (barber.specialty || '').toLowerCase();
             const name = barber.name.toLowerCase();
-            
-            const isAsistente = role.includes('lavado') || 
-                                role.includes('lavarista') || 
-                                role.includes('asistente') ||
+
+            // Asistente (grupo 4) — va siempre al final
+            const isAsistente = role.includes('asistente') ||
+                                role.includes('lavado') ||
+                                role.includes('lavarista') ||
                                 spec.includes('lavado') ||
                                 spec.includes('lavarista') ||
                                 name.includes('cesia');
-            if (isAsistente) return 3;
-            
-            const isTatuador = role.includes('tatu') || 
-                               role.includes('ink') || 
+            if (isAsistente) return 4;
+
+            // Barista (grupo 3) — va antes del asistente
+            const isBarista = role.includes('barista') ||
+                              role.includes('café') ||
+                              role.includes('cafe') ||
+                              spec.includes('barista') ||
+                              spec.includes('café') ||
+                              spec.includes('cafe') ||
+                              name.includes('yarlin');
+            if (isBarista) return 3;
+
+            // Tatuador (grupo 2)
+            const isTatuador = role.includes('tatu') ||
+                               role.includes('ink') ||
                                role.includes('artista') ||
                                spec.includes('tatu') ||
                                spec.includes('ink') ||
                                spec.includes('artista');
             if (isTatuador) return 2;
-            
+
+            // Barbero (grupo 1) — va primero
             return 1;
           };
-          
+
           const rankA = getGroupRank(a);
           const rankB = getGroupRank(b);
-          
-          if (rankA !== rankB) {
-            return rankA - rankB;
-          }
-          
+
+          if (rankA !== rankB) return rankA - rankB;
+
+          // Dentro del grupo de barberos: Ángel primero, Moret segundo
           if (rankA === 1) {
             if (a.name === 'Ángel Serrano') return -1;
             if (b.name === 'Ángel Serrano') return 1;
             if (a.name === 'Moret Serrano') return -1;
             if (b.name === 'Moret Serrano') return 1;
           }
-          
+
           return a.name.localeCompare(b.name);
         });
         setBarbers(sortedBarbers);
