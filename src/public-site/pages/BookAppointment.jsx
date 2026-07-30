@@ -890,6 +890,7 @@ export default function BookAppointment() {
     return null;
   });
   const [expandedBarberPortfolio, setExpandedBarberPortfolio] = useState([]);
+  const [profileActivePeriod, setProfileActivePeriod] = useState('mañana');
 
   const loadExpandedPortfolio = async (barberId) => {
     if (!barberId) return;
@@ -3985,27 +3986,80 @@ export default function BookAppointment() {
                                 </div>
 
                                 {/* 3. Selecciona Horario */}
-                                <div className="space-y-3">
-                                  <span className="text-[10px] text-white/40 font-black uppercase tracking-widest block">3. Selecciona horario</span>
-                                  <div className="grid grid-cols-3 gap-2">
-                                    {['09:00', '10:30', '12:00', '14:00', '15:30', '16:30'].map(t => {
-                                      const isSelected = selectedTime === t;
-                                      return (
-                                        <button
-                                          key={t}
-                                          onClick={() => setSelectedTime(t)}
-                                          className={`py-2 px-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer text-center ${
-                                            isSelected 
-                                              ? 'bg-[#CBB79A] border-[#CBB79A] text-black' 
-                                              : 'bg-white/[0.02] border-white/5 text-white/60 hover:bg-white/[0.04] hover:border-white/10 hover:text-white'
-                                          }`}
-                                        >
-                                          {formatTime12(t)}
-                                        </button>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
+                                 <div className="space-y-3">
+                                   <div className="flex items-center justify-between">
+                                     <span className="text-[10px] text-white/40 font-black uppercase tracking-widest block">3. Selecciona horario</span>
+                                     {/* Selector de periodo (Mañana / Tarde / Noche) */}
+                                     <div className="flex bg-white/5 border border-white/10 rounded-lg p-0.5 text-[8px] sm:text-[9px] font-bold">
+                                       <button 
+                                         type="button"
+                                         onClick={() => setProfileActivePeriod('mañana')}
+                                         className={`px-1.5 py-0.5 rounded-md transition-all cursor-pointer ${profileActivePeriod === 'mañana' ? 'bg-[#CBB79A] text-black font-black' : 'text-white/60 hover:text-white'}`}
+                                       >
+                                         MAÑANA
+                                       </button>
+                                       <button 
+                                         type="button"
+                                         onClick={() => setProfileActivePeriod('tarde')}
+                                         className={`px-1.5 py-0.5 rounded-md transition-all cursor-pointer ${profileActivePeriod === 'tarde' ? 'bg-[#CBB79A] text-black font-black' : 'text-white/60 hover:text-white'}`}
+                                       >
+                                         TARDE
+                                       </button>
+                                       <button 
+                                         type="button"
+                                         onClick={() => setProfileActivePeriod('noche')}
+                                         className={`px-1.5 py-0.5 rounded-md transition-all cursor-pointer ${profileActivePeriod === 'noche' ? 'bg-[#CBB79A] text-black font-black' : 'text-white/60 hover:text-white'}`}
+                                       >
+                                         NOCHE
+                                       </button>
+                                     </div>
+                                   </div>
+
+                                   {/* Grid de horarios correspondientes al período activo */}
+                                   <div className="grid grid-cols-3 gap-2">
+                                     {(() => {
+                                       const periodSlots = visibleSlots.filter(({ time }) => {
+                                         const hour = parseInt(time.split(':')[0], 10);
+                                         if (profileActivePeriod === 'mañana') return hour >= 9 && hour < 12;
+                                         if (profileActivePeriod === 'tarde') return hour >= 12 && hour < 18;
+                                         if (profileActivePeriod === 'noche') return hour >= 18 && hour <= 22;
+                                         return false;
+                                       });
+
+                                       if (periodSlots.length === 0) {
+                                         return (
+                                           <div className="col-span-3 text-center text-white/30 text-[9px] py-4 uppercase font-bold tracking-wider">
+                                             Sin turnos disponibles
+                                           </div>
+                                         );
+                                       }
+
+                                       return periodSlots.map(({ time, label, isPast, isOccupied }) => {
+                                         const isSelected = selectedTime === time;
+                                         const isDisabled = isPast || isOccupied;
+                                         return (
+                                           <button
+                                             key={time}
+                                             type="button"
+                                             disabled={isDisabled}
+                                             onClick={() => setSelectedTime(time)}
+                                             className={`py-2 px-1 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer text-center ${
+                                               isOccupied
+                                                 ? 'border-red-500/20 bg-red-500/5 text-red-400/20 cursor-not-allowed opacity-40 line-through'
+                                                 : isPast
+                                                   ? 'border-white/3 bg-transparent text-white/10 cursor-not-allowed line-through'
+                                                   : isSelected
+                                                     ? 'bg-[#CBB79A] border-[#CBB79A] text-black font-black scale-[1.02] shadow-[0_0_8px_rgba(203,183,154,0.3)]'
+                                                     : 'bg-white/[0.02] border-white/5 text-white/60 hover:bg-white/[0.04] hover:border-white/10 hover:text-white'
+                                             }`}
+                                           >
+                                             {label.replace(' AM', '').replace(' PM', '')} <span className="text-[8px] opacity-60">{label.includes('AM') ? 'AM' : 'PM'}</span>
+                                           </button>
+                                         );
+                                       });
+                                     })()}
+                                   </div>
+                                 </div>
 
                                 {/* Resumen del Cita de Escritorio */}
                                 {selectedService && selectedDate && selectedTime && (
