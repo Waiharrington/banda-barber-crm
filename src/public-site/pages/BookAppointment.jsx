@@ -425,16 +425,34 @@ const getServiceIcon = (service) => {
   return <Scissors size={26} className="landing-service-icon" />;
 };
 
-// Generate time slots from 9 AM to 10 PM (22:00) in 30-min intervals
-function generateTimeSlots() {
+// ── HORARIO OFICIAL PANDA BARBER STUDIO ──────────────────────────────────────
+// Lunes  – Jueves : 9:00 AM → 8:00 PM  (09:00 – 20:00)
+// Viernes – Sábado : 9:00 AM → 10:00 PM (09:00 – 22:00)
+// Domingo          : 10:00 AM → 6:00 PM  (10:00 – 18:00)
+// ─────────────────────────────────────────────────────────────────────────────
+function getBusinessHours(date) {
+  const day = date ? new Date(date).getDay() : new Date().getDay();
+  if (day === 0) return { start: 10, end: 18 };           // Domingo
+  if (day >= 5) return { start: 9, end: 22 };             // Viernes – Sábado
+  return { start: 9, end: 20 };                           // Lunes – Jueves
+}
+
+// Format a 24h time string to 12h display (e.g. "18:00" → "6:00 PM")
+function generateTimeSlotsForDate(date) {
+  const { start, end } = getBusinessHours(date);
   const slots = [];
-  for (let hour = 9; hour <= 22; hour++) {
+  for (let hour = start; hour <= end; hour++) {
     for (let min = 0; min < 60; min += 30) {
-      if (hour === 22 && min > 0) break; // Stop at 22:00
+      if (hour === end && min > 0) break; // Only include exact closing hour
       slots.push(`${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`);
     }
   }
   return slots;
+}
+
+// Legacy alias kept for any remaining references
+function generateTimeSlots() {
+  return generateTimeSlotsForDate(new Date());
 }
 
 // Convert "09:00" to "9:00 AM", "14:30" to "2:30 PM" etc
@@ -1119,7 +1137,7 @@ export default function BookAppointment() {
   const [occupiedSlots, setOccupiedSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   
-  const allTimeSlots = useMemo(() => generateTimeSlots(), []);
+  const allTimeSlots = useMemo(() => generateTimeSlotsForDate(selectedDate || new Date()), [selectedDate]);
   
   // Persist booking progress to localStorage
   useEffect(() => {
