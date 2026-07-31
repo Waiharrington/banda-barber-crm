@@ -2942,14 +2942,13 @@ export default function BookAppointment() {
                 </a>
               </div>
 
-              {/* Grid of 5 Posts */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+              {/* Grid of 4 Videos */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-[1200px] mx-auto">
                 {[
                   { video: instaVideo1, url: 'https://www.instagram.com/p/DZitYBeBsDk/', likes: '284', comments: '24' },
                   { video: instaVideo2, url: 'https://www.instagram.com/p/Dbd_QOHolsp/', likes: '342', comments: '31' },
                   { video: instaVideo3, url: 'https://www.instagram.com/p/DbOP3D_R7sG/', likes: '198', comments: '16' },
-                  { video: instaVideo4, url: 'https://www.instagram.com/p/DZ8SmG3JFcH/', likes: '412', comments: '39' },
-                  { img: tatuajesCover, url: 'https://www.instagram.com/pandabarberestudio/', likes: '289', comments: '21' }
+                  { video: instaVideo4, url: 'https://www.instagram.com/p/DZ8SmG3JFcH/', likes: '412', comments: '39' }
                 ].map((post, idx) => {
                   const handleDoubleClick = (e) => {
                     e.preventDefault();
@@ -2960,33 +2959,24 @@ export default function BookAppointment() {
                     <div
                       key={idx}
                       onDoubleClick={handleDoubleClick}
-                      className="group relative aspect-square rounded-2xl overflow-hidden border border-white/5 bg-[#1c1c24] cursor-pointer select-none"
+                      className="group relative rounded-2xl overflow-hidden border border-white/5 bg-[#1c1c24] cursor-pointer select-none"
                       title="Doble clic para ver en Instagram"
                     >
-                      {post.video ? (
-                        <video
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        >
-                          <source src={post.video} type="video/mp4" />
-                        </video>
-                      ) : (
-                        <img 
-                          src={post.img} 
-                          alt="Instagram Post" 
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                        />
-                      )}
+                      <video
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-auto block transition-transform duration-500 group-hover:scale-105"
+                      >
+                        <source src={post.video} type="video/mp4" />
+                      </video>
                       {/* Hover Overlay */}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-1.5 text-white text-xs font-bold z-10 pointer-events-none">
-                        <div className="flex gap-4">
-                          <span className="flex items-center gap-1">❤️ {post.likes}</span>
-                          <span className="flex items-center gap-1">💬 {post.comments}</span>
-                        </div>
-                        <span className="text-[8px] text-white/50 uppercase tracking-widest mt-1">Doble clic para abrir</span>
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-1.5 text-white text-[10px] font-extrabold z-10 pointer-events-none">
+                        <span className="bg-[#CBB79A] text-black py-1.5 px-3.5 rounded-lg uppercase tracking-wider scale-90 group-hover:scale-100 transition-transform duration-300">
+                          VER PUBLICACIÓN
+                        </span>
+                        <span className="text-[7.5px] text-white/55 uppercase tracking-widest mt-1">Doble clic para abrir</span>
                       </div>
                     </div>
                   );
