@@ -2141,7 +2141,7 @@ export default function BookAppointment() {
             {/* SECTION: ELIGE TU SERVICIO */}
             <div className="w-full text-center" id="servicios">
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">EXPERIENCIA EXCLUSIVA</span>
-              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-12">
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-12 title-loop-pulse">
                 ELIGE TU <span className="text-[#CBB79A]">SERVICIO</span>
               </h2>
 
@@ -2258,7 +2258,7 @@ export default function BookAppointment() {
 
             {/* SECTION: NUESTROS ARTISTAS / EL EQUIPO */}
             <div className="w-full text-center reveal-item pt-16" id="equipo">
-              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-5">
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-5 title-loop-pulse">
                 NUESTRO <span className="text-[#CBB79A]">EQUIPO</span>
               </h2>
               
@@ -2532,95 +2532,107 @@ export default function BookAppointment() {
               </div>
             </div>
 
-            {/* SECTION: PANDA KIDS CLUB */}
-            <div id="pandakids" className="w-full reveal-item scroll-mt-24">
-              <div className="w-full bg-[#111115]/30 border border-white/[0.04] rounded-3xl overflow-hidden flex flex-col lg:flex-row items-stretch group hover:border-[rgba(203,183,154,0.12)] transition-all duration-500">
-                {/* Left side: Full-Bleed Video Banner */}
-                <div className="w-full lg:w-[45%] aspect-[16/9] lg:aspect-auto lg:min-h-[380px] relative bg-black flex-shrink-0">
-                   {loadDeferredAssets ? (
+            {/* SECTION: PANDA KIDS CLUB — Premium 3-column UX layout (no card container) */}
+            <div id="pandakids" className="w-full reveal-item scroll-mt-24 py-12">
+              <div className="w-full flex flex-col lg:flex-row items-stretch gap-10 xl:gap-14">
+                
+                {/* COLUMN 1: Floating Video Player (36% width) */}
+                <div className="w-full lg:w-[36%] h-auto relative rounded-[2rem] overflow-hidden bg-black/40 border border-white/5 shadow-2xl group flex-shrink-0">
+                  {loadDeferredAssets ? (
                     <video
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="absolute inset-0 w-full h-full object-cover animate-fade-in"
-                      style={{ filter: 'brightness(0.85)', objectPosition: 'center top' }}
+                      autoPlay loop muted playsInline
+                      className="absolute inset-0 w-full h-full object-cover"
+                      style={{ filter: 'brightness(0.9)' }}
                     >
                       <source src={pandaKidsVideo} type="video/mp4" />
                     </video>
                   ) : (
-                    <div className="absolute inset-0 bg-[#0d0d11]/80 flex items-center justify-center">
+                    <div className="w-full aspect-[3/4] bg-[#0d0d11] flex items-center justify-center">
                       <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest animate-pulse">Cargando experiencia...</span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/80 via-black/20 lg:via-transparent to-transparent lg:to-[#111115]/30 z-1" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
                   
                   {/* Floating badge inside video */}
-                  <div className="absolute top-6 left-6 z-10 bg-black/70 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-1.5">
+                  <div className="absolute top-6 left-6 z-10 bg-black/60 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-1.5">
                     <Heart size={12} className="text-[#CBB79A]" fill="#CBB79A" />
-                    <span className="text-[9px] font-extrabold text-white tracking-widest uppercase">ZONA EXCLUSIVA</span>
+                    <span className="text-[9px] font-extrabold text-white tracking-widest uppercase">PANDA KIDS</span>
                   </div>
                 </div>
 
-                {/* Right side: Premium Copywriting */}
-                <div className="flex-1 p-8 lg:p-12 text-left space-y-6 flex flex-col justify-center">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CLUB INFANTIL</span>
-                    <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-4 leading-tight">
+                {/* COLUMN 2: Copywriting & Vertical Features (38% width) */}
+                <div className="w-full lg:w-[38%] text-left flex flex-col justify-between py-2 space-y-6">
+                  <div className="space-y-4">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block">SU PRIMER ESTILO</span>
+                    <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase leading-tight font-sans title-loop-pulse">
                       CORTES QUE HACEN<br />
                       <span className="text-[#CBB79A]">FELICES A LOS PEQUEÑOS</span>
                     </h2>
-                    <p className="text-white/80 text-[15px] leading-relaxed">
+                    <p className="text-white/70 text-[15px] leading-relaxed">
                       En Panda Barber los niños son parte de nuestra familia. Nuestros barberos saben exactamente cómo crear una experiencia divertida, cómoda y especial para ellos.
                     </p>
                   </div>
 
-                  {/* Feature Tags */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Feature List — Clean, easy vertical scanning */}
+                  <div className="space-y-4 pt-2">
                     {[
-                      { icon: <Scissors size={16} />, title: 'Silla especial kids', desc: 'Asiento adaptado para que estén cómodos' },
-                      { icon: <Sparkles size={16} />, title: 'Productos suaves', desc: 'Formulados para cuero cabelludo infantil' },
-                      { icon: <Gamepad2 size={16} />, title: 'Ambiente divertido', desc: 'Una experiencia que les va a encantar' },
-                      { icon: <Heart size={16} />, title: 'Barberos pacientes', desc: 'Con experiencia en atención a niños' },
+                      { icon: <Scissors size={15} />, title: 'Silla especial kids', desc: 'Asiento adaptado para que estén cómodos' },
+                      { icon: <Sparkles size={15} />, title: 'Productos suaves', desc: 'Formulados para cuero cabelludo infantil' },
+                      { icon: <Gamepad2 size={15} />, title: 'Ambiente divertido', desc: 'Una experiencia que les va a encantar' },
+                      { icon: <Heart size={15} />, title: 'Barberos pacientes', desc: 'Con experiencia en atención a niños' },
                     ].map((feat, i) => (
-                      <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-                        <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 flex items-center justify-center flex-shrink-0 text-[#CBB79A]">
+                      <div key={i} className="flex gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/15 flex items-center justify-center flex-shrink-0 text-[#CBB79A] mt-0.5">
                           {feat.icon}
                         </div>
                         <div>
-                          <p className="text-white text-[13px] font-bold leading-tight mb-0.5">{feat.title}</p>
-                          <p className="text-white/50 text-[11px] lg:text-[12px] leading-relaxed">{feat.desc}</p>
+                          <h4 className="text-white text-[13.5px] font-bold leading-snug mb-0.5">{feat.title}</h4>
+                          <p className="text-white/45 text-[11.5px] lg:text-[12px] leading-relaxed">{feat.desc}</p>
                         </div>
                       </div>
                     ))}
                   </div>
+                </div>
 
-                  {/* Testimonial */}
-                  <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-4 relative">
-                    <p className="text-white/85 text-sm italic leading-relaxed">
-                      "Me gustó mucho el corte, el señor fue muy amable y me trató súper bien. ¡Quiero volver pronto!"
+                {/* COLUMN 3: Social Proof & CTA (26% width) */}
+                <div className="flex-1 text-left flex flex-col justify-between py-2 space-y-6 lg:border-l lg:border-white/5 lg:pl-10 xl:pl-14">
+                  {/* Premium Floating Testimonial Card */}
+                  <div className="bg-white/[0.02] border border-white/[0.04] rounded-2xl p-6 relative flex-1 flex flex-col justify-center space-y-4">
+                    <span className="text-[3rem] text-[#CBB79A]/15 font-serif absolute -top-2 -left-1 select-none pointer-events-none">“</span>
+                    <p className="text-white/80 text-[14px] leading-relaxed italic relative z-1">
+                      Me gustó mucho el corte, el barbero fue muy paciente y amable, y lo trató súper bien. ¡Volveremos pronto sin duda!
                     </p>
-                    <p className="text-[#CBB79A] text-[11px] font-bold uppercase tracking-wider mt-2">— Cliente Panda Kids ⭐⭐⭐⭐⭐</p>
+                    <div className="border-t border-white/5 pt-4 flex items-center gap-3">
+                      {/* Avatar Initials Badge */}
+                      <div className="w-8 h-8 rounded-full bg-[#CBB79A]/15 border border-[#CBB79A]/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-[#CBB79A] text-[10px] font-extrabold tracking-wider">PM</span>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-white text-[13px] font-bold mb-1">Papá de Mateo</p>
+                        <span className="text-[#CBB79A] text-[11px] block">⭐⭐⭐⭐⭐</span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* CTA */}
-                  <div className="flex flex-col sm:flex-row gap-3">
+                  {/* CTA Buttons stack */}
+                  <div className="flex flex-col gap-3">
                     <button
                       onClick={() => handleStartBooking()}
-                      className="btn-gold py-3 px-7 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2 whitespace-nowrap"
-                      style={{ borderRadius: '10px' }}
+                      className="btn-gold w-full py-3.5 px-6 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2 whitespace-nowrap"
+                      style={{ borderRadius: '12px' }}
                     >
                       <Heart size={13} fill="black" /> RESERVAR PARA MI HIJO
                     </button>
                     <button
                       onClick={() => document.getElementById('equipo')?.scrollIntoView({ behavior: 'smooth' })}
-                      className="btn-outline py-3 px-7 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2"
-                      style={{ borderRadius: '10px', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
+                      className="btn-outline w-full py-3.5 px-6 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2"
+                      style={{ borderRadius: '12px', borderColor: 'rgba(255,255,255,0.15)', color: 'white' }}
                     >
                       VER EL EQUIPO
                     </button>
                   </div>
                 </div>
+
               </div>
             </div>
 
@@ -2730,78 +2742,46 @@ export default function BookAppointment() {
               </div>
             )}
 
-            {/* SECTION: EXPERIENCIA PANDA SECTION (INTEGRADA EN PAGINA) */}
-            <div id="experiencia-section" className="w-full reveal-item scroll-mt-24">
-              <div className="w-full bg-[#111115]/30 border border-white/[0.04] rounded-3xl overflow-hidden flex flex-col lg:flex-row items-stretch group hover:border-[rgba(203,183,154,0.12)] transition-all duration-500">
-                {/* Left side: Full-Bleed Video Panel */}
-                <div className="w-full lg:w-[45%] aspect-[16/9] lg:aspect-auto lg:min-h-[380px] relative bg-black flex-shrink-0">
-                   {loadDeferredAssets ? (
-                    <video
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="absolute inset-0 w-full h-full object-cover animate-fade-in"
-                      style={{ filter: 'brightness(0.85)', objectPosition: 'center top' }}
-                    >
-                      <source src={heroVideo} type="video/mp4" />
-                    </video>
-                  ) : (
-                    <div className="absolute inset-0 bg-[#0d0d11]/80 flex items-center justify-center">
-                      <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest animate-pulse">Cargando experiencia...</span>
+            <div id="experiencia-section" className="w-full reveal-item scroll-mt-24 py-12">
+              <div 
+                className="w-full relative rounded-[2rem] overflow-hidden min-h-[440px] border border-white/5 shadow-2xl flex items-center justify-center p-8 md:p-16 lg:p-24 bg-cover bg-center"
+                style={{ backgroundImage: `url(${experienciaPandaCover})` }}
+              >
+                {/* Subtle vignette layer to ensure high-contrast text readability */}
+                <div className="absolute inset-0 bg-black/45 pointer-events-none z-1" />
+                
+                {/* Floating Top Label */}
+                <div className="absolute top-8 left-8 z-10 bg-black/60 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-1.5">
+                  <Sparkles size={12} className="text-[#CBB79A]" />
+                  <span className="text-[9px] font-extrabold text-white tracking-widest uppercase">EL RITUAL PANDA</span>
+                </div>
+
+                {/* Content Overlay - Centered with text shadows for perfect readability */}
+                <div className="relative z-10 text-center max-w-2xl mx-auto space-y-6" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.85)' }}>
+                  <div className="space-y-3">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block">CULTURA, ESTILO Y EXCLUSIVIDAD</span>
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight uppercase font-sans leading-none title-loop-pulse">
+                      EXPERIENCIA <span className="text-[#CBB79A]">PANDA</span>
+                    </h2>
+                  </div>
+
+                  <p className="text-white text-[14px] sm:text-[16px] leading-relaxed max-w-xl mx-auto font-medium">
+                    Redefinimos el arte del corte en un entorno diseñado para desconectar. Disfruta de nuestro <strong className="text-[#CBB79A] font-extrabold">Café de especialidad y Bar de cortesía</strong> con bebidas premium servidas en cada sesión.
+                  </p>
+
+                  <div className="inline-flex items-center gap-4 pt-4 border-t border-white/10">
+                    <div className="flex items-center gap-1.5 text-white/50 text-[11px] uppercase tracking-widest font-extrabold">
+                      <Coffee size={13} className="text-[#CBB79A]" />
+                      <span>Café de Especialidad</span>
                     </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/80 via-black/20 lg:via-transparent to-transparent lg:to-[#111115]/30 z-1" />
-                  
-                  {/* Floating badge inside video */}
-                  <div className="absolute top-6 left-6 z-10 bg-black/70 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-1.5">
-                    <Sparkles size={12} className="text-[#CBB79A]" />
-                    <span className="text-[9px] font-extrabold text-white tracking-widest uppercase">CLUB PRIVADO</span>
+                    <span className="text-white/20">•</span>
+                    <div className="flex items-center gap-1.5 text-white/50 text-[11px] uppercase tracking-widest font-extrabold">
+                      <Sparkles size={13} className="text-[#CBB79A]" />
+                      <span>Bebidas de Cortesía</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Right side: Premium Copywriting */}
-                <div className="flex-1 p-8 lg:p-12 text-left space-y-6 flex flex-col justify-center">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">CULTURA, ESTILO Y HOSPITALIDAD</span>
-                    <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-4">EXPERIENCIA <span className="text-[#CBB79A]">PANDA</span></h2>
-                    <p className="text-white/80 text-[15px] leading-relaxed">
-                      En <strong className="text-[#CBB79A] font-semibold">Panda Barber Studio</strong> redefinimos la experiencia clásica de barbería. Fusionamos el arte del corte urbano y la tinta en un club social exclusivo diseñado para tu comodidad y relax.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex gap-3 items-start">
-                      <div className="p-2.5 rounded-xl bg-[#CBB79A]/10 text-[#CBB79A] mt-0.5">
-                        <Coffee size={16} />
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="text-white font-extrabold text-[13px] uppercase tracking-wider">Panda Cafe & Bar</h4>
-                        <p className="text-white/50 text-[12px] leading-relaxed">Café de especialidad, bebidas premium y cerveza fría de cortesía en cada sesión.</p>
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex gap-3 items-start">
-                      <div className="p-2.5 rounded-xl bg-[#CBB79A]/10 text-[#CBB79A] mt-0.5">
-                        <Gamepad2 size={16} />
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="text-white font-extrabold text-[13px] uppercase tracking-wider">Espacio Retro Arcade</h4>
-                        <p className="text-white/50 text-[12px] leading-relaxed">Consolas arcade clásicas libres para divertirte mientras esperas tu turno.</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-2">
-                    <button 
-                      onClick={() => handleStartBooking()}
-                      className="btn-gold px-7 py-3 rounded-xl text-[12px] uppercase tracking-wider font-extrabold flex items-center justify-center gap-2"
-                      style={{ borderRadius: '10px' }}
-                    >
-                      Reservar visita <ArrowRight size={14} />
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -2812,7 +2792,7 @@ export default function BookAppointment() {
               {/* Left Column: Why Choose Us (Redesigned as premium cards) */}
               <div className="lg:col-span-6 flex flex-col justify-center text-left">
                 <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">¿POR QUÉ ELEGIR</span>
-                <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-8">
+                <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-8 title-loop-pulse">
                   <span className="text-[#CBB79A]">PANDA BARBER?</span>
                 </h2>
                 
@@ -2839,7 +2819,7 @@ export default function BookAppointment() {
               {/* Right Column: Locations (Redesigned address cards) */}
               <div className="lg:col-span-6 flex flex-col justify-center text-left">
                 <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">NUESTRA SEDE</span>
-                <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-8">
+                <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-8 title-loop-pulse">
                   NUESTRA <span className="text-[#CBB79A]">UBICACIÓN</span>
                 </h2>
 
@@ -2940,7 +2920,7 @@ export default function BookAppointment() {
             <div className="w-full text-center space-y-8 pt-8 reveal-item">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">SÍGUENOS EN REDES</span>
-                <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-3">INSTAGRAM <span className="text-[#CBB79A]">FEED</span></h2>
+                <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-3 title-loop-pulse">INSTAGRAM <span className="text-[#CBB79A]">FEED</span></h2>
                 <a 
                   href="https://www.instagram.com/pandabarberestudio/" 
                   target="_blank" 

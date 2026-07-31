@@ -3045,3 +3045,53 @@ body.hide-public-header nav {
 .animate-float-subtle {
   animation: float-subtle 4s ease-in-out infinite;
 }
+
+/* ── TITLE ANIMATION SYSTEM ── */
+
+/* 1. Entrance animation (Slide-up & Fade-in) */
+.title-enter-active {
+  animation: titleEnter 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes titleEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 2. Exit animation (Slide-down & Fade-out) */
+.title-exit-active {
+  animation: titleExit 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes titleExit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+}
+
+/* 3. Continuous Loop animation (Soft gold breathing glow & micro-pulse) */
+.title-loop-pulse {
+  animation: titleLoopPulse 4s ease-in-out infinite;
+}
+
+@keyframes titleLoopPulse {
+  0%, 100% {
+    text-shadow: 0 0 15px rgba(203, 183, 154, 0.1), 0 0 30px rgba(0, 0, 0, 0.5);
+    transform: scale(1);
+  }
+  50% {
+    text-shadow: 0 0 25px rgba(203, 183, 154, 0.35), 0 0 10px rgba(203, 183, 154, 0.2);
+    transform: scale(1.008);
+  }
+}
