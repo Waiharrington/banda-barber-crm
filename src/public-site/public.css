@@ -48,6 +48,12 @@
     color: var(--text-primary);
     min-height: 100vh;
     overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+
+  /* Adjust anchors scroll margin to leave headroom for fixed header layout */
+  #servicios, #equipo, #experiencia-section, #ubicacion {
+    scroll-margin-top: 120px;
   }
 
   /* Font mappings for titles and subtitles */

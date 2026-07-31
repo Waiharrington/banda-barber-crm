@@ -120,81 +120,35 @@ export default function PublicLayout() {
           <div className="flex items-center gap-8 nav-links-desktop">
             <a 
               href="#inicio" 
-              onClick={(e) => {
-                e.preventDefault();
-                // Find the main scrollable container div by tracking parents or selector
-                const container = document.getElementById('inicio')?.closest('.overflow-y-auto') || window;
-                container.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onClick={(e) => { e.preventDefault(); handleScrollTo('inicio'); }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
             >
               Inicio
             </a>
             <a 
               href="#servicios" 
-              onClick={(e) => {
-                e.preventDefault();
-                const element = document.getElementById('servicios');
-                const container = element?.closest('.overflow-y-auto') || window;
-                if (element) {
-                  // If container is window, use standard bounding rect, else use relative offsetTop
-                  const scrollTarget = container === window 
-                    ? element.getBoundingClientRect().top + window.scrollY - 120
-                    : element.offsetTop - 120;
-                  container.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-                }
-              }}
+              onClick={(e) => { e.preventDefault(); handleScrollTo('servicios'); }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
             >
               Servicios
             </a>
             <a 
               href="#equipo" 
-              onClick={(e) => {
-                e.preventDefault();
-                const element = document.getElementById('equipo');
-                const container = element?.closest('.overflow-y-auto') || window;
-                if (element) {
-                  const scrollTarget = container === window 
-                    ? element.getBoundingClientRect().top + window.scrollY - 120
-                    : element.offsetTop - 120;
-                  container.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-                }
-              }}
+              onClick={(e) => { e.preventDefault(); handleScrollTo('equipo'); }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
             >
               Equipo
             </a>
             <a 
               href="#experiencia-section" 
-              onClick={(e) => {
-                e.preventDefault();
-                const element = document.getElementById('experiencia-section');
-                const container = element?.closest('.overflow-y-auto') || window;
-                if (element) {
-                  const scrollTarget = container === window 
-                    ? element.getBoundingClientRect().top + window.scrollY - 120
-                    : element.offsetTop - 120;
-                  container.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-                }
-              }}
+              onClick={(e) => { e.preventDefault(); handleScrollTo('experiencia-section'); }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
             >
               Experiencia
             </a>
             <a 
               href="#ubicacion" 
-              onClick={(e) => {
-                e.preventDefault();
-                const element = document.getElementById('ubicacion');
-                const container = element?.closest('.overflow-y-auto') || window;
-                if (element) {
-                  const scrollTarget = container === window 
-                    ? element.getBoundingClientRect().top + window.scrollY - 120
-                    : element.offsetTop - 120;
-                  container.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-                }
-              }}
+              onClick={(e) => { e.preventDefault(); handleScrollTo('ubicacion'); }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
             >
               Ubicación
