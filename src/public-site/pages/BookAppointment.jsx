@@ -71,13 +71,13 @@ import instaVideo3 from '../../assets/instagram_post_3.mp4';
 import instaVideo4 from '../../assets/instagram_post_4.mp4';
 
 // Import Mural Media Assets
-const muralVideo = '/src/assets/mural/video_project_13.mp4';
+const muralVideo = '/video_project_13.mp4';
+const cafeVideo = '/panda_cafe.mp4';
 import mural1 from '../../assets/mural/DSC_7071.jpg';
 import mural2 from '../../assets/mural/DSC_7329.jpg';
 import mural3 from '../../assets/mural/barberia.jpg';
 import mural4 from '../../assets/mural/DSC_7081.jpg';
 import mural5 from '../../assets/mural/479889969.jpg';
-import mural6 from '../../assets/mural/captura_pantalla.png';
 import mural7 from '../../assets/mural/DSC_7828.jpg';
 import mural8 from '../../assets/mural/DSC_7829.jpg';
 import mural9 from '../../assets/mural/DSC_7837.jpg';
@@ -557,6 +557,7 @@ export default function BookAppointment() {
   const [artistFilter, setArtistFilter] = useState('todos');
   const [loadDeferredAssets, setLoadDeferredAssets] = useState(false);
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [activeMuralIdx, setActiveMuralIdx] = useState(0);
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
@@ -2800,14 +2801,10 @@ export default function BookAppointment() {
               </div>
             )}
 
-            <div id="experiencia-section" className="w-full reveal-item scroll-mt-24 py-12 flex flex-col gap-10">
+            <div id="experiencia-section" className="w-full reveal-item scroll-mt-24 py-12 flex flex-col gap-8">
               
               {/* Header Title for the Mural */}
               <div className="text-center space-y-3">
-                <div className="inline-flex items-center gap-2 bg-white/[0.03] border border-white/10 py-1.5 px-4 rounded-full">
-                  <Sparkles size={13} className="text-[#CBB79A] animate-pulse" />
-                  <span className="text-[9px] font-bold text-white tracking-[0.25em] uppercase">EL RITUAL PANDA</span>
-                </div>
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight uppercase font-sans title-loop-pulse">
                   EXPERIENCIA <span className="text-[#CBB79A]">PANDA</span>
                 </h2>
@@ -2816,94 +2813,159 @@ export default function BookAppointment() {
                 </p>
               </div>
 
-              {/* Bento Grid Collage Mural */}
-              <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-4 w-full auto-rows-[160px] sm:auto-rows-[180px]">
+              {/* Desktop Masonry vs Mobile 3D Interactive Card Stack */}
+              <div className="w-full">
                 
-                {/* 1. Main protagonist: The Video Project */}
-                <div className="md:col-span-2 lg:col-span-6 lg:row-span-3 rounded-3xl overflow-hidden border border-white/10 bg-black relative group flex items-center justify-center shadow-2xl">
-                  <video 
-                    src={muralVideo}
-                    className="w-full h-full object-cover transition-all duration-700 brightness-[0.75] group-hover:brightness-[0.9] group-hover:scale-[1.02]"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                  />
-                  <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md border border-[#CBB79A]/30 py-1 px-3 rounded-lg flex items-center gap-1.5 z-10">
-                    <Sparkles size={11} className="text-[#CBB79A]" />
-                    <span className="text-[8px] font-extrabold text-[#CBB79A] tracking-wider uppercase">PANDA MOVIE</span>
+                {/* Mobile & Tablet: Cinematic Mural (Visible only below md) */}
+                <div className="flex md:hidden flex-col gap-3 w-full">
+                  
+                  {/* === HERO: 2 Vertical Videos Side by Side === */}
+                  <div className="flex gap-2 w-full">
+                    {/* Video 1 — Panda Principal */}
+                    <div className="flex-1 rounded-2xl overflow-hidden shadow-2xl border border-[#CBB79A]/20 relative bg-black">
+                      <video 
+                        src={muralVideo}
+                        className="w-full aspect-[9/16] object-cover brightness-[0.9]"
+                        autoPlay loop muted playsInline
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                    </div>
+                    {/* Video 2 — Café Panda */}
+                    <div className="flex-1 rounded-2xl overflow-hidden shadow-2xl border border-[#CBB79A]/20 relative bg-black">
+                      <video 
+                        src={cafeVideo}
+                        className="w-full aspect-[9/16] object-cover brightness-[0.9]"
+                        autoPlay loop muted playsInline
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                    </div>
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none z-1" />
-                  <div className="absolute bottom-4 left-4 right-4 z-10 text-left">
-                    <h4 className="text-white text-xs sm:text-sm font-extrabold uppercase tracking-widest">VIDEO EXPERIENCIA</h4>
-                    <p className="text-white/50 text-[10px] sm:text-[11px] font-bold">Sumérgete en la cultura Panda Barber</p>
+
+                  {/* === STRIP 1: Marquee scrolling LEFT — larger photos === */}
+                  <div className="relative w-full overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)' }}>
+                    <div className="marquee-strip-left flex gap-2 w-max">
+                      {/* Original set */}
+                      {[mural1, mural2, mural3, mural4, mural5, mural7].map((src, i) => (
+                        <div key={`s1-${i}`} className="flex-shrink-0 w-[170px] h-[130px] rounded-xl overflow-hidden shadow-lg border border-white/5" style={{ transform: `rotate(${[-1.2, 0.8, -0.5, 1, -0.8, 0.6][i]}deg)` }}>
+                          <img src={src} alt="Panda Barber" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                      {/* Duplicate set for seamless loop */}
+                      {[mural1, mural2, mural3, mural4, mural5, mural7].map((src, i) => (
+                        <div key={`s1d-${i}`} className="flex-shrink-0 w-[170px] h-[130px] rounded-xl overflow-hidden shadow-lg border border-white/5" style={{ transform: `rotate(${[-1.2, 0.8, -0.5, 1, -0.8, 0.6][i]}deg)` }}>
+                          <img src={src} alt="Panda Barber" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
                   </div>
+
+                  {/* === STRIP 2: Marquee scrolling RIGHT — slightly smaller photos === */}
+                  <div className="relative w-full overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)' }}>
+                    <div className="marquee-strip-right flex gap-2 w-max">
+                      {/* Original set */}
+                      {[mural8, mural9, mural10, mural11, mural1, mural3].map((src, i) => (
+                        <div key={`s2-${i}`} className="flex-shrink-0 w-[145px] h-[110px] rounded-xl overflow-hidden shadow-md border border-white/5" style={{ transform: `rotate(${[0.7, -1, 0.5, -0.6, 1.1, -0.4][i]}deg)` }}>
+                          <img src={src} alt="Panda Barber" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                      {/* Duplicate set for seamless loop */}
+                      {[mural8, mural9, mural10, mural11, mural1, mural3].map((src, i) => (
+                        <div key={`s2d-${i}`} className="flex-shrink-0 w-[145px] h-[110px] rounded-xl overflow-hidden shadow-md border border-white/5" style={{ transform: `rotate(${[0.7, -1, 0.5, -0.6, 1.1, -0.4][i]}deg)` }}>
+                          <img src={src} alt="Panda Barber" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                 </div>
 
-                {/* 2. Photo: DSC_7071 */}
-                <div className="md:col-span-2 lg:col-span-3 lg:row-span-2 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                  <img src={mural1} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
-                </div>
+                {/* Desktop 5-Column Grid (Hidden on mobile, visible from md up) */}
+                <div className="hidden md:grid md:grid-cols-5 gap-3.5 w-full auto-rows-[220px] max-h-[850px] overflow-hidden">
+                  
+                  {/* 1. Video Protagonist (col-span-1, row-span-2) */}
+                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 bg-black relative group shadow-lg">
+                    <video 
+                      src={muralVideo}
+                      className="w-full h-full object-cover transition-all duration-700 brightness-[0.9]"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                    />
+                  </div>
 
-                {/* 3. Photo: DSC_7329 */}
-                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                  <img src={mural2} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
-                </div>
+                  {/* 2. Photo: DSC_7071 (col-span-1, row-span-2) */}
+                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                    <img src={mural1} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
+                  </div>
 
-                {/* 4. Photo: barberia.jpg */}
-                <div className="md:col-span-2 lg:col-span-3 lg:row-span-2 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                  <img src={mural3} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:-rotate-1 brightness-[0.8]" />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
-                </div>
+                  {/* 3. Photo: DSC_7329 (col-span-1, row-span-1) */}
+                  <div className="md:col-span-1 md:row-span-1 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                    <img src={mural2} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
+                  </div>
 
-                {/* 5. Photo: DSC_7081 */}
-                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                  <img src={mural4} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
-                </div>
+                  {/* 4. Photo: barberia.jpg (col-span-1, row-span-2) */}
+                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                    <img src={mural3} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
+                  </div>
 
-                {/* 6. Photo: 479889969.jpg */}
-                <div className="md:col-span-2 lg:col-span-3 lg:row-span-2 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                  <img src={mural5} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
-                </div>
+                  {/* 5. Photo: DSC_7081 (col-span-1, row-span-1) */}
+                  <div className="md:col-span-1 md:row-span-1 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                    <img src={mural4} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
+                  </div>
 
-                {/* 7. Photo: captura_pantalla.png */}
-                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                  <img src={mural6} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:-rotate-1 brightness-[0.8]" />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
-                </div>
+                  {/* 6. Photo: 479889969.jpg (col-span-1, row-span-1) */}
+                  <div className="md:col-span-1 md:row-span-1 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                    <img src={mural5} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
+                  </div>
 
-                {/* 8. Photo: DSC_7828 */}
-                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                  <img src={mural7} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
-                </div>
+                  {/* 7. Photo: DSC_7828 (col-span-1, row-span-2) */}
+                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                    <img src={mural7} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
+                  </div>
 
-                {/* 9. Photo: DSC_7829 */}
-                <div className="md:col-span-2 lg:col-span-3 lg:row-span-2 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                  <img src={mural8} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:-rotate-1 brightness-[0.8]" />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
-                </div>
+                  {/* 8. Photo: DSC_7829 (col-span-1, row-span-2) */}
+                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                    <img src={mural8} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
+                  </div>
 
-                {/* 10. Photo: DSC_7837 */}
-                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                  <img src={mural9} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
-                </div>
+                  {/* 9. Photo: DSC_7837 (col-span-1, row-span-2) */}
+                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                    <img src={mural9} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
+                  </div>
 
-                {/* 11. Photo: DSC_7927 */}
-                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                  <img src={mural10} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
-                </div>
+                  {/* 10. Photo: DSC_7927 (col-span-1, row-span-2) */}
+                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                    <img src={mural10} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
+                  </div>
 
-                {/* 12. Photo: DSC_7935 */}
-                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                  <img src={mural11} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:-rotate-1 brightness-[0.8]" />
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
+                  {/* 11. Photo: DSC_7935 (col-span-1, row-span-2) */}
+                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                    <img src={mural11} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
+                  </div>
+
+                  {/* 12. Video: Panda Cafe (col-span-1, row-span-2) */}
+                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 bg-black relative group shadow-lg">
+                    <video 
+                      src={cafeVideo}
+                      className="w-full h-full object-cover transition-all duration-700 brightness-[0.9]"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                    />
+                  </div>
+
                 </div>
 
               </div>

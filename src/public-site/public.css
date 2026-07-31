@@ -3101,3 +3101,44 @@ body.hide-public-header nav {
     transform: scale(1.008);
   }
 }
+
+/* 4. Masonry Collage Entrance Animations */
+.animate-fade-in-up {
+  opacity: 0;
+  animation: fadeInUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === Marquee Photo Strip Animations === */
+@keyframes marquee-scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes marquee-scroll-right {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+.marquee-strip-left {
+  animation: marquee-scroll-left 25s linear infinite;
+}
+
+.marquee-strip-right {
+  animation: marquee-scroll-right 30s linear infinite;
+}
+
+.marquee-strip-left:hover,
+.marquee-strip-right:hover {
+  animation-play-state: paused;
+}
