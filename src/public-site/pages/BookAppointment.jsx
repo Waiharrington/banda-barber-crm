@@ -1485,7 +1485,30 @@ export default function BookAppointment() {
         });
         setBarbers(sortedBarbers);
         setTopClients(topClientsData || []);
-        setBarberOfMonth(topBarberData);
+        
+        // If there is no calculated top barber of the month from the database,
+        // dynamically select a random active barber/tatuador to rotate on each page reload
+        if (topBarberData) {
+          setBarberOfMonth(topBarberData);
+        } else {
+          // Filter to only include active barbers or tatuadores (excluding baristas and assistants)
+          const rotatableBarbers = filteredBarbers.filter(b => {
+            const role = (b.role || '').toLowerCase();
+            const spec = (b.specialty || '').toLowerCase();
+            const name = b.name.toLowerCase();
+            const isAsistente = role.includes('asistente') || role.includes('lavado') || name.includes('cesia');
+            const isBarista = role.includes('barista') || role.includes('cafe') || name.includes('yarlin');
+            return !isAsistente && !isBarista;
+          });
+
+          if (rotatableBarbers.length > 0) {
+            const randomIndex = Math.floor(Math.random() * rotatableBarbers.length);
+            setBarberOfMonth(rotatableBarbers[randomIndex]);
+          } else {
+            setBarberOfMonth(null);
+          }
+        }
+        
         setReviews(reviewsData || []);
 
 
