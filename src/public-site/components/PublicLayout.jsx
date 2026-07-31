@@ -122,9 +122,8 @@ export default function PublicLayout() {
               href="#inicio" 
               onClick={(e) => {
                 e.preventDefault();
-                const container = document.querySelector('.overflow-y-auto');
-                const element = document.getElementById('inicio');
-                if (container && element) {
+                const container = document.getElementById('inicio')?.parentNode;
+                if (container) {
                   container.scrollTo({ top: 0, behavior: 'smooth' });
                 }
               }}
@@ -136,8 +135,8 @@ export default function PublicLayout() {
               href="#servicios" 
               onClick={(e) => {
                 e.preventDefault();
-                const container = document.querySelector('.overflow-y-auto');
                 const element = document.getElementById('servicios');
+                const container = element?.closest('.overflow-y-auto');
                 if (container && element) {
                   container.scrollTo({ top: element.offsetTop - 120, behavior: 'smooth' });
                 }
@@ -150,8 +149,8 @@ export default function PublicLayout() {
               href="#equipo" 
               onClick={(e) => {
                 e.preventDefault();
-                const container = document.querySelector('.overflow-y-auto');
                 const element = document.getElementById('equipo');
+                const container = element?.closest('.overflow-y-auto');
                 if (container && element) {
                   container.scrollTo({ top: element.offsetTop - 120, behavior: 'smooth' });
                 }
@@ -164,8 +163,8 @@ export default function PublicLayout() {
               href="#experiencia-section" 
               onClick={(e) => {
                 e.preventDefault();
-                const container = document.querySelector('.overflow-y-auto');
                 const element = document.getElementById('experiencia-section');
+                const container = element?.closest('.overflow-y-auto');
                 if (container && element) {
                   container.scrollTo({ top: element.offsetTop - 120, behavior: 'smooth' });
                 }
@@ -178,8 +177,8 @@ export default function PublicLayout() {
               href="#ubicacion" 
               onClick={(e) => {
                 e.preventDefault();
-                const container = document.querySelector('.overflow-y-auto');
                 const element = document.getElementById('ubicacion');
+                const container = element?.closest('.overflow-y-auto');
                 if (container && element) {
                   container.scrollTo({ top: element.offsetTop - 120, behavior: 'smooth' });
                 }
