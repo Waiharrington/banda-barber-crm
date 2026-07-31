@@ -63,6 +63,12 @@ import abrahamWork2 from '../../assets/abraham_work2.png';
 import abrahamWork3 from '../../assets/abraham_work3.jpg';
 import abrahamWork4 from '../../assets/abraham_work4.jpg';
 
+// Import Instagram Real Video Assets
+import instaVideo1 from '../../assets/instagram_post_1.mp4';
+import instaVideo2 from '../../assets/instagram_post_2.mp4';
+import instaVideo3 from '../../assets/instagram_post_3.mp4';
+import instaVideo4 from '../../assets/instagram_post_4.mp4';
+
 const mockPortfolio = [
   { id: 'ab1', image_url: abrahamWork1 },
   { id: 'ab2', image_url: abrahamWork2 },
@@ -2939,31 +2945,52 @@ export default function BookAppointment() {
               {/* Grid of 5 Posts */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                 {[
-                  { img: heroSlide1, likes: '184', comments: '12' },
-                  { img: heroSlide2, likes: '243', comments: '18' },
-                  { img: heroSlide3, likes: '196', comments: '14' },
-                  { img: tatuajesCover, likes: '312', comments: '27' },
-                  { img: heroSlide4, likes: '289', comments: '21' }
-                ].map((post, idx) => (
-                  <a
-                    key={idx}
-                    href="https://www.instagram.com/pandabarberestudio/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group relative aspect-square rounded-2xl overflow-hidden border border-white/5 bg-[#1c1c24] cursor-pointer"
-                  >
-                    <img 
-                      src={post.img} 
-                      alt="Instagram Post" 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                    />
-                    {/* Hover Overlay */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 text-white text-sm font-bold z-10">
-                      <span className="flex items-center gap-1.5">❤️ {post.likes}</span>
-                      <span className="flex items-center gap-1.5">💬 {post.comments}</span>
+                  { video: instaVideo1, url: 'https://www.instagram.com/p/DZitYBeBsDk/', likes: '284', comments: '24' },
+                  { video: instaVideo2, url: 'https://www.instagram.com/p/Dbd_QOHolsp/', likes: '342', comments: '31' },
+                  { video: instaVideo3, url: 'https://www.instagram.com/p/DbOP3D_R7sG/', likes: '198', comments: '16' },
+                  { video: instaVideo4, url: 'https://www.instagram.com/p/DZ8SmG3JFcH/', likes: '412', comments: '39' },
+                  { img: tatuajesCover, url: 'https://www.instagram.com/pandabarberestudio/', likes: '289', comments: '21' }
+                ].map((post, idx) => {
+                  const handleDoubleClick = (e) => {
+                    e.preventDefault();
+                    window.open(post.url, '_blank', 'noopener,noreferrer');
+                  };
+
+                  return (
+                    <div
+                      key={idx}
+                      onDoubleClick={handleDoubleClick}
+                      className="group relative aspect-square rounded-2xl overflow-hidden border border-white/5 bg-[#1c1c24] cursor-pointer select-none"
+                      title="Doble clic para ver en Instagram"
+                    >
+                      {post.video ? (
+                        <video
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        >
+                          <source src={post.video} type="video/mp4" />
+                        </video>
+                      ) : (
+                        <img 
+                          src={post.img} 
+                          alt="Instagram Post" 
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                        />
+                      )}
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-1.5 text-white text-xs font-bold z-10 pointer-events-none">
+                        <div className="flex gap-4">
+                          <span className="flex items-center gap-1">❤️ {post.likes}</span>
+                          <span className="flex items-center gap-1">💬 {post.comments}</span>
+                        </div>
+                        <span className="text-[8px] text-white/50 uppercase tracking-widest mt-1">Doble clic para abrir</span>
+                      </div>
                     </div>
-                  </a>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Follow Button */}
