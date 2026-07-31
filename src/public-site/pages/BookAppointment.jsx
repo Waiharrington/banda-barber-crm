@@ -33,7 +33,8 @@ import {
   GlassWater,
   Gamepad2,
   Heart,
-  X
+  X,
+  ArrowUp
 } from 'lucide-react';
 import { publicService } from '../services/publicService';
 import PandaLoader from '../../components/PandaLoader';
@@ -537,6 +538,7 @@ export default function BookAppointment() {
     return 1;
   });
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const [showExperienceModal, setShowExperienceModal] = useState(false);
   const [artistFilter, setArtistFilter] = useState('todos');
   const [loadDeferredAssets, setLoadDeferredAssets] = useState(false);
@@ -835,8 +837,20 @@ export default function BookAppointment() {
   useEffect(() => {
     if (!showWelcome) {
       setIsScrolled(false);
+      setShowBackToTop(false);
       return;
     }
+
+    const handleWindowScroll = () => {
+      // Show back to top button when scrolled down more than 600px
+      if (window.scrollY > 600) {
+        setShowBackToTop(true);
+      } else {
+        setShowBackToTop(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleWindowScroll);
 
     let observer;
     const initObserver = () => {
@@ -856,6 +870,7 @@ export default function BookAppointment() {
     const timer = setTimeout(initObserver, 100);
 
     return () => {
+      window.removeEventListener('scroll', handleWindowScroll);
       clearTimeout(timer);
       if (observer) {
         observer.disconnect();
@@ -3125,6 +3140,7 @@ export default function BookAppointment() {
         onScroll={(e) => {
           const scrollTop = e.currentTarget.scrollTop;
           setIsScrolled(scrollTop > 80);
+          setShowBackToTop(scrollTop > 600);
         }}
         className="relative w-full h-full overflow-x-hidden flex flex-col justify-between items-center bg-center overflow-y-auto"
         style={{
@@ -3161,6 +3177,19 @@ export default function BookAppointment() {
                 style={{ boxShadow: '0 10px 25px -5px rgba(203,183,154,0.4), 0 8px 10px -6px rgba(203,183,154,0.4)' }}
               >
                 <span>Volver a la reserva</span> <span className="text-[14px]">→</span>
+              </button>
+            )}
+            {showBackToTop && !isTransitioning && (
+              <button 
+                onClick={() => {
+                  if (scrollContainerRef.current) {
+                    scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
+                }}
+                className="fixed bottom-6 left-6 z-[100] bg-black/60 hover:bg-black/90 text-[#CBB79A] border border-white/10 hover:border-[#CBB79A]/40 w-11 h-11 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center cursor-pointer backdrop-blur-md"
+                title="Volver al inicio"
+              >
+                <ArrowUp size={18} strokeWidth={2.5} />
               </button>
             )}
           </>

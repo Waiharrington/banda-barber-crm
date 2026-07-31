@@ -118,11 +118,76 @@ export default function PublicLayout() {
           
            {/* Navigation Links */}
           <div className="flex items-center gap-8 nav-links-desktop">
-            <a href="/" className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline">Inicio</a>
-            <a href="#servicios" className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline">Servicios</a>
-            <a href="#equipo" className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline">Equipo</a>
-            <a href="#experiencia" className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline">Experiencia</a>
-            <a href="#ubicacion" className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline">Ubicación</a>
+            <a 
+              href="#inicio" 
+              onClick={(e) => {
+                e.preventDefault();
+                const container = document.querySelector('.overflow-y-auto');
+                const element = document.getElementById('inicio');
+                if (container && element) {
+                  container.scrollTo({ top: element.offsetTop, behavior: 'smooth' });
+                }
+              }}
+              className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
+            >
+              Inicio
+            </a>
+            <a 
+              href="#servicios" 
+              onClick={(e) => {
+                e.preventDefault();
+                const container = document.querySelector('.overflow-y-auto');
+                const element = document.getElementById('servicios');
+                if (container && element) {
+                  container.scrollTo({ top: element.offsetTop - 96, behavior: 'smooth' });
+                }
+              }}
+              className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
+            >
+              Servicios
+            </a>
+            <a 
+              href="#equipo" 
+              onClick={(e) => {
+                e.preventDefault();
+                const container = document.querySelector('.overflow-y-auto');
+                const element = document.getElementById('equipo');
+                if (container && element) {
+                  container.scrollTo({ top: element.offsetTop - 96, behavior: 'smooth' });
+                }
+              }}
+              className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
+            >
+              Equipo
+            </a>
+            <a 
+              href="#experiencia-section" 
+              onClick={(e) => {
+                e.preventDefault();
+                const container = document.querySelector('.overflow-y-auto');
+                const element = document.getElementById('experiencia-section');
+                if (container && element) {
+                  container.scrollTo({ top: element.offsetTop - 96, behavior: 'smooth' });
+                }
+              }}
+              className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
+            >
+              Experiencia
+            </a>
+            <a 
+              href="#ubicacion" 
+              onClick={(e) => {
+                e.preventDefault();
+                const container = document.querySelector('.overflow-y-auto');
+                const element = document.getElementById('ubicacion');
+                if (container && element) {
+                  container.scrollTo({ top: element.offsetTop - 96, behavior: 'smooth' });
+                }
+              }}
+              className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
+            >
+              Ubicación
+            </a>
           </div>
  
           {/* Action Buttons */}
