@@ -122,9 +122,10 @@ export default function PublicLayout() {
               href="#inicio" 
               onClick={(e) => {
                 e.preventDefault();
+                const container = document.querySelector('.overflow-y-auto');
                 const element = document.getElementById('inicio');
-                if (element) {
-                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (container && element) {
+                  container.scrollTo({ top: 0, behavior: 'smooth' });
                 }
               }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
@@ -135,9 +136,10 @@ export default function PublicLayout() {
               href="#servicios" 
               onClick={(e) => {
                 e.preventDefault();
+                const container = document.querySelector('.overflow-y-auto');
                 const element = document.getElementById('servicios');
-                if (element) {
-                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (container && element) {
+                  container.scrollTo({ top: element.offsetTop - 120, behavior: 'smooth' });
                 }
               }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
@@ -148,9 +150,10 @@ export default function PublicLayout() {
               href="#equipo" 
               onClick={(e) => {
                 e.preventDefault();
+                const container = document.querySelector('.overflow-y-auto');
                 const element = document.getElementById('equipo');
-                if (element) {
-                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (container && element) {
+                  container.scrollTo({ top: element.offsetTop - 120, behavior: 'smooth' });
                 }
               }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
@@ -161,9 +164,10 @@ export default function PublicLayout() {
               href="#experiencia-section" 
               onClick={(e) => {
                 e.preventDefault();
+                const container = document.querySelector('.overflow-y-auto');
                 const element = document.getElementById('experiencia-section');
-                if (element) {
-                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (container && element) {
+                  container.scrollTo({ top: element.offsetTop - 120, behavior: 'smooth' });
                 }
               }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
@@ -174,9 +178,10 @@ export default function PublicLayout() {
               href="#ubicacion" 
               onClick={(e) => {
                 e.preventDefault();
+                const container = document.querySelector('.overflow-y-auto');
                 const element = document.getElementById('ubicacion');
-                if (element) {
-                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (container && element) {
+                  container.scrollTo({ top: element.offsetTop - 120, behavior: 'smooth' });
                 }
               }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
