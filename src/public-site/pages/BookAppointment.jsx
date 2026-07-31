@@ -3117,10 +3117,12 @@ export default function BookAppointment() {
                 </div>
 
                 {/* Sub-footer strip */}
-                <div className="border-t border-white/[0.04] pt-8 pb-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] font-bold text-white/30">
-                  <p>© 2026 Panda Barber Studio. Todos los derechos reservados.</p>
-                  <p className="flex items-center gap-1">
-                    Diseño & Desarrollo <span className="text-[#CBB79A]">★</span> SomosDos Studio
+                <div className="border-t border-white/[0.04] pt-8 pb-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] sm:text-[11px] font-bold text-white/30">
+                  <p className="tracking-wide">© 2026 Panda Barber Studio. Todos los derechos reservados.</p>
+                  <p className="flex items-center gap-1.5 bg-white/[0.02] border border-white/[0.04] py-1.5 px-3 rounded-full hover:border-[#CBB79A]/20 transition-all duration-300 group cursor-pointer">
+                    <span className="text-white/40 tracking-wider">Diseño & Desarrollo</span>
+                    <span className="text-[#CBB79A] text-[9px] group-hover:rotate-45 transition-transform duration-500">★</span>
+                    <span className="text-white/60 group-hover:text-white transition-colors tracking-widest font-extrabold uppercase text-[10px]">SomosDos Studio</span>
                   </p>
                 </div>
               </footer>
