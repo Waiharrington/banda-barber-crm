@@ -70,6 +70,20 @@ import instaVideo2 from '../../assets/instagram_post_2.mp4';
 import instaVideo3 from '../../assets/instagram_post_3.mp4';
 import instaVideo4 from '../../assets/instagram_post_4.mp4';
 
+// Import Mural Media Assets
+const muralVideo = '/src/assets/mural/video_project_13.mp4';
+import mural1 from '../../assets/mural/DSC_7071.jpg';
+import mural2 from '../../assets/mural/DSC_7329.jpg';
+import mural3 from '../../assets/mural/barberia.jpg';
+import mural4 from '../../assets/mural/DSC_7081.jpg';
+import mural5 from '../../assets/mural/479889969.jpg';
+import mural6 from '../../assets/mural/captura_pantalla.png';
+import mural7 from '../../assets/mural/DSC_7828.jpg';
+import mural8 from '../../assets/mural/DSC_7829.jpg';
+import mural9 from '../../assets/mural/DSC_7837.jpg';
+import mural10 from '../../assets/mural/DSC_7927.jpg';
+import mural11 from '../../assets/mural/DSC_7935.jpg';
+
 const mockPortfolio = [
   { id: 'ab1', image_url: abrahamWork1 },
   { id: 'ab2', image_url: abrahamWork2 },
@@ -2786,47 +2800,114 @@ export default function BookAppointment() {
               </div>
             )}
 
-            <div id="experiencia-section" className="w-full reveal-item scroll-mt-24 py-12">
-              <div 
-                className="w-full relative rounded-[2rem] overflow-hidden min-h-[440px] border border-white/5 shadow-2xl flex items-center justify-center p-8 md:p-16 lg:p-24 bg-cover bg-center"
-                style={{ backgroundImage: `url(${experienciaPandaCover})` }}
-              >
-                {/* Subtle vignette layer to ensure high-contrast text readability */}
-                <div className="absolute inset-0 bg-black/45 pointer-events-none z-1" />
+            <div id="experiencia-section" className="w-full reveal-item scroll-mt-24 py-12 flex flex-col gap-10">
+              
+              {/* Header Title for the Mural */}
+              <div className="text-center space-y-3">
+                <div className="inline-flex items-center gap-2 bg-white/[0.03] border border-white/10 py-1.5 px-4 rounded-full">
+                  <Sparkles size={13} className="text-[#CBB79A] animate-pulse" />
+                  <span className="text-[9px] font-bold text-white tracking-[0.25em] uppercase">EL RITUAL PANDA</span>
+                </div>
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight uppercase font-sans title-loop-pulse">
+                  EXPERIENCIA <span className="text-[#CBB79A]">PANDA</span>
+                </h2>
+                <p className="text-white/60 text-[13px] sm:text-[14px] max-w-xl mx-auto leading-relaxed font-medium">
+                  Redefinimos el arte del corte en un entorno diseñado para desconectar. Explora nuestro mural exclusivo con los mejores cortes y momentos capturados en el estudio.
+                </p>
+              </div>
+
+              {/* Bento Grid Collage Mural */}
+              <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-4 w-full auto-rows-[160px] sm:auto-rows-[180px]">
                 
-                {/* Floating Top Label */}
-                <div className="absolute top-8 left-8 z-10 bg-black/60 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-1.5">
-                  <Sparkles size={12} className="text-[#CBB79A]" />
-                  <span className="text-[9px] font-extrabold text-white tracking-widest uppercase">EL RITUAL PANDA</span>
+                {/* 1. Main protagonist: The Video Project */}
+                <div className="md:col-span-2 lg:col-span-6 lg:row-span-3 rounded-3xl overflow-hidden border border-white/10 bg-black relative group flex items-center justify-center shadow-2xl">
+                  <video 
+                    src={muralVideo}
+                    className="w-full h-full object-cover transition-all duration-700 brightness-[0.75] group-hover:brightness-[0.9] group-hover:scale-[1.02]"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
+                  <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md border border-[#CBB79A]/30 py-1 px-3 rounded-lg flex items-center gap-1.5 z-10">
+                    <Sparkles size={11} className="text-[#CBB79A]" />
+                    <span className="text-[8px] font-extrabold text-[#CBB79A] tracking-wider uppercase">PANDA MOVIE</span>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none z-1" />
+                  <div className="absolute bottom-4 left-4 right-4 z-10 text-left">
+                    <h4 className="text-white text-xs sm:text-sm font-extrabold uppercase tracking-widest">VIDEO EXPERIENCIA</h4>
+                    <p className="text-white/50 text-[10px] sm:text-[11px] font-bold">Sumérgete en la cultura Panda Barber</p>
+                  </div>
                 </div>
 
-                {/* Content Overlay - Centered with text shadows for perfect readability */}
-                <div className="relative z-10 text-center max-w-2xl mx-auto space-y-6" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.85)' }}>
-                  <div className="space-y-3">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block">CULTURA, ESTILO Y EXCLUSIVIDAD</span>
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight uppercase font-sans leading-none title-loop-pulse">
-                      EXPERIENCIA <span className="text-[#CBB79A]">PANDA</span>
-                    </h2>
-                  </div>
+                {/* 2. Photo: DSC_7071 */}
+                <div className="md:col-span-2 lg:col-span-3 lg:row-span-2 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                  <img src={mural1} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
+                </div>
 
-                  <p className="text-white text-[14px] sm:text-[16px] leading-relaxed max-w-xl mx-auto font-medium">
-                    Redefinimos el arte del corte en un entorno diseñado para desconectar. Disfruta de nuestro <strong className="text-[#CBB79A] font-extrabold">Café de especialidad y Bar de cortesía</strong> con bebidas premium servidas en cada sesión.
-                  </p>
+                {/* 3. Photo: DSC_7329 */}
+                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                  <img src={mural2} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
+                </div>
 
-                  <div className="inline-flex items-center gap-4 pt-4 border-t border-white/10">
-                    <div className="flex items-center gap-1.5 text-white/50 text-[11px] uppercase tracking-widest font-extrabold">
-                      <Coffee size={13} className="text-[#CBB79A]" />
-                      <span>Café de Especialidad</span>
-                    </div>
-                    <span className="text-white/20">•</span>
-                    <div className="flex items-center gap-1.5 text-white/50 text-[11px] uppercase tracking-widest font-extrabold">
-                      <Sparkles size={13} className="text-[#CBB79A]" />
-                      <span>Bebidas de Cortesía</span>
-                    </div>
-                  </div>
+                {/* 4. Photo: barberia.jpg */}
+                <div className="md:col-span-2 lg:col-span-3 lg:row-span-2 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                  <img src={mural3} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:-rotate-1 brightness-[0.8]" />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
+                </div>
+
+                {/* 5. Photo: DSC_7081 */}
+                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                  <img src={mural4} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
+                </div>
+
+                {/* 6. Photo: 479889969.jpg */}
+                <div className="md:col-span-2 lg:col-span-3 lg:row-span-2 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                  <img src={mural5} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
+                </div>
+
+                {/* 7. Photo: captura_pantalla.png */}
+                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                  <img src={mural6} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:-rotate-1 brightness-[0.8]" />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
+                </div>
+
+                {/* 8. Photo: DSC_7828 */}
+                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                  <img src={mural7} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
+                </div>
+
+                {/* 9. Photo: DSC_7829 */}
+                <div className="md:col-span-2 lg:col-span-3 lg:row-span-2 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                  <img src={mural8} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:-rotate-1 brightness-[0.8]" />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
+                </div>
+
+                {/* 10. Photo: DSC_7837 */}
+                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                  <img src={mural9} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
+                </div>
+
+                {/* 11. Photo: DSC_7927 */}
+                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                  <img src={mural10} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1 brightness-[0.8]" />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
+                </div>
+
+                {/* 12. Photo: DSC_7935 */}
+                <div className="md:col-span-2 lg:col-span-3 lg:row-span-1 rounded-3xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
+                  <img src={mural11} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:-rotate-1 brightness-[0.8]" />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all duration-500" />
                 </div>
 
               </div>
+
             </div>
 
             {/* SECTION: ¿POR QUÉ ELEGIR PANDA BARBER? / NUESTRAS SEDES */}
