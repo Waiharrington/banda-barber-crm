@@ -1370,7 +1370,43 @@ export const dataService = {
       }
     });
 
-    
+    // 5. Award loyalty points to client
+    if (paymentRecord.clientId && paymentRecord.appointmentIds && paymentRecord.appointmentIds.length > 0) {
+      try {
+        let totalPoints = 0;
+        for (const appId of paymentRecord.appointmentIds) {
+          const { data: app } = await supabase
+            .from('appointments')
+            .select('service_id, services(name, category)')
+            .eq('id', appId)
+            .single();
+          
+          if (app?.services) {
+            const serviceName = (app.services.name || '').toLowerCase();
+            const category = (app.services.category || '').toLowerCase();
+            
+            if (category.includes('lavado') || serviceName.includes('lavado')) {
+              totalPoints += 10;
+            } else {
+              totalPoints += 20;
+            }
+          }
+        }
+
+        if (totalPoints > 0) {
+          const relatedClients = await findRelatedClientRecords(paymentRecord.clientId);
+          for (const rc of relatedClients) {
+            const currentPoints = Number(rc.points || 0);
+            await supabase
+              .from('clients')
+              .update({ points: currentPoints + totalPoints })
+              .eq('id', rc.id);
+          }
+        }
+      } catch (pointsErr) {
+        console.error('Error awarding points:', pointsErr);
+      }
+    }
 
     return true;
   },

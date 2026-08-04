@@ -84,9 +84,9 @@ export default function Profile() {
   };
 
   const prizes = [
-    { name: 'Corte Gratis', points: 500, available: points >= 500 },
-    { name: 'Lavado Premium', points: 200, available: points >= 200 },
-    { name: '10% Descuento', points: 100, available: points >= 100 },
+    { name: 'Corte Gratis', points: 300, available: points >= 300 },
+    { name: 'Servicio de Barba Gratis', points: 200, available: points >= 200 },
+    { name: 'Lavado Premium Gratis', points: 100, available: points >= 100 },
   ];
 
   const tattooAppointments = appointments.filter(a => a.tattoo_data);
