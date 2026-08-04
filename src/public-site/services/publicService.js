@@ -114,7 +114,7 @@ export const publicService = {
   async getStaff() {
     const { data, error } = await supabase
       .from('staff')
-      .select('id, name, role, image_url, active, specialty, badge, biography')
+      .select('id, name, role, image_url, active, specialty, badge, biography, phone')
       .eq('active', true)
       .not('role', 'like', 'ARCHIVED|%')
       .order('name');
@@ -355,8 +355,20 @@ export const publicService = {
     return data || [];
   },
 
+  // Update appointment tattoo consent
+  async updateAppointmentTattooConsent(appointmentId, tattooData) {
+    const { data, error } = await authClient
+      .from('appointments')
+      .update({ tattoo_data: tattooData })
+      .eq('id', appointmentId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   // Create appointment
-  async createAppointment({ client_id, service_id, staff_id, scheduled_at, beverage_selection, notes }) {
+  async createAppointment({ client_id, service_id, staff_id, scheduled_at, beverage_selection, notes, tattoo_data }) {
     const { data: service } = await supabase
       .from('services')
       .select('price')
@@ -373,7 +385,8 @@ export const publicService = {
         total_price: service?.price || 0,
         status: 'Agendado',
         beverage_selection: beverage_selection || null,
-        notes: notes || null
+        notes: notes || null,
+        tattoo_data: tattoo_data || null
       }])
       .select()
       .single();

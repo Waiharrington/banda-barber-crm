@@ -2016,6 +2016,68 @@ const VisitDetailModal = ({ isOpen, visit, onClose, gallery = [] }) => {
                 )}
               </div>
 
+              {/* Tattoo Details */}
+              {visit.tattoo_data && (
+                <div style={{ padding: '16px', backgroundColor: 'rgba(212, 175, 55, 0.05)', borderRadius: '16px', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: '800', color: 'var(--gold-primary)', marginBottom: '12px', letterSpacing: '1px' }}>DETALLES DEL TATUAJE</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {visit.tattoo_data.size && (
+                      <div>
+                        <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Tamaño</span>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: 'white' }}>{visit.tattoo_data.size}</div>
+                      </div>
+                    )}
+                    {visit.tattoo_data.zone && (
+                      <div>
+                        <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Zona</span>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: 'white' }}>{visit.tattoo_data.zone}</div>
+                      </div>
+                    )}
+                    {visit.tattoo_data.style && (
+                      <div>
+                        <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Estilo</span>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: 'white' }}>{visit.tattoo_data.style}</div>
+                      </div>
+                    )}
+                    {visit.tattoo_data.theme && (
+                      <div>
+                        <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Temática</span>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: 'white' }}>{visit.tattoo_data.theme}</div>
+                      </div>
+                    )}
+                    {visit.tattoo_data.has_design !== null && (
+                      <div>
+                        <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Diseño</span>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: 'white' }}>{visit.tattoo_data.has_design ? 'Trae su propio diseño' : 'Diseño personalizado (+$10)'}</div>
+                      </div>
+                    )}
+                  </div>
+                  {visit.tattoo_data.idea && (
+                    <div style={{ marginTop: '12px' }}>
+                      <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Idea del cliente</span>
+                      <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginTop: '4px', lineHeight: '1.5', fontStyle: 'italic' }}>"{visit.tattoo_data.idea}"</p>
+                    </div>
+                  )}
+
+                  {/* Consent Status */}
+                  <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px dashed rgba(212, 175, 55, 0.2)' }}>
+                    <label style={{ display: 'block', fontSize: '9px', fontWeight: '800', color: 'var(--gold-primary)', marginBottom: '8px', letterSpacing: '1px' }}>CONSENTIMIENTO</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ 
+                        width: '8px', height: '8px', borderRadius: '50%', 
+                        backgroundColor: visit.tattoo_data.consent_signed ? '#34c759' : '#ff453a' 
+                      }} />
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: visit.tattoo_data.consent_signed ? '#34c759' : '#ff453a' }}>
+                        {visit.tattoo_data.consent_signed ? 'Consentimiento firmado' : 'Pendiente de consentimiento'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      {visit.tattoo_data.is_of_legal_age ? 'Mayor de edad - Descargo de responsabilidad' : 'Menor de edad - Requiere consentimiento de padre/tutor'}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Photos */}
               {servicePhotos.length > 0 && (
                 <div style={{ marginTop: '10px' }}>

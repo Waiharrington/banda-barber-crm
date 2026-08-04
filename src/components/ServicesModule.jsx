@@ -358,10 +358,10 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
 
   const handleCreateService = async () => {
     const isTattoo = (newService.category || '').toLowerCase().includes('tatuaj');
-    if (!newService.name || (!isTattoo && !newService.price)) return;
+    if (!newService.name || !newService.price) return;
     try {
       setLoading(true);
-      const serviceToSave = { ...newService, price: isTattoo ? 0 : (newService.price || 0) };
+      const serviceToSave = { ...newService, price: newService.price || 0 };
       if (isEditing && serviceToSave.id) {
         await dataService.updateService(serviceToSave.id, serviceToSave);
         showToast(`¡Servicio ${serviceToSave.name} actualizado!`);
@@ -696,7 +696,10 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         
                         <div style={{ textAlign: 'right', minWidth: '100px' }}>
                           <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)' }}>PRECIO</div>
-                          <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)' }}>${service.price}</div>
+                          <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)' }}>
+                            {(service.category || '').toLowerCase().includes('tatuaj') && <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-primary)', marginRight: '4px' }}>Desde</span>}
+                            ${service.price}
+                          </div>
                           {rates?.usd > 0 && (
                             <div style={{ fontSize: '11px', color: 'var(--gold-primary)', fontWeight: '700' }}>
                               ≈ {Math.round(service.price * rates.usd).toLocaleString()} Bs.
@@ -748,7 +751,10 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                         {service.duration} min
                       </td>
                       <td style={{ padding: '16px 24px' }}>
-                        <div style={{ fontWeight: '800', color: 'var(--text-primary)' }}>${service.price}</div>
+                        <div style={{ fontWeight: '800', color: 'var(--text-primary)' }}>
+                          {(service.category || '').toLowerCase().includes('tatuaj') && <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-primary)', marginRight: '4px' }}>Desde</span>}
+                          ${service.price}
+                        </div>
                         {rates?.usd > 0 && <div style={{ fontSize: '11px', color: 'var(--gold-primary)' }}>{Math.round(service.price * rates.usd).toLocaleString()} Bs.</div>}
                       </td>
                       <td style={{ padding: '16px 24px', textAlign: 'right' }}>
@@ -1036,7 +1042,10 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                 <div className="details-price-row">
                   <div>
                     <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Precio Base</div>
-                    <div style={{ fontSize: '24px', fontWeight: '900', color: 'white' }}>${selectedServiceDetail.price}</div>
+                    <div style={{ fontSize: '24px', fontWeight: '900', color: 'white' }}>
+                      {(selectedServiceDetail.category || '').toLowerCase().includes('tatuaj') && <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--gold-primary)', marginRight: '4px' }}>Desde</span>}
+                      ${selectedServiceDetail.price}
+                    </div>
                   </div>
                   {rates?.usd > 0 && (
                     <div style={{ textAlign: 'right' }}>
@@ -1403,32 +1412,24 @@ const ServicesModule = ({ isMobile, currency, rates }) => {
                       <div className="modal-grid-2col">
                         <div className="form-group">
                           <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>PRECIO ($)</label>
-                          {(newService.category || '').toLowerCase().includes('tatuaj') ? (
-                            <div style={{ 
-                              display: 'flex', alignItems: 'center', gap: '8px', 
-                              padding: '12px 16px', borderRadius: '12px', 
-                              background: 'rgba(212, 175, 55, 0.08)', border: '1px solid rgba(212, 175, 55, 0.2)',
-                              color: 'var(--gold-primary)', fontSize: '14px', fontWeight: '800', fontStyle: 'italic', height: '48px'
-                            }}>
-                              <span style={{ fontSize: '18px' }}>✏️</span> A cotizar
-                            </div>
-                          ) : (
-                            <div className="premium-price-input-container">
-                              <span className="price-currency-symbol">$</span>
-                              <input 
-                                className="price-input-field" 
-                                type="number" 
-                                placeholder="25" 
-                                value={newService.price === 0 ? '' : newService.price} 
-                                onChange={e => setNewService({...newService, price: e.target.value === '' ? '' : Number(e.target.value)})} 
-                              />
-                              {rates?.usd > 0 && (
-                                <div className="price-bs-equivalent" style={{ color: 'var(--text-muted)' }}>
-                                  ≈ {Math.round((Number(newService.price) || 0) * rates.usd).toLocaleString()} Bs.
-                                </div>
-                              )}
-                            </div>
-                          )}
+                          <div className="premium-price-input-container">
+                            {(newService.category || '').toLowerCase().includes('tatuaj') && (
+                              <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--gold-primary)', whiteSpace: 'nowrap', marginRight: '4px' }}>DESDE</span>
+                            )}
+                            <span className="price-currency-symbol">$</span>
+                            <input 
+                              className="price-input-field" 
+                              type="number" 
+                              placeholder="25" 
+                              value={newService.price === 0 ? '' : newService.price} 
+                              onChange={e => setNewService({...newService, price: e.target.value === '' ? '' : Number(e.target.value)})} 
+                            />
+                            {rates?.usd > 0 && (
+                              <div className="price-bs-equivalent" style={{ color: 'var(--text-muted)' }}>
+                                ≈ {Math.round((Number(newService.price) || 0) * rates.usd).toLocaleString()} Bs.
+                              </div>
+                            )}
+                          </div>
                       </div>
                         <div className="form-group">
                           <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '8px' }}>DURACIÓN (MIN)</label>

@@ -92,7 +92,10 @@ export default function Services() {
                             </div>
                           )}
                         </div>
-                        <span className="text-gold" style={{ fontSize: 18, fontWeight: 900 }}>{service.price}</span>
+                        <span className="text-gold" style={{ fontSize: 18, fontWeight: 900 }}>
+                          {(service.category || '').toLowerCase().includes('tatuaj') && <span style={{ fontSize: 13, fontWeight: 700, marginRight: 4 }}>Desde</span>}
+                          ${service.price}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -104,7 +107,7 @@ export default function Services() {
           {/* Note */}
           <div className="glass-card" style={{ marginTop: 24, textAlign: 'center', padding: '20px 24px', borderColor: 'var(--border-color)' }}>
             <p style={{ color: 'var(--champagne)', fontWeight: 700, marginBottom: 4 }}>💡 ¿Tatuaje?</p>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Los precios de tatuajes son por cotización. Contacta al tatuador para presupuesto.</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Los precios de tatuajes muestran un valor inicial. El precio final puede variar según diseño y complejidad.</p>
           </div>
         </div>
       </section>

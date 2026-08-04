@@ -1140,8 +1140,46 @@ export default function BookAppointment() {
     const saved = localStorage.getItem('bookingState');
     return saved ? JSON.parse(saved).selectedTime : null;
   });
-  const [selectedBeverage, setSelectedBeverage] = useState('');
-  const [notes, setNotes] = useState('');
+  const [selectedBeverage, setSelectedBeverage] = useState(() => {
+    const saved = localStorage.getItem('bookingState');
+    return saved ? JSON.parse(saved).selectedBeverage : '';
+  });
+  const [notes, setNotes] = useState(() => {
+    const saved = localStorage.getItem('bookingState');
+    return saved ? JSON.parse(saved).notes || '' : '';
+  });
+  const [tattooIdea, setTattooIdea] = useState(() => {
+    const saved = localStorage.getItem('bookingState');
+    return saved ? JSON.parse(saved).tattooIdea || '' : '';
+  });
+  const [tattooSize, setTattooSize] = useState(() => {
+    const saved = localStorage.getItem('bookingState');
+    return saved ? JSON.parse(saved).tattooSize || '' : '';
+  });
+  const [tattooZone, setTattooZone] = useState(() => {
+    const saved = localStorage.getItem('bookingState');
+    return saved ? JSON.parse(saved).tattooZone || '' : '';
+  });
+  const [tattooStyle, setTattooStyle] = useState(() => {
+    const saved = localStorage.getItem('bookingState');
+    return saved ? JSON.parse(saved).tattooStyle || '' : '';
+  });
+  const [tattooTheme, setTattooTheme] = useState(() => {
+    const saved = localStorage.getItem('bookingState');
+    return saved ? JSON.parse(saved).tattooTheme || '' : '';
+  });
+  const [isOfLegalAge, setIsOfLegalAge] = useState(() => {
+    const saved = localStorage.getItem('bookingState');
+    return saved ? JSON.parse(saved).isOfLegalAge : null;
+  });
+  const [hasDesign, setHasDesign] = useState(() => {
+    const saved = localStorage.getItem('bookingState');
+    return saved ? JSON.parse(saved).hasDesign : null;
+  });
+  const [consentSigned, setConsentSigned] = useState(() => {
+    const saved = localStorage.getItem('bookingState');
+    return saved ? JSON.parse(saved).consentSigned || false : false;
+  });
   const [imgErrors, setImgErrors] = useState({});
   
   // Auth state at step 6
@@ -1192,10 +1230,18 @@ export default function BookAppointment() {
       selectedTime,
       selectedBeverage,
       notes,
-      expandedBarber
+      expandedBarber,
+      tattooIdea,
+      tattooSize,
+      tattooZone,
+      tattooStyle,
+      tattooTheme,
+      isOfLegalAge,
+      hasDesign,
+      consentSigned
     };
     localStorage.setItem('bookingState', JSON.stringify(state));
-  }, [showWelcome, hasVisited, step, selectedCategory, selectedService, selectedBarber, selectedDate, selectedTime, selectedBeverage, notes, success, expandedBarber]);
+  }, [showWelcome, hasVisited, step, selectedCategory, selectedService, selectedBarber, selectedDate, selectedTime, selectedBeverage, notes, success, expandedBarber, tattooIdea, tattooSize, tattooZone, tattooStyle, tattooTheme, isOfLegalAge, hasDesign, consentSigned]);
 
   // Restore portfolio images if expandedBarber is loaded from localStorage on mount
   useEffect(() => {
@@ -1748,7 +1794,14 @@ export default function BookAppointment() {
     if (step === 1) return selectedService;
     if (step === 2) return selectedBarber;
     if (step === 3) return selectedDate && selectedTime;
-    if (step === 4) return selectedBeverage;
+    if (step === 4) {
+      if (!selectedBeverage) return false;
+      const isTattoo = (selectedService?.category || '').toLowerCase().includes('tatuaj');
+      if (isTattoo) {
+        return tattooSize && tattooZone && tattooStyle && isOfLegalAge !== null && consentSigned;
+      }
+      return true;
+    }
     return false;
   };
 
@@ -1762,6 +1815,16 @@ export default function BookAppointment() {
       beverage: selectedBeverage,
       notes: notes,
       category: selectedCategory,
+      tattooData: (selectedService?.category || '').toLowerCase().includes('tatuaj') ? {
+        idea: tattooIdea,
+        size: tattooSize,
+        zone: tattooZone,
+        style: tattooStyle,
+        theme: tattooTheme,
+        has_design: hasDesign,
+        is_of_legal_age: isOfLegalAge,
+        consent_signed: consentSigned
+      } : null,
       step: 5
     }));
     publicService.signInWithGoogle();
@@ -1853,7 +1916,17 @@ export default function BookAppointment() {
         staff_id: selectedBarber.id,
         scheduled_at: scheduledAt.toISOString(),
         beverage_selection: selectedBeverage,
-        notes: notes
+        notes: notes,
+        tattoo_data: (selectedService?.category || '').toLowerCase().includes('tatuaj') ? {
+          idea: tattooIdea,
+          size: tattooSize,
+          zone: tattooZone,
+          style: tattooStyle,
+          theme: tattooTheme,
+          has_design: hasDesign,
+          is_of_legal_age: isOfLegalAge,
+          consent_signed: consentSigned
+        } : null
       });
       setSuccess(true);
     } catch (err) {
@@ -3385,7 +3458,37 @@ export default function BookAppointment() {
         )}
 
         {/* ── SUCCESS VIEW SCREEN ── */}
-        {!showWelcome && success && (
+        {!showWelcome && success && (() => {
+          const isTattoo = (selectedService?.category || '').toLowerCase().includes('tatuaj');
+          const barberPhone = selectedBarber?.phone?.replace(/[^0-9]/g, '') || '';
+          const dateStr = selectedDate?.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) || '';
+          const timeStr = formatTime12(selectedTime) || '';
+          
+          let whatsappMsg = `Hola! Quiero agendar una cita.\n\n`;
+          whatsappMsg += `*Fecha:* ${dateStr}\n*Hora:* ${timeStr}\n*Servicio:* ${selectedService?.name}\n*Bebida:* ${selectedBeverage}\n`;
+          
+          if (isTattoo && tattooSize) {
+            whatsappMsg += `\n--- *Detalles del Tatuaje* ---\n`;
+            if (tattooIdea) whatsappMsg += `*Idea:* ${tattooIdea}\n`;
+            if (tattooSize) whatsappMsg += `*Tamano:* ${tattooSize}\n`;
+            if (tattooZone) whatsappMsg += `*Zona:* ${tattooZone}\n`;
+            if (tattooStyle) whatsappMsg += `*Estilo:* ${tattooStyle}\n`;
+            if (tattooTheme) whatsappMsg += `*Tematica:* ${tattooTheme}\n`;
+            if (hasDesign !== null) whatsappMsg += `*Diseno:* ${hasDesign ? 'Tengo mi propio diseno' : 'Quiero diseno personalizado'}\n`;
+            if (isOfLegalAge !== null) whatsappMsg += `*Mayor de edad:* ${isOfLegalAge ? 'Si' : 'No (menor de edad)'}\n`;
+          }
+          
+          if (notes) {
+            whatsappMsg += `\n*Notas:* ${notes}\n`;
+          }
+          
+          whatsappMsg += `\nGracias!`;
+          
+          const whatsappUrl = barberPhone 
+            ? `https://wa.me/${barberPhone}?text=${encodeURIComponent(whatsappMsg)}`
+            : null;
+
+          return (
           <div className="w-full flex-1 flex items-center justify-center p-4">
             <div className="glass-card text-center py-10 px-8 max-w-md w-full border border-[var(--border-color)] relative overflow-hidden animate-page-fade-in">
               <div className="absolute -top-24 -left-24 w-48 h-48 rounded-full bg-[rgba(203,183,154,0.08)] blur-3xl"></div>
@@ -3394,9 +3497,11 @@ export default function BookAppointment() {
               <div className="w-20 h-20 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-6 border border-emerald-500/30">
                 <Check size={40} className="text-emerald-400" />
               </div>
-              <h2 className="text-3xl font-extrabold mb-3 text-white tracking-tight">¡Cita Agendada!</h2>
+              <h2 className="text-3xl font-extrabold mb-3 text-white tracking-tight">¡Reserva Hecha!</h2>
               <p className="text-[var(--text-secondary)] mb-8 text-sm leading-relaxed">
-                Tu reserva ha sido registrada exitosamente. Hemos preparado todo para tu llegada. ¡Disfruta de la experiencia!
+                {isTattoo 
+                  ? 'Tu reserva ha sido registrada. Ahora envía los detalles a tu tatuador por WhatsApp.'
+                  : 'Tu reserva ha sido registrada exitosamente. Hemos preparado todo para tu llegada.'}
               </p>
 
               <div className="bg-black/40 rounded-xl p-5 border border-white/5 text-left mb-8 space-y-3">
@@ -3420,15 +3525,44 @@ export default function BookAppointment() {
                 </div>
               </div>
 
-              <button
-                onClick={() => navigate('/perfil')}
-                className="btn-gold w-full py-3.5 rounded-full font-bold uppercase tracking-wider text-sm shadow-[var(--shadow-glow-gold)] cursor-pointer"
-              >
-                Ir a mi Perfil
-              </button>
+              {isTattoo ? (
+                <div className="space-y-3">
+                  {whatsappUrl ? (
+                    <a
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-3 w-full py-3.5 rounded-full font-bold uppercase tracking-wider text-sm bg-[#25D366] text-white hover:bg-[#20ba5a] transition-all shadow-lg cursor-pointer"
+                    >
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                      </svg>
+                      Enviar por WhatsApp
+                    </a>
+                  ) : (
+                    <div className="text-center py-3 px-4 rounded-xl bg-white/5 border border-white/10">
+                      <p className="text-xs text-white/50">Tu tatuador recibirá los datos de tu cita por nuestro sistema.</p>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => navigate('/perfil')}
+                    className="w-full py-3 rounded-full font-bold uppercase tracking-wider text-sm border border-white/10 text-white/60 hover:text-white hover:border-white/20 transition-all cursor-pointer"
+                  >
+                    Ir a mi Perfil
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => navigate('/perfil')}
+                  className="btn-gold w-full py-3.5 rounded-full font-bold uppercase tracking-wider text-sm shadow-[var(--shadow-glow-gold)] cursor-pointer"
+                >
+                  Ir a mi Perfil
+                </button>
+              )}
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* ── INTERACTIVE WIZARD FLOW SCREEN (STEPS 1-6) ── */}
         {(!showWelcome || isTransitioning) && !success && (
@@ -3593,6 +3727,7 @@ export default function BookAppointment() {
                                         </div>
                                       </div>
                                       <div className="service-price">
+                                        {(service.category || '').toLowerCase().includes('tatuaj') && <span style={{ fontSize: '11px', fontWeight: 700, marginRight: 4 }}>Desde</span>}
                                         ${service.price}
                                       </div>
                                     </button>
@@ -4867,7 +5002,9 @@ export default function BookAppointment() {
                 )}
 
                 {/* STEP 4: Beverage Concierge & Experience Customization */}
-                {step === 4 && (
+                {step === 4 && (() => {
+                  const isTattoo = (selectedService?.category || '').toLowerCase().includes('tatuaj');
+                  return (
                   <div className="space-y-10 w-full animate-fade-in py-2">
                     {/* 1. Beverage Section */}
                     <div className="space-y-4">
@@ -4897,7 +5034,6 @@ export default function BookAppointment() {
                                   : 'border-white/5 bg-[#0e0e12] hover:bg-[#121216] hover:border-white/10'
                               }`}
                             >
-                              {/* Selection Indicator Badge */}
                               <div className="absolute top-1.5 right-1.5 z-20">
                                 <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-extrabold transition-all duration-300 ${
                                   isSelected 
@@ -4907,8 +5043,6 @@ export default function BookAppointment() {
                                   ✓
                                 </div>
                               </div>
-
-                              {/* Drink image */}
                               <div className="h-24 w-full overflow-hidden relative bg-black/40 flex items-center justify-center">
                                 {!imgErrors[bev.id] ? (
                                   <img 
@@ -4922,8 +5056,6 @@ export default function BookAppointment() {
                                 )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0e0e12] via-transparent to-transparent z-10" />
                               </div>
-
-                              {/* Label */}
                               <div className="pb-2.5 px-1 z-20">
                                 <span className={`block font-extrabold text-[9px] uppercase tracking-wider ${
                                   isSelected ? 'text-[var(--champagne)]' : 'text-white/80'
@@ -4937,7 +5069,7 @@ export default function BookAppointment() {
                       </div>
                     </div>
 
-                    {/* 2. Customer Notes Section */}
+                    {!isTattoo ? (
                     <div className="space-y-4">
                       <div className="flex items-center gap-2 text-white/90 text-left">
                         <MessageSquare size={18} className="text-[var(--champagne)]" />
@@ -4946,7 +5078,6 @@ export default function BookAppointment() {
                       <p className="text-[10px] text-white/40 -mt-1 text-left">
                         Cuéntanos cualquier detalle especial.
                       </p>
-
                       <div className="relative">
                         <textarea
                           value={notes}
@@ -4959,9 +5090,223 @@ export default function BookAppointment() {
                         </span>
                       </div>
                     </div>
+                    ) : (
+                    <div className="space-y-6">
+                      {/* Tattoos Form */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-white/90 text-left">
+                          <PenTool size={18} className="text-[var(--champagne)]" />
+                          <h3 className="text-xs font-bold uppercase tracking-widest">Cuéntanos tu idea</h3>
+                        </div>
+                        <textarea
+                          value={tattooIdea}
+                          onChange={(e) => setTattooIdea(e.target.value)}
+                          placeholder="Describe la idea que tienes en mente..."
+                          className="w-full h-20 bg-black/40 border border-white/5 rounded-xl p-3 text-xs text-white placeholder-white/20 focus:outline-none focus:border-[var(--champagne)]/40 focus:bg-black/60 transition-all resize-none text-left"
+                        />
+                      </div>
+
+                      {/* Tamaño */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-white/90 text-left">
+                          <h3 className="text-xs font-bold uppercase tracking-widest">Tamaño</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {['Minimalista', 'Pequeño', 'Mediano', 'Grande', 'Manga completa'].map(size => (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => setTattooSize(size)}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                                tattooSize === size
+                                  ? 'bg-[var(--champagne)] text-black border-[var(--champagne)]'
+                                  : 'bg-black/40 text-white/60 border-white/10 hover:border-white/20'
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Zona */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-white/90 text-left">
+                          <h3 className="text-xs font-bold uppercase tracking-widest">¿En qué zona?</h3>
+                        </div>
+                        <input
+                          type="text"
+                          value={tattooZone}
+                          onChange={(e) => setTattooZone(e.target.value)}
+                          placeholder="Ej: Brazo, pierna, espalda, costillas..."
+                          className="w-full bg-black/40 border border-white/5 rounded-xl p-3 text-xs text-white placeholder-white/20 focus:outline-none focus:border-[var(--champagne)]/40 focus:bg-black/60 transition-all text-left"
+                        />
+                      </div>
+
+                      {/* Estilo */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-white/90 text-left">
+                          <h3 className="text-xs font-bold uppercase tracking-widest">Estilo y color</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {['Black & Grey', 'Color real', 'Acuarela', 'Lineal', 'Tradicional', 'Realismo', 'Neo-tradicional', 'Dotwork'].map(style => (
+                            <button
+                              key={style}
+                              type="button"
+                              onClick={() => setTattooStyle(style)}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                                tattooStyle === style
+                                  ? 'bg-[var(--champagne)] text-black border-[var(--champagne)]'
+                                  : 'bg-black/40 text-white/60 border-white/10 hover:border-white/20'
+                              }`}
+                            >
+                              {style}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Temática */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-white/90 text-left">
+                          <h3 className="text-xs font-bold uppercase tracking-widest">Temática</h3>
+                        </div>
+                        <input
+                          type="text"
+                          value={tattooTheme}
+                          onChange={(e) => setTattooTheme(e.target.value)}
+                          placeholder="Ej: Mitología, flores, geométrico, tribal, retrato..."
+                          className="w-full bg-black/40 border border-white/5 rounded-xl p-3 text-xs text-white placeholder-white/20 focus:outline-none focus:border-[var(--champagne)]/40 focus:bg-black/60 transition-all text-left"
+                        />
+                      </div>
+
+                      {/* Diseño */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-white/90 text-left">
+                          <h3 className="text-xs font-bold uppercase tracking-widest">¿Tienes un diseño?</h3>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setHasDesign(true)}
+                            className={`flex-1 py-3 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all border ${
+                              hasDesign === true
+                                ? 'bg-[var(--champagne)] text-black border-[var(--champagne)]'
+                                : 'bg-black/40 text-white/60 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            Ya tengo mi diseño
+                          </button>
+                          <div className="flex-1 relative">
+                            <button
+                              type="button"
+                              onClick={() => setHasDesign(false)}
+                              className={`w-full py-3 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all border ${
+                                hasDesign === false
+                                  ? 'bg-[var(--champagne)] text-black border-[var(--champagne)]'
+                                  : 'bg-black/40 text-white/60 border-white/10 hover:border-white/20'
+                              }`}
+                            >
+                              Quiero diseño personalizado
+                            </button>
+                            <span className="absolute -bottom-4 left-0 right-0 text-[9px] text-white/40 text-center">Costo adicional a partir de $10</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Edad y Consentimiento */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 text-white/90 text-left">
+                          <h3 className="text-xs font-bold uppercase tracking-widest">¿Eres mayor de edad?</h3>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setIsOfLegalAge(true)}
+                            className={`flex-1 py-3 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all border ${
+                              isOfLegalAge === true
+                                ? 'bg-[var(--champagne)] text-black border-[var(--champagne)]'
+                                : 'bg-black/40 text-white/60 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            Sí, soy mayor de edad
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsOfLegalAge(false)}
+                            className={`flex-1 py-3 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all border ${
+                              isOfLegalAge === false
+                                ? 'bg-[var(--champagne)] text-black border-[var(--champagne)]'
+                                : 'bg-black/40 text-white/60 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            No, soy menor de edad
+                          </button>
+                        </div>
+
+                        {isOfLegalAge === true && (
+                          <div className="mt-3 p-3 rounded-xl bg-black/40 border border-white/10 text-left">
+                            <p className="text-[10px] text-white/60 mb-3">
+                              Al continuar, aceptas un descargo de responsabilidad que se firmará digitalmente. Este documento quedará guardado en tu perfil.
+                            </p>
+                            <label className="flex items-start gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={consentSigned}
+                                onChange={(e) => setConsentSigned(e.target.checked)}
+                                className="mt-0.5 accent-[var(--champagne)]"
+                              />
+                              <span className="text-[10px] text-white/80">
+                                Acepto el descargo de responsabilidad y confirmo que soy mayor de edad. Entiendo que el tatuaje es permanente y acepto los riesgos asociados.
+                              </span>
+                            </label>
+                          </div>
+                        )}
+
+                        {isOfLegalAge === false && (
+                          <div className="mt-3 p-3 rounded-xl bg-black/40 border border-white/10 text-left">
+                            <p className="text-[10px] text-white/60 mb-3">
+                              Se requiere consentimiento de un padre o tutor legal. Después de agendar la cita, se generará un documento de consentimiento que deberá ser firmado digitalmente por tu padre/tutor y quedará guardado en tu perfil.
+                            </p>
+                            <label className="flex items-start gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={consentSigned}
+                                onChange={(e) => setConsentSigned(e.target.checked)}
+                                className="mt-0.5 accent-[var(--champagne)]"
+                              />
+                              <span className="text-[10px] text-white/80">
+                                Mi padre/tutor legal será notificado para firmar el consentimiento correspondiente.
+                              </span>
+                            </label>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Notas adicionales */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-white/90 text-left">
+                          <MessageSquare size={18} className="text-[var(--champagne)]" />
+                          <h3 className="text-xs font-bold uppercase tracking-widest">¿Algo más que debamos saber?</h3>
+                        </div>
+                        <div className="relative">
+                          <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value.slice(0, 200))}
+                            placeholder="Alergias, sensibilidades, referencias adicionales..."
+                            className="w-full h-16 bg-black/40 border border-white/5 rounded-xl p-3 text-xs text-white placeholder-white/20 focus:outline-none focus:border-[var(--champagne)]/40 focus:bg-black/60 transition-all resize-none pr-12 text-left"
+                          />
+                          <span className="absolute bottom-2.5 right-3 text-[9px] font-bold text-white/25">
+                            {notes.length}/200
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    )}
 
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* STEP 5: Confirmation & Cierre Mágico (Registration) */}
                 {step === 5 && (

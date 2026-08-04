@@ -197,7 +197,10 @@ export default function Home() {
                 <div key={service.id} className="glass-card" style={{ textAlign: 'center', padding: '32px 20px' }}>
                   <div style={{ fontSize: 40, marginBottom: 16 }}>✂️</div>
                   <h3 style={{ fontWeight: 700, marginBottom: 8, fontSize: 16 }}>{service.name}</h3>
-                  <div className="text-gold" style={{ fontSize: 28, fontWeight: 900, marginBottom: 4 }}>${service.price}</div>
+                  <div className="text-gold" style={{ fontSize: 28, fontWeight: 900, marginBottom: 4 }}>
+                    {(service.category || '').toLowerCase().includes('tatuaj') && <span style={{ fontSize: 16, fontWeight: 700, marginRight: 4 }}>Desde</span>}
+                    ${service.price}
+                  </div>
                   {service.duration && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{service.duration} min</div>}
                 </div>
               ))}
