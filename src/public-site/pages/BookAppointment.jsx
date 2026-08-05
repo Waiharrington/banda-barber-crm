@@ -1271,7 +1271,7 @@ export default function BookAppointment() {
       const filtered = services.filter(s => {
         const cat = (s.category || '').toLowerCase();
         if (isTattoo) return cat === 'tatuajes';
-        return cat === 'barbería' || cat === 'servicios' || cat === 'tratamientos' || s.name.toLowerCase().includes('corte') || s.name.toLowerCase().includes('barba');
+        return cat === 'barbería' || cat === 'barba' || cat === 'servicios' || cat === 'tratamientos' || s.name.toLowerCase().includes('corte') || s.name.toLowerCase().includes('barba');
       });
       if (filtered.length > 0) {
         setSelectedService(filtered[0]);
@@ -1458,9 +1458,13 @@ export default function BookAppointment() {
         ];
 
         const fallbackServices = [
-          { id: 'fs-1', name: 'Corte de Cabello', price: 15, duration: 30, category: 'Corte' },
-          { id: 'fs-2', name: 'Arreglo de Barba', price: 10, duration: 20, category: 'Barba' },
-          { id: 'fs-3', name: 'Tatuaje Personalizado', price: 80, duration: 60, category: 'Tatuajes' }
+          { id: 'fs-1', name: 'Corte básico', price: 12, duration: 30, category: 'Barbería' },
+          { id: 'fs-2', name: 'Corte desvanecido', price: 15, duration: 40, category: 'Barbería' },
+          { id: 'fs-3', name: 'Barba', price: 8, duration: 30, category: 'Barba' },
+          { id: 'fs-4', name: 'Corte y barba', price: 17, duration: 50, category: 'Barbería' },
+          { id: 'fs-5', name: 'Corte y barba ritual', price: 20, duration: 60, category: 'Barbería' },
+          { id: 'fs-6', name: 'Sesion de tatuaje', price: 80, duration: 240, category: 'Tatuajes' },
+          { id: 'fs-7', name: 'Tatuaje Minimalista', price: 20, duration: 44, category: 'Tatuajes' }
         ];
 
         const [servicesData, staffData, topClientsData, topBarberData, reviewsData] = await Promise.all([
@@ -4191,16 +4195,16 @@ export default function BookAppointment() {
                                         if (isTattoo) {
                                           return cat === 'tatuajes';
                                         } else {
-                                          return cat === 'barbería' || cat === 'servicios' || cat === 'tratamientos' || s.name.toLowerCase().includes('corte') || s.name.toLowerCase().includes('barba');
+                                          return cat === 'barbería' || cat === 'barba' || cat === 'servicios' || cat === 'tratamientos' || s.name.toLowerCase().includes('corte') || s.name.toLowerCase().includes('barba');
                                         }
                                       }).slice(0, 4);
 
                                       const itemsToRender = filtered.length > 0 ? filtered : [
-                                        { name: isTattoo ? 'Tatuaje Mini' : 'Corte Tradicional', price: isTattoo ? 40 : 25, duration: 30 },
-                                        { name: isTattoo ? 'Tatuaje Mediano' : 'Corte + Barba Ritual', price: isTattoo ? 80 : 35, duration: 45 },
-                                        { name: isTattoo ? 'Tatuaje Grande' : 'Afeitado Clásico', price: isTattoo ? 150 : 15, duration: 30 },
-                                        { name: isTattoo ? 'Diseño Flash' : 'Diseño Personalizado', price: isTattoo ? 50 : 10, duration: 15 }
-                                      ];
+                                        { name: isTattoo ? 'Sesion de tatuaje' : 'Corte básico', price: isTattoo ? 80 : 12, duration: isTattoo ? 240 : 30, category: isTattoo ? 'Tatuajes' : 'Barbería' },
+                                        { name: isTattoo ? 'Tatuaje Minimalista' : 'Corte desvanecido', price: isTattoo ? 20 : 15, duration: isTattoo ? 44 : 40, category: isTattoo ? 'Tatuajes' : 'Barbería' },
+                                        { name: isTattoo ? null : 'Barba', price: isTattoo ? null : 8, duration: isTattoo ? null : 30, category: isTattoo ? null : 'Barba' },
+                                        { name: isTattoo ? null : 'Corte y barba', price: isTattoo ? null : 17, duration: isTattoo ? null : 50, category: isTattoo ? null : 'Barbería' }
+                                      ].filter(s => s.name !== null);
 
                                       return itemsToRender.map((s, i) => (
                                         <div key={s.id || i} className="urban-service-row flex items-center justify-between py-3 px-2">
@@ -4261,15 +4265,15 @@ export default function BookAppointment() {
                                       const filtered = services.filter(s => {
                                         const cat = (s.category || '').toLowerCase();
                                         if (isTattoo) return cat === 'tatuajes';
-                                        return cat === 'barbería' || cat === 'servicios' || cat === 'tratamientos' || s.name.toLowerCase().includes('corte') || s.name.toLowerCase().includes('barba');
+                                        return cat === 'barbería' || cat === 'barba' || cat === 'servicios' || cat === 'tratamientos' || s.name.toLowerCase().includes('corte') || s.name.toLowerCase().includes('barba');
                                       }).slice(0, 4);
 
                                       const itemsToRender = filtered.length > 0 ? filtered : [
-                                        { id: 'fs-1', name: isTattoo ? 'Tatuaje Mini' : 'Corte Tradicional', price: isTattoo ? 40 : 25, duration: 30 },
-                                        { id: 'fs-2', name: isTattoo ? 'Tatuaje Mediano' : 'Corte + Barba Ritual', price: isTattoo ? 80 : 35, duration: 45 },
-                                        { id: 'fs-3', name: isTattoo ? 'Tatuaje Grande' : 'Afeitado Clásico', price: isTattoo ? 150 : 15, duration: 30 },
-                                        { id: 'fs-4', name: isTattoo ? 'Diseño Flash' : 'Diseño Personalizado', price: isTattoo ? 50 : 10, duration: 15 }
-                                      ];
+                                        { id: 'fs-1', name: isTattoo ? 'Sesion de tatuaje' : 'Corte básico', price: isTattoo ? 80 : 12, duration: isTattoo ? 240 : 30, category: isTattoo ? 'Tatuajes' : 'Barbería' },
+                                        { id: 'fs-2', name: isTattoo ? 'Tatuaje Minimalista' : 'Corte desvanecido', price: isTattoo ? 20 : 15, duration: isTattoo ? 44 : 40, category: isTattoo ? 'Tatuajes' : 'Barbería' },
+                                        { id: 'fs-3', name: isTattoo ? null : 'Barba', price: isTattoo ? null : 8, duration: isTattoo ? null : 30, category: isTattoo ? null : 'Barba' },
+                                        { id: 'fs-4', name: isTattoo ? null : 'Corte y barba', price: isTattoo ? null : 17, duration: isTattoo ? null : 50, category: isTattoo ? null : 'Barbería' }
+                                      ].filter(s => s.name !== null);
 
                                       return itemsToRender.map(s => {
                                         const isSelected = selectedService?.name === s.name;
