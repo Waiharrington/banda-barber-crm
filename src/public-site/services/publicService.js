@@ -65,9 +65,9 @@ export const publicService = {
     return supabase.auth.onAuthStateChange(callback);
   },
 
-  // Get active staff (barbers)
+  // Get active staff (barbers) — uses authClient (service role) because anon has no RLS policy on staff table
   async getStaff() {
-    const { data, error } = await supabase
+    const { data, error } = await authClient
       .from('staff')
       .select('id, name, role, image_url, active, specialty, badge, biography, phone')
       .eq('active', true)
