@@ -419,14 +419,36 @@ export const publicService = {
     return data;
   },
 
-  async submitStaffReview(staffId, rating, comment) {
+  // Submit a rating for a barber (3 categories: rapidez, limpieza, habilidad)
+  async submitStaffReview({ staff_id, client_id, appointment_id, rapidez, limpieza, habilidad, comment }) {
+    const avgRating = (Number(rapidez) + Number(limpieza) + Number(habilidad)) / 3;
     const { data, error } = await supabase
       .from('staff_reviews')
-      .insert([{ staff_id: staffId, rating: Number(rating), comment }])
+      .upsert([{
+        staff_id,
+        client_id: client_id || null,
+        appointment_id: appointment_id || null,
+        rapidez: Number(rapidez),
+        limpieza: Number(limpieza),
+        habilidad: Number(habilidad),
+        rating: Math.round(avgRating * 10) / 10,
+        comment: comment || null
+      }], { onConflict: 'appointment_id' })
       .select()
       .single();
     if (error) throw error;
     return data;
+  },
+
+  // Check if a client already reviewed an appointment
+  async hasClientReviewed(appointmentId) {
+    const { data, error } = await supabase
+      .from('staff_reviews')
+      .select('id')
+      .eq('appointment_id', appointmentId)
+      .maybeSingle();
+    if (error) return false;
+    return !!data;
   },
 
   async getStaffReviews(staffId = null) {
@@ -439,35 +461,74 @@ export const publicService = {
     return data || [];
   },
 
-  // Get barber of the month (based on completed appointments total price in last 30 days)
+  // Get average rating for a barber
+  async getBarberAverageRating(staffId) {
+    const { data, error } = await supabase
+      .from('staff_reviews')
+      .select('rating')
+      .eq('staff_id', staffId);
+    if (error || !data || data.length === 0) return { avg: 0, count: 0 };
+    const avg = data.reduce((sum, r) => sum + Number(r.rating), 0) / data.length;
+    return { avg: Math.round(avg * 10) / 10, count: data.length };
+  },
+
+  // Get barber of the month (highest rated barber in last 30 days)
   async getBarberOfMonth() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const isoString = thirtyDaysAgo.toISOString();
 
-    const { data: apps, error } = await supabase
-      .from('appointments')
-      .select('staff_id, total_price')
-      .eq('status', 'Completado')
-      .gte('scheduled_at', isoString);
+    // Get all reviews from last 30 days
+    const { data: reviews, error } = await supabase
+      .from('staff_reviews')
+      .select('staff_id, rating')
+      .gte('created_at', isoString);
 
     if (error) throw error;
 
-    const earnings = {};
-    (apps || []).forEach(app => {
-      if (app.staff_id) {
-        earnings[app.staff_id] = (earnings[app.staff_id] || 0) + Number(app.total_price || 0);
+    // Calculate average rating per barber
+    const ratings = {};
+    const counts = {};
+    (reviews || []).forEach(r => {
+      if (r.staff_id && r.rating) {
+        ratings[r.staff_id] = (ratings[r.staff_id] || 0) + Number(r.rating);
+        counts[r.staff_id] = (counts[r.staff_id] || 0) + 1;
       }
     });
 
-    const sorted = Object.entries(earnings)
-      .sort((a, b) => b[1] - a[1]);
+    const sorted = Object.entries(ratings)
+      .map(([id, total]) => ({ id, avg: total / counts[id], count: counts[id] }))
+      .sort((a, b) => b.avg - a.avg || b.count - a.count);
 
-    if (sorted.length === 0) return null;
+    // Fallback: if no reviews, use completed appointments revenue
+    if (sorted.length === 0) {
+      const { data: apps } = await supabase
+        .from('appointments')
+        .select('staff_id, total_price')
+        .eq('status', 'Completado')
+        .gte('scheduled_at', isoString);
 
-    const topBarberId = sorted[0][0];
-    const totalGenerated = sorted[0][1];
+      const earnings = {};
+      (apps || []).forEach(app => {
+        if (app.staff_id) {
+          earnings[app.staff_id] = (earnings[app.staff_id] || 0) + Number(app.total_price || 0);
+        }
+      });
 
+      const earnSorted = Object.entries(earnings).sort((a, b) => b[1] - a[1]);
+      if (earnSorted.length === 0) return null;
+
+      const topBarberId = earnSorted[0][0];
+      const { data: barberData } = await supabase
+        .from('staff')
+        .select('*')
+        .eq('id', topBarberId)
+        .single();
+
+      return { ...barberData, total_generated: earnSorted[0][1], avg_rating: 0, reviews_count: 0 };
+    }
+
+    const topBarberId = sorted[0].id;
     const { data: barberData, error: staffErr } = await supabase
       .from('staff')
       .select('*')
@@ -476,7 +537,11 @@ export const publicService = {
 
     if (staffErr) throw staffErr;
 
-    return { ...barberData, total_generated: totalGenerated };
+    return {
+      ...barberData,
+      avg_rating: sorted[0].avg,
+      reviews_count: sorted[0].count
+    };
   }
 };
 

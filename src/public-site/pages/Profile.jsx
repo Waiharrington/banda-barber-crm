@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Calendar, Gift, Star, LogOut, Clock, Heart, ChevronRight, FileCheck, AlertTriangle, Check, X, PenTool, Scissors, Droplets, Sparkles, Eye } from 'lucide-react';
+import { User, Calendar, Gift, Star, LogOut, Clock, Heart, ChevronRight, FileCheck, AlertTriangle, Check, X, PenTool, Scissors, Droplets, Sparkles, Eye, Zap, Shield, Award } from 'lucide-react';
 import { publicService } from '../services/publicService';
 import PrizeWheel from '../components/PrizeWheel';
 
@@ -18,6 +18,11 @@ export default function Profile() {
   });
   const [selectedConsent, setSelectedConsent] = useState(null);
   const [consentSaving, setConsentSaving] = useState(false);
+  const [ratingModal, setRatingModal] = useState(null);
+  const [ratings, setRatings] = useState({ rapidez: 0, limpieza: 0, habilidad: 0 });
+  const [ratingComment, setRatingComment] = useState('');
+  const [ratingSaving, setRatingSaving] = useState(false);
+  const [ratedAppointments, setRatedAppointments] = useState({});
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
   const lastPoint = useRef(null);
@@ -44,6 +49,16 @@ export default function Profile() {
       setPoints(pts);
       setIsTopClient((topClients || []).some(c => c.id === clientId));
       setAllBarbers(staffData);
+
+      // Check which appointments have been rated
+      const rated = {};
+      for (const apt of (appts || [])) {
+        if (apt.status === 'Completado' || apt.status === 'Pagado') {
+          const reviewed = await publicService.hasClientReviewed(apt.id);
+          if (reviewed) rated[apt.id] = true;
+        }
+      }
+      setRatedAppointments(rated);
     } catch (e) { console.error('Error loading profile data:', e); }
     finally { setLoading(false); }
   };
@@ -147,6 +162,50 @@ export default function Profile() {
     } catch (e) { console.error('Error saving consent:', e); }
     finally { setConsentSaving(false); }
   };
+
+  const submitRating = async () => {
+    if (!ratingModal || ratings.rapidez === 0 || ratings.limpieza === 0 || ratings.habilidad === 0) return;
+    setRatingSaving(true);
+    try {
+      await publicService.submitStaffReview({
+        staff_id: ratingModal.staff_id,
+        client_id: client?.id,
+        appointment_id: ratingModal.id,
+        rapidez: ratings.rapidez,
+        limpieza: ratings.limpieza,
+        habilidad: ratings.habilidad,
+        comment: ratingComment || null
+      });
+      setRatedAppointments(prev => ({ ...prev, [ratingModal.id]: true }));
+      setRatingModal(null);
+      setRatings({ rapidez: 0, limpieza: 0, habilidad: 0 });
+      setRatingComment('');
+    } catch (e) {
+      console.error('Error submitting rating:', e);
+    } finally {
+      setRatingSaving(false);
+    }
+  };
+
+  const StarRating = ({ label, icon: Icon, value, onChange }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 110 }}>
+        <Icon size={14} style={{ color: 'var(--champagne)' }} />
+        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>{label}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {[1, 2, 3, 4, 5].map(star => (
+          <button key={star} onClick={() => onChange(star)} style={{
+            background: 'none', border: 'none', cursor: 'pointer', padding: 2,
+            transition: 'transform 0.15s',
+          }}>
+            <Star size={22} fill={star <= value ? '#CBB79A' : 'none'} stroke={star <= value ? '#CBB79A' : 'rgba(255,255,255,0.2)'}
+              style={{ transition: 'all 0.2s', transform: star <= value ? 'scale(1.1)' : 'scale(1)' }} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -314,6 +373,27 @@ export default function Profile() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Rating button for completed appointments */}
+                  {(apt.status === 'Completado' || apt.status === 'Pagado') && apt.staff?.name && (
+                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                      {ratedAppointments[apt.id] ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#34c759' }}>
+                          <Check size={13} /> Calificado
+                        </div>
+                      ) : (
+                        <button onClick={() => { setRatingModal(apt); setRatings({ rapidez: 0, limpieza: 0, habilidad: 0 }); setRatingComment(''); }} style={{
+                          display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+                          borderRadius: 'var(--radius-pill)', fontSize: 11, fontWeight: 800,
+                          background: 'rgba(203,183,154,0.1)', color: 'var(--champagne)',
+                          border: '1px solid rgba(203,183,154,0.2)', cursor: 'pointer',
+                          transition: 'all 0.2s',
+                        }}>
+                          <Star size={13} fill="#CBB79A" stroke="#CBB79A" /> Calificar servicio
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {apt.tattoo_data && (
                     <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
@@ -664,6 +744,86 @@ export default function Profile() {
                   color: 'var(--text-muted)', border: 'none', cursor: 'pointer',
                 }}>Cerrar</button>
               )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── RATING MODAL ── */}
+      {ratingModal && (() => {
+        const apt = ratingModal;
+        const avgRating = (ratings.rapidez + ratings.limpieza + ratings.habilidad) / 3;
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 9999, display: 'flex',
+            alignItems: 'center', justifyContent: 'center', padding: 16,
+            background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)',
+          }}>
+            <div className="glass-card" style={{
+              width: '100%', maxWidth: 380, padding: '24px 20px',
+              background: 'linear-gradient(135deg, rgba(20,20,20,0.97), rgba(10,10,10,0.99))',
+              border: '1px solid rgba(203,183,154,0.15)', borderRadius: 20,
+              animation: 'fadeInUp 0.3s ease',
+            }}>
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: 'white', margin: 0, fontFamily: 'General Sans' }}>Calificar servicio</h3>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0' }}>{apt.services?.name} con {apt.staff?.name}</p>
+                </div>
+                <button onClick={() => setRatingModal(null)} style={{
+                  background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%',
+                  width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: 'var(--text-muted)',
+                }}><X size={16} /></button>
+              </div>
+
+              {/* Rating Categories */}
+              <div style={{ marginBottom: 16 }}>
+                <StarRating label="Rapidez" icon={Zap} value={ratings.rapidez} onChange={v => setRatings(p => ({ ...p, rapidez: v }))} />
+                <StarRating label="Limpieza" icon={Shield} value={ratings.limpieza} onChange={v => setRatings(p => ({ ...p, limpieza: v }))} />
+                <StarRating label="Habilidad" icon={Award} value={ratings.habilidad} onChange={v => setRatings(p => ({ ...p, habilidad: v }))} />
+              </div>
+
+              {/* Average */}
+              {avgRating > 0 && (
+                <div style={{ textAlign: 'center', marginBottom: 14, padding: '10px 0', background: 'rgba(203,183,154,0.06)', borderRadius: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <Star size={18} fill="#CBB79A" stroke="#CBB79A" />
+                    <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--champagne)' }}>{avgRating.toFixed(1)}</span>
+                  </div>
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Promedio</span>
+                </div>
+              )}
+
+              {/* Comment */}
+              <textarea
+                placeholder="Comentario opcional..."
+                value={ratingComment}
+                onChange={e => setRatingComment(e.target.value)}
+                rows={2}
+                style={{
+                  width: '100%', padding: '10px 12px', borderRadius: 10, resize: 'none',
+                  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+                  color: 'white', fontSize: 12, fontFamily: 'General Sans', marginBottom: 14,
+                }}
+              />
+
+              {/* Submit */}
+              <button
+                onClick={submitRating}
+                disabled={ratingSaving || ratings.rapidez === 0 || ratings.limpieza === 0 || ratings.habilidad === 0}
+                style={{
+                  width: '100%', padding: '13px 0', borderRadius: 'var(--radius-pill)',
+                  fontSize: 13, fontWeight: 800, fontFamily: 'General Sans',
+                  background: (ratings.rapidez > 0 && ratings.limpieza > 0 && ratings.habilidad > 0) ? 'var(--gold-gradient)' : 'rgba(255,255,255,0.05)',
+                  color: (ratings.rapidez > 0 && ratings.limpieza > 0 && ratings.habilidad > 0) ? '#000' : 'rgba(255,255,255,0.3)',
+                  border: 'none', cursor: ratingSaving ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}
+              >
+                <Check size={15} /> {ratingSaving ? 'Enviando...' : 'Enviar calificación'}
+              </button>
             </div>
           </div>
         );
