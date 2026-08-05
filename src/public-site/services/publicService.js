@@ -1,73 +1,28 @@
 import { publicSupabase as supabase, authClient } from '../../lib/supabase';
 
-const normalizeIdCard = value => {
-  const raw = String(value || '').trim().toUpperCase();
-  const digits = raw.replace(/\D/g, '');
-  return digits || raw.replace(/[^A-Z0-9]/g, '');
-};
-
-const normalizePhone = value => String(value || '').replace(/\D/g, '');
-
+// Busca el cliente existente por cédula/email/teléfono. La normalización (quitar
+// todo lo que no sea dígito) y el desempate viven ahora en el RPC SECURITY DEFINER
+// pandabarber.find_existing_client, que devuelve 0 o 1 fila. Antes esto traía la
+// tabla completa de clientes al navegador y filtraba en JS (fuga de datos).
 const findExistingClientRecord = async ({ id_card, email, phone }) => {
-  const { data: clients, error } = await authClient
-    .from('clients')
-    .select('*, appointments(id)');
-
+  const { data, error } = await authClient.rpc('find_existing_client', {
+    p_id_card: id_card ?? null,
+    p_email: email ?? null,
+    p_phone: phone ?? null
+  });
   if (error) throw error;
-
-  const normalizedId = normalizeIdCard(id_card);
-  if (normalizedId) {
-    const identityMatches = (clients || []).filter(client =>
-      normalizeIdCard(client.id_card) === normalizedId
-    );
-
-    if (identityMatches.length > 0) {
-      return identityMatches.sort((a, b) => {
-        const linkedDifference = Number(Boolean(b.auth_user_id)) - Number(Boolean(a.auth_user_id));
-        if (linkedDifference !== 0) return linkedDifference;
-
-        const historyDifference = (b.appointments?.length || 0) - (a.appointments?.length || 0);
-        if (historyDifference !== 0) return historyDifference;
-
-        return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
-      })[0];
-    }
-  }
-
-  const normalizedEmail = String(email || '').trim().toLowerCase();
-  if (normalizedEmail) {
-    const emailMatch = (clients || []).find(client =>
-      String(client.email || '').trim().toLowerCase() === normalizedEmail
-    );
-    if (emailMatch) return emailMatch;
-  }
-
-  const normalizedPhone = normalizePhone(phone);
-  if (normalizedPhone) {
-    return (clients || []).find(client =>
-      normalizePhone(client.phone) === normalizedPhone
-    ) || null;
-  }
-
-  return null;
+  return (data && data[0]) || null;
 };
 
+// Registros que pertenecen a la misma persona (misma cédula normalizada) para
+// sumar puntos y citas. El filtrado por cédula normalizada ocurre en el RPC
+// pandabarber.find_related_clients; antes traía la tabla completa.
 const findRelatedClientRecords = async clientId => {
-  const { data: clients, error } = await authClient
-    .from('clients')
-    .select('id, id_card, points, auth_user_id');
-
+  const { data, error } = await authClient.rpc('find_related_clients', {
+    p_client_id: String(clientId)
+  });
   if (error) throw error;
-
-  const currentClient = (clients || []).find(client => String(client.id) === String(clientId));
-  if (!currentClient) return [];
-
-  const normalizedId = normalizeIdCard(currentClient.id_card);
-  if (!normalizedId) return [currentClient];
-
-  return (clients || []).filter(client =>
-    normalizeIdCard(client.id_card) === normalizedId
-  );
+  return data || [];
 };
 
 const linkClientRecord = async (existing, userId, incoming) => {
