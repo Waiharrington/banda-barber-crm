@@ -5,6 +5,9 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
+    storageKey: 'sb-panda-crm-auth-token',
+    persistSession: true,
+    autoRefreshToken: true,
     detectSessionInUrl: false
   },
   db: { schema: 'pandabarber' }
