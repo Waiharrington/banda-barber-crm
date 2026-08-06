@@ -124,9 +124,25 @@ const SchedulingModule = ({ isMobile, rates, openAddModal, onCloseAddModal }) =>
     }
   };
 
+  const isGhostAppointment = (a) => {
+    const serviceBase = Number(a.services?.price !== undefined && a.services?.price !== null ? a.services.price : (a.total_price || 0));
+    const extras = a.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+    const products = a.appointment_products?.reduce((sum, p) => sum + (Number(p.price || 0) * (p.quantity || 1)), 0) || 0;
+    const tips = a.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
+    const totalVal = serviceBase + extras + products + tips;
+
+    const hasService = Boolean(a.services?.name);
+    const hasExtras = Boolean(a.appointment_extras?.length);
+    const hasProducts = Boolean(a.appointment_products?.length);
+    const hasTips = Boolean(a.appointment_staff?.some(s => Number(s.tip_amount) > 0));
+
+    return !hasService && !hasExtras && !hasProducts && !hasTips && totalVal === 0;
+  };
+
   const loadAllAppointments = async () => {
     try {
       let data = await dataService.getAppointmentsByState(['Agendado', 'En Silla', 'En Lavado', 'Por Pagar', 'Completado', 'Cancelada']);
+      data = data.filter(a => !isGhostAppointment(a));
       
       const isBarber = user?.role === 'Barbero' || user?.role?.startsWith('Barbero|');
       if (isBarber) {
@@ -143,6 +159,7 @@ const SchedulingModule = ({ isMobile, rates, openAddModal, onCloseAddModal }) =>
     try {
       setLoading(true);
       let data = await dataService.getAppointmentsByState(['Agendado', 'En Silla', 'En Lavado', 'Por Pagar', 'Completado', 'Cancelada']);
+      data = data.filter(a => !isGhostAppointment(a));
       
       const isBarber = user?.role === 'Barbero' || user?.role?.startsWith('Barbero|');
       if (isBarber) {
