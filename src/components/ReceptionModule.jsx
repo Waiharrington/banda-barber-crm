@@ -414,12 +414,13 @@ const ReceptionModule = ({ isMobile, rates }) => {
           appointments = await Promise.all(promises);
         } else {
           // Only extras (no main services)
+          const extrasTotal = selectedExtras.reduce((sum, e) => sum + Number((e.customPrice ?? e.price) || 0), 0);
           const shellApp = await dataService.createAppointment({
             client_id: selectedClient.id,
             service_id: null,
             staff_id: formData.staffId,
             status: statusOverride || formData.status,
-            total_price: 0,
+            total_price: extrasTotal,
             scheduled_at: scheduledAt
           });
           appointments = [shellApp];
