@@ -137,30 +137,45 @@ const BarberPanel = ({ isMobile, rates }) => {
     }
   }, [selectedCompletedApp, showAddModal, showCamera, showWashModal, pushModal, popModal]);
 
+  // Lazy-load base64 galleries only for the clients actually shown, then merge them
+  // into the already-rendered cards. Keeps the initial fetch light on slow WiFi.
+  const hydrateGalleries = useCallback(async (list, setter) => {
+    try {
+      const ids = [...new Set(list.map(s => s.client_id).filter(Boolean))];
+      if (ids.length === 0) return;
+      const galleries = await dataService.getClientGalleries(ids);
+      setter(prev => prev.map(s =>
+        galleries[s.client_id]
+          ? { ...s, clients: { ...(s.clients || {}), work_gallery: galleries[s.client_id] } }
+          : s
+      ));
+    } catch (err) {
+      console.error('Error cargando galerías', err);
+    }
+  }, []);
+
   const loadMyWork = useCallback(async () => {
     if (!selectedBarber) return;
     try {
       setLoading(true);
       const isAssistant = selectedBarber.role?.toLowerCase().includes('asistente');
       const states = isAssistant ? ['En Silla', 'En Lavado'] : ['En Silla', 'Agendado', 'En Lavado'];
-      const data = await dataService.getAppointmentsByState(states);
-      if (isAssistant) {
-        setMyServices(data);
-      } else {
-        const filtered = data.filter(s => String(s.staff_id) === String(selectedBarber.id));
-        setMyServices(filtered);
-      }
+      // Light fetch (no base64 galleries); photos are hydrated below only for shown clients.
+      const data = await dataService.getAppointmentsByState(states, null, { light: true });
+      const list = isAssistant ? data : data.filter(s => String(s.staff_id) === String(selectedBarber.id));
+      setMyServices(list);
+      if (!isAssistant) hydrateGalleries(list, setMyServices);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [selectedBarber]);
+  }, [selectedBarber, hydrateGalleries]);
 
   const loadCompletedToday = useCallback(async () => {
     if (!selectedBarber) return;
     try {
-      const data = await dataService.getAppointmentsByState(['Completado', 'Por Pagar']);
+      const data = await dataService.getAppointmentsByState(['Completado', 'Por Pagar'], null, { light: true });
       const today = new Date().toISOString().split('T')[0];
       const isAssistant = selectedBarber.role?.toLowerCase().includes('asistente');
       const filtered = data.filter(s => {
@@ -175,10 +190,11 @@ const BarberPanel = ({ isMobile, rates }) => {
         }
       });
       setCompletedToday(filtered);
+      hydrateGalleries(filtered, setCompletedToday);
     } catch (err) {
       console.error(err);
     }
-  }, [selectedBarber]);
+  }, [selectedBarber, hydrateGalleries]);
 
   useEffect(() => {
     if (selectedBarber) {
@@ -254,7 +270,7 @@ const BarberPanel = ({ isMobile, rates }) => {
     try {
       const isAssistant = selectedBarber.role?.toLowerCase().includes('asistente');
       if (isAssistant) {
-        const data = await dataService.getAppointmentsByState(['Completado', 'Por Pagar']);
+        const data = await dataService.getAppointmentsByState(['Completado', 'Por Pagar'], null, { light: true });
         const today = new Date().toISOString().split('T')[0];
         let count = 0;
         let earned = 0;

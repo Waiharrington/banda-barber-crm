@@ -166,7 +166,7 @@ export const dataService = {
   },
 
   async updateClient(id, updates) {
-    _cacheInvalidate('clients');
+    _cacheInvalidate('clients', 'gallery_' + id);
     _cacheInvalidateAppts();
     const allowedColumns = [
       'name', 'phone', 'id_card', 'email', 'status', 'points', 'last_visit', 'work_gallery'
@@ -1041,17 +1041,27 @@ export const dataService = {
   },
 
   // Appointments (Operational States)
-  async getAppointmentsByState(states = [], startDate = null) {
-    // Cache key based on the states array and startDate
-    const cacheKey = 'appts_' + [...states].sort().join(',') + (startDate ? `_${startDate}` : '');
+  async getAppointmentsByState(states = [], startDate = null, opts = {}) {
+    // Heavy base64 fields (client work_gallery, staff avatars) bloat this list and
+    // hurt slow connections. Callers that don't render photos/avatars pass
+    // { light: true } and lazy-load galleries only for the clients shown.
+    const light = opts.light === true;
+    // Cache key based on the states array, startDate and payload mode
+    const cacheKey = 'appts_' + [...states].sort().join(',') + (startDate ? `_${startDate}` : '') + (light ? '_lite' : '');
     const cached = _cacheGet(cacheKey);
     if (cached) return cached;
 
+    const clientsSelect = light
+      ? 'clients(id, name, phone, id_card)'
+      : 'clients(id, name, phone, id_card, work_gallery)';
+    const staffSelect = light
+      ? 'staff(id, name, role, commission_pct, washing_rate)'
+      : 'staff(id, name, email, role, username, image_url, commission_pct, washing_rate)';
     let query = supabase.from('appointments').select(`
-      *, 
-      clients(id, name, phone, id_card, work_gallery), 
+      *,
+      ${clientsSelect},
       services(name, price, included_items),
-      staff(id, name, email, role, username, image_url, commission_pct, washing_rate),
+      ${staffSelect},
       appointment_extras(id, price, service_extras(id, name)),
       appointment_products(id, quantity, price, inventory(id, name)),
       appointment_staff(*, staff(name, role))
@@ -1064,6 +1074,33 @@ export const dataService = {
     const result = _asArray(data).map(_normalizeAppointment);
     _cacheSet(cacheKey, result, 15000);
     return result;
+  },
+
+  // Lightweight gallery fetch for a set of clients. Cached per-client (not cleared
+  // by appointment changes) so slow connections don't re-download base64 photos on
+  // every realtime tick. The cache is invalidated when a client's work_gallery is written.
+  async getClientGalleries(clientIds = []) {
+    const ids = [...new Set((clientIds || []).filter(Boolean))];
+    const map = {};
+    const missing = [];
+    ids.forEach(id => {
+      const cached = _cacheGet('gallery_' + id);
+      if (cached) map[id] = cached;
+      else missing.push(id);
+    });
+    if (missing.length > 0) {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, work_gallery')
+        .in('id', missing);
+      if (error) throw error;
+      (data || []).forEach(c => {
+        const gallery = _asArray(c.work_gallery);
+        map[c.id] = gallery;
+        _cacheSet('gallery_' + c.id, gallery, 60000);
+      });
+    }
+    return map;
   },
 
   async getTodayAppointments() {
