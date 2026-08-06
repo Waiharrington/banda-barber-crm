@@ -359,6 +359,40 @@ const ReceptionModule = ({ isMobile, rates }) => {
     }
   };
 
+  // Send the selected client straight to a barber's chair WITHOUT a service.
+  // The barber loads the service(s) from their own panel afterwards. Creates a
+  // "shell" appointment (service_id null) so the client shows up in the barber's chair.
+  const handleSendToChair = async (staffId) => {
+    if (!selectedClient) {
+      showToast("Selecciona un cliente primero", "warning");
+      return;
+    }
+    try {
+      setLoading(true);
+      await dataService.createAppointment({
+        client_id: selectedClient.id,
+        staff_id: staffId,
+        service_id: null,
+        status: 'En Silla',
+        total_price: 0
+      });
+      showToast(`${selectedClient.name.split(' ')[0]} enviado a silla. El barbero cargará el servicio.`);
+      triggerRocket();
+      // Reset selection
+      setSelectedClient(null);
+      setSelectedServices([]);
+      setSelectedExtras([]);
+      setSelectedProducts([]);
+      setFormData({ serviceId: '', staffId: '', status: 'En Silla' });
+      loadData();
+    } catch (error) {
+      showToast("Error al enviar a silla", "error");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (statusOverride, scheduledAt = null) => {
     const isProductOnly = selectedServices.length === 0 && selectedExtras.length === 0 && selectedProducts.length > 0;
     
@@ -890,6 +924,28 @@ const ReceptionModule = ({ isMobile, rates }) => {
                           )}
                         </div>
                       </button>
+
+                      {selectedClient && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleSendToChair(s.id); }}
+                          style={{
+                            padding: '5px 6px',
+                            borderRadius: '8px',
+                            backgroundColor: 'rgba(50,215,75,0.12)',
+                            border: '1px solid rgba(50,215,75,0.35)',
+                            color: '#32d74b',
+                            fontSize: '9px',
+                            fontWeight: '900',
+                            cursor: 'pointer',
+                            textAlign: 'center',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(ev) => ev.currentTarget.style.backgroundColor = 'rgba(50,215,75,0.2)'}
+                          onMouseLeave={(ev) => ev.currentTarget.style.backgroundColor = 'rgba(50,215,75,0.12)'}
+                        >
+                          Enviar a silla
+                        </button>
+                      )}
 
                       {!isBusy && (
                         <button

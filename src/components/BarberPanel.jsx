@@ -58,6 +58,7 @@ const BarberPanel = ({ isMobile, rates }) => {
   // New States for Extras/Products
   const [allExtras, setAllExtras] = useState([]);
   const [inventory, setInventory] = useState([]);
+  const [allServices, setAllServices] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeAppId, setActiveAppId] = useState(null);
   const [addMode, setAddMode] = useState(null); // 'extra' | 'product'
@@ -98,12 +99,14 @@ const BarberPanel = ({ isMobile, rates }) => {
 
   const loadCatalog = async () => {
     try {
-      const [extras, items] = await Promise.all([
+      const [extras, items, services] = await Promise.all([
         dataService.getExtras(),
-        dataService.getInventory()
+        dataService.getInventory(),
+        dataService.getServices()
       ]);
       setAllExtras(extras);
       setInventory(items);
+      setAllServices(services);
     } catch (err) {
       console.error(err);
     }
@@ -278,6 +281,12 @@ const BarberPanel = ({ isMobile, rates }) => {
   };
 
   const handleFinishService = async (serviceId) => {
+    const app = myServices.find(s => s.id === serviceId);
+    const hasSomething = !!app?.service_id || (app?.appointment_extras?.length > 0) || (app?.appointment_products?.length > 0);
+    if (!hasSomething) {
+      showToast("Carga un servicio primero", "warning");
+      return;
+    }
     try {
       setLoading(true);
       await dataService.updateAppointmentStatus(serviceId, 'Por Pagar');
@@ -615,6 +624,67 @@ const BarberPanel = ({ isMobile, rates }) => {
       loadStats();
     } catch (err) {
       showToast("Error al añadir producto", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Barber loads a base service onto the chair. If this card has no base service yet,
+  // set it on this appointment (the shell created by reception's "Enviar a silla").
+  // If it already has one, create an additional appointment (same client/barber) so the
+  // client can have several services — mirroring how reception adds multiple services.
+  const handleSetService = async (service) => {
+    try {
+      setLoading(true);
+      const app = myServices.find(s => s.id === activeAppId);
+      if (!app) { setShowAddModal(false); return; }
+      if (!app.service_id) {
+        await dataService.updateAppointment(app.id, { service_id: service.id, total_price: service.price });
+      } else {
+        await dataService.createAppointment({
+          client_id: app.client_id,
+          staff_id: app.staff_id,
+          service_id: service.id,
+          status: 'En Silla',
+          total_price: service.price
+        });
+      }
+      showToast(`+ ${service.name} añadido`);
+      setShowAddModal(false);
+      loadMyWork();
+      loadStats();
+    } catch (err) {
+      showToast("Error al añadir servicio", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cancel the chair. If nothing has been loaded yet (no service/extra/product) the shell
+  // is deleted outright; otherwise it's marked 'Cancelado' for history. Either way the
+  // barber is freed in the queue.
+  const handleCancelChair = async (app) => {
+    const hasSomething = !!app.service_id || (app.appointment_extras?.length > 0) || (app.appointment_products?.length > 0);
+    const message = hasSomething
+      ? "¿Cancelar este servicio? Se marcará como cancelado."
+      : "¿Quitar este cliente de la silla?";
+    if (!await confirm(message)) return;
+    try {
+      setLoading(true);
+      if (hasSomething) {
+        await dataService.updateAppointment(app.id, { status: 'Cancelado' });
+      } else {
+        await dataService.deleteAppointment(app.id);
+      }
+      if (app.staff_id) {
+        await dataService.updateQueueStatus(app.staff_id, 'AVAILABLE').catch(() => {});
+      }
+      showToast(hasSomething ? "Servicio cancelado" : "Cliente retirado de la silla");
+      loadMyWork();
+      loadStats();
+      loadCompletedToday();
+    } catch (err) {
+      showToast("Error al cancelar", "error");
     } finally {
       setLoading(false);
     }
@@ -1087,7 +1157,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                             borderRadius: '10px',
                             border: '1px solid rgba(255, 255, 255,0.12)'
                           }}>
-                            {app.services?.name}
+                            {app.services?.name || 'Sin servicio — usa "+ Servicio"'}
                           </div>
                           
                           {app.services?.included_items && app.services.included_items.length > 0 && (
@@ -1328,23 +1398,45 @@ const BarberPanel = ({ isMobile, rates }) => {
                         </div>
                       )}
 
-                      {/* Add Extras/Products */}
+                      {/* Add Service / Extras / Products */}
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-                        <button 
+                        <button
+                          onClick={() => { setActiveAppId(app.id); setAddMode('service'); setShowAddModal(true); }}
+                          style={{
+                            flex: 1,
+                            padding: '14px',
+                            borderRadius: '16px',
+                            background: 'rgba(255,255,255,0.02)',
+                            border: '1px solid rgba(255, 255, 255,0.15)',
+                            color: 'white',
+                            fontSize: '12px',
+                            fontWeight: '800',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <Scissors size={15} color="var(--gold-primary)" style={{ filter: 'drop-shadow(0 0 5px rgba(255, 255, 255,0.4))' }} /> Servicio
+                        </button>
+                        <button
                           onClick={() => { setActiveAppId(app.id); setAddMode('extra'); setShowAddModal(true); }}
-                          style={{ 
-                            flex: 1, 
-                            padding: '14px', 
-                            borderRadius: '16px', 
-                            background: 'rgba(255,255,255,0.02)', 
-                            border: '1px solid rgba(255, 255, 255,0.15)', 
-                            color: 'white', 
-                            fontSize: '12px', 
-                            fontWeight: '800', 
-                            cursor: 'pointer', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
+                          style={{
+                            flex: 1,
+                            padding: '14px',
+                            borderRadius: '16px',
+                            background: 'rgba(255,255,255,0.02)',
+                            border: '1px solid rgba(255, 255, 255,0.15)',
+                            color: 'white',
+                            fontSize: '12px',
+                            fontWeight: '800',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                             gap: '8px',
                             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
                             transition: 'all 0.2s'
@@ -1450,6 +1542,16 @@ const BarberPanel = ({ isMobile, rates }) => {
                           ESPERANDO AL CLIENTE...
                         </button>
                       )}
+
+                      {app.status !== 'Completado' && app.status !== 'Por Pagar' && (
+                        <button
+                          onClick={() => handleCancelChair(app)}
+                          disabled={loading}
+                          style={{ width: '100%', marginTop: '10px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '11px', fontWeight: '700', cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                        >
+                          <Trash2 size={13} /> Cancelar
+                        </button>
+                      )}
                     </div>
                   );
                 })
@@ -1496,14 +1598,14 @@ const BarberPanel = ({ isMobile, rates }) => {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: '900' }}>Añadir <span className="text-gold">{addMode === 'extra' ? 'Extra' : 'Producto'}</span></h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: '900' }}>Añadir <span className="text-gold">{addMode === 'extra' ? 'Extra' : addMode === 'service' ? 'Servicio' : 'Producto'}</span></h3>
                   <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '20px', cursor: 'pointer', padding: '4px' }}>&times;</button>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto', paddingRight: '4px' }}>
-                  {(addMode === 'extra' ? allExtras : inventory).map(item => (
-                    <button 
+                  {(addMode === 'extra' ? allExtras : addMode === 'service' ? allServices : inventory).map(item => (
+                    <button
                       key={item.id}
-                      onClick={() => addMode === 'extra' ? handleAddExtra(item) : handleAddProduct(item)}
+                      onClick={() => addMode === 'extra' ? handleAddExtra(item) : addMode === 'service' ? handleSetService(item) : handleAddProduct(item)}
                       className="selection-modal-item"
                       style={{ 
                         display: 'flex', 
