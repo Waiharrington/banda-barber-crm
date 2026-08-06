@@ -14,14 +14,27 @@ import {
   UserCheck,
   PieChart,
   MoreHorizontal,
-  X
+  X,
+  Bell,
+  CheckCircle
 } from 'lucide-react';
 
 import { useAuth } from '../../context/AuthContext';
+import { notificationService } from '../../services/notificationService';
 
 const MobileBottomNav = ({ activeTab, setActiveTab }) => {
   const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [notifPermission, setNotifPermission] = useState(() => notificationService.getPermissionStatus());
+
+  const handleToggleNotif = async () => {
+    if (notifPermission === 'granted') return;
+    const res = await notificationService.requestPermission();
+    setNotifPermission(res);
+    if (res === 'granted') {
+      notificationService.sendNotification('🔔 Notificaciones Activadas', '¡Excelente! Ahora recibirás alertas en tiempo real.');
+    }
+  };
 
   const allMasterItems = [
     { id: 'barber', label: 'Panel Barber', icon: Scissors, roles: ['Admin', 'Barbero', 'Asistente de Lavado'] },
@@ -216,6 +229,36 @@ const MobileBottomNav = ({ activeTab, setActiveTab }) => {
               boxShadow: '0 -10px 40px rgba(0,0,0,0.8)'
             }}
           >
+            {/* Notification Status Button Bar */}
+            <div style={{ marginBottom: '16px' }}>
+              <button
+                onClick={handleToggleNotif}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 16px',
+                  borderRadius: '16px',
+                  background: notifPermission === 'granted' ? 'rgba(48, 209, 88, 0.12)' : 'rgba(203, 183, 154, 0.15)',
+                  border: notifPermission === 'granted' ? '1px solid rgba(48, 209, 88, 0.3)' : '1px solid rgba(203, 183, 154, 0.4)',
+                  color: notifPermission === 'granted' ? '#30d158' : 'var(--gold-primary)',
+                  cursor: notifPermission === 'granted' ? 'default' : 'pointer',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Bell size={18} color={notifPermission === 'granted' ? '#30d158' : 'var(--gold-primary)'} />
+                  <span>{notifPermission === 'granted' ? 'Notificaciones activas' : 'Activar notificaciones'}</span>
+                </div>
+                {notifPermission === 'granted' && (
+                  <CheckCircle size={16} color="#30d158" />
+                )}
+              </button>
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
               {secondaryItems.map((item) => (
                 <button
