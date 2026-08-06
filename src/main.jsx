@@ -8,6 +8,11 @@ import { ModalProvider } from './context/ModalContext'
 
 import { DialogProvider } from './context/DialogContext'
 
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  window.location.reload();
+});
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>

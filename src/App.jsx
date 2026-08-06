@@ -29,22 +29,38 @@ import { useScrollLock } from './hooks/useScrollLock';
 import { useModal, ModalShield } from './context/ModalContext';
 import { whatsappService } from './services/whatsappService';
 
-const DashboardModule = lazy(() => import('./components/DashboardModule'));
-const MobileDashboard = lazy(() => import('./components/mobile/MobileDashboard'));
-const ClientModule = lazy(() => import('./components/ClientModule'));
-const PersonnelModule = lazy(() => import('./components/PersonnelModule'));
-const FinanceModule = lazy(() => import('./components/FinanceModule'));
-const ServicesModule = lazy(() => import('./components/ServicesModule'));
-const InventoryModule = lazy(() => import('./components/InventoryModule'));
-const SaleServiceModal = lazy(() => import('./components/SaleServiceModal'));
-const HistoryModule = lazy(() => import('./components/HistoryModule'));
-const UserProfilePage = lazy(() => import('./components/UserProfilePage'));
-const ReportsModule = lazy(() => import('./components/ReportsModule'));
-const ReceptionModule = lazy(() => import('./components/ReceptionModule'));
-const CheckoutPOS = lazy(() => import('./components/CheckoutPOS'));
-const BarberPanel = lazy(() => import('./components/BarberPanel'));
-const SchedulingModule = lazy(() => import('./components/SchedulingModule'));
-const SettingsModule = lazy(() => import('./components/SettingsModule'));
+const safeLazy = (importFn) => lazy(async () => {
+  try {
+    return await importFn();
+  } catch (error) {
+    if (typeof window !== 'undefined') {
+      const reloaded = sessionStorage.getItem('panda_chunk_reload');
+      if (!reloaded) {
+        sessionStorage.setItem('panda_chunk_reload', 'true');
+        window.location.reload();
+        return new Promise(() => {});
+      }
+    }
+    throw error;
+  }
+});
+
+const DashboardModule = safeLazy(() => import('./components/DashboardModule'));
+const MobileDashboard = safeLazy(() => import('./components/mobile/MobileDashboard'));
+const ClientModule = safeLazy(() => import('./components/ClientModule'));
+const PersonnelModule = safeLazy(() => import('./components/PersonnelModule'));
+const FinanceModule = safeLazy(() => import('./components/FinanceModule'));
+const ServicesModule = safeLazy(() => import('./components/ServicesModule'));
+const InventoryModule = safeLazy(() => import('./components/InventoryModule'));
+const SaleServiceModal = safeLazy(() => import('./components/SaleServiceModal'));
+const HistoryModule = safeLazy(() => import('./components/HistoryModule'));
+const UserProfilePage = safeLazy(() => import('./components/UserProfilePage'));
+const ReportsModule = safeLazy(() => import('./components/ReportsModule'));
+const ReceptionModule = safeLazy(() => import('./components/ReceptionModule'));
+const CheckoutPOS = safeLazy(() => import('./components/CheckoutPOS'));
+const BarberPanel = safeLazy(() => import('./components/BarberPanel'));
+const SchedulingModule = safeLazy(() => import('./components/SchedulingModule'));
+const SettingsModule = safeLazy(() => import('./components/SettingsModule'));
 const asArray = (val) => Array.isArray(val) ? val : [];
 
 const ModuleFallback = () => (
