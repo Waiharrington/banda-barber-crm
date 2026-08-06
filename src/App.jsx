@@ -406,6 +406,22 @@ function App() {
   // Phase 2: Heavy data — runs silently after loader is gone
   async function fetchSecondaryData() {
     try {
+      const roleName = (user?.role || '').toLowerCase();
+      const isServiceProfessionalOnly = (roleName.includes('barber') || roleName.includes('tatu')) && 
+                                       !roleName.includes('admin') && 
+                                       !roleName.includes('recepcionista') && 
+                                       !roleName.includes('caja');
+      
+      // Service professionals don't need heavy admin transactions, inventory, or full financials
+      if (isServiceProfessionalOnly) {
+        const ext = await dataService.getExtras();
+        setDbData(prev => ({
+          ...prev,
+          extras: ext
+        }));
+        return;
+      }
+
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);

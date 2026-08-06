@@ -188,8 +188,10 @@ const BarberPanel = ({ isMobile, rates }) => {
   const loadCompletedToday = useCallback(async () => {
     if (!selectedBarber) return;
     try {
-      const data = await dataService.getAppointmentsByState(['Completado', 'Por Pagar'], null, { light: true });
-      const today = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const todayStartISO = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const data = await dataService.getAppointmentsByState(['Completado', 'Por Pagar'], todayStartISO, { light: true });
+      const today = now.toISOString().split('T')[0];
       const isAssistant = selectedBarber.role?.toLowerCase().includes('asistente');
       const filtered = data.filter(s => {
         const createdDate = s.created_at ? new Date(s.created_at).toISOString().split('T')[0] : '';
@@ -242,22 +244,24 @@ const BarberPanel = ({ isMobile, rates }) => {
             }
           }
           
+          dataService.clearApptsCache();
           setTimeout(() => {
             loadMyWork();
             loadStats();
             loadCompletedToday();
-          }, 300);
+          }, 200);
         })
         .on('postgres_changes', {
           event: '*',
           schema: 'pandabarber',
           table: 'appointment_staff'
         }, () => {
+          dataService.clearApptsCache();
           setTimeout(() => {
             loadMyWork();
             loadStats();
             loadCompletedToday();
-          }, 300);
+          }, 200);
         })
         .subscribe();
 

@@ -67,6 +67,9 @@ function _normalizeStaff(member) {
 
 export const dataService = {
   supabase: anonClient,
+  clearApptsCache() {
+    _cacheInvalidateAppts();
+  },
   // Clients
   async getClients() {
     const cached = _cacheGet('clients');
