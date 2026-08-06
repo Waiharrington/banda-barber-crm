@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { useNotifs } from '../context/NotificationContext';
+import { supabase } from '../lib/supabase';
 import PandaSelect from './PandaSelect';
 import { notificationService } from '../services/notificationService';
 import { whatsappService } from '../services/whatsappService';
