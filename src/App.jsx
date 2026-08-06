@@ -24,6 +24,7 @@ import { useAuth } from './context/AuthContext';
 import TopBar from './components/TopBar';
 import NotificationsDrawer from './components/NotificationsDrawer';
 import { notificationService } from './services/notificationService';
+import { pushService } from './services/pushService';
 import { useDialog } from './context/DialogContext';
 import { useScrollLock } from './hooks/useScrollLock';
 import { useModal, ModalShield } from './context/ModalContext';
@@ -203,6 +204,12 @@ function App() {
     return () => {
       dataService.supabase.removeChannel(channel);
     };
+  }, [user]);
+
+  // Subscribe this staff device to Web Push (PWA notifications) on login.
+  useEffect(() => {
+    if (!user) return;
+    pushService.subscribe(user);
   }, [user]);
 
   // Persist active rate type

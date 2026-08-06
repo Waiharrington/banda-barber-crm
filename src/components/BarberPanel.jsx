@@ -677,7 +677,7 @@ const BarberPanel = ({ isMobile, rates }) => {
           service_id: service.id,
           status: app.status || 'En Silla',
           total_price: service.price
-        });
+        }, { skipPush: true });
       }
       showToast(`+ ${service.name} añadido`);
       setShowAddModal(false);

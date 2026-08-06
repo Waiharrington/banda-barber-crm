@@ -1,6 +1,7 @@
 import { supabase as anonClient, authClient } from '../lib/supabase';
 const supabase = authClient || anonClient;
 import { notificationService } from './notificationService';
+import { pushService } from './pushService';
 
 // ─── Smart In-Memory Cache ────────────────────────────────────────────────────
 // Reduces redundant Supabase calls from ~35+ per session to ~8.
@@ -788,6 +789,7 @@ export const dataService = {
     _cacheInvalidateAppts();
     const { data, error } = await supabase.from('appointment_products').insert([{ appointment_id: appointmentId, product_id: productId, quantity, price }]).select().single();
     if (error) throw error;
+    this._pushProduct(appointmentId, productId, quantity);
     return data;
   },
 
@@ -1127,7 +1129,62 @@ export const dataService = {
     return _asArray(data).map(_normalizeAppointment);
   },
 
-  async createAppointment(appointment) {
+  // Web Push helper: builds a rich message for an appointment event and fires it
+  // to the right barber/roles. Fire-and-forget — never blocks the caller.
+  async _pushAppointment(appId, kind) {
+    try {
+      const { data: app } = await supabase.from('appointments')
+        .select('id, staff_id, scheduled_at, total_price, clients(name), services(name, price)')
+        .eq('id', appId)
+        .single();
+      if (!app) return;
+      const clientName = app.clients?.name || 'Cliente';
+      const svc = app.services?.name;
+      const price = app.services?.price ?? app.total_price;
+      const priceStr = price ? ` • $${price}` : '';
+      let when = '';
+      if (app.scheduled_at) {
+        const d = new Date(app.scheduled_at);
+        const fecha = d.toLocaleDateString('es-VE', { timeZone: 'America/Caracas', day: '2-digit', month: '2-digit' });
+        const hora = d.toLocaleTimeString('es-VE', { timeZone: 'America/Caracas', hour: '2-digit', minute: '2-digit', hour12: true });
+        when = ` • ${fecha} ${hora}`;
+      }
+      if (kind === 'agendada') {
+        pushService.notify({ staffId: app.staff_id }, '📅 Nueva cita agendada',
+          `${clientName}${svc ? ' • ' + svc : ''}${when}${priceStr}`, { appId, kind });
+      } else if (kind === 'ensilla') {
+        pushService.notify({ staffId: app.staff_id }, '💈 Cliente en tu silla',
+          `${clientName} está en tu silla${svc ? ' • ' + svc : ''}${priceStr}`, { appId, kind });
+      } else if (kind === 'caja') {
+        pushService.notify({ roles: ['Admin'] }, '💳 Cobrar cliente',
+          `${clientName}${svc ? ' • ' + svc : ''}${priceStr} — listo para cobrar`, { appId, kind });
+      } else if (kind === 'lavado') {
+        pushService.notify({ roles: ['Asistente'] }, '💧 Nuevo lavado',
+          `${clientName} está listo para lavado`, { appId, kind });
+      }
+    } catch (e) {
+      console.error('push appointment error', e);
+    }
+  },
+
+  // Web Push helper: product sale → barista, asistentes y administración.
+  async _pushProduct(appointmentId, productId, quantity) {
+    try {
+      const [prodRes, appRes] = await Promise.all([
+        supabase.from('inventory').select('name').eq('id', productId).single(),
+        supabase.from('appointments').select('clients(name)').eq('id', appointmentId).single(),
+      ]);
+      const prodName = prodRes.data?.name || 'Producto';
+      const clientName = appRes.data?.clients?.name || 'Cliente';
+      const qty = quantity && quantity > 1 ? ` x${quantity}` : '';
+      pushService.notify({ roles: ['Barista', 'Asistente', 'Admin'] }, '🥤 Venta de producto',
+        `${prodName}${qty} para ${clientName}`, { appointmentId, productId });
+    } catch (e) {
+      console.error('push product error', e);
+    }
+  },
+
+  async createAppointment(appointment, opts = {}) {
     // Invalidate all appointment caches
     _cacheInvalidateAppts();
     const { data, error } = await supabase
@@ -1142,6 +1199,11 @@ export const dataService = {
       .select()
       .single();
     if (error) throw error;
+    // Push: cliente enviado a silla, o cita agendada (con fecha/hora)
+    if (data && !opts.skipPush && data.staff_id) {
+      if (data.status === 'En Silla') this._pushAppointment(data.id, 'ensilla');
+      else if (data.scheduled_at) this._pushAppointment(data.id, 'agendada');
+    }
     return data;
   },
 
@@ -1207,6 +1269,11 @@ export const dataService = {
         console.error('Error al enviar notificacion de cliente en silla:', e);
       }
     }
+
+    // Web Push por transición de estado
+    if (newStatus === 'En Silla') this._pushAppointment(id, 'ensilla');
+    else if (newStatus === 'En Lavado') this._pushAppointment(id, 'lavado');
+    else if (newStatus === 'Por Pagar') this._pushAppointment(id, 'caja');
 
     return data;
   },
