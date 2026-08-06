@@ -95,6 +95,22 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
   };
 
   const filteredHistory = history.filter(item => {
+    const serviceBase = Number(item.services?.price !== undefined && item.services?.price !== null ? item.services.price : (item.total_price || 0));
+    const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
+    const products = item.appointment_products?.reduce((sum, p) => sum + (Number(p.price || 0) * (p.quantity || 1)), 0) || 0;
+    const tips = item.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
+    const val = isAdmin ? (serviceBase + extras + products + tips) : ((item.commission_earned || 0) + (item.tip_amount || 0));
+
+    const hasService = Boolean(item.services?.name);
+    const hasExtras = Boolean(item.appointment_extras?.length);
+    const hasProducts = Boolean(item.appointment_products?.length);
+    const hasTips = Boolean(item.appointment_staff?.some(s => Number(s.tip_amount) > 0));
+
+    // Exclude ghost/empty 0-value appointments (e.g. placeholders without service/extras/products/tips)
+    if (!hasService && !hasExtras && !hasProducts && !hasTips && val === 0) {
+      return false;
+    }
+
     const searchMatch = (item.clients?.name || '').toLowerCase().includes(filter.toLowerCase()) ||
                        (item.services?.name || '').toLowerCase().includes(filter.toLowerCase());
     if (!searchMatch) return false;
@@ -114,7 +130,7 @@ const HistoryModule = ({ isMobile, rates, onNavigate }) => {
     if (!isAdmin) return acc + (item.commission_earned || 0) + (item.tip_amount || 0);
     
     // Admin: Sum everything including tips from appointment_staff
-    const serviceBase = Number(item.services?.price || 0);
+    const serviceBase = Number(item.services?.price !== undefined && item.services?.price !== null ? item.services.price : (item.total_price || 0));
     const extras = item.appointment_extras?.reduce((sum, e) => sum + Number(e.price || 0), 0) || 0;
     const products = item.appointment_products?.reduce((sum, p) => sum + (Number(p.price || 0) * (p.quantity || 1)), 0) || 0;
     const tips = item.appointment_staff?.reduce((sum, s) => sum + Number(s.tip_amount || 0), 0) || 0;
