@@ -297,6 +297,28 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
   useEffect(() => {
     loadData();
     if (rates?.usd) setFixedRate(rates.usd);
+
+    const channel = supabase
+      .channel('checkout-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'pandabarber',
+        table: 'appointments'
+      }, () => {
+        loadData();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'pandabarber',
+        table: 'appointment_staff'
+      }, () => {
+        loadData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [rates]);
 
   useEffect(() => {

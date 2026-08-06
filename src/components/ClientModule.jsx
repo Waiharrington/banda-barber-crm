@@ -42,19 +42,21 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
   const { confirm } = useDialog();
   const { user } = useAuth();
   const roleName = String(user?.role || '').split('|')[0].toLowerCase();
-  const isAssistant = roleName.includes('asistente') || roleName.includes('lavado');
+  const isAssistant = roleName.includes('asistente') || roleName.includes('barista') || roleName.includes('recep') || roleName.includes('admin') || roleName.includes('caja');
   const isServiceProfessional = !isAssistant && (roleName.includes('barbero') || roleName.includes('tatuador'));
   const canManageClientAdminActions = !isServiceProfessional;
+
   const visibleClients = useMemo(() => {
     const clientList = Array.isArray(clients) ? clients : [];
     if (!isServiceProfessional || !user?.id) return clientList;
 
     return clientList.filter(client => (
       Array.isArray(client.appointments)
-      && client.appointments.some(appointment => (
-        String(appointment.staff_id) === String(user.id)
-        && ['Completado', 'En Silla', 'Por Pagar'].includes(appointment.status)
-      ))
+      && client.appointments.some(appointment => {
+        const isMainStaff = String(appointment.staff_id) === String(user.id);
+        const isInStaffList = Array.isArray(appointment.appointment_staff) && appointment.appointment_staff.some(as => String(as.staff_id) === String(user.id));
+        return (isMainStaff || isInStaffList) && ['Completado', 'En Silla', 'Por Pagar'].includes(appointment.status);
+      })
     ));
   }, [clients, isServiceProfessional, user?.id]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -873,6 +875,11 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
     scalp_type: client.scalp_type
   });
 
+  const { user } = useAuth();
+  const roleName = String(user?.role || '').split('|')[0].toLowerCase();
+  const isAssistant = roleName.includes('asistente') || roleName.includes('barista') || roleName.includes('recep') || roleName.includes('admin') || roleName.includes('caja');
+  const isServiceProfessional = !isAssistant && (roleName.includes('barbero') || roleName.includes('tatuador'));
+
   useEffect(() => {
     const loadHistory = async () => {
       try {
@@ -887,7 +894,17 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
       try {
         setLoadingHistory(true);
         const data = await dataService.getClientTransactions(client.id);
-        setHistory(Array.isArray(data) ? data : []);
+        const allHistory = Array.isArray(data) ? data : [];
+        if (isServiceProfessional && user?.id) {
+          const filteredHistory = allHistory.filter(h => {
+            const isMainStaff = String(h.staff_id) === String(user.id);
+            const isInStaffList = Array.isArray(h.appointment_staff) && h.appointment_staff.some(as => String(as.staff_id) === String(user.id));
+            return isMainStaff || isInStaffList;
+          });
+          setHistory(filteredHistory);
+        } else {
+          setHistory(allHistory);
+        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -895,7 +912,7 @@ const ClientDetail = ({ isMobile, client, onBack, onDelete, onUpdate }) => {
       }
     };
     loadHistory();
-  }, [client.id]);
+  }, [client.id, isServiceProfessional, user?.id]);
 
   const handleRouletteFinish = async (prize) => {
     try {

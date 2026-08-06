@@ -183,7 +183,7 @@ const BarberPanel = ({ isMobile, rates }) => {
       loadStats();
       loadCompletedToday();
       
-      // Real-time listener for appointments
+      // Real-time listener for appointments and multi-staff assignments
       const subscription = supabase
         .channel(`barber-realtime-${selectedBarber.id}`)
         .on('postgres_changes', { 
@@ -196,7 +196,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                           String(payload.new?.staff_id) === String(selectedBarber.id) || 
                           String(payload.old?.staff_id) === String(selectedBarber.id);
           
-          if (isForMe) {
+          if (isForMe || !payload.new?.staff_id) {
             if (payload.eventType === 'INSERT') {
               showToast("🚀 ¡Nueva cita asignada!");
               triggerRocket();
@@ -208,14 +208,24 @@ const BarberPanel = ({ isMobile, rates }) => {
             } else {
               showToast("Actualizando silla...", "info");
             }
-            
-            // Reload with a tiny delay to ensure DB consistency
-            setTimeout(() => {
-              loadMyWork();
-              loadStats();
-              loadCompletedToday();
-            }, 500);
           }
+          
+          setTimeout(() => {
+            loadMyWork();
+            loadStats();
+            loadCompletedToday();
+          }, 300);
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'pandabarber',
+          table: 'appointment_staff'
+        }, () => {
+          setTimeout(() => {
+            loadMyWork();
+            loadStats();
+            loadCompletedToday();
+          }, 300);
         })
         .subscribe();
 

@@ -153,9 +153,32 @@ const ReceptionModule = ({ isMobile, rates }) => {
 
   useEffect(() => {
     loadData();
+
+    // Real-time listener for appointments, staff changes, and turn queue updates
+    const channel = supabase
+      .channel('reception-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'pandabarber',
+        table: 'appointments'
+      }, () => {
+        loadData();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'pandabarber',
+        table: 'turn_queue'
+      }, () => {
+        loadData();
+      })
+      .subscribe();
+
     // Auto-refresh every minute to update countdowns
     const interval = setInterval(loadData, 60000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadData = async () => {

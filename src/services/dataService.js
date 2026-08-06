@@ -73,7 +73,7 @@ export const dataService = {
 
     const { data, error } = await supabase
       .from('clients')
-      .select('*, appointments(status, total_price, staff_id)')
+      .select('*, appointments(status, total_price, staff_id, appointment_staff(staff_id))')
       .order('name');
 
     if (error) throw error;
@@ -872,8 +872,10 @@ export const dataService = {
         created_at, 
         total_price,
         status,
+        staff_id,
         services(name, price, included_items),
-        staff(name)
+        staff(name),
+        appointment_staff(staff_id)
       `)
       .eq('client_id', clientId)
       .in('status', ['Completado', 'En Silla', 'Por Pagar'])
@@ -905,7 +907,9 @@ export const dataService = {
         payment_method: relatedTx?.metadata?.method_usd || relatedTx?.metadata?.method_bs || relatedTx?.description?.split(' - ')[2] || 'No registrado',
         payment_metadata: relatedTx?.metadata || {},
         exchange_rate: relatedTx?.exchange_rate,
-        description: `Servicio: ${app.services?.name} - Barbero: ${app.staff?.name}`
+        description: `Servicio: ${app.services?.name} - Barbero: ${app.staff?.name}`,
+        staff_id: app.staff_id,
+        appointment_staff: app.appointment_staff || []
       };
     });
   },
