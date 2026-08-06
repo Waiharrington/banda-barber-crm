@@ -162,12 +162,13 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Set default tab based on user role on first load
+  // Set default tab based on user role on first load (Barbers always open in Panel Barber)
   useEffect(() => {
     if (!user) return;
-    const isBarber = user?.role === 'Barbero' || user?.role?.startsWith('Barbero|');
-    if (isBarber && !localStorage.getItem('panda_active_tab')) {
-      setActiveTab('my-profile');
+    const roleName = (user.role || '').toLowerCase();
+    const isServiceProf = (roleName.includes('barber') || roleName.includes('tatu')) && !roleName.includes('admin');
+    if (isServiceProf) {
+      setActiveTab('barber');
     }
   }, [user]);
 

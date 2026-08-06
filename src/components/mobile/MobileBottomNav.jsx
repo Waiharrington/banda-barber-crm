@@ -23,50 +23,54 @@ const MobileBottomNav = ({ activeTab, setActiveTab }) => {
   const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const allMainItems = [
-    { id: 'dashboard', label: 'Inicio', icon: BarChart3, roles: ['Admin', 'Asistente de Lavado'] },
+  const allMasterItems = [
+    { id: 'barber', label: 'Panel Barber', icon: Scissors, roles: ['Admin', 'Barbero', 'Asistente de Lavado'] },
+    { id: 'scheduling', label: 'Agenda', icon: Calendar, roles: ['Admin', 'Barbero', 'Recepcionista'] },
+    { id: 'my-profile', label: 'Mi Perfil', icon: UserCircle, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
     { id: 'clients', label: 'Clientes', icon: Users, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja'] },
+    { id: 'dashboard', label: 'Inicio', icon: BarChart3, roles: ['Admin', 'Asistente de Lavado'] },
     { id: 'inventory', label: 'Stock', icon: Package, roles: ['Admin', 'Caja'] },
     { id: 'checkout', label: 'Caja', icon: CreditCard, roles: ['Admin', 'Caja'] },
-  ];
-
-  const allSecondaryItems = [
-    { id: 'scheduling', label: 'Agenda', icon: Calendar, roles: ['Admin', 'Barbero', 'Recepcionista'] },
     { id: 'reception', label: 'Recepción', icon: ClipboardList, roles: ['Admin', 'Recepcionista'] },
     { id: 'finance', label: 'Finanzas', icon: Wallet, roles: ['Admin', 'Caja'] },
-    { id: 'barber', label: 'Panel Barber', icon: Scissors, roles: ['Admin', 'Barbero', 'Asistente de Lavado'] },
     { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
     { id: 'personnel', label: 'Equipo', icon: UserCheck, roles: ['Admin'] },
     { id: 'reports', label: 'Reportes', icon: PieChart, roles: ['Admin'] },
     { id: 'services', label: 'Servicios', icon: Star, roles: ['Admin'] },
   ];
 
-  const filterByPerms = (items) => items.filter(item => {
-    const userRole = user?.role || '';
-    const [roleName, customPerms] = userRole.split('|');
+  const userRole = user?.role || '';
+  const [roleName] = userRole.split('|');
+  const isServiceProf = (roleName.toLowerCase().includes('barber') || roleName.toLowerCase().includes('tatu')) && roleName !== 'Admin';
 
-    if (roleName === 'Admin') return true;
-    
-    // Asistente de Lavado: only dashboard, history, barber, my-profile
-    if (roleName === 'Asistente de Lavado') {
-      return ['dashboard', 'history', 'barber', 'my-profile'].includes(item.id);
-    }
+  let mainItems = [];
+  let secondaryItems = [];
 
-    if (customPerms) {
-      const perms = customPerms.split(',');
-      return perms.includes(item.id);
-    }
+  if (isServiceProf) {
+    const mainIds = ['barber', 'scheduling', 'my-profile', 'clients'];
+    mainItems = mainIds.map(id => allMasterItems.find(i => i.id === id)).filter(Boolean);
+    secondaryItems = [allMasterItems.find(i => i.id === 'history')].filter(Boolean);
+  } else {
+    const filterByPerms = (items) => items.filter(item => {
+      if (roleName === 'Admin') return true;
+      if (roleName === 'Asistente de Lavado') {
+        return ['dashboard', 'history', 'barber', 'my-profile'].includes(item.id);
+      }
+      return item.roles.includes(roleName);
+    });
 
-    if (roleName.startsWith('Custom:')) {
-      const perms = roleName.split(':')[1].split(',');
-      return perms.includes(item.id);
-    }
+    const defaultMain = [
+      allMasterItems.find(i => i.id === 'dashboard'),
+      allMasterItems.find(i => i.id === 'clients'),
+      allMasterItems.find(i => i.id === 'inventory'),
+      allMasterItems.find(i => i.id === 'checkout'),
+    ].filter(Boolean);
 
-    return item.roles.includes(roleName);
-  });
+    const defaultSecondary = allMasterItems.filter(i => !['dashboard', 'clients', 'inventory', 'checkout'].includes(i.id));
 
-  const mainItems = filterByPerms(allMainItems);
-  const secondaryItems = filterByPerms(allSecondaryItems);
+    mainItems = filterByPerms(defaultMain);
+    secondaryItems = filterByPerms(defaultSecondary);
+  }
 
   const handleSelect = (id) => {
     setActiveTab(id);

@@ -62,29 +62,39 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
     { id: 'settings', label: 'Ajustes', icon: Settings, roles: ['Admin'] },
   ];
 
-  const menuItems = allMenuItems.filter(item => {
+  const menuItems = (() => {
     const userRole = user?.role || '';
     const [roleName, customPerms] = userRole.split('|');
+    const isServiceProf = (roleName.toLowerCase().includes('barber') || roleName.toLowerCase().includes('tatu')) && roleName !== 'Admin';
 
-    if (item.id === 'my-profile') return false; // Hides "Mi Perfil" from menu since bottom profile card is used
-    if (roleName === 'Admin') return true;
-    
-    if (roleName === 'Asistente de Lavado') {
-      return ['dashboard', 'history', 'barber'].includes(item.id);
+    if (isServiceProf) {
+      const barberOrder = ['barber', 'scheduling', 'my-profile', 'clients', 'history'];
+      return barberOrder
+        .map(id => allMenuItems.find(m => m.id === id))
+        .filter(Boolean);
     }
 
-    if (customPerms) {
-      const perms = customPerms.split(',');
-      return perms.includes(item.id);
-    }
+    return allMenuItems.filter(item => {
+      if (item.id === 'my-profile') return false; // Hides "Mi Perfil" from admin menu since bottom profile card is used
+      if (roleName === 'Admin') return true;
+      
+      if (roleName === 'Asistente de Lavado') {
+        return ['dashboard', 'history', 'barber'].includes(item.id);
+      }
 
-    if (roleName.startsWith('Custom:')) {
-      const perms = roleName.split(':')[1].split(',');
-      return perms.includes(item.id);
-    }
+      if (customPerms) {
+        const perms = customPerms.split(',');
+        return perms.includes(item.id);
+      }
 
-    return item.roles.includes(roleName);
-  });
+      if (roleName.startsWith('Custom:')) {
+        const perms = roleName.split(':')[1].split(',');
+        return perms.includes(item.id);
+      }
+
+      return item.roles.includes(roleName);
+    });
+  })();
 
   const itemRefs = useRef([]);
   const [hoveredTab, setHoveredTab] = useState(null);
