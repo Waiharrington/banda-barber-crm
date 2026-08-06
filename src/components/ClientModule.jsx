@@ -46,8 +46,26 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
   const isServiceProfessional = !isAssistant && (roleName.includes('barbero') || roleName.includes('tatuador'));
   const canManageClientAdminActions = !isServiceProfessional;
 
+  const [localClients, setLocalClients] = useState(clients || []);
+
+  useEffect(() => {
+    setLocalClients(clients || []);
+  }, [clients]);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (isServiceProfessional || (Array.isArray(clients) && clients.length > 0 && !clients[0]?.appointments)) {
+      dataService.getClients().then(fullList => {
+        if (isMounted && Array.isArray(fullList)) {
+          setLocalClients(fullList);
+        }
+      }).catch(console.error);
+    }
+    return () => { isMounted = false; };
+  }, [isServiceProfessional, user?.id]);
+
   const visibleClients = useMemo(() => {
-    const clientList = Array.isArray(clients) ? clients : [];
+    const clientList = Array.isArray(localClients) ? localClients : [];
     if (!isServiceProfessional || !user?.id) return clientList;
 
     return clientList.filter(client => (
@@ -58,7 +76,7 @@ const ClientModule = ({ isMobile, clients, onRefresh, initialClientId }) => {
         return (isMainStaff || isInStaffList) && ['Completado', 'En Silla', 'Por Pagar'].includes(appointment.status);
       })
     ));
-  }, [clients, isServiceProfessional, user?.id]);
+  }, [localClients, isServiceProfessional, user?.id]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
   const [showMessageModal, setShowMessageModal] = useState(false);
