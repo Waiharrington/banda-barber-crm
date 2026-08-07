@@ -647,6 +647,8 @@ export default function BookAppointment() {
   });
   const yParallaxOdd = useTransform(muralScrollY, [0, 1], [30, -30]);
   const yParallaxEven = useTransform(muralScrollY, [0, 1], [-20, 20]);
+  const muralOpacity = useTransform(muralScrollY, [0.6, 0.9], [1, 0]);
+  const muralScale = useTransform(muralScrollY, [0.6, 0.9], [1, 0.95]);
 
   // --- Premium Parallax Footer Reveal ---
   const footerRef = useRef(null);
@@ -3218,8 +3220,8 @@ export default function BookAppointment() {
                     onMouseLeave={() => setIsHoveringMural(false)}
                     onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
                     style={{
-                      opacity: useTransform(muralScrollY, [0.6, 0.9], [1, 0]),
-                      scale: useTransform(muralScrollY, [0.6, 0.9], [1, 0.95])
+                      opacity: muralOpacity,
+                      scale: muralScale
                     }}
                   >
                     {bentoGridItems.map((item, idx) => (

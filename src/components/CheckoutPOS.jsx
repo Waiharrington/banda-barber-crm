@@ -40,6 +40,7 @@ import AnimatedModal from './AnimatedModal';
 import { normalizeForSearch } from '../utils/stringUtils';
 import { useScrollLock } from '../hooks/useScrollLock';
 import ReceiptTicket from './ReceiptTicket';
+import { enqueuePayment, subscribeToQueue, initOfflineService } from '../services/offlineService';
 
 const parseUsdAmount = (value) => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
@@ -226,6 +227,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
   const [linkedApps, setLinkedApps] = useState([]);
   const [totalAppsInCheckout, setTotalAppsInCheckout] = useState([]);
   const [activeAppForBarberChange, setActiveAppForBarberChange] = useState(null);
+  const [pendingOfflineCount, setPendingOfflineCount] = useState(0);
 
   // Coupon & Reminder States
   const [couponCode, setCouponCode] = useState('');
@@ -321,6 +323,12 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
       supabase.removeChannel(channel);
     };
   }, [rates]);
+
+  useEffect(() => {
+    initOfflineService();
+    const unsubscribe = subscribeToQueue(setPendingOfflineCount);
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (selectedApp) {
@@ -1017,7 +1025,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
         paymentReferenceBs: referenceRequired ? normalizedBsReference : null
       };
 
-      await dataService.processFinalPayment(paymentData);
+      await enqueuePayment(paymentData);
       
       // Enviar notificación Push y agregar a historial local
       let paymentDetail = '';
@@ -1366,6 +1374,11 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
         <header style={{ marginBottom: isMobile ? '16px' : '40px' }}>
           <h1 style={{ fontSize: '32px', fontWeight: '900' }}>Caja <span className="text-gold">Panda Pro</span></h1>
           <p style={{ color: 'var(--text-secondary)' }}>Liquidación de servicios y venta de productos.</p>
+          {pendingOfflineCount > 0 && (
+            <div style={{ marginTop: '8px', padding: '6px 14px', borderRadius: '10px', background: 'rgba(255, 149, 0, 0.15)', border: '1px solid rgba(255, 149, 0, 0.4)', color: '#ff9500', fontSize: '11px', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <RefreshCcw size={12} /> {pendingOfflineCount} pago(s) pendientes offline
+            </div>
+          )}
         </header>
       )}
 

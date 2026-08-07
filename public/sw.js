@@ -1,7 +1,10 @@
 // Service Worker para la PWA Client de Panda Barber Studio
 
-const CACHE_NAME = 'panda-client-cache-v1';
+const CACHE_NAME = 'panda-client-cache-v2';
 const CLIENT_BASE = '/';
+
+// Extensiones de assets estáticos con nombre hasheado (inmutables) -> cache-first.
+const STATIC_ASSET_RE = /\.(js|mjs|css|woff2?|ttf|otf|eot|png|jpe?g|webp|svg|gif|ico|mp4|webm)$/i;
 
 const ASSETS_TO_CACHE = [
   '/',
@@ -59,6 +62,29 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request).catch(async () => {
         return (await caches.match('/index.html')) || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+      })
+    );
+    return;
+  }
+
+  // Cache-first para assets estáticos hasheados del mismo origen (JS/CSS/fuentes/imágenes).
+  // Nombres con hash de contenido => cacheables para siempre; cargas repetidas instantáneas.
+  if (
+    event.request.method === 'GET' &&
+    url.origin === self.location.origin &&
+    (url.pathname.startsWith('/assets/') || STATIC_ASSET_RE.test(url.pathname))
+  ) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async cache => {
+        const cached = await cache.match(event.request);
+        if (cached) return cached;
+        try {
+          const response = await fetch(event.request);
+          if (response && response.ok) cache.put(event.request, response.clone());
+          return response;
+        } catch (err) {
+          return (await cache.match(event.request)) || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+        }
       })
     );
     return;

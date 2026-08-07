@@ -123,9 +123,9 @@ export default function PublicLayout() {
               href="#inicio" 
               onClick={(e) => {
                 e.preventDefault();
-                // Find the main scrollable container div by tracking parents or selector
-                const container = document.getElementById('inicio')?.closest('.overflow-y-auto') || window;
-                container.scrollTo({ top: 0, behavior: 'smooth' });
+                const el = document.getElementById('inicio');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                else window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
             >
@@ -135,15 +135,8 @@ export default function PublicLayout() {
               href="#servicios" 
               onClick={(e) => {
                 e.preventDefault();
-                const element = document.getElementById('servicios');
-                const container = element?.closest('.overflow-y-auto') || window;
-                if (element) {
-                  // If container is window, use standard bounding rect, else use relative offsetTop
-                  const scrollTarget = container === window 
-                    ? element.getBoundingClientRect().top + window.scrollY - 120
-                    : element.offsetTop - 120;
-                  container.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-                }
+                const el = document.getElementById('servicios');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
             >
@@ -153,14 +146,8 @@ export default function PublicLayout() {
               href="#equipo" 
               onClick={(e) => {
                 e.preventDefault();
-                const element = document.getElementById('equipo');
-                const container = element?.closest('.overflow-y-auto') || window;
-                if (element) {
-                  const scrollTarget = container === window 
-                    ? element.getBoundingClientRect().top + window.scrollY - 120
-                    : element.offsetTop - 120;
-                  container.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-                }
+                const el = document.getElementById('equipo');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
             >
@@ -170,14 +157,8 @@ export default function PublicLayout() {
               href="#experiencia-section" 
               onClick={(e) => {
                 e.preventDefault();
-                const element = document.getElementById('experiencia-section');
-                const container = element?.closest('.overflow-y-auto') || window;
-                if (element) {
-                  const scrollTarget = container === window 
-                    ? element.getBoundingClientRect().top + window.scrollY - 120
-                    : element.offsetTop - 120;
-                  container.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-                }
+                const el = document.getElementById('experiencia-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
             >
@@ -187,14 +168,8 @@ export default function PublicLayout() {
               href="#ubicacion" 
               onClick={(e) => {
                 e.preventDefault();
-                const element = document.getElementById('ubicacion');
-                const container = element?.closest('.overflow-y-auto') || window;
-                if (element) {
-                  const scrollTarget = container === window 
-                    ? element.getBoundingClientRect().top + window.scrollY - 120
-                    : element.offsetTop - 120;
-                  container.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-                }
+                const el = document.getElementById('ubicacion');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
               className="text-white hover:text-[var(--champagne)] transition-colors text-xs uppercase font-extrabold tracking-widest no-underline"
             >
