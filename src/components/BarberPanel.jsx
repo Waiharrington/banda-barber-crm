@@ -45,6 +45,18 @@ const renderBeverageIcon = (beverageName, size = 16, className = "text-[var(--ch
   return <GlassWater size={size} className={className} />;
 };
 
+// Group a barber's chair appointments by client so a client with several services
+// shows as ONE order (multiple appointment rows) instead of a card per service.
+const groupAppointmentsByClient = (list) => {
+  const groups = [];
+  (list || []).forEach(app => {
+    let g = groups.find(x => x.client_id === app.client_id);
+    if (!g) { g = { client_id: app.client_id, apps: [] }; groups.push(g); }
+    g.apps.push(app);
+  });
+  return groups;
+};
+
 const BarberPanel = ({ isMobile, rates }) => {
   const { user } = useAuth();
   const { showToast, triggerConfetti, triggerRocket } = useNotifs();
@@ -69,6 +81,7 @@ const BarberPanel = ({ isMobile, rates }) => {
   const [visibleCompletedCount, setVisibleCompletedCount] = useState(5);
   const [showWashModal, setShowWashModal] = useState(false);
   const [washAppId, setWashAppId] = useState(null);
+  const [washGroupApps, setWashGroupApps] = useState([]);
   const [assistantQueue, setAssistantQueue] = useState([]);
   const [loadingAssistantQueue, setLoadingAssistantQueue] = useState(false);
   const [selectedCompletedApp, setSelectedCompletedApp] = useState(null);
@@ -137,31 +150,48 @@ const BarberPanel = ({ isMobile, rates }) => {
     }
   }, [selectedCompletedApp, showAddModal, showCamera, showWashModal, pushModal, popModal]);
 
+  // Lazy-load base64 galleries only for the clients actually shown, then merge them
+  // into the already-rendered cards. Keeps the initial fetch light on slow WiFi.
+  const hydrateGalleries = useCallback(async (list, setter) => {
+    try {
+      const ids = [...new Set(list.map(s => s.client_id).filter(Boolean))];
+      if (ids.length === 0) return;
+      const galleries = await dataService.getClientGalleries(ids);
+      setter(prev => prev.map(s =>
+        galleries[s.client_id]
+          ? { ...s, clients: { ...(s.clients || {}), work_gallery: galleries[s.client_id] } }
+          : s
+      ));
+    } catch (err) {
+      console.error('Error cargando galerías', err);
+    }
+  }, []);
+
   const loadMyWork = useCallback(async () => {
     if (!selectedBarber) return;
     try {
       setLoading(true);
       const isAssistant = selectedBarber.role?.toLowerCase().includes('asistente');
       const states = isAssistant ? ['En Silla', 'En Lavado'] : ['En Silla', 'Agendado', 'En Lavado'];
-      const data = await dataService.getAppointmentsByState(states);
-      if (isAssistant) {
-        setMyServices(data);
-      } else {
-        const filtered = data.filter(s => String(s.staff_id) === String(selectedBarber.id));
-        setMyServices(filtered);
-      }
+      // Light fetch (no base64 galleries); photos are hydrated below only for shown clients.
+      const data = await dataService.getAppointmentsByState(states, null, { light: true });
+      const list = isAssistant ? data : data.filter(s => String(s.staff_id) === String(selectedBarber.id));
+      setMyServices(list);
+      if (!isAssistant) hydrateGalleries(list, setMyServices);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [selectedBarber]);
+  }, [selectedBarber, hydrateGalleries]);
 
   const loadCompletedToday = useCallback(async () => {
     if (!selectedBarber) return;
     try {
-      const data = await dataService.getAppointmentsByState(['Completado', 'Por Pagar']);
-      const today = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const todayStartISO = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const data = await dataService.getAppointmentsByState(['Completado', 'Por Pagar'], todayStartISO, { light: true });
+      const today = now.toISOString().split('T')[0];
       const isAssistant = selectedBarber.role?.toLowerCase().includes('asistente');
       const filtered = data.filter(s => {
         const createdDate = s.created_at ? new Date(s.created_at).toISOString().split('T')[0] : '';
@@ -175,10 +205,11 @@ const BarberPanel = ({ isMobile, rates }) => {
         }
       });
       setCompletedToday(filtered);
+      hydrateGalleries(filtered, setCompletedToday);
     } catch (err) {
       console.error(err);
     }
-  }, [selectedBarber]);
+  }, [selectedBarber, hydrateGalleries]);
 
   useEffect(() => {
     if (selectedBarber) {
@@ -208,27 +239,31 @@ const BarberPanel = ({ isMobile, rates }) => {
               triggerRocket();
             } else if (payload.eventType === 'UPDATE' && payload.new.status === 'En Lavado') {
               showToast("💧 Cliente en estación de lavado", "info");
+            } else if (payload.eventType === 'UPDATE' && payload.new.status === 'Completado') {
+              showToast("💰 ¡Cobro finalizado por Caja!", "success");
             } else {
               showToast("Actualizando silla...", "info");
             }
           }
           
+          dataService.clearApptsCache();
           setTimeout(() => {
             loadMyWork();
             loadStats();
             loadCompletedToday();
-          }, 300);
+          }, 200);
         })
         .on('postgres_changes', {
           event: '*',
           schema: 'pandabarber',
           table: 'appointment_staff'
         }, () => {
+          dataService.clearApptsCache();
           setTimeout(() => {
             loadMyWork();
             loadStats();
             loadCompletedToday();
-          }, 300);
+          }, 200);
         })
         .subscribe();
 
@@ -254,7 +289,7 @@ const BarberPanel = ({ isMobile, rates }) => {
     try {
       const isAssistant = selectedBarber.role?.toLowerCase().includes('asistente');
       if (isAssistant) {
-        const data = await dataService.getAppointmentsByState(['Completado', 'Por Pagar']);
+        const data = await dataService.getAppointmentsByState(['Completado', 'Por Pagar'], null, { light: true });
         const today = new Date().toISOString().split('T')[0];
         let count = 0;
         let earned = 0;
@@ -351,7 +386,8 @@ const BarberPanel = ({ isMobile, rates }) => {
         await dataService.assignAssistantToAppointment(washAppId, assistantId);
       }
 
-      await dataService.updateAppointmentStatus(washAppId, 'En Lavado');
+      const idsToWash = washGroupApps.length ? washGroupApps : [washAppId];
+      await Promise.all(idsToWash.map(id => dataService.updateAppointmentStatus(id, 'En Lavado')));
       showToast("¡Cliente enviado a la estación de lavado!");
       triggerRocket();
       setShowWashModal(false);
@@ -645,9 +681,9 @@ const BarberPanel = ({ isMobile, rates }) => {
           client_id: app.client_id,
           staff_id: app.staff_id,
           service_id: service.id,
-          status: 'En Silla',
+          status: app.status || 'En Silla',
           total_price: service.price
-        });
+        }, { skipPush: true });
       }
       showToast(`+ ${service.name} añadido`);
       setShowAddModal(false);
@@ -685,6 +721,108 @@ const BarberPanel = ({ isMobile, rates }) => {
       loadCompletedToday();
     } catch (err) {
       showToast("Error al cancelar", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Group-level actions (one client card = several service appointments) ──
+  const groupHasContent = (group) =>
+    group.apps.some(a => !!a.service_id || a.appointment_extras?.length > 0 || a.appointment_products?.length > 0);
+
+  // Send the whole client order to checkout.
+  const handleFinishGroup = async (group) => {
+    if (!groupHasContent(group)) {
+      showToast("Carga un servicio primero", "warning");
+      return;
+    }
+    try {
+      setLoading(true);
+      await Promise.all(group.apps.map(a => dataService.updateAppointmentStatus(a.id, 'Por Pagar')));
+      showToast("¡Servicio finalizado! Enviado a caja para cobro.");
+      triggerConfetti();
+      loadMyWork();
+      loadStats();
+      loadCompletedToday();
+    } catch (err) {
+      showToast("Error al finalizar servicio", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cancel the whole client order. Empty shells are deleted; anything with content
+  // is marked 'Cancelado'. The barber is freed in the queue.
+  const handleCancelGroup = async (group) => {
+    const hasContent = groupHasContent(group);
+    const message = hasContent
+      ? "¿Cancelar la orden de este cliente? Se marcará como cancelada."
+      : "¿Quitar este cliente de la silla?";
+    if (!await confirm(message)) return;
+    try {
+      setLoading(true);
+      await Promise.all(group.apps.map(a => {
+        const has = !!a.service_id || a.appointment_extras?.length > 0 || a.appointment_products?.length > 0;
+        return has
+          ? dataService.updateAppointment(a.id, { status: 'Cancelado' })
+          : dataService.deleteAppointment(a.id);
+      }));
+      const staffId = group.apps[0]?.staff_id;
+      if (staffId) await dataService.updateQueueStatus(staffId, 'AVAILABLE').catch(() => {});
+      showToast(hasContent ? "Orden cancelada" : "Cliente retirado de la silla");
+      loadMyWork();
+      loadStats();
+      loadCompletedToday();
+    } catch (err) {
+      showToast("Error al cancelar", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePullFromWashGroup = async (group) => {
+    try {
+      setLoading(true);
+      await Promise.all(group.apps.map(a => dataService.updateAppointmentStatus(a.id, 'En Silla')));
+      showToast("¡Cliente recuperado a tu silla!");
+      loadMyWork();
+      loadStats();
+      loadCompletedToday();
+    } catch (err) {
+      showToast("Error al recuperar de lavado", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendToWashGroup = async (group) => {
+    setWashAppId(group.apps[0].id);
+    setWashGroupApps(group.apps.map(a => a.id));
+    setShowWashModal(true);
+    await loadAssistantQueue();
+  };
+
+  // Remove a single service line from a client's order (the little red x). Services
+  // with extras/products attached must have those removed first (they live on that row).
+  const handleRemoveService = async (app, group) => {
+    if (app.appointment_extras?.length > 0 || app.appointment_products?.length > 0) {
+      showToast("Ese servicio tiene extras/productos; quítalos primero", "warning");
+      return;
+    }
+    if (!await confirm(`¿Quitar "${app.services?.name || 'servicio'}"?`)) return;
+    try {
+      setLoading(true);
+      if (group.apps.length > 1) {
+        await dataService.deleteAppointment(app.id);
+      } else {
+        // Last line: keep the client in the chair as an empty shell
+        await dataService.updateAppointment(app.id, { service_id: null, total_price: 0 });
+      }
+      showToast("Servicio quitado");
+      loadMyWork();
+      loadStats();
+    } catch (err) {
+      showToast("Error al quitar servicio", "error");
     } finally {
       setLoading(false);
     }
@@ -1101,11 +1239,14 @@ const BarberPanel = ({ isMobile, rates }) => {
                   <p style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>Buscando clientes... La silla está libre.</p>
                 </div>
               ) : (
-                myServices.map(app => {
-                  const includesWashing = app.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) || 
-                                          app.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'));
+                groupAppointmentsByClient(myServices).map(group => {
+                  const app = group.apps[0];
+                  const includesWashing = group.apps.some(a =>
+                    a.services?.included_items?.some(i => i.toLowerCase().includes('lavado')) ||
+                    a.appointment_extras?.some(e => e.service_extras?.name?.toLowerCase().includes('lavado'))
+                  );
                   return (
-                    <div key={app.id} className="glass-card animate-slide-up" style={{ 
+                    <div key={group.client_id} className="glass-card animate-slide-up" style={{
                       borderRadius: '28px', 
                       padding: '24px', 
                       background: app.status === 'En Silla' ? 'linear-gradient(135deg, rgba(28,28,30,0.98), rgba(255, 255, 255,0.02))' : 'var(--bg-secondary)',
@@ -1144,20 +1285,36 @@ const BarberPanel = ({ isMobile, rates }) => {
                             )}
                           </span>
                           <h3 style={{ fontSize: '24px', fontWeight: '900', marginTop: '10px', color: 'white', letterSpacing: '-0.3px' }}>{app.clients?.name}</h3>
-                          <div style={{ 
-                            display: 'inline-flex', 
-                            alignItems: 'center', 
-                            gap: '6px', 
-                            color: 'var(--gold-primary)', 
-                            fontSize: '13px', 
-                            fontWeight: '800', 
-                            marginTop: '6px',
-                            background: 'rgba(255, 255, 255,0.06)',
-                            padding: '4px 12px',
-                            borderRadius: '10px',
-                            border: '1px solid rgba(255, 255, 255,0.12)'
-                          }}>
-                            {app.services?.name || 'Sin servicio — usa "+ Servicio"'}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '10px' }}>
+                            {group.apps.map(svc => (
+                              <div key={svc.id} style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                width: 'fit-content',
+                                maxWidth: '100%',
+                                background: 'rgba(255, 255, 255,0.06)',
+                                padding: '4px 8px 4px 12px',
+                                borderRadius: '10px',
+                                border: '1px solid rgba(255, 255, 255,0.12)'
+                              }}>
+                                <span style={{ color: svc.services?.name ? 'var(--gold-primary)' : 'var(--text-muted)', fontSize: '13px', fontWeight: '800' }}>
+                                  {svc.services?.name || 'Sin servicio — usa "+ Servicio"'}
+                                </span>
+                                {svc.services?.price ? (
+                                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', fontWeight: '700' }}>${svc.services.price}</span>
+                                ) : null}
+                                {group.apps.length > 1 && (
+                                  <button
+                                    onClick={() => handleRemoveService(svc, group)}
+                                    title="Quitar servicio"
+                                    style={{ background: 'rgba(255,69,58,0.15)', border: '1px solid rgba(255,69,58,0.35)', color: '#ff453a', borderRadius: '50%', width: '18px', height: '18px', minWidth: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, fontSize: '13px', fontWeight: '900', lineHeight: 1 }}
+                                  >
+                                    ×
+                                  </button>
+                                )}
+                              </div>
+                            ))}
                           </div>
                           
                           {app.services?.included_items && app.services.included_items.length > 0 && (
@@ -1191,7 +1348,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                           )}
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '22px', fontWeight: '900', color: 'white' }}>${app.services?.price}</div>
+                          <div style={{ fontSize: '22px', fontWeight: '900', color: 'white' }}>${group.apps.reduce((acc, a) => acc + Number(a.services?.price || 0), 0)}</div>
                         </div>
                       </div>
 
@@ -1471,7 +1628,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                       {app.status === 'En Silla' ? (
                         <div style={{ display: 'flex', gap: '12px' }}>
                           <button 
-                            onClick={() => handleSendToWash(app.id)}
+                            onClick={() => handleSendToWashGroup(group)}
                             disabled={loading}
                             className="hover-item"
                             style={{ 
@@ -1500,7 +1657,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                             </div>
                           </button>
                           <button 
-                            onClick={() => handleFinishService(app.id)}
+                            onClick={() => handleFinishGroup(group)}
                             disabled={loading}
                             className="btn-gold" 
                             style={{ 
@@ -1526,7 +1683,7 @@ const BarberPanel = ({ isMobile, rates }) => {
                             <Droplets size={18} className="animate-pulse" /> EN LAVADO...
                           </button>
                           <button 
-                            onClick={() => handlePullFromWash(app.id)}
+                            onClick={() => handlePullFromWashGroup(group)}
                             disabled={loading}
                             className="hover-item"
                             style={{ flex: 1, height: '56px', borderRadius: '16px', backgroundColor: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.15)', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
@@ -1545,7 +1702,7 @@ const BarberPanel = ({ isMobile, rates }) => {
 
                       {app.status !== 'Completado' && app.status !== 'Por Pagar' && (
                         <button
-                          onClick={() => handleCancelChair(app)}
+                          onClick={() => handleCancelGroup(group)}
                           disabled={loading}
                           style={{ width: '100%', marginTop: '10px', background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '11px', fontWeight: '700', cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                         >

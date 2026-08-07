@@ -23,16 +23,43 @@ export const AuthProvider = ({ children }) => {
       return null;
     }
 
-    const staffProfile = await dataService.getStaffByAuthUserId(authUser.id);
-    if (!staffProfile) {
-      await dataService.supabase.auth.signOut();
-      setUser(null);
+    try {
+      const staffProfile = await dataService.getStaffByAuthUserId(authUser.id);
+      if (!staffProfile) {
+        // Fallback to local cache if available before attempting force signout
+        const cached = localStorage.getItem('panda_active_session_profile');
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (parsed.auth_user_id === authUser.id) {
+              setUser(parsed);
+              return parsed;
+            }
+          } catch (e) { console.error(e); }
+        }
+        await dataService.supabase.auth.signOut();
+        setUser(null);
+        return null;
+      }
+
+      const sessionUser = toSessionUser(staffProfile, authUser);
+      localStorage.setItem('panda_active_session_profile', JSON.stringify(sessionUser));
+      setUser(sessionUser);
+      return sessionUser;
+    } catch (error) {
+      console.warn('Network issue fetching staff profile, recovering from cached session:', error);
+      const cached = localStorage.getItem('panda_active_session_profile');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed.auth_user_id === authUser.id) {
+            setUser(parsed);
+            return parsed;
+          }
+        } catch (e) { console.error(e); }
+      }
       return null;
     }
-
-    const sessionUser = toSessionUser(staffProfile, authUser);
-    setUser(sessionUser);
-    return sessionUser;
   };
 
   useEffect(() => {
@@ -117,6 +144,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       localStorage.removeItem('panda_active_tab');
       localStorage.removeItem('panda_auth_user');
+      localStorage.removeItem('panda_active_session_profile');
       setLoading(false);
     }
   };

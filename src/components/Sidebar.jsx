@@ -18,12 +18,15 @@ import {
   UserCircle,
   User,
   Settings,
-  History
+  History,
+  Bell,
+  CheckCircle
 } from 'lucide-react';
 import logo from '../assets/logo.png';
 import sidebarLogo from '../assets/sidebar_logo.png';
 import { useAuth } from '../context/AuthContext';
 import { useModal } from '../context/ModalContext';
+import { notificationService } from '../services/notificationService';
 
 // Tooltip de íconos del sidebar: se porta al body con posición fija calculada
 // a partir del botón, para que el overflow del sidebar no lo corte.
@@ -44,6 +47,16 @@ const SidebarTooltip = ({ targetRef, label, danger }) => {
 const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsCollapsed, activeRateType, onToggleRateType }) => {
   const { user, logout } = useAuth();
   const { isModalOpen } = useModal();
+  const [notifPermission, setNotifPermission] = useState(() => notificationService.getPermissionStatus());
+
+  const handleToggleNotif = async () => {
+    if (notifPermission === 'granted') return;
+    const res = await notificationService.requestPermission();
+    setNotifPermission(res);
+    if (res === 'granted') {
+      notificationService.sendNotification('🔔 Notificaciones Activadas', '¡Excelente! Ahora recibirás alertas en tiempo real de citas y avisos.');
+    }
+  };
 
   const allMenuItems = [
     { id: 'my-profile', label: 'Mi Perfil', icon: UserCircle, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
@@ -62,29 +75,39 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
     { id: 'settings', label: 'Ajustes', icon: Settings, roles: ['Admin'] },
   ];
 
-  const menuItems = allMenuItems.filter(item => {
+  const menuItems = (() => {
     const userRole = user?.role || '';
     const [roleName, customPerms] = userRole.split('|');
+    const isServiceProf = (roleName.toLowerCase().includes('barber') || roleName.toLowerCase().includes('tatu')) && roleName !== 'Admin';
 
-    if (item.id === 'my-profile') return false; // Hides "Mi Perfil" from menu since bottom profile card is used
-    if (roleName === 'Admin') return true;
-    
-    if (roleName === 'Asistente de Lavado') {
-      return ['dashboard', 'history', 'barber'].includes(item.id);
+    if (isServiceProf) {
+      const barberOrder = ['barber', 'scheduling', 'my-profile', 'clients', 'history'];
+      return barberOrder
+        .map(id => allMenuItems.find(m => m.id === id))
+        .filter(Boolean);
     }
 
-    if (customPerms) {
-      const perms = customPerms.split(',');
-      return perms.includes(item.id);
-    }
+    return allMenuItems.filter(item => {
+      if (item.id === 'my-profile') return false; // Hides "Mi Perfil" from admin menu since bottom profile card is used
+      if (roleName === 'Admin') return true;
+      
+      if (roleName === 'Asistente de Lavado') {
+        return ['dashboard', 'history', 'barber'].includes(item.id);
+      }
 
-    if (roleName.startsWith('Custom:')) {
-      const perms = roleName.split(':')[1].split(',');
-      return perms.includes(item.id);
-    }
+      if (customPerms) {
+        const perms = customPerms.split(',');
+        return perms.includes(item.id);
+      }
 
-    return item.roles.includes(roleName);
-  });
+      if (roleName.startsWith('Custom:')) {
+        const perms = roleName.split(':')[1].split(',');
+        return perms.includes(item.id);
+      }
+
+      return item.roles.includes(roleName);
+    });
+  })();
 
   const itemRefs = useRef([]);
   const [hoveredTab, setHoveredTab] = useState(null);
@@ -290,7 +313,29 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
       {!isMobile && (
         <div className="sidebar-bottom-div" style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', zIndex: 2 }}>
           
-          {/* Premium Profile Card with Glassmorphism */}
+          <button
+            onClick={handleToggleNotif}
+            title={notifPermission === 'granted' ? 'Notificaciones activadas' : 'Hacer clic para activar notificaciones'}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: isCollapsed ? 'center' : 'flex-start',
+              gap: '8px',
+              padding: isCollapsed ? '8px 0' : '8px 10px',
+              background: notifPermission === 'granted' ? 'rgba(48, 209, 88, 0.08)' : 'rgba(203, 183, 154, 0.05)',
+              border: notifPermission === 'granted' ? '1px solid rgba(48, 209, 88, 0.25)' : '1px solid rgba(203, 183, 154, 0.12)',
+              borderRadius: '9px',
+              color: notifPermission === 'granted' ? '#30d158' : 'rgba(203, 183, 154, 0.6)',
+              cursor: notifPermission === 'granted' ? 'default' : 'pointer',
+              fontSize: '12px',
+              fontWeight: '600',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <Bell size={isCollapsed ? 15 : 13} /> {!isCollapsed && (notifPermission === 'granted' ? 'Notificaciones activas' : 'Activar notificaciones')}
+          </button>
+
           {!isCollapsed && (
             <div
               onClick={() => setActiveTab('my-profile')}

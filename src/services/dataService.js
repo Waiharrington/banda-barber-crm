@@ -1,6 +1,7 @@
 import { supabase as anonClient, authClient } from '../lib/supabase';
 const supabase = authClient || anonClient;
 import { notificationService } from './notificationService';
+import { pushService } from './pushService';
 
 // ─── Smart In-Memory Cache ────────────────────────────────────────────────────
 // Reduces redundant Supabase calls from ~35+ per session to ~8.
@@ -66,6 +67,9 @@ function _normalizeStaff(member) {
 
 export const dataService = {
   supabase: anonClient,
+  clearApptsCache() {
+    _cacheInvalidateAppts();
+  },
   // Clients
   async getClients() {
     const cached = _cacheGet('clients');
@@ -73,7 +77,7 @@ export const dataService = {
 
     const { data, error } = await supabase
       .from('clients')
-      .select('*, appointments(status, total_price, staff_id, appointment_staff(staff_id))')
+      .select('*, appointments(status, total_price, staff_id, created_at, scheduled_at, completed_at, appointment_staff(staff_id))')
       .order('name');
 
     if (error) throw error;
@@ -126,7 +130,7 @@ export const dataService = {
     _cacheInvalidate('clients');
     const allowedColumns = [
       'name', 'phone', 'id_card', 'email', 'birth_date', 'hair_type', 'scalp_type',
-      'origin', 'status', 'points', 'last_visit', 'work_gallery'
+      'origin', 'status', 'points', 'last_visit', 'work_gallery', 'created_at'
     ];
     const filtered = {};
     allowedColumns.forEach(col => {
@@ -134,6 +138,9 @@ export const dataService = {
         filtered[col] = client[col];
       }
     });
+    if (!filtered.created_at) {
+      filtered.created_at = new Date().toISOString();
+    }
 
     const { data, error } = await supabase
       .from('clients')
@@ -166,7 +173,7 @@ export const dataService = {
   },
 
   async updateClient(id, updates) {
-    _cacheInvalidate('clients');
+    _cacheInvalidate('clients', 'gallery_' + id);
     _cacheInvalidateAppts();
     const allowedColumns = [
       'name', 'phone', 'id_card', 'email', 'status', 'points', 'last_visit', 'work_gallery'
@@ -788,6 +795,7 @@ export const dataService = {
     _cacheInvalidateAppts();
     const { data, error } = await supabase.from('appointment_products').insert([{ appointment_id: appointmentId, product_id: productId, quantity, price }]).select().single();
     if (error) throw error;
+    this._pushProduct(appointmentId, productId, quantity);
     return data;
   },
 
@@ -1041,17 +1049,27 @@ export const dataService = {
   },
 
   // Appointments (Operational States)
-  async getAppointmentsByState(states = [], startDate = null) {
-    // Cache key based on the states array and startDate
-    const cacheKey = 'appts_' + [...states].sort().join(',') + (startDate ? `_${startDate}` : '');
+  async getAppointmentsByState(states = [], startDate = null, opts = {}) {
+    // Heavy base64 fields (client work_gallery, staff avatars) bloat this list and
+    // hurt slow connections. Callers that don't render photos/avatars pass
+    // { light: true } and lazy-load galleries only for the clients shown.
+    const light = opts.light === true;
+    // Cache key based on the states array, startDate and payload mode
+    const cacheKey = 'appts_' + [...states].sort().join(',') + (startDate ? `_${startDate}` : '') + (light ? '_lite' : '');
     const cached = _cacheGet(cacheKey);
     if (cached) return cached;
 
+    const clientsSelect = light
+      ? 'clients(id, name, phone, id_card)'
+      : 'clients(id, name, phone, id_card, work_gallery)';
+    const staffSelect = light
+      ? 'staff(id, name, role, commission_pct, washing_rate)'
+      : 'staff(id, name, email, role, username, image_url, commission_pct, washing_rate)';
     let query = supabase.from('appointments').select(`
-      *, 
-      clients(id, name, phone, id_card, work_gallery), 
+      *,
+      ${clientsSelect},
       services(name, price, included_items),
-      staff(id, name, email, role, username, image_url, commission_pct, washing_rate),
+      ${staffSelect},
       appointment_extras(id, price, service_extras(id, name)),
       appointment_products(id, quantity, price, inventory(id, name)),
       appointment_staff(*, staff(name, role))
@@ -1064,6 +1082,33 @@ export const dataService = {
     const result = _asArray(data).map(_normalizeAppointment);
     _cacheSet(cacheKey, result, 15000);
     return result;
+  },
+
+  // Lightweight gallery fetch for a set of clients. Cached per-client (not cleared
+  // by appointment changes) so slow connections don't re-download base64 photos on
+  // every realtime tick. The cache is invalidated when a client's work_gallery is written.
+  async getClientGalleries(clientIds = []) {
+    const ids = [...new Set((clientIds || []).filter(Boolean))];
+    const map = {};
+    const missing = [];
+    ids.forEach(id => {
+      const cached = _cacheGet('gallery_' + id);
+      if (cached) map[id] = cached;
+      else missing.push(id);
+    });
+    if (missing.length > 0) {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, work_gallery')
+        .in('id', missing);
+      if (error) throw error;
+      (data || []).forEach(c => {
+        const gallery = _asArray(c.work_gallery);
+        map[c.id] = gallery;
+        _cacheSet('gallery_' + c.id, gallery, 60000);
+      });
+    }
+    return map;
   },
 
   async getTodayAppointments() {
@@ -1090,7 +1135,62 @@ export const dataService = {
     return _asArray(data).map(_normalizeAppointment);
   },
 
-  async createAppointment(appointment) {
+  // Web Push helper: builds a rich message for an appointment event and fires it
+  // to the right barber/roles. Fire-and-forget — never blocks the caller.
+  async _pushAppointment(appId, kind) {
+    try {
+      const { data: app } = await supabase.from('appointments')
+        .select('id, staff_id, scheduled_at, total_price, clients(name), services(name, price)')
+        .eq('id', appId)
+        .single();
+      if (!app) return;
+      const clientName = app.clients?.name || 'Cliente';
+      const svc = app.services?.name;
+      const price = app.services?.price ?? app.total_price;
+      const priceStr = price ? ` • $${price}` : '';
+      let when = '';
+      if (app.scheduled_at) {
+        const d = new Date(app.scheduled_at);
+        const fecha = d.toLocaleDateString('es-VE', { timeZone: 'America/Caracas', day: '2-digit', month: '2-digit' });
+        const hora = d.toLocaleTimeString('es-VE', { timeZone: 'America/Caracas', hour: '2-digit', minute: '2-digit', hour12: true });
+        when = ` • ${fecha} ${hora}`;
+      }
+      if (kind === 'agendada') {
+        pushService.notify({ staffId: app.staff_id }, '📅 Nueva cita agendada',
+          `${clientName}${svc ? ' • ' + svc : ''}${when}${priceStr}`, { appId, kind });
+      } else if (kind === 'ensilla') {
+        pushService.notify({ staffId: app.staff_id }, '💈 Cliente en tu silla',
+          `${clientName} está en tu silla${svc ? ' • ' + svc : ''}${priceStr}`, { appId, kind });
+      } else if (kind === 'caja') {
+        pushService.notify({ roles: ['Admin'] }, '💳 Cobrar cliente',
+          `${clientName}${svc ? ' • ' + svc : ''}${priceStr} — listo para cobrar`, { appId, kind });
+      } else if (kind === 'lavado') {
+        pushService.notify({ roles: ['Asistente'] }, '💧 Nuevo lavado',
+          `${clientName} está listo para lavado`, { appId, kind });
+      }
+    } catch (e) {
+      console.error('push appointment error', e);
+    }
+  },
+
+  // Web Push helper: product sale → barista, asistentes y administración.
+  async _pushProduct(appointmentId, productId, quantity) {
+    try {
+      const [prodRes, appRes] = await Promise.all([
+        supabase.from('inventory').select('name').eq('id', productId).single(),
+        supabase.from('appointments').select('clients(name)').eq('id', appointmentId).single(),
+      ]);
+      const prodName = prodRes.data?.name || 'Producto';
+      const clientName = appRes.data?.clients?.name || 'Cliente';
+      const qty = quantity && quantity > 1 ? ` x${quantity}` : '';
+      pushService.notify({ roles: ['Barista', 'Asistente', 'Admin'] }, '🥤 Venta de producto',
+        `${prodName}${qty} para ${clientName}`, { appointmentId, productId });
+    } catch (e) {
+      console.error('push product error', e);
+    }
+  },
+
+  async createAppointment(appointment, opts = {}) {
     // Invalidate all appointment caches
     _cacheInvalidateAppts();
     const { data, error } = await supabase
@@ -1105,6 +1205,11 @@ export const dataService = {
       .select()
       .single();
     if (error) throw error;
+    // Push: cliente enviado a silla, o cita agendada (con fecha/hora)
+    if (data && !opts.skipPush && data.staff_id) {
+      if (data.status === 'En Silla') this._pushAppointment(data.id, 'ensilla');
+      else if (data.scheduled_at) this._pushAppointment(data.id, 'agendada');
+    }
     return data;
   },
 
@@ -1170,6 +1275,11 @@ export const dataService = {
         console.error('Error al enviar notificacion de cliente en silla:', e);
       }
     }
+
+    // Web Push por transición de estado
+    if (newStatus === 'En Silla') this._pushAppointment(id, 'ensilla');
+    else if (newStatus === 'En Lavado') this._pushAppointment(id, 'lavado');
+    else if (newStatus === 'Por Pagar') this._pushAppointment(id, 'caja');
 
     return data;
   },
@@ -1374,42 +1484,98 @@ export const dataService = {
       }
     });
 
-    // 5. Award loyalty points to client
-    if (paymentRecord.clientId && paymentRecord.appointmentIds && paymentRecord.appointmentIds.length > 0) {
+    // 5. Award loyalty points to client (20 pts for corte/barba, 10 pts for lavado)
+    const clientTargetId = paymentRecord.clientId;
+    const targetAppIds = paymentRecord.appointmentIds && paymentRecord.appointmentIds.length > 0 
+      ? paymentRecord.appointmentIds 
+      : (paymentRecord.appointmentId ? [paymentRecord.appointmentId] : []);
+
+    if (clientTargetId) {
       try {
         let totalPoints = 0;
-        for (const appId of paymentRecord.appointmentIds) {
-          const { data: app } = await supabase
-            .from('appointments')
-            .select('service_id, services(name, category)')
-            .eq('id', appId)
-            .single();
-          
-          if (app?.services) {
-            const serviceName = (app.services.name || '').toLowerCase();
-            const category = (app.services.category || '').toLowerCase();
+
+        if (targetAppIds.length > 0) {
+          for (const appId of targetAppIds) {
+            const { data: app } = await supabase
+              .from('appointments')
+              .select('service_id, services(name, category)')
+              .eq('id', appId)
+              .maybeSingle();
             
-            if (category.includes('lavado') || serviceName.includes('lavado')) {
-              totalPoints += 10;
-            } else {
-              totalPoints += 20;
+            if (app?.services) {
+              const serviceName = (app.services.name || '').toLowerCase();
+              const category = (app.services.category || '').toLowerCase();
+              
+              if (category.includes('lavado') || serviceName.includes('lavado')) {
+                totalPoints += 10;
+              } else {
+                totalPoints += 20;
+              }
             }
           }
         }
 
+        // If washing was added separately via washCount and no dedicated service appointment was present
+        if (paymentRecord.washCount > 0 && targetAppIds.length === 0) {
+          totalPoints += paymentRecord.washCount * 10;
+        }
+
         if (totalPoints > 0) {
-          const relatedClients = await findRelatedClientRecords(paymentRecord.clientId);
-          for (const rc of relatedClients) {
-            const currentPoints = Number(rc.points || 0);
+          const { data: clientObj } = await supabase
+            .from('clients')
+            .select('id, points, id_card')
+            .eq('id', clientTargetId)
+            .maybeSingle();
+
+          if (clientObj) {
+            const currentPoints = Number(clientObj.points || 0);
+            const updatedPoints = currentPoints + totalPoints;
+
+            _cacheInvalidate('clients', 'clients_lite');
             await supabase
               .from('clients')
-              .update({ points: currentPoints + totalPoints })
-              .eq('id', rc.id);
+              .update({ points: updatedPoints })
+              .eq('id', clientTargetId);
+
+            if (clientObj.id_card) {
+              await supabase
+                .from('clients')
+                .update({ points: updatedPoints })
+                .eq('id_card', clientObj.id_card);
+            }
           }
         }
       } catch (pointsErr) {
         console.error('Error awarding points:', pointsErr);
       }
+    }
+
+    // 6. Notify staff involved that payment has been completed by POS / Caja
+    try {
+      const clientName = paymentRecord.clientName || 'Cliente';
+      const serviceName = paymentRecord.serviceName || 'Servicio';
+      const staffInvolved = paymentRecord.staffInvolved || [];
+
+      const staffIdsToNotify = new Set();
+      staffInvolved.forEach(s => {
+        if (s.staffId) staffIdsToNotify.add(String(s.staffId));
+      });
+      if (paymentRecord.appointments) {
+        paymentRecord.appointments.forEach(a => {
+          if (a.staff_id) staffIdsToNotify.add(String(a.staff_id));
+        });
+      }
+
+      staffIdsToNotify.forEach(staffId => {
+        notificationService.broadcastNotification(
+          supabase,
+          '💰 ¡Cobro Finalizado!',
+          `El pago de ${clientName} (${serviceName}) ha sido procesado exitosamente en Caja.`,
+          { recipientId: staffId }
+        );
+      });
+    } catch (notifErr) {
+      console.error('Error broadcasting payment completion notification:', notifErr);
     }
 
     return true;

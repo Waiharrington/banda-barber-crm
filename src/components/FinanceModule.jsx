@@ -1872,30 +1872,6 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
                 )}
               </div>
-
-              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px', width: isMobile ? '100%' : 'auto' }}>
-                <button 
-                  onClick={() => setIsConfiguringPayroll(true)} 
-                  style={{ 
-                    padding: '14px 16px', 
-                    fontSize: '13px', 
-                    borderRadius: '12px',
-                    background: 'rgba(255, 255, 255,0.1)',
-                    border: '1px solid rgba(255, 255, 255,0.3)',
-                    color: 'var(--gold-primary)',
-                    fontWeight: '800',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    width: isMobile ? '100%' : 'auto',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <WalletCards size={16} /> Salario Asistente
-                </button>
-              </div>
             </div>
 
             {/* PANDA GENERAL RESULTS (Resultados Panda) */}
@@ -1991,10 +1967,6 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Ingreso Bruto</span>
                           <span style={{ fontSize: '12px', fontWeight: '850', color: 'white' }}>{formatCurrency(st.grossIncomeBs, '')} Bs.</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Deducción Asistencia</span>
-                          <span style={{ fontSize: '12px', fontWeight: '850', color: '#ff453a' }}>-{formatCurrency(st.weeklyAssistanceBs, '')} Bs.</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
                           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Ingreso Neto</span>
@@ -2557,12 +2529,20 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
           <AnimatedModal isOpen={payrollModal.isOpen}>
             {(overlayClass, cardClass) => (
             <div className={overlayClass} onClick={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.96)', backdropFilter: 'blur(20px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-              <div className={`glass-card ${cardClass}`} style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '32px' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '8px' }}>
-                  {payrollModal.isAbono ? 'Abono a' : 'Pago a'} <span className="text-gold">{payrollModal.staff?.name}</span>
-                </h3>
+              <div className={`glass-card ${cardClass}`} style={{ maxWidth: '400px', width: '100%', borderRadius: '32px', padding: '32px', position: 'relative' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <h3 style={{ fontSize: '20px', fontWeight: '900', margin: 0 }}>
+                    {payrollModal.isAbono ? 'Abono a' : 'Pago a'} <span className="text-gold">{payrollModal.staff?.name}</span>
+                  </h3>
+                  <button
+                    onClick={() => setPayrollModal({...payrollModal, isOpen: false})}
+                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '24px' }}>
-                  {payrollModal.isAbono ? 'Indica el monto que deseas abonar hoy.' : 'Realiza el descuento de asistencia y sube el comprobante.'}
+                  {payrollModal.isAbono ? 'Indica el monto que deseas abonar hoy.' : 'Sube el comprobante y confirma el pago de nómina.'}
                 </p>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -2571,7 +2551,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                     <span style={{ fontSize: '18px', fontWeight: '900' }}>{formatCurrency(payrollModal.earnedBs, '')} Bs</span>
                   </div>
 
-                  {payrollModal.isAbono ? (
+                  {payrollModal.isAbono && (
                     <div>
                       <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--gold-primary)', display: 'block', marginBottom: '8px' }}>Monto a Abonar (Bs)</label>
                       <input 
@@ -2581,18 +2561,12 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                         style={{ width: '100%', padding: '14px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--gold-primary)', color: 'white', fontSize: '18px', fontWeight: '900' }} 
                       />
                     </div>
-                  ) : (
-                    <div>
-                      <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Deducción Asistente / Insumos (Bs)</label>
-                      <input type="number" value={payrollModal.deductionBs} onChange={(e) => setPayrollModal({...payrollModal, deductionBs: Number(e.target.value)})} style={{ width: '100%', padding: '14px', borderRadius: '12px', background: 'rgba(255,69,58,0.1)', border: '1px solid rgba(255,69,58,0.2)', color: '#ff453a', fontSize: '16px', fontWeight: '900' }} />
-                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>Monto sugerido basado en la configuración de la Vaca.</p>
-                    </div>
                   )}
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
                     <span style={{ fontSize: '16px', fontWeight: '900', color: 'var(--gold-primary)' }}>Total a Transferir:</span>
                     <span style={{ fontSize: '24px', fontWeight: '900', color: '#32d74b' }}>
-                      {formatCurrency(payrollModal.isAbono ? payrollModal.paymentAmountBs : (payrollModal.earnedBs - payrollModal.deductionBs), '')} Bs
+                      {formatCurrency(payrollModal.paymentAmountBs || 0, '')} Bs
                     </span>
                   </div>
 

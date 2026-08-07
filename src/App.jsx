@@ -24,6 +24,7 @@ import { useAuth } from './context/AuthContext';
 import TopBar from './components/TopBar';
 import NotificationsDrawer from './components/NotificationsDrawer';
 import { notificationService } from './services/notificationService';
+import { pushService } from './services/pushService';
 import { useDialog } from './context/DialogContext';
 import { useScrollLock } from './hooks/useScrollLock';
 import { useModal, ModalShield } from './context/ModalContext';
@@ -161,12 +162,13 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Set default tab based on user role on first load
+  // Set default tab based on user role on first load (Barbers always open in Panel Barber)
   useEffect(() => {
     if (!user) return;
-    const isBarber = user?.role === 'Barbero' || user?.role?.startsWith('Barbero|');
-    if (isBarber && !localStorage.getItem('panda_active_tab')) {
-      setActiveTab('my-profile');
+    const roleName = (user.role || '').toLowerCase();
+    const isServiceProf = (roleName.includes('barber') || roleName.includes('tatu')) && !roleName.includes('admin');
+    if (isServiceProf) {
+      setActiveTab('barber');
     }
   }, [user]);
 
@@ -203,6 +205,12 @@ function App() {
     return () => {
       dataService.supabase.removeChannel(channel);
     };
+  }, [user]);
+
+  // Subscribe this staff device to Web Push (PWA notifications) on login.
+  useEffect(() => {
+    if (!user) return;
+    pushService.subscribe(user);
   }, [user]);
 
   // Persist active rate type
@@ -399,6 +407,22 @@ function App() {
   // Phase 2: Heavy data — runs silently after loader is gone
   async function fetchSecondaryData() {
     try {
+      const roleName = (user?.role || '').toLowerCase();
+      const isServiceProfessionalOnly = (roleName.includes('barber') || roleName.includes('tatu')) && 
+                                       !roleName.includes('admin') && 
+                                       !roleName.includes('recepcionista') && 
+                                       !roleName.includes('caja');
+      
+      // Service professionals don't need heavy admin transactions, inventory, or full financials
+      if (isServiceProfessionalOnly) {
+        const ext = await dataService.getExtras();
+        setDbData(prev => ({
+          ...prev,
+          extras: ext
+        }));
+        return;
+      }
+
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const tomorrowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -505,9 +529,23 @@ function App() {
       const incomeInRange = (start, end) => operationalTransactions
         .filter(tr => tr.type === 'income' && inRange(tr.created_at, start, end))
         .reduce((acc, tr) => acc + Number(tr.amount || 0), 0);
-      const clientsCreatedInRange = (start, end) => fullClients.filter(client =>
-        inRange(client.created_at, start, end)
-      ).length;
+      const clientsCreatedInRange = (start, end) => fullClients.filter(client => {
+        if (!client) return false;
+        if (client.created_at && inRange(client.created_at, start, end)) {
+          return true;
+        }
+        const validApps = Array.isArray(client.appointments) 
+          ? client.appointments.filter(a => ['Completado', 'En Silla', 'Por Pagar'].includes(a.status))
+          : [];
+        if (validApps.length === 1) {
+          const firstApp = validApps[0];
+          const appDate = firstApp.completed_at || firstApp.scheduled_at || firstApp.created_at;
+          if (appDate && inRange(appDate, start, end)) {
+            return true;
+          }
+        }
+        return false;
+      }).length;
       const todayTransactions = operationalTransactions.filter(trans => inRange(trans.created_at, todayStart, tomorrowStart));
       const yesterdayTransactions = operationalTransactions.filter(trans => inRange(trans.created_at, yesterdayStart, todayStart));
       const todayAppointmentCount = countOperationalAppointments(todayApps, todayTransactions);
