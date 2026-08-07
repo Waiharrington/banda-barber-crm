@@ -130,7 +130,7 @@ export const dataService = {
     _cacheInvalidate('clients');
     const allowedColumns = [
       'name', 'phone', 'id_card', 'email', 'birth_date', 'hair_type', 'scalp_type',
-      'origin', 'status', 'points', 'last_visit', 'work_gallery'
+      'origin', 'status', 'points', 'last_visit', 'work_gallery', 'created_at'
     ];
     const filtered = {};
     allowedColumns.forEach(col => {
@@ -138,6 +138,9 @@ export const dataService = {
         filtered[col] = client[col];
       }
     });
+    if (!filtered.created_at) {
+      filtered.created_at = new Date().toISOString();
+    }
 
     const { data, error } = await supabase
       .from('clients')

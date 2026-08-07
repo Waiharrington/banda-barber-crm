@@ -270,12 +270,18 @@ const DashboardModule = ({
   };
 
   // --- Real Database Metrics Calculations ---
-  const todayStr = new Date().toISOString().split('T')[0];
+  const getLocalDateKey = (d = new Date()) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const todayStr = getLocalDateKey();
 
   const citasHoyCount = stats?.appointments ?? dbData?.todayAppointments?.length ?? 0;
   const facturadoHoyAmount = stats?.income || 0;
   const clientesNuevosCount = stats?.newClientsToday ??
-    (dbData?.clients || []).filter(c => c.created_at?.startsWith(todayStr)).length;
+    (dbData?.clients || []).filter(c => c.created_at && getLocalDateKey(new Date(c.created_at)) === todayStr).length;
 
   const occupiedChairsCount = (realtimeAppointments || []).filter(a => a.status === 'En Silla').length;
   const totalChairs = 7;
