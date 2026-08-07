@@ -281,7 +281,17 @@ const DashboardModule = ({
   const citasHoyCount = stats?.appointments ?? dbData?.todayAppointments?.length ?? 0;
   const facturadoHoyAmount = stats?.income || 0;
   const clientesNuevosCount = stats?.newClientsToday ??
-    (dbData?.clients || []).filter(c => c.created_at && getLocalDateKey(new Date(c.created_at)) === todayStr).length;
+    (dbData?.clients || []).filter(client => {
+      if (client.created_at && getLocalDateKey(new Date(client.created_at)) === todayStr) return true;
+      const validApps = Array.isArray(client.appointments)
+        ? client.appointments.filter(a => ['Completado', 'En Silla', 'Por Pagar'].includes(a.status))
+        : [];
+      if (validApps.length === 1) {
+        const appDate = validApps[0].completed_at || validApps[0].scheduled_at || validApps[0].created_at;
+        if (appDate && getLocalDateKey(new Date(appDate)) === todayStr) return true;
+      }
+      return false;
+    }).length;
 
   const occupiedChairsCount = (realtimeAppointments || []).filter(a => a.status === 'En Silla').length;
   const totalChairs = 7;

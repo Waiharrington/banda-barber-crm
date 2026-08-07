@@ -529,9 +529,23 @@ function App() {
       const incomeInRange = (start, end) => operationalTransactions
         .filter(tr => tr.type === 'income' && inRange(tr.created_at, start, end))
         .reduce((acc, tr) => acc + Number(tr.amount || 0), 0);
-      const clientsCreatedInRange = (start, end) => fullClients.filter(client =>
-        inRange(client.created_at, start, end)
-      ).length;
+      const clientsCreatedInRange = (start, end) => fullClients.filter(client => {
+        if (!client) return false;
+        if (client.created_at && inRange(client.created_at, start, end)) {
+          return true;
+        }
+        const validApps = Array.isArray(client.appointments) 
+          ? client.appointments.filter(a => ['Completado', 'En Silla', 'Por Pagar'].includes(a.status))
+          : [];
+        if (validApps.length === 1) {
+          const firstApp = validApps[0];
+          const appDate = firstApp.completed_at || firstApp.scheduled_at || firstApp.created_at;
+          if (appDate && inRange(appDate, start, end)) {
+            return true;
+          }
+        }
+        return false;
+      }).length;
       const todayTransactions = operationalTransactions.filter(trans => inRange(trans.created_at, todayStart, tomorrowStart));
       const yesterdayTransactions = operationalTransactions.filter(trans => inRange(trans.created_at, yesterdayStart, todayStart));
       const todayAppointmentCount = countOperationalAppointments(todayApps, todayTransactions);
