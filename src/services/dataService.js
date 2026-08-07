@@ -1481,37 +1481,65 @@ export const dataService = {
       }
     });
 
-    // 5. Award loyalty points to client
-    if (paymentRecord.clientId && paymentRecord.appointmentIds && paymentRecord.appointmentIds.length > 0) {
+    // 5. Award loyalty points to client (20 pts for corte/barba, 10 pts for lavado)
+    const clientTargetId = paymentRecord.clientId;
+    const targetAppIds = paymentRecord.appointmentIds && paymentRecord.appointmentIds.length > 0 
+      ? paymentRecord.appointmentIds 
+      : (paymentRecord.appointmentId ? [paymentRecord.appointmentId] : []);
+
+    if (clientTargetId) {
       try {
         let totalPoints = 0;
-        for (const appId of paymentRecord.appointmentIds) {
-          const { data: app } = await supabase
-            .from('appointments')
-            .select('service_id, services(name, category)')
-            .eq('id', appId)
-            .single();
-          
-          if (app?.services) {
-            const serviceName = (app.services.name || '').toLowerCase();
-            const category = (app.services.category || '').toLowerCase();
+
+        if (targetAppIds.length > 0) {
+          for (const appId of targetAppIds) {
+            const { data: app } = await supabase
+              .from('appointments')
+              .select('service_id, services(name, category)')
+              .eq('id', appId)
+              .maybeSingle();
             
-            if (category.includes('lavado') || serviceName.includes('lavado')) {
-              totalPoints += 10;
-            } else {
-              totalPoints += 20;
+            if (app?.services) {
+              const serviceName = (app.services.name || '').toLowerCase();
+              const category = (app.services.category || '').toLowerCase();
+              
+              if (category.includes('lavado') || serviceName.includes('lavado')) {
+                totalPoints += 10;
+              } else {
+                totalPoints += 20;
+              }
             }
           }
         }
 
+        // If washing was added separately via washCount and no dedicated service appointment was present
+        if (paymentRecord.washCount > 0 && targetAppIds.length === 0) {
+          totalPoints += paymentRecord.washCount * 10;
+        }
+
         if (totalPoints > 0) {
-          const relatedClients = await findRelatedClientRecords(paymentRecord.clientId);
-          for (const rc of relatedClients) {
-            const currentPoints = Number(rc.points || 0);
+          const { data: clientObj } = await supabase
+            .from('clients')
+            .select('id, points, id_card')
+            .eq('id', clientTargetId)
+            .maybeSingle();
+
+          if (clientObj) {
+            const currentPoints = Number(clientObj.points || 0);
+            const updatedPoints = currentPoints + totalPoints;
+
+            _cacheInvalidate('clients', 'clients_lite');
             await supabase
               .from('clients')
-              .update({ points: currentPoints + totalPoints })
-              .eq('id', rc.id);
+              .update({ points: updatedPoints })
+              .eq('id', clientTargetId);
+
+            if (clientObj.id_card) {
+              await supabase
+                .from('clients')
+                .update({ points: updatedPoints })
+                .eq('id_card', clientObj.id_card);
+            }
           }
         }
       } catch (pointsErr) {
