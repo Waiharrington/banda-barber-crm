@@ -1037,7 +1037,7 @@ const DashboardModule = ({
           {/* Top KPI Cards Row */}
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)', 
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', 
             gap: '10px',
             flexShrink: 0
           }}>
@@ -1083,26 +1083,7 @@ const DashboardModule = ({
               </div>
             </div>
 
-            {/* KPI Card 4: Ocupación */}
-            <div className="glass-card" style={{ padding: '8px 10px', borderRadius: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '76px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.04)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.7 }}>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.5px' }}>OCUPACIÓN</span>
-                <Clock size={13} color="rgba(255,255,255,0.6)" />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '1px 0' }}>
-                <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>
-                  {ocupacionPercent}%
-                </div>
-                <div style={{ width: '45px', height: '4px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${ocupacionPercent}%`, height: '100%', background: 'linear-gradient(to right, var(--champagne), #fff)', borderRadius: '2px' }} />
-                </div>
-              </div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700' }}>
-                <span>{occupiedChairsCount} de {totalChairs}</span> <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: '500' }}>sillas ocupadas</span>
-              </div>
-            </div>
-
-            {/* KPI Card 5: Staff pending arrival */}
+            {/* KPI Card 4: Staff pending arrival */}
             <div className="glass-card" style={{ padding: '8px 10px', borderRadius: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '76px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.7 }}>
                 <span style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: '0.5px' }}>POR LLEGAR</span>
@@ -1369,10 +1350,10 @@ const DashboardModule = ({
             </div>
           </div>
 
-          {/* Bottom Row: Ingresos Chart, Top Services, Client Origin */}
+          {/* Bottom Row: Ingresos Chart and Top Services */}
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: isMobile ? '1fr' : '1.1fr 1.15fr 1fr', 
+            gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr', 
             gap: '12px',
             flex: '1 1 0%',
             minHeight: 0
@@ -1425,33 +1406,34 @@ const DashboardModule = ({
             </div>
 
             {/* 2. Servicios más vendidos */}
-            <div className="glass-card" style={{ padding: '12px 14px', borderRadius: '16px', backgroundColor: '#161617', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', minHeight: 0 }}>
-              <div style={{ flexShrink: 0, marginBottom: '6px' }}>
+            <div className="glass-card" style={{ padding: '12px 14px', borderRadius: '16px', backgroundColor: '#161617', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+              <div style={{ flexShrink: 0, marginBottom: '8px' }}>
                 <h4 style={{ fontSize: '10px', fontWeight: '800', color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Servicios más vendidos</h4>
               </div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1, margin: '2px 0' }} className="panda-scrollbar">
-                {finalTopServices.map((s, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', paddingBottom: '2px', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                    <span style={{ color: 'white', fontWeight: '600' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.35)', marginRight: '6px', fontWeight: '800' }}>{idx + 1}</span> {s.name}
-                    </span>
-                    <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: '700' }}>{s.val}</span>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, overflowY: 'auto' }}>
+                {topServicesList.slice(0, 4).map((service, idx) => (
+                  <div key={service.id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--champagne)' }}>{idx + 1}</span>
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: 'white' }}>{service.name}</span>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(255,255,255,0.9)' }}>{service.count}</span>
                   </div>
                 ))}
               </div>
 
-              <button 
+              <button
                 onClick={() => onNavigate && onNavigate('services')}
                 style={{
+                  marginTop: '8px',
                   width: '100%',
-                  marginTop: '6px',
-                  backgroundColor: 'rgba(255,255,255,0.03)',
+                  background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.06)',
                   borderRadius: '8px',
-                  padding: '7px 0',
+                  padding: '6px 0',
                   color: 'white',
-                  fontSize: '10.5px',
+                  fontSize: '10px',
                   fontWeight: '700',
                   cursor: 'pointer',
                   textAlign: 'center',
@@ -1463,51 +1445,6 @@ const DashboardModule = ({
               >
                 Ver todos los servicios
               </button>
-            </div>
-
-            {/* 3. Clientes por origen */}
-            <div className="glass-card" style={{ padding: '12px 14px', borderRadius: '16px', backgroundColor: '#161617', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-              <div style={{ flexShrink: 0, marginBottom: '6px' }}>
-                <h4 style={{ fontSize: '10px', fontWeight: '800', color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Clientes por origen</h4>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minHeight: 0 }}>
-                {/* Donut generated from the real client-origin distribution */}
-                <div style={{ position: 'relative', width: '65px', height: '65px', flexShrink: 0, borderRadius: '50%', background: originGradient }}>
-                  <div style={{ position: 'absolute', inset: '8px', borderRadius: '50%', backgroundColor: '#161617' }} />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
-                  {originPercentages.map((origin, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '9.5px', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <div style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: origin.color }} />
-                        <span style={{ color: 'rgba(255,255,255,0.65)', fontWeight: '500' }}>{origin.label}</span>
-                      </div>
-                      <span style={{ color: 'white', fontWeight: '800' }}>{origin.val}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Total Summary Footer */}
-              <div style={{ 
-                marginTop: '4px', 
-                borderTop: '1px solid rgba(255,255,255,0.03)', 
-                paddingTop: '6px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between',
-                flexShrink: 0
-              }}>
-                <div>
-                  <div style={{ fontSize: '8.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '600' }}>Clientes totales</div>
-                  <div style={{ fontSize: '13px', fontWeight: '900', color: 'white' }}>{realTotalClients}</div>
-                </div>
-                <div style={{ fontSize: '8.5px', color: '#c5a880', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  {renderComparison(stats?.clientsThisWeek, stats?.clientsPreviousWeek, 'vs semana ant.')}
-                </div>
-              </div>
             </div>
           </div>
         </div>

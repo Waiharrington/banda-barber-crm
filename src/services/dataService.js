@@ -77,7 +77,7 @@ export const dataService = {
 
     const { data, error } = await supabase
       .from('clients')
-      .select('*, appointments(status, total_price, staff_id, appointment_staff(staff_id))')
+      .select('*, appointments(status, total_price, staff_id, created_at, scheduled_at, completed_at, appointment_staff(staff_id))')
       .order('name');
 
     if (error) throw error;
