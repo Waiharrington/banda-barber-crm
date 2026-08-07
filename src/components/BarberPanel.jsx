@@ -239,6 +239,8 @@ const BarberPanel = ({ isMobile, rates }) => {
               triggerRocket();
             } else if (payload.eventType === 'UPDATE' && payload.new.status === 'En Lavado') {
               showToast("💧 Cliente en estación de lavado", "info");
+            } else if (payload.eventType === 'UPDATE' && payload.new.status === 'Completado') {
+              showToast("💰 ¡Cobro finalizado por Caja!", "success");
             } else {
               showToast("Actualizando silla...", "info");
             }

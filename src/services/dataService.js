@@ -1547,6 +1547,34 @@ export const dataService = {
       }
     }
 
+    // 6. Notify staff involved that payment has been completed by POS / Caja
+    try {
+      const clientName = paymentRecord.clientName || 'Cliente';
+      const serviceName = paymentRecord.serviceName || 'Servicio';
+      const staffInvolved = paymentRecord.staffInvolved || [];
+
+      const staffIdsToNotify = new Set();
+      staffInvolved.forEach(s => {
+        if (s.staffId) staffIdsToNotify.add(String(s.staffId));
+      });
+      if (paymentRecord.appointments) {
+        paymentRecord.appointments.forEach(a => {
+          if (a.staff_id) staffIdsToNotify.add(String(a.staff_id));
+        });
+      }
+
+      staffIdsToNotify.forEach(staffId => {
+        notificationService.broadcastNotification(
+          supabase,
+          '💰 ¡Cobro Finalizado!',
+          `El pago de ${clientName} (${serviceName}) ha sido procesado exitosamente en Caja.`,
+          { recipientId: staffId }
+        );
+      });
+    } catch (notifErr) {
+      console.error('Error broadcasting payment completion notification:', notifErr);
+    }
+
     return true;
   },
 
