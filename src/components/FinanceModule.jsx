@@ -17,7 +17,8 @@ import {
   Edit2,
   Eye,
   WalletCards,
-  List
+  List,
+  X
 } from 'lucide-react';
 
 import { dataService } from '../services/dataService';
