@@ -3100,9 +3100,13 @@ body.hide-public-header nav {
 
 @keyframes fadeInUp {
   0% {
-  position: relative;
-  z-index: 10;
-  overflow: hidden;
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes panImageMask {
