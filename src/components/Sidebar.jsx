@@ -47,6 +47,16 @@ const SidebarTooltip = ({ targetRef, label, danger }) => {
 const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsCollapsed, activeRateType, onToggleRateType }) => {
   const { user, logout } = useAuth();
   const { isModalOpen } = useModal();
+  const [notifPermission, setNotifPermission] = useState(() => notificationService.getPermissionStatus());
+
+  const handleToggleNotif = async () => {
+    if (notifPermission === 'granted') return;
+    const res = await notificationService.requestPermission();
+    setNotifPermission(res);
+    if (res === 'granted') {
+      notificationService.sendNotification('🔔 Notificaciones Activadas', '¡Excelente! Ahora recibirás alertas en tiempo real de citas y avisos.');
+    }
+  };
 
   const allMenuItems = [
     { id: 'my-profile', label: 'Mi Perfil', icon: UserCircle, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
