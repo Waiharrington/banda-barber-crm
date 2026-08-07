@@ -4,6 +4,7 @@ import { Menu, X, Scissors, Phone, MapPin, Calendar, User, ChevronRight } from '
 import { AnimatePresence, motion } from 'framer-motion';
 import { publicService } from '../services/publicService';
 import logo from '../../assets/logo_full.png';
+import PandaLoader from '../../components/PandaLoader';
 
 export default function PublicLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -13,6 +14,13 @@ export default function PublicLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const googleCallbackHandledRef = useRef(false);
+
+  const isGoogleCallback = typeof window !== 'undefined' && (
+    window.location.hash.includes('access_token=') ||
+    window.location.search.includes('code=') ||
+    localStorage.getItem('panda_google_login_pending') === 'true'
+  );
+  const [isAuthResolving, setIsAuthResolving] = useState(isGoogleCallback);
 
   useEffect(() => {
     const handleScroll = (e) => {
@@ -35,26 +43,41 @@ export default function PublicLayout() {
 
   useEffect(() => {
     const completeGoogleLogin = async session => {
-      if (
-        !session?.user
-        || localStorage.getItem('panda_google_login_pending') !== 'true'
-        || googleCallbackHandledRef.current
-      ) {
+      if (!session?.user) {
+        setIsAuthResolving(false);
         return;
       }
 
+      const isGoogleUser = session.user.app_metadata?.provider === 'google'
+        || session.user.identities?.some(id => id.provider === 'google');
+
+      if (!isGoogleUser && localStorage.getItem('panda_google_login_pending') !== 'true') {
+        setIsAuthResolving(false);
+        return;
+      }
+
+      if (googleCallbackHandledRef.current) return;
       googleCallbackHandledRef.current = true;
+      setIsAuthResolving(true);
+
       try {
-        const client = await publicService.getClientByUserId(session.user.id);
         localStorage.removeItem('panda_google_login_pending');
 
-        if (!client) {
+        let client = await publicService.getClientByUserId(session.user.id);
+        if (!client && session.user.email) {
+          client = await publicService.getClientByEmail(session.user.email);
+        }
+
+        // If client record doesn't exist OR is missing phone/id_card -> Complete Registration
+        if (!client || !client.phone || !client.id_card) {
           navigate('/completar-registro', { replace: true });
           return;
         }
 
         localStorage.setItem('panda_public_client', JSON.stringify(client));
+        localStorage.setItem('panda_public_session', JSON.stringify(session));
         setIsLoggedIn(true);
+
         if (localStorage.getItem('panda_login_return_to_booking') === 'true') {
           localStorage.removeItem('panda_login_return_to_booking');
           localStorage.removeItem('bookingState');
@@ -64,7 +87,9 @@ export default function PublicLayout() {
         }
       } catch (e) {
         googleCallbackHandledRef.current = false;
-        console.error('Error fetching client after login:', e);
+        console.error('Error fetching client after Google login:', e);
+      } finally {
+        setIsAuthResolving(false);
       }
     };
 
@@ -76,7 +101,10 @@ export default function PublicLayout() {
 
     publicService.getSession()
       .then(completeGoogleLogin)
-      .catch(error => console.error('Error restoring Google session:', error));
+      .catch(error => {
+        console.error('Error restoring Google session:', error);
+        setIsAuthResolving(false);
+      });
 
     return () => {
       authListener?.subscription?.unsubscribe();
@@ -100,6 +128,22 @@ export default function PublicLayout() {
       element.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  if (isAuthResolving) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: '#050506',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20
+      }}>
+        <PandaLoader visible={true} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>

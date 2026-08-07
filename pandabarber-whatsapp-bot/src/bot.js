@@ -5,8 +5,13 @@ import { renderTemplate, normalizePhone } from './utils/messageTemplates.js';
 
 let client = null;
 let isReady = false;
+let lastQr = null;
 
-export function initializeWhatsApp() {
+export function getLatestQr() {
+  return lastQr;
+}
+
+export async function initializeWhatsApp() {
   const sessionPath = process.env.WHATSAPP_SESSION_PATH || './sessions';
   const puppeteerExecPath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
 
@@ -31,6 +36,7 @@ export function initializeWhatsApp() {
   });
 
   client.on('qr', (qr) => {
+    lastQr = qr;
     console.log('[WhatsApp] QR Code received. Scan with your phone:');
     qrcode.generate(qr, { small: true });
   });
@@ -38,10 +44,12 @@ export function initializeWhatsApp() {
   client.on('ready', () => {
     console.log('[WhatsApp] Client is ready!');
     isReady = true;
+    lastQr = null;
   });
 
   client.on('authenticated', () => {
     console.log('[WhatsApp] Authenticated successfully');
+    lastQr = null;
   });
 
   client.on('auth_failure', (msg) => {

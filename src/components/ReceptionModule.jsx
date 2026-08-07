@@ -359,15 +359,19 @@ const ReceptionModule = ({ isMobile, rates }) => {
     }
   };
 
+  const isSubmittingRef = useRef(false);
+
   // Send the selected client straight to a barber's chair WITHOUT a service.
   // The barber loads the service(s) from their own panel afterwards. Creates a
   // "shell" appointment (service_id null) so the client shows up in the barber's chair.
   const handleSendToChair = async (staffId) => {
+    if (isSubmittingRef.current || loading) return;
     if (!selectedClient) {
       showToast("Selecciona un cliente primero", "warning");
       return;
     }
     try {
+      isSubmittingRef.current = true;
       setLoading(true);
       await dataService.createAppointment({
         client_id: selectedClient.id,
@@ -389,11 +393,13 @@ const ReceptionModule = ({ isMobile, rates }) => {
       showToast("Error al enviar a silla", "error");
       console.error(error);
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };
 
   const handleSubmit = async (statusOverride, scheduledAt = null) => {
+    if (isSubmittingRef.current || loading) return;
     const isProductOnly = selectedServices.length === 0 && selectedExtras.length === 0 && selectedProducts.length > 0;
     
     if (!selectedClient) {
@@ -413,6 +419,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
     }
 
     try {
+      isSubmittingRef.current = true;
       setLoading(true);
       
       // We process multiple services as individual appointments/lines for now 
@@ -491,6 +498,7 @@ const ReceptionModule = ({ isMobile, rates }) => {
       showToast("Error al procesar orden", "error");
       console.error(error);
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };

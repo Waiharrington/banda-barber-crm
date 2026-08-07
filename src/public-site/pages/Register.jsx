@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { User, Phone, CreditCard, Mail, Lock, Eye, EyeOff, Calendar, Sparkles, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { publicService } from '../services/publicService';
@@ -12,6 +12,23 @@ export default function Register() {
   const [error, setError] = useState('');
   const [focusedField, setFocusedField] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    try {
+      localStorage.setItem('panda_google_login_pending', 'true');
+      if (location.state?.startBooking) {
+        localStorage.setItem('panda_login_return_to_booking', 'true');
+        localStorage.removeItem('bookingState');
+      }
+      await publicService.signInWithGoogle();
+    } catch (e) {
+      localStorage.removeItem('panda_google_login_pending');
+      console.error('Google register error:', e);
+      setError('Error al registrarse con Google');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +37,17 @@ export default function Register() {
     try {
       const result = await publicService.registerClient(form);
       localStorage.setItem('panda_public_client', JSON.stringify(result.client));
-      navigate('/perfil');
+      
+      const shouldStartBooking = location.state?.startBooking
+        || localStorage.getItem('panda_login_return_to_booking') === 'true';
+
+      if (shouldStartBooking) {
+        localStorage.removeItem('panda_login_return_to_booking');
+        localStorage.removeItem('bookingState');
+        navigate('/agendar', { replace: true, state: { startBooking: true } });
+      } else {
+        navigate('/perfil');
+      }
     } catch (e) {
       console.error('Register error:', e);
       setError(e.message || 'Error al registrar. Intenta de nuevo.');
@@ -177,7 +204,7 @@ export default function Register() {
           <motion.button
             whileHover={{ scale: 1.01, backgroundColor: 'rgba(255,255,255,0.08)' }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => publicService.signInWithGoogle()}
+            onClick={handleGoogleLogin}
             style={{
               width: '100%',
               padding: '15px',

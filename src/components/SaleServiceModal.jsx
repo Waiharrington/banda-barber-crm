@@ -127,7 +127,10 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
     }
   };
 
+  const isSubmittingRef = useRef(false);
+
   const handleSubmit = async () => {
+    if (isSubmittingRef.current || loading) return;
     if (!selectedClient || (!selectedService && selectedProducts.length === 0)) {
       showToast('Selecciona al menos un servicio o producto.', 'error');
       return;
@@ -139,6 +142,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
     }
 
     try {
+      isSubmittingRef.current = true;
       setLoading(true);
       
       // Create Appointment
@@ -176,6 +180,7 @@ const SaleServiceModal = ({ isOpen, onClose, clients, services, staff, extras, i
       console.error('Error registering quick operation:', error);
       showToast('Error técnico al registrar operación.', 'error');
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };

@@ -550,6 +550,7 @@ export default function BookAppointment() {
   const videoRef = useRef(null);
   const modalVideoRef = useRef(null);
   const [showWelcome, setShowWelcome] = useState(() => {
+    if (location.state?.startBooking) return false;
     const saved = localStorage.getItem('bookingState');
     return saved ? JSON.parse(saved).showWelcome : true;
   });
@@ -625,6 +626,7 @@ export default function BookAppointment() {
     return saved ? JSON.parse(saved).hasVisited : false;
   });
   const [step, setStep] = useState(() => {
+    if (location.state?.startBooking) return 1;
     const saved = localStorage.getItem('bookingState');
     return saved ? JSON.parse(saved).step : 1;
   });
@@ -1426,14 +1428,16 @@ export default function BookAppointment() {
     autoStartHandledRef.current = bookingRequestId;
     localStorage.removeItem('bookingState');
     setStep(1);
-    setShowWelcome(true);
+    setShowWelcome(false);
+    setIsTransitioning(false);
+    setHasVisited(true);
 
-    const transitionTimer = setTimeout(() => {
-      handleStartBooking();
-      navigate(location.pathname, { replace: true, state: {} });
-    }, 180);
+    window.scrollTo(0, 0);
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+    if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
 
-    return () => clearTimeout(transitionTimer);
+    navigate(location.pathname, { replace: true, state: {} });
   }, [location.state, location.pathname, loading, navigate]);
 
   const handleReturnToWelcome = (scrollToEquipo = false) => {

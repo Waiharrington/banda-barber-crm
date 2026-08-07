@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Calendar, Gift, Star, LogOut, Clock, Heart, ChevronRight, FileCheck, AlertTriangle, Check, X, PenTool, Scissors, Droplets, Sparkles, Eye, Zap, Shield, Award } from 'lucide-react';
+import { User, Calendar, Gift, Star, LogOut, Clock, Heart, ChevronRight, ChevronLeft, FileCheck, AlertTriangle, Check, X, PenTool, Scissors, Droplets, Sparkles, Eye, Zap, Shield, Award } from 'lucide-react';
 import { publicService } from '../services/publicService';
 import PrizeWheel from '../components/PrizeWheel';
 
@@ -8,6 +8,8 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState('citas');
   const [client, setClient] = useState(null);
   const [appointments, setAppointments] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
   const [points, setPoints] = useState(0);
   const [allBarbers, setAllBarbers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,14 +52,19 @@ export default function Profile() {
       setIsTopClient((topClients || []).some(c => c.id === clientId));
       setAllBarbers(staffData);
 
-      // Check which appointments have been rated
+      // Check which appointments have been rated (parallelized for ultra-fast loading)
+      const completedApts = (appts || []).filter(apt => apt.status === 'Completado' || apt.status === 'Pagado');
+      const reviewResults = await Promise.all(
+        completedApts.map(apt =>
+          publicService.hasClientReviewed(apt.id)
+            .then(reviewed => ({ id: apt.id, reviewed }))
+            .catch(() => ({ id: apt.id, reviewed: false }))
+        )
+      );
       const rated = {};
-      for (const apt of (appts || [])) {
-        if (apt.status === 'Completado' || apt.status === 'Pagado') {
-          const reviewed = await publicService.hasClientReviewed(apt.id);
-          if (reviewed) rated[apt.id] = true;
-        }
-      }
+      reviewResults.forEach(item => {
+        if (item.reviewed) rated[item.id] = true;
+      });
       setRatedAppointments(rated);
     } catch (e) { console.error('Error loading profile data:', e); }
     finally { setLoading(false); }
@@ -89,7 +96,15 @@ export default function Profile() {
     { name: 'Lavado Premium Gratis', points: 100, icon: Droplets, available: points >= 100 },
   ];
 
-  const tattooAppointments = appointments.filter(a => a.tattoo_data);
+  const validAppointments = (appointments || []).filter(a => {
+    const status = (a.status || '').toLowerCase();
+    return !status.includes('cancelad');
+  });
+
+  const totalPages = Math.ceil(validAppointments.length / ITEMS_PER_PAGE) || 1;
+  const paginatedAppointments = validAppointments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  const tattooAppointments = validAppointments.filter(a => a.tattoo_data);
   const pendingConsent = tattooAppointments.filter(a => !a.tattoo_data?.consent_signed);
   const signedConsent = tattooAppointments.filter(a => a.tattoo_data?.consent_signed);
 
@@ -256,6 +271,45 @@ export default function Profile() {
           }}>{client?.name}</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '4px 0 0' }}>{client?.phone}</p>
 
+          {/* Logout moved up */}
+          <div style={{ marginTop: 6 }}>
+            <button onClick={handleLogout} style={{
+              background: 'none', border: 'none',
+              color: 'var(--text-muted)', cursor: 'pointer', fontSize: 11,
+              fontFamily: 'General Sans', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4,
+              opacity: 0.65, transition: 'opacity 0.2s', padding: '4px 8px', borderRadius: '6px'
+            }} onMouseEnter={e => e.target.style.opacity = 1} onMouseLeave={e => e.target.style.opacity = 0.65}>
+              <LogOut size={13} /> Cerrar sesión
+            </button>
+          </div>
+
+          {/* Botón Agendar Cita */}
+          <div style={{ marginTop: 14 }}>
+            <button
+              onClick={() => navigate('/agendar', { state: { startBooking: true, bookingRequestId: Date.now() } })}
+              className="btn-gold"
+              style={{
+                width: '100%',
+                padding: '13px 20px',
+                borderRadius: 'var(--radius-pill)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                fontWeight: 700,
+                fontSize: 14,
+                fontFamily: 'General Sans',
+                boxShadow: '0 4px 20px rgba(203,183,154,0.25)',
+                cursor: 'pointer',
+                border: 'none'
+              }}
+            >
+              <Calendar size={17} />
+              <span>Agendar Cita</span>
+              <ChevronRight size={17} />
+            </button>
+          </div>
+
           {/* Points display */}
           <div style={{
             marginTop: 14, padding: '14px 20px', borderRadius: 'var(--radius-lg)',
@@ -287,16 +341,6 @@ export default function Profile() {
               <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>Acumula puntos con cada servicio</p>
             )}
           </div>
-
-          {/* Logout */}
-          <button onClick={handleLogout} style={{
-            marginTop: 12, background: 'none', border: 'none',
-            color: 'var(--text-muted)', cursor: 'pointer', fontSize: 11,
-            fontFamily: 'General Sans', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4,
-            opacity: 0.6, transition: 'opacity 0.2s',
-          }} onMouseEnter={e => e.target.style.opacity = 1} onMouseLeave={e => e.target.style.opacity = 0.6}>
-            <LogOut size={13} /> Cerrar sesion
-          </button>
         </div>
 
         {isTopClient && !hasSpun && (
@@ -333,88 +377,153 @@ export default function Profile() {
         {/* ── CITAS TAB ── */}
         {activeTab === 'citas' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {appointments.length === 0 ? (
+            {validAppointments.length === 0 ? (
               <div className="glass-card" style={{ textAlign: 'center', padding: '48px 20px' }}>
                 <Calendar size={44} style={{ color: 'var(--champagne)', margin: '0 auto 14px', opacity: 0.3 }} />
                 <p style={{ color: 'var(--text-secondary)', fontSize: 15, fontWeight: 700, fontFamily: 'General Sans' }}>Sin citas aun</p>
                 <p style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 6 }}>Tus citas apareceran aqui cuando reserves.</p>
               </div>
             ) : (
-              appointments.map((apt, idx) => (
-                <div key={apt.id} className="glass-card" style={{
-                  padding: '16px',
-                  animation: `fadeInUp 0.4s ease ${idx * 0.05}s both`,
-                }}>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    {/* Service icon */}
-                    <div style={{
-                      width: 40, height: 40, borderRadius: 'var(--radius-md)',
-                      background: 'rgba(203,183,154,0.08)', display: 'flex',
-                      alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      color: 'var(--champagne)',
-                    }}>
-                      {getServiceIcon(apt.services?.name, apt.services?.category)}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                        <div style={{ minWidth: 0 }}>
-                          <h3 style={{ fontWeight: 700, fontSize: 14, fontFamily: 'General Sans', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{apt.services?.name || 'Servicio'}</h3>
-                          <p style={{ color: 'var(--champagne)', fontSize: 12, fontWeight: 600, margin: '2px 0 0' }}>{apt.staff?.name || 'Barbero'}</p>
-                        </div>
-                        <span style={{
-                          padding: '3px 10px', borderRadius: 'var(--radius-pill)', fontSize: 10, fontWeight: 700, flexShrink: 0,
-                          background: apt.status === 'Agendado' ? 'rgba(203,183,154,0.12)' : apt.status === 'Completado' ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.12)',
-                          color: apt.status === 'Agendado' ? 'var(--champagne)' : apt.status === 'Completado' ? '#34c759' : '#fbbf24',
-                        }}>{apt.status}</span>
+              <>
+                {paginatedAppointments.map((apt, idx) => (
+                  <div key={apt.id} className="glass-card" style={{
+                    padding: '16px',
+                    animation: `fadeInUp 0.4s ease ${idx * 0.05}s both`,
+                  }}>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      {/* Service icon */}
+                      <div style={{
+                        width: 40, height: 40, borderRadius: 'var(--radius-md)',
+                        background: 'rgba(203,183,154,0.08)', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                        color: 'var(--champagne)',
+                      }}>
+                        {getServiceIcon(apt.services?.name, apt.services?.category)}
                       </div>
-                      <p style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Clock size={11} />
-                        {apt.scheduled_at ? new Date(apt.scheduled_at).toLocaleString('es', { date: 'short', time: 'short' }) : 'Sin fecha'}
-                      </p>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                          <div style={{ minWidth: 0 }}>
+                            <h3 style={{ fontWeight: 700, fontSize: 14, fontFamily: 'General Sans', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{apt.services?.name || 'Servicio'}</h3>
+                            <p style={{ color: 'var(--champagne)', fontSize: 12, fontWeight: 600, margin: '2px 0 0' }}>{apt.staff?.name || 'Barbero'}</p>
+                          </div>
+                          <span style={{
+                            padding: '3px 10px', borderRadius: 'var(--radius-pill)', fontSize: 10, fontWeight: 700, flexShrink: 0,
+                            background: apt.status === 'Agendado' ? 'rgba(203,183,154,0.12)' : apt.status === 'Completado' ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.12)',
+                            color: apt.status === 'Agendado' ? 'var(--champagne)' : apt.status === 'Completado' ? '#34c759' : '#fbbf24',
+                          }}>{apt.status}</span>
+                        </div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Clock size={11} />
+                          {apt.scheduled_at ? new Date(apt.scheduled_at).toLocaleString('es', { date: 'short', time: 'short' }) : 'Sin fecha'}
+                        </p>
+                      </div>
                     </div>
+
+                    {/* Rating button for completed appointments */}
+                    {(apt.status === 'Completado' || apt.status === 'Pagado') && apt.staff?.name && (
+                      <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                        {ratedAppointments[apt.id] ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#34c759' }}>
+                            <Check size={13} /> Calificado
+                          </div>
+                        ) : (
+                          <button onClick={() => { setRatingModal(apt); setRatings({ rapidez: 0, limpieza: 0, habilidad: 0 }); setRatingComment(''); }} style={{
+                            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+                            borderRadius: 'var(--radius-pill)', fontSize: 11, fontWeight: 800,
+                            background: 'rgba(203,183,154,0.1)', color: 'var(--champagne)',
+                            border: '1px solid rgba(203,183,154,0.2)', cursor: 'pointer',
+                            transition: 'all 0.2s',
+                          }}>
+                            <Star size={13} fill="#CBB79A" stroke="#CBB79A" /> Calificar servicio
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {apt.tattoo_data && (
+                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                        <span style={{ fontSize: 8, fontWeight: 800, color: '#c084fc', letterSpacing: '1.5px' }}>TATUAJE</span>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 6 }}>
+                          {apt.tattoo_data.size && <div><span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Tamano</span><p style={{ fontSize: 12, fontWeight: 700, color: 'white', margin: 0 }}>{apt.tattoo_data.size}</p></div>}
+                          {apt.tattoo_data.zone && <div><span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Zona</span><p style={{ fontSize: 12, fontWeight: 700, color: 'white', margin: 0 }}>{apt.tattoo_data.zone}</p></div>}
+                          {apt.tattoo_data.style && <div><span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Estilo</span><p style={{ fontSize: 12, fontWeight: 700, color: 'white', margin: 0 }}>{apt.tattoo_data.style}</p></div>}
+                          {apt.tattoo_data.theme && <div><span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Tematica</span><p style={{ fontSize: 12, fontWeight: 700, color: 'white', margin: 0 }}>{apt.tattoo_data.theme}</p></div>}
+                        </div>
+                        {apt.tattoo_data.idea && <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 6, fontStyle: 'italic' }}>"{apt.tattoo_data.idea}"</p>}
+                        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: apt.tattoo_data.consent_signed ? '#34c759' : '#ff453a' }} />
+                          <span style={{ fontSize: 10, fontWeight: 700, color: apt.tattoo_data.consent_signed ? '#34c759' : '#ff453a' }}>
+                            {apt.tattoo_data.consent_signed ? 'Consentimiento firmado' : 'Pendiente'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                ))}
 
-                  {/* Rating button for completed appointments */}
-                  {(apt.status === 'Completado' || apt.status === 'Pagado') && apt.staff?.name && (
-                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                      {ratedAppointments[apt.id] ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#34c759' }}>
-                          <Check size={13} /> Calificado
-                        </div>
-                      ) : (
-                        <button onClick={() => { setRatingModal(apt); setRatings({ rapidez: 0, limpieza: 0, habilidad: 0 }); setRatingComment(''); }} style={{
-                          display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-                          borderRadius: 'var(--radius-pill)', fontSize: 11, fontWeight: 800,
-                          background: 'rgba(203,183,154,0.1)', color: 'var(--champagne)',
-                          border: '1px solid rgba(203,183,154,0.2)', cursor: 'pointer',
-                          transition: 'all 0.2s',
-                        }}>
-                          <Star size={13} fill="#CBB79A" stroke="#CBB79A" /> Calificar servicio
-                        </button>
-                      )}
-                    </div>
-                  )}
+                {/* Controles de Paginación */}
+                {totalPages > 1 && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 12,
+                    marginTop: 12,
+                    paddingTop: 12,
+                    borderTop: '1px solid rgba(255,255,255,0.06)'
+                  }}>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                      disabled={currentPage === 1}
+                      style={{
+                        background: currentPage === 1 ? 'rgba(255,255,255,0.02)' : 'rgba(203,183,154,0.1)',
+                        border: '1px solid rgba(203,183,154,0.2)',
+                        color: currentPage === 1 ? 'var(--text-muted)' : 'var(--champagne)',
+                        padding: '6px 14px',
+                        borderRadius: 'var(--radius-pill)',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                        opacity: currentPage === 1 ? 0.35 : 1,
+                        transition: 'all 0.2s',
+                        fontFamily: 'General Sans'
+                      }}
+                    >
+                      <ChevronLeft size={14} /> Anterior
+                    </button>
 
-                  {apt.tattoo_data && (
-                    <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                      <span style={{ fontSize: 8, fontWeight: 800, color: '#c084fc', letterSpacing: '1.5px' }}>TATUAJE</span>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 6 }}>
-                        {apt.tattoo_data.size && <div><span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Tamano</span><p style={{ fontSize: 12, fontWeight: 700, color: 'white', margin: 0 }}>{apt.tattoo_data.size}</p></div>}
-                        {apt.tattoo_data.zone && <div><span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Zona</span><p style={{ fontSize: 12, fontWeight: 700, color: 'white', margin: 0 }}>{apt.tattoo_data.zone}</p></div>}
-                        {apt.tattoo_data.style && <div><span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Estilo</span><p style={{ fontSize: 12, fontWeight: 700, color: 'white', margin: 0 }}>{apt.tattoo_data.style}</p></div>}
-                        {apt.tattoo_data.theme && <div><span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Tematica</span><p style={{ fontSize: 12, fontWeight: 700, color: 'white', margin: 0 }}>{apt.tattoo_data.theme}</p></div>}
-                      </div>
-                      {apt.tattoo_data.idea && <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 6, fontStyle: 'italic' }}>"{apt.tattoo_data.idea}"</p>}
-                      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: apt.tattoo_data.consent_signed ? '#34c759' : '#ff453a' }} />
-                        <span style={{ fontSize: 10, fontWeight: 700, color: apt.tattoo_data.consent_signed ? '#34c759' : '#ff453a' }}>
-                          {apt.tattoo_data.consent_signed ? 'Consentimiento firmado' : 'Pendiente'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', fontFamily: 'General Sans' }}>
+                      Página <strong style={{ color: 'var(--champagne)' }}>{currentPage}</strong> de {totalPages}
+                    </span>
+
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      style={{
+                        background: currentPage === totalPages ? 'rgba(255,255,255,0.02)' : 'rgba(203,183,154,0.1)',
+                        border: '1px solid rgba(203,183,154,0.2)',
+                        color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--champagne)',
+                        padding: '6px 14px',
+                        borderRadius: 'var(--radius-pill)',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                        opacity: currentPage === totalPages ? 0.35 : 1,
+                        transition: 'all 0.2s',
+                        fontFamily: 'General Sans'
+                      }}
+                    >
+                      Siguiente <ChevronRight size={14} />
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

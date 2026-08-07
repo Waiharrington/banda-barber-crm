@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, CreditCard, Check, Loader } from 'lucide-react';
+import { User, Phone, CreditCard, Calendar, Check, Loader } from 'lucide-react';
 import { publicService } from '../services/publicService';
 
 export default function CompleteRegistration() {
@@ -14,6 +14,7 @@ export default function CompleteRegistration() {
     email: '',
     phone: '',
     id_card: '',
+    birth_date: '',
   });
 
   useEffect(() => {
@@ -28,19 +29,14 @@ export default function CompleteRegistration() {
         const user = session.user;
         setGoogleUser(user);
 
-        // Pre-fill form with Google data
-        const metadata = user.user_metadata || {};
-        setForm({
-          name: metadata.full_name || metadata.name || '',
-          email: user.email || '',
-          phone: '',
-          id_card: '',
-        });
+        // Check if client already completed registration with both phone AND id_card
+        let existingClient = await publicService.getClientByUserId(user.id);
+        if (!existingClient && user.email) {
+          existingClient = await publicService.getClientByEmail(user.email);
+        }
 
-        // Check if client already completed registration
-        const existingClient = await publicService.getClientByUserId(user.id);
-        if (existingClient) {
-          // Already registered, save and redirect
+        if (existingClient && existingClient.phone && existingClient.id_card) {
+          // Already fully registered, save session and redirect
           localStorage.setItem('panda_public_client', JSON.stringify(existingClient));
           if (localStorage.getItem('panda_login_return_to_booking') === 'true') {
             localStorage.removeItem('panda_login_return_to_booking');
@@ -51,6 +47,18 @@ export default function CompleteRegistration() {
           }
           return;
         }
+
+        // Pre-fill form with Google data or existing partial client data
+        const metadata = user.user_metadata || {};
+        const googleBirthDate = metadata.birth_date || metadata.birthdate || metadata.birthday || '';
+
+        setForm({
+          name: existingClient?.name || metadata.full_name || metadata.name || '',
+          email: existingClient?.email || user.email || '',
+          phone: existingClient?.phone || '',
+          id_card: existingClient?.id_card || '',
+          birth_date: existingClient?.birth_date || googleBirthDate || '',
+        });
       } catch (e) {
         console.error('Session check error:', e);
       } finally {
@@ -81,6 +89,7 @@ export default function CompleteRegistration() {
         email: form.email,
         phone: form.phone,
         id_card: form.id_card,
+        birth_date: form.birth_date,
       });
       localStorage.setItem('panda_public_client', JSON.stringify(client));
       if (localStorage.getItem('panda_login_return_to_booking') === 'true') {
@@ -225,6 +234,23 @@ export default function CompleteRegistration() {
                   required
                 />
               </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
+                Fecha de Nacimiento
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Calendar size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', zIndex: 1 }} />
+                <input
+                  type="date"
+                  value={form.birth_date}
+                  onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
+                  className="input-field"
+                  style={{ paddingLeft: '40px' }}
+                />
+              </div>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Para darte sorpresas y descuentos en tu cumpleaños</p>
             </div>
           </div>
 

@@ -1450,7 +1450,15 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                 groupedActiveServices.map(group => {
                   const isSelected = selectedApp?.client_id === group.client_id;
                   const badgeStatus = group.apps.some(a => a.status === 'En Silla') ? 'En Silla' : (group.apps.some(a => a.status === 'En Lavado') ? 'En Lavado' : 'Por Pagar');
-                  const serviceNames = group.apps.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Venta de Productos';
+                  const serviceNames = (() => {
+                    const names = group.apps.map(a => a.services?.name).filter(Boolean);
+                    if (names.length > 0) return names.join(' + ');
+                    const hasExtras = group.apps.some(a => (a.appointment_extras?.length || 0) > 0);
+                    if (hasExtras) return 'Extras';
+                    const hasProducts = group.apps.some(a => (a.appointment_products?.length || 0) > 0);
+                    if (hasProducts) return 'Venta de Productos';
+                    return 'Sin servicio asignado';
+                  })();
                   const staffNames = Array.from(new Set(group.apps.map(a => a.staff?.name?.split(' ')[0]).filter(Boolean))).join(', ') || 'Caja';
                   const totalUsd = group.apps.reduce((acc, a) => acc + (a.total_price !== undefined && a.total_price !== null && Number(a.total_price) > 0 ? Number(a.total_price) : (a.services?.price || 0)), 0);
                   
@@ -1502,7 +1510,15 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                 ) : (
                   groupedScheduledServices.map(group => {
                     const firstApp = group.apps[0];
-                    const serviceNames = group.apps.map(a => a.services?.name).filter(Boolean).join(' + ') || 'Venta de Productos';
+                    const serviceNames = (() => {
+                      const names = group.apps.map(a => a.services?.name).filter(Boolean);
+                      if (names.length > 0) return names.join(' + ');
+                      const hasExtras = group.apps.some(a => (a.appointment_extras?.length || 0) > 0);
+                      if (hasExtras) return 'Extras';
+                      const hasProducts = group.apps.some(a => (a.appointment_products?.length || 0) > 0);
+                      if (hasProducts) return 'Venta de Productos';
+                      return 'Sin servicio asignado';
+                    })();
                     const staffNames = Array.from(new Set(group.apps.map(a => a.staff?.name?.split(' ')[0]).filter(Boolean))).join(', ') || 'Caja';
                     const timeString = new Date(firstApp.scheduled_at || firstApp.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
                     
@@ -1712,7 +1728,7 @@ const CheckoutPOS = ({ isMobile, rates, onNavigate, preselectAppId, isModalView,
                         )}
                         {isLinked && <span style={{ color: 'var(--gold-primary)', fontWeight: '800', fontSize: '10px', flexShrink: 0 }}>({app.clients?.name?.split(' ')[0]}):</span>}
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'rgba(255,255,255,0.9)' }}>
-                          {app.services ? `Servicio: ${app.services.name}` : 'Extras'}
+                          {app.services ? `Servicio: ${app.services.name}` : ((app.appointment_extras?.length || 0) > 0 ? 'Extras' : ((app.appointment_products?.length || 0) > 0 ? 'Productos' : 'Sin servicio asignado'))}
                         </span>
                         {' • '}
                         <span 

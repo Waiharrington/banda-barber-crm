@@ -1193,6 +1193,30 @@ export const dataService = {
   async createAppointment(appointment, opts = {}) {
     // Invalidate all appointment caches
     _cacheInvalidateAppts();
+
+    // Deduplication safety check for rapid double-click sending to chair:
+    if (appointment.client_id && appointment.status === 'En Silla' && !appointment.service_id) {
+      try {
+        const fiveSecAgo = new Date(Date.now() - 5000).toISOString();
+        const { data: existingRecent } = await supabase
+          .from('appointments')
+          .select('*')
+          .eq('client_id', appointment.client_id)
+          .eq('staff_id', appointment.staff_id)
+          .eq('status', 'En Silla')
+          .is('service_id', null)
+          .gte('created_at', fiveSecAgo)
+          .maybeSingle();
+
+        if (existingRecent) {
+          console.warn('[dataService] Duplicate rapid chair assignment intercepted:', existingRecent.id);
+          return existingRecent;
+        }
+      } catch (dedupErr) {
+        console.error('[dataService] Dedup check non-blocking error:', dedupErr);
+      }
+    }
+
     const { data, error } = await supabase
       .from('appointments')
       .insert([{

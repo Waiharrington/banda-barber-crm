@@ -230,36 +230,83 @@ export const publicService = {
     return true;
   },
 
-  // Complete Google registration (create client record)
-  async completeGoogleRegistration({ user_id, name, email, phone, id_card }) {
-    // Check if client already exists
-    const existing = await findExistingClientRecord({ id_card, email, phone });
+  // Complete Google registration (create or update client record using service role to bypass RLS)
+  async completeGoogleRegistration({ user_id, name, email, phone, id_card, birth_date }) {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+    // Check if client already exists by auth_user_id or email or phone or id_card
+    const queryParams = new URLSearchParams();
+    queryParams.set('or', `auth_user_id.eq.${user_id},email.eq.${email},phone.eq.${phone},id_card.eq.${id_card}`);
+
+    const existingClients = await fetch(`${supabaseUrl}/rest/v1/clients?${queryParams.toString()}`, {
+      headers: {
+        'apikey': serviceKey,
+        'Authorization': `Bearer ${serviceKey}`,
+        'Accept-Profile': 'pandabarber'
+      }
+    }).then(res => res.json()).catch(() => []);
+
+    const existing = Array.isArray(existingClients) && existingClients.length > 0 ? existingClients[0] : null;
 
     if (existing) {
-      // Update existing client
-      return linkClientRecord(existing, user_id, {
-        name,
-        email,
-        phone
+      // Update existing client using service role key (bypasses RLS)
+      const updateRes = await fetch(`${supabaseUrl}/rest/v1/clients?id=eq.${existing.id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+          'Accept-Profile': 'pandabarber',
+          'Content-Profile': 'pandabarber'
+        },
+        body: JSON.stringify({
+          name: name || existing.name,
+          email: email || existing.email,
+          phone: phone || existing.phone,
+          id_card: id_card || existing.id_card,
+          birth_date: birth_date || existing.birth_date || null,
+          auth_user_id: user_id
+        })
       });
+      if (!updateRes.ok) {
+        const err = await updateRes.json().catch(() => ({}));
+        throw new Error(err?.message || 'Error al actualizar el perfil del cliente.');
+      }
+      const [updatedData] = await updateRes.json();
+      return updatedData;
     }
 
-    // Create new client
-    const { data, error } = await supabase
-      .from('clients')
-      .insert([{
+    // Insert new client using service role key (bypasses RLS)
+    const insertRes = await fetch(`${supabaseUrl}/rest/v1/clients`, {
+      method: 'POST',
+      headers: {
+        'apikey': serviceKey,
+        'Authorization': `Bearer ${serviceKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+        'Accept-Profile': 'pandabarber',
+        'Content-Profile': 'pandabarber'
+      },
+      body: JSON.stringify({
         name,
-        email,
+        email: email || null,
         phone,
         id_card,
+        birth_date: birth_date || null,
         points: 0,
         status: 'Activo',
         auth_user_id: user_id
-      }])
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+      })
+    });
+
+    if (!insertRes.ok) {
+      const err = await insertRes.json().catch(() => ({}));
+      throw new Error(err?.message || 'Error al crear el perfil de cliente.');
+    }
+    const [insertedData] = await insertRes.json();
+    return insertedData;
   },
 
   // Check if user has completed registration
