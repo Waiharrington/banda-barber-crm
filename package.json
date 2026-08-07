@@ -13,6 +13,7 @@
     "@supabase/supabase-js": "^2.104.0",
     "canvas-confetti": "^1.9.4",
     "chart.js": "^4.5.1",
+    "dexie": "^4.4.4",
     "dotenv": "^17.4.2",
     "exceljs": "^4.4.0",
     "framer-motion": "^12.40.0",
