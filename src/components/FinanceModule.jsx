@@ -1872,30 +1872,6 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
                   </div>
                 )}
               </div>
-
-              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px', width: isMobile ? '100%' : 'auto' }}>
-                <button 
-                  onClick={() => setIsConfiguringPayroll(true)} 
-                  style={{ 
-                    padding: '14px 16px', 
-                    fontSize: '13px', 
-                    borderRadius: '12px',
-                    background: 'rgba(255, 255, 255,0.1)',
-                    border: '1px solid rgba(255, 255, 255,0.3)',
-                    color: 'var(--gold-primary)',
-                    fontWeight: '800',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    width: isMobile ? '100%' : 'auto',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <WalletCards size={16} /> Salario Asistente
-                </button>
-              </div>
             </div>
 
             {/* PANDA GENERAL RESULTS (Resultados Panda) */}
