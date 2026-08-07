@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
   Calendar as CalendarIcon, 
@@ -39,6 +40,8 @@ import {
 import { publicService } from '../services/publicService';
 import PandaLoader from '../../components/PandaLoader';
 import PandaDatePicker from '../../components/PandaDatePicker';
+import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
+import HorizontalScrollGallery from '../components/HorizontalScrollGallery';
 
 // Import background images and logo
 import bgDesktop from '../../assets/barbershop_desktop.png';
@@ -55,6 +58,11 @@ import tatuajesCover from '../../assets/tatuajes_cover.webp';
 import experienciaPandaCover from '../../assets/experiencia_panda_cover.webp';
 import pandaKidsCover from '../../assets/panda_kids.webp';
 import pandaKidsVideo from '../../assets/panda_kids_video.mp4';
+import maskPhoto1 from '../../assets/mural/DSC_7071.jpg';
+import maskPhoto2 from '../../assets/mural/DSC_7081.jpg';
+import maskPhoto3 from '../../assets/mural/DSC_7329.jpg';
+import maskPhoto4 from '../../assets/mural/DSC_7828.jpg';
+import maskPhoto5 from '../../assets/mural/DSC_7829.jpg';
 import heroSlide1 from '../../assets/hero1.webp';
 import heroSlide2 from '../../assets/hero2.webp';
 import heroSlide3 from '../../assets/hero3.webp';
@@ -72,7 +80,7 @@ import instaVideo4 from '../../assets/instagram_post_4.mp4';
 
 // Import Mural Media Assets
 const muralVideo = '/video_project_13.mp4';
-const cafeVideo = '/panda_cafe.mp4';
+const cafeVideo = '/panda_cafe_new.mp4';
 import mural1 from '../../assets/mural/DSC_7071.jpg';
 import mural2 from '../../assets/mural/DSC_7329.jpg';
 import mural3 from '../../assets/mural/barberia.jpg';
@@ -83,6 +91,7 @@ import mural8 from '../../assets/mural/DSC_7829.jpg';
 import mural9 from '../../assets/mural/DSC_7837.jpg';
 import mural10 from '../../assets/mural/DSC_7927.jpg';
 import mural11 from '../../assets/mural/DSC_7935.jpg';
+import pandaLogo from '../../assets/panda_logo_black.png';
 
 const mockPortfolio = [
   { id: 'ab1', image_url: abrahamWork1 },
@@ -522,6 +531,19 @@ function BarberAvatar({ url, name, className = "w-10 h-10 rounded-xl", iconSize 
   );
 }
 
+const FadeInUp = ({ children, delay = 0, className = "", ...props }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    whileInView={{ opacity: 1, scale: 1 }}
+    viewport={{ once: false, margin: "-100px" }}
+    transition={{ duration: 0.8, delay: delay, ease: [0.21, 0.47, 0.32, 0.98] }}
+    className={className}
+    {...props}
+  >
+    {children}
+  </motion.div>
+);
+
 export default function BookAppointment() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -532,6 +554,18 @@ export default function BookAppointment() {
     return saved ? JSON.parse(saved).showWelcome : true;
   });
   const [videoBlocked, setVideoBlocked] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Track scroll position for scroll-to-top button
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const handleScrollForButton = () => {
+      setShowScrollTop(container.scrollTop > 600);
+    };
+    container.addEventListener('scroll', handleScrollForButton);
+    return () => container.removeEventListener('scroll', handleScrollForButton);
+  }, [showWelcome]);
 
   // Force video playback to bypass some mobile browser restrictions
   useEffect(() => {
@@ -558,6 +592,31 @@ export default function BookAppointment() {
   const [loadDeferredAssets, setLoadDeferredAssets] = useState(false);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [activeMuralIdx, setActiveMuralIdx] = useState(0);
+  const [showFooterReveal, setShowFooterReveal] = useState(false);
+  const [bentoEditMode, setBentoEditMode] = useState(false);
+  const [selectedMuralItem, setSelectedMuralItem] = useState(null);
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const [isHoveringMural, setIsHoveringMural] = useState(false);
+  const [pandaOffset, setPandaOffset] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPandaOffset(prev => prev + 1);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+  const [bentoGridItems, setBentoGridItems] = useState([
+    { id: 1, type: 'video', src: muralVideo, tag: 'Experiencia', title: 'Panda Barber', colSpan: 3, rowSpan: 6, posX: 50, posY: 50 },
+    { id: 2, type: 'image', src: mural3, tag: 'Cortes', title: 'Fresh Fade', colSpan: 3, rowSpan: 4, posX: 38, posY: 26 },
+    { id: 3, type: 'image', src: mural1, tag: 'Estilo', title: 'Precisión', colSpan: 3, rowSpan: 4, posX: 50, posY: 50 },
+    { id: 4, type: 'video', src: cafeVideo, tag: 'Relax', title: 'Panda Café', colSpan: 3, rowSpan: 6, posX: 50, posY: 50 },
+    { id: 10, type: 'image', src: mural9, tag: 'Comunidad', title: 'La Experiencia', colSpan: 3, rowSpan: 5, posX: 35, posY: 11 },
+    { id: 6, type: 'image', src: mural4, tag: 'Atención', title: 'Detalles', colSpan: 3, rowSpan: 5, posX: 50, posY: 18 },
+    { id: 7, type: 'image', src: mural5, tag: 'Café', title: 'Disfruta', colSpan: 3, rowSpan: 6, posX: 50, posY: 52 },
+    { id: 5, type: 'image', src: mural2, tag: 'Arte', title: 'El Diseño', colSpan: 3, rowSpan: 6, posX: 50, posY: 67 },
+    { id: 9, type: 'image', src: mural8, tag: 'Premium', title: 'Tu Momento', colSpan: 3, rowSpan: 3, posX: 50, posY: 88 },
+    { id: 8, type: 'image', src: mural7, tag: 'Lookbook', title: 'Tendencias', colSpan: 3, rowSpan: 3, posX: 46, posY: 29 },
+  ]);
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
@@ -579,6 +638,26 @@ export default function BookAppointment() {
   const teamScrollRef = useRef(null);
   const timeSlotsRef = useRef(null);
   const bookingSummaryRef = useRef(null);
+  const muralGridRef = useRef(null);
+
+  const { scrollYProgress: muralScrollY } = useScroll({
+    target: muralGridRef,
+    container: scrollContainerRef,
+    offset: ["start end", "end start"]
+  });
+  const yParallaxOdd = useTransform(muralScrollY, [0, 1], [30, -30]);
+  const yParallaxEven = useTransform(muralScrollY, [0, 1], [-20, 20]);
+
+  // --- Premium Parallax Footer Reveal ---
+  const footerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: footerRef,
+    container: scrollContainerRef,
+    offset: ["start end", "end end"]
+  });
+  // Empuja el footer hacia abajo al principio para crear el efecto "reveal" de subir
+  const footerY = useTransform(scrollYProgress, [0, 1], [180, 0]);
+
 
   // Soporte de Swipe (deslizar con el dedo / arrastrar con el mouse) para el carrusel de equipo
   const touchStartX = useRef(null);
@@ -2015,7 +2094,12 @@ export default function BookAppointment() {
 
 
         {/* Centered content container positioned vertically centered relative to full-screen photo backgrounds */}
-        <div className="w-full max-w-[1440px] mx-auto flex flex-col justify-center items-start gap-5 lg:gap-8 relative z-20 px-6 lg:px-12 text-left pt-6 lg:pt-0 lg:my-auto">
+        <motion.div 
+          initial={{ opacity: 0, y: 80 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-[1440px] mx-auto flex flex-col justify-center items-start gap-5 lg:gap-8 relative z-20 px-6 lg:px-12 text-left pt-6 lg:pt-0 lg:my-auto"
+        >
           
           {/* Trust/Reputation Badge */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 reveal-item delay-100 w-full">
@@ -2084,7 +2168,7 @@ export default function BookAppointment() {
             </span>
           </div>
 
-        </div>
+        </motion.div>
 
 
         {/* Centered Scroll Indicator (Desktop Only) */}
@@ -2230,8 +2314,9 @@ export default function BookAppointment() {
         : null;
 
       return (
-        <div className="landing-scroll-container w-full bg-transparent" style={{ paddingBottom: '0px' }}>
-          {heroContent}
+        <div ref={scrollContainerRef} className="landing-scroll-container w-full" style={{ paddingBottom: '0px' }}>
+            {heroContent}
+
 
           {/* Stats Bar */}
           <div className="w-full bg-[#07070a] border-y border-[rgba(203,183,154,0.1)] py-8 px-6 lg:px-16 relative z-20">
@@ -2272,18 +2357,20 @@ export default function BookAppointment() {
           </div>
 
           {/* Vertical Flow Sections Container */}
-          <div className="w-full max-w-[1440px] mx-auto px-4 lg:px-8 py-16 space-y-20 relative z-10">
+          <div className="w-full max-w-[1440px] mx-auto px-6 lg:px-8 pt-16 pb-0 space-y-20 relative z-10">
             
             {/* SECTION: ELIGE TU SERVICIO */}
-            <div className="w-full text-center" id="servicios">
+            <FadeInUp className="w-full text-center" id="servicios">
               <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">EXPERIENCIA EXCLUSIVA</span>
               <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-12 title-loop-pulse">
                 ELIGE TU <span className="text-[#CBB79A]">SERVICIO</span>
               </h2>
+            </FadeInUp>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto">
-                {/* Card 1: Barbería */}
-                <div 
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1440px] mx-auto">
+              {/* Card 1: Barbería */}
+              <FadeInUp delay={0.1}
+
                   className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-100"
                   onClick={() => {
                     setArtistFilter('barberos');
@@ -2309,10 +2396,10 @@ export default function BookAppointment() {
                       </span>
                     </div>
                   </div>
-                </div>
+                </FadeInUp>
 
                 {/* Card 2: Tatuajes */}
-                <div 
+                <FadeInUp delay={0.2}
                   className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-200"
                   onClick={() => {
                     setArtistFilter('tatuadores');
@@ -2338,10 +2425,10 @@ export default function BookAppointment() {
                       </span>
                     </div>
                   </div>
-                </div>
+                </FadeInUp>
 
                 {/* Card 3: Panda Kids */}
-                <div 
+                <FadeInUp delay={0.3}
                   className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-300"
                   onClick={() => document.getElementById('pandakids')?.scrollIntoView({ behavior: 'smooth' })}
                 >
@@ -2363,10 +2450,10 @@ export default function BookAppointment() {
                       </span>
                     </div>
                   </div>
-                </div>
+                </FadeInUp>
 
                 {/* Card 4: Experiencia Panda */}
-                <div 
+                <FadeInUp delay={0.4}
                   className="relative rounded-2xl overflow-hidden h-[420px] flex flex-col justify-end p-6 lg:p-8 text-left border border-[rgba(203,183,154,0.18)] group cursor-pointer reveal-item delay-400"
                   onClick={() => document.getElementById('experiencia-section')?.scrollIntoView({ behavior: 'smooth' })}
                 >
@@ -2388,18 +2475,18 @@ export default function BookAppointment() {
                       </span>
                     </div>
                   </div>
-                </div>
+                </FadeInUp>
               </div>
-            </div>
 
             {/* SECTION: NUESTROS ARTISTAS / EL EQUIPO */}
-            <div className="w-full text-center reveal-item pt-16" id="equipo">
+            <FadeInUp className="w-full text-center reveal-item pt-16" id="equipo">
               <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-5 title-loop-pulse">
                 NUESTRO <span className="text-[#CBB79A]">EQUIPO</span>
               </h2>
+            </FadeInUp>
               
               {/* Categorías de Equipo con estilo de Barbería Premium */}
-              <div className="relative flex items-center p-1 bg-white/[0.03] border border-white/10 rounded-full w-[290px] sm:w-[360px] md:w-[420px] mx-auto mb-10 shadow-2xl backdrop-blur-md">
+              <FadeInUp delay={0.1} className="relative flex items-center p-1 bg-white/[0.03] border border-white/10 rounded-full w-[290px] sm:w-[360px] md:w-[420px] mx-auto mb-10 shadow-2xl backdrop-blur-md">
                 {/* Fondo deslizante con efecto de Barber Pole animado en dorado */}
                 <div 
                   className="absolute top-[7.5%] h-[85%] w-[31%] rounded-full transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] barber-pole-glow" 
@@ -2437,10 +2524,10 @@ export default function BookAppointment() {
                   <PenTool size={13} className={artistFilter === 'tatuadores' ? 'animate-bounce' : ''} />
                   <span>Tatuadores</span>
                 </button>
-              </div>
+              </FadeInUp>
 
               {/* Slider Component */}
-              <div className="relative w-full px-12 group/slider">
+              <FadeInUp delay={0.2} className="relative w-full px-12 group/slider">
                 {/* Nav buttons */}
                 {(() => {
                   const filteredCount = barbers.filter(barber => {
@@ -2665,64 +2752,115 @@ export default function BookAppointment() {
                     )}
                   </div>
                 </div>
-              </div>
-            </div>
+              </FadeInUp>
 
-            {/* SECTION: PANDA KIDS CLUB — Premium 3-column UX layout (no card container) */}
-            <div id="pandakids" className="w-full reveal-item scroll-mt-24 py-12">
-              <div className="w-full flex flex-col lg:flex-row items-stretch gap-10 xl:gap-14">
+            {/* SECTION: PANDA KIDS CLUB — Premium responsive grid layout */}
+            <FadeInUp id="pandakids" className="w-full reveal-item scroll-mt-24 py-12">
+              {/* CSS for micro-animations inside this section */}
+              <style>{`
+                .kids-feature-item:hover .icon-scissors svg {
+                  animation: scissor-cut 0.5s ease-in-out infinite;
+                }
+                .kids-feature-item:hover .icon-sparkles svg {
+                  animation: sparkle-spin 0.8s linear infinite;
+                }
+                .kids-feature-item:hover .icon-gamepad svg {
+                  animation: gamepad-wiggle 0.4s ease-in-out infinite;
+                }
+                .kids-feature-item:hover .icon-heart svg {
+                  animation: heart-pulse 0.6s ease-in-out infinite;
+                }
+
+                @keyframes scissor-cut {
+                  0%, 100% { transform: rotate(0deg); }
+                  50% { transform: rotate(-15deg); }
+                }
+                @keyframes sparkle-spin {
+                  0% { transform: rotate(0deg) scale(1); }
+                  50% { transform: rotate(180deg) scale(1.25); }
+                  100% { transform: rotate(360deg) scale(1); }
+                }
+                @keyframes gamepad-wiggle {
+                  0%, 100% { transform: rotate(0deg) translateY(0); }
+                  25% { transform: rotate(-8deg) translateY(-2px); }
+                  75% { transform: rotate(8deg) translateY(2px); }
+                }
+                @keyframes heart-pulse {
+                  0%, 100% { transform: scale(1); }
+                  50% { transform: scale(1.22); }
+                }
+              `}</style>
+
+              <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 xl:gap-14">
                 
-                {/* COLUMN 1: Floating Video Player (36% width) */}
-                <div className="w-full lg:w-[36%] h-auto relative rounded-[2rem] overflow-hidden bg-black/40 border border-white/5 shadow-2xl group flex-shrink-0">
-                  {loadDeferredAssets ? (
-                    <video
-                      autoPlay loop muted playsInline
-                      className="absolute inset-0 w-full h-full object-cover"
-                      style={{ filter: 'brightness(0.9)' }}
-                    >
-                      <source src={pandaKidsVideo} type="video/mp4" />
-                    </video>
-                  ) : (
-                    <div className="w-full aspect-[3/4] bg-[#0d0d11] flex items-center justify-center">
-                      <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest animate-pulse">Cargando experiencia...</span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+                {/* COLUMN 1: Floating Video Player */}
+                <div className="w-full md:col-span-1 lg:col-span-4 relative group flex-shrink-0">
+                  {/* Premium Ambient glow behind the video */}
+                  <div 
+                    className="absolute -inset-4 bg-radial-gradient rounded-[2.5rem] blur-xl opacity-60 pointer-events-none z-0 group-hover:opacity-85 transition-opacity duration-700" 
+                    style={{ backgroundImage: 'radial-gradient(circle, rgba(203, 183, 154, 0.22) 0%, transparent 70%)' }} 
+                  />
                   
-                  {/* Floating badge inside video */}
-                  <div className="absolute top-6 left-6 z-10 bg-black/60 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-1.5">
-                    <Heart size={12} className="text-[#CBB79A]" fill="#CBB79A" />
-                    <span className="text-[9px] font-extrabold text-white tracking-widest uppercase">PANDA KIDS</span>
+                  {/* Video container */}
+                  <div className="w-full aspect-[3/4] lg:aspect-auto h-full relative rounded-[2rem] overflow-hidden bg-black/40 border border-white/5 shadow-2xl z-10">
+                    {loadDeferredAssets ? (
+                      <video
+                        autoPlay loop muted playsInline
+                        className="absolute inset-0 w-full h-full object-cover"
+                        style={{ filter: 'brightness(0.9)' }}
+                      >
+                        <source src={pandaKidsVideo} type="video/mp4" />
+                      </video>
+                    ) : (
+                      <div className="w-full aspect-[3/4] bg-[#0d0d11] flex items-center justify-center">
+                        <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest animate-pulse">Cargando experiencia...</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+                    
+                    {/* Floating badge inside video */}
+                    <div className="absolute top-6 left-6 z-10 bg-black/60 backdrop-blur-md border border-white/10 py-1.5 px-3 rounded-lg flex items-center gap-1.5">
+                      <Heart size={12} className="text-[#CBB79A]" fill="#CBB79A" />
+                      <span className="text-[9px] font-extrabold text-white tracking-widest uppercase">PANDA KIDS</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* COLUMN 2: Copywriting & Vertical Features (38% width) */}
-                <div className="w-full lg:w-[38%] text-left flex flex-col justify-between py-2 space-y-6">
+                {/* COLUMN 2: Copywriting & Vertical Features */}
+                <div className="w-full md:col-span-1 lg:col-span-4 text-left flex flex-col justify-start py-2 gap-8 z-10">
                   <div className="space-y-4">
                     <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block">SU PRIMER ESTILO</span>
                     <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase leading-tight font-sans title-loop-pulse">
                       CORTES QUE HACEN<br />
                       <span className="text-[#CBB79A]">FELICES A LOS PEQUEÑOS</span>
                     </h2>
-                    <p className="text-white/70 text-[15px] leading-relaxed">
+                    
+                    {/* Minimalist, high-end indicators */}
+                    <div className="flex items-center gap-3 text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-[#CBB79A] uppercase pt-1">
+                      <span>EDADES: 1 A 12 AÑOS</span>
+                      <span className="text-white/20 select-none">•</span>
+                      <span>ZONA GAMER PS5</span>
+                    </div>
+
+                    <p className="text-white/70 text-[15px] leading-relaxed pt-1">
                       En Panda Barber los niños son parte de nuestra familia. Nuestros barberos saben exactamente cómo crear una experiencia divertida, cómoda y especial para ellos.
                     </p>
                   </div>
 
-                  {/* Feature List — Clean, easy vertical scanning */}
-                  <div className="space-y-4 pt-2">
+                  {/* Feature List — Interactive hover styling */}
+                  <div className="space-y-4 pt-1">
                     {[
-                      { icon: <Scissors size={15} />, title: 'Silla especial kids', desc: 'Asiento adaptado para que estén cómodos' },
-                      { icon: <Sparkles size={15} />, title: 'Productos suaves', desc: 'Formulados para cuero cabelludo infantil' },
-                      { icon: <Gamepad2 size={15} />, title: 'Ambiente divertido', desc: 'Una experiencia que les va a encantar' },
-                      { icon: <Heart size={15} />, title: 'Barberos pacientes', desc: 'Con experiencia en atención a niños' },
+                      { icon: <Scissors size={15} />, class: 'icon-scissors', title: 'Silla especial kids', desc: 'Asiento adaptado para que estén cómodos' },
+                      { icon: <Sparkles size={15} />, class: 'icon-sparkles', title: 'Productos suaves', desc: 'Formulados para cuero cabelludo infantil' },
+                      { icon: <Gamepad2 size={15} />, class: 'icon-gamepad', title: 'Ambiente divertido', desc: 'Una experiencia que les va a encantar' },
+                      { icon: <Heart size={15} />, class: 'icon-heart', title: 'Barberos pacientes', desc: 'Con experiencia en atención a niños' },
                     ].map((feat, i) => (
-                      <div key={i} className="flex gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/15 flex items-center justify-center flex-shrink-0 text-[#CBB79A] mt-0.5">
+                      <div key={i} className="flex gap-3 kids-feature-item group/feat cursor-pointer">
+                        <div className={`w-8 h-8 rounded-lg bg-[#CBB79A]/10 border border-[#CBB79A]/15 flex items-center justify-center flex-shrink-0 text-[#CBB79A] mt-0.5 transition-all duration-300 group-hover/feat:bg-[#CBB79A] group-hover/feat:text-black ${feat.class}`}>
                           {feat.icon}
                         </div>
                         <div>
-                          <h4 className="text-white text-[13.5px] font-bold leading-snug mb-0.5">{feat.title}</h4>
+                          <h4 className="text-white text-[13.5px] font-bold leading-snug mb-0.5 group-hover/feat:text-[#CBB79A] transition-colors duration-300">{feat.title}</h4>
                           <p className="text-white/45 text-[11.5px] lg:text-[12px] leading-relaxed">{feat.desc}</p>
                         </div>
                       </div>
@@ -2730,8 +2868,8 @@ export default function BookAppointment() {
                   </div>
                 </div>
 
-                {/* COLUMN 3: Social Proof & CTA (26% width) */}
-                <div className="flex-1 text-left flex flex-col justify-between py-2 space-y-6 lg:border-l lg:border-white/5 lg:pl-10 xl:pl-14">
+                {/* COLUMN 3: Social Proof & CTA */}
+                <div className="w-full md:col-span-2 lg:col-span-4 text-left flex flex-col justify-between py-2 space-y-6 md:border-t md:border-white/5 md:pt-6 lg:border-t-0 lg:border-l lg:pt-2 lg:pl-10 xl:pl-14 md:max-w-2xl md:mx-auto lg:max-w-none z-10">
                   {/* Premium Floating Testimonial Card */}
                   <div className="bg-white/[0.02] border border-white/[0.04] rounded-2xl p-6 relative flex-1 flex flex-col justify-center space-y-4">
                     <span className="text-[3rem] text-[#CBB79A]/15 font-serif absolute -top-2 -left-1 select-none pointer-events-none">“</span>
@@ -2744,24 +2882,28 @@ export default function BookAppointment() {
                         <span className="text-[#CBB79A] text-[10px] font-extrabold tracking-wider">PM</span>
                       </div>
                       <div className="text-left">
-                        <p className="text-white text-[13px] font-bold mb-1">Papá de Mateo</p>
-                        <span className="text-[#CBB79A] text-[11px] block">⭐⭐⭐⭐⭐</span>
+                        <p className="text-white text-[13px] font-bold">Papá de Mateo</p>
+                        <div className="flex items-center gap-0.5 mt-0.5">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star key={i} size={11} className="text-[#CBB79A]" fill="#CBB79A" />
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* CTA Buttons stack */}
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full">
                     <button
                       onClick={() => handleStartBooking()}
-                      className="btn-gold w-full py-3.5 px-6 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2 whitespace-nowrap"
+                      className="btn-gold w-full sm:w-auto sm:flex-1 py-3.5 px-6 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2 whitespace-nowrap"
                       style={{ borderRadius: '12px' }}
                     >
                       <Heart size={13} fill="black" /> RESERVAR PARA MI HIJO
                     </button>
                     <button
                       onClick={() => document.getElementById('equipo')?.scrollIntoView({ behavior: 'smooth' })}
-                      className="btn-outline w-full py-3.5 px-6 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2"
+                      className="btn-outline w-full sm:w-auto sm:flex-1 py-3.5 px-6 rounded-xl font-extrabold text-[12px] uppercase tracking-wider flex items-center justify-center gap-2"
                       style={{ borderRadius: '12px', borderColor: 'rgba(255,255,255,0.15)', color: 'white' }}
                     >
                       VER EL EQUIPO
@@ -2770,11 +2912,11 @@ export default function BookAppointment() {
                 </div>
 
               </div>
-            </div>
+            </FadeInUp>
 
             {/* SECTION: BARBERO DESTACADO DEL MES */}
             {topBarber && (
-              <div className="w-full text-left">
+              <FadeInUp className="w-full text-left">
                 <div className="w-full bg-[#111115]/30 border border-white/[0.04] rounded-3xl overflow-hidden flex flex-col lg:flex-row items-stretch group hover:border-[rgba(203,183,154,0.12)] transition-all duration-500">
                   {/* Left Column: Full-Bleed Portrait */}
                   <div className="w-full lg:w-[38%] min-h-[420px] lg:min-h-auto relative bg-[#1c1c24] flex-shrink-0">
@@ -2875,13 +3017,13 @@ export default function BookAppointment() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </FadeInUp>
             )}
 
             <div id="experiencia-section" className="w-full reveal-item scroll-mt-24 py-12 flex flex-col gap-8">
               
-              {/* Header Title for the Mural */}
-              <div className="text-center space-y-3">
+              {/* Header Title for the Mural — Mobile only */}
+              <div className="text-center space-y-3 block md:hidden">
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight uppercase font-sans title-loop-pulse">
                   EXPERIENCIA <span className="text-[#CBB79A]">PANDA</span>
                 </h2>
@@ -2923,13 +3065,13 @@ export default function BookAppointment() {
                     <div className="marquee-strip-left flex gap-2 w-max">
                       {/* Original set */}
                       {[mural1, mural2, mural3, mural4, mural5, mural7].map((src, i) => (
-                        <div key={`s1-${i}`} className="flex-shrink-0 w-[170px] h-[130px] rounded-xl overflow-hidden shadow-lg border border-white/5" style={{ transform: `rotate(${[-1.2, 0.8, -0.5, 1, -0.8, 0.6][i]}deg)` }}>
+                        <div key={`s1-${i}`} className="flex-shrink-0 w-[170px] h-[170px] rounded-xl overflow-hidden shadow-lg border border-white/5" style={{ transform: `rotate(${[-1.2, 0.8, -0.5, 1, -0.8, 0.6][i]}deg)` }}>
                           <img src={src} alt="Panda Barber" className="w-full h-full object-cover" />
                         </div>
                       ))}
                       {/* Duplicate set for seamless loop */}
                       {[mural1, mural2, mural3, mural4, mural5, mural7].map((src, i) => (
-                        <div key={`s1d-${i}`} className="flex-shrink-0 w-[170px] h-[130px] rounded-xl overflow-hidden shadow-lg border border-white/5" style={{ transform: `rotate(${[-1.2, 0.8, -0.5, 1, -0.8, 0.6][i]}deg)` }}>
+                        <div key={`s1d-${i}`} className="flex-shrink-0 w-[170px] h-[170px] rounded-xl overflow-hidden shadow-lg border border-white/5" style={{ transform: `rotate(${[-1.2, 0.8, -0.5, 1, -0.8, 0.6][i]}deg)` }}>
                           <img src={src} alt="Panda Barber" className="w-full h-full object-cover" />
                         </div>
                       ))}
@@ -2941,13 +3083,13 @@ export default function BookAppointment() {
                     <div className="marquee-strip-right flex gap-2 w-max">
                       {/* Original set */}
                       {[mural8, mural9, mural10, mural11, mural1, mural3].map((src, i) => (
-                        <div key={`s2-${i}`} className="flex-shrink-0 w-[145px] h-[110px] rounded-xl overflow-hidden shadow-md border border-white/5" style={{ transform: `rotate(${[0.7, -1, 0.5, -0.6, 1.1, -0.4][i]}deg)` }}>
+                        <div key={`s2-${i}`} className="flex-shrink-0 w-[145px] h-[145px] rounded-xl overflow-hidden shadow-md border border-white/5" style={{ transform: `rotate(${[0.7, -1, 0.5, -0.6, 1.1, -0.4][i]}deg)` }}>
                           <img src={src} alt="Panda Barber" className="w-full h-full object-cover" />
                         </div>
                       ))}
                       {/* Duplicate set for seamless loop */}
                       {[mural8, mural9, mural10, mural11, mural1, mural3].map((src, i) => (
-                        <div key={`s2d-${i}`} className="flex-shrink-0 w-[145px] h-[110px] rounded-xl overflow-hidden shadow-md border border-white/5" style={{ transform: `rotate(${[0.7, -1, 0.5, -0.6, 1.1, -0.4][i]}deg)` }}>
+                        <div key={`s2d-${i}`} className="flex-shrink-0 w-[145px] h-[145px] rounded-xl overflow-hidden shadow-md border border-white/5" style={{ transform: `rotate(${[0.7, -1, 0.5, -0.6, 1.1, -0.4][i]}deg)` }}>
                           <img src={src} alt="Panda Barber" className="w-full h-full object-cover" />
                         </div>
                       ))}
@@ -2956,102 +3098,262 @@ export default function BookAppointment() {
 
                 </div>
 
-                {/* Desktop 5-Column Grid (Hidden on mobile, visible from md up) */}
-                <div className="hidden md:grid md:grid-cols-5 gap-3.5 w-full auto-rows-[220px] max-h-[850px] overflow-hidden">
-                  
-                  {/* 1. Video Protagonist (col-span-1, row-span-2) */}
-                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 bg-black relative group shadow-lg">
-                    <video 
-                      src={muralVideo}
-                      className="w-full h-full object-cover transition-all duration-700 brightness-[0.9]"
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                    />
+                {/* Desktop: Premium Bento Grid */}
+                <div className="hidden md:block">
+                  {/* Header */}
+                  <div className="text-center space-y-3 mb-10 relative group/header">
+                    <button 
+                      onClick={() => setBentoEditMode(!bentoEditMode)}
+                      className="hidden absolute top-0 right-0 md:right-4 bg-[#CBB79A]/10 hover:bg-[#CBB79A]/20 text-[#CBB79A] px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border border-[#CBB79A]/30 transition-colors z-20 opacity-0 group-hover/header:opacity-100"
+                    >
+                      {bentoEditMode ? 'Cerrar Editor' : 'Editar Mural'}
+                    </button>
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight uppercase font-sans title-loop-pulse">
+                      EXPERIENCIA <span className="text-[#CBB79A]">PANDA</span>
+                    </h2>
+                    <p className="text-white/60 text-[13px] sm:text-[14px] max-w-xl mx-auto leading-relaxed font-medium">
+                      Redefinimos el arte del corte en un entorno diseñado para desconectar. Explora nuestro mural exclusivo con los mejores cortes y momentos capturados en el estudio.
+                    </p>
                   </div>
 
-                  {/* 2. Photo: DSC_7071 (col-span-1, row-span-2) */}
-                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                    <img src={mural1} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
-                  </div>
+                  {/* Bento Grid Editor UI (Conditional) */}
+                  {bentoEditMode && (
+                    <div className="flex justify-between items-center mb-4 bg-black/60 p-4 rounded-xl border border-[#CBB79A]/50 backdrop-blur-sm">
+                      <div>
+                        <p className="text-[#CBB79A] text-[11px] font-bold tracking-[0.2em] uppercase">Modo Edición Activo</p>
+                        <p className="text-white/60 text-[10px] mt-1">Pasa el cursor sobre cada imagen para ajustar. Al terminar, haz clic en copiar.</p>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          const conf = bentoGridItems.map(({id, colSpan, rowSpan, posX, posY}) => ({id, colSpan, rowSpan, posX, posY}));
+                          navigator.clipboard.writeText(JSON.stringify(conf, null, 2));
+                          alert('¡Configuración copiada al portapapeles! Pégala en el chat.');
+                        }}
+                        className="bg-[#CBB79A] text-black px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white transition-colors"
+                      >
+                        Copiar Config.
+                      </button>
+                    </div>
+                  )}
 
-                  {/* 3. Photo: DSC_7329 (col-span-1, row-span-1) */}
-                  <div className="md:col-span-1 md:row-span-1 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                    <img src={mural2} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
-                  </div>
+                  {/* Overlays Cinemáticos (Lightbox y Cursor) movidos a un Portal para evitar problemas de transform/perspective del parent */}
+                  {createPortal(
+                    <>
+                      {/* Lightbox Cinemático */}
+                      <AnimatePresence>
+                        {selectedMuralItem && (
+                          <motion.div
+                            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+                            animate={{ opacity: 1, backdropFilter: 'blur(10px)' }}
+                            exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+                            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 sm:p-10"
+                            onClick={() => setSelectedMuralItem(null)}
+                          >
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setSelectedMuralItem(null); }}
+                              className="absolute top-6 right-6 md:top-10 md:right-10 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-md transition-colors"
+                            >
+                              <X size={24} />
+                            </button>
+                            
+                            <motion.div
+                              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                              animate={{ scale: 1, opacity: 1, y: 0 }}
+                              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                              className="relative max-w-5xl w-full max-h-[90vh] rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-black"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {selectedMuralItem.type === 'video' ? (
+                                <video 
+                                  src={selectedMuralItem.src} 
+                                  className="w-full h-full max-h-[90vh] object-contain bg-black" 
+                                  autoPlay loop muted playsInline 
+                                />
+                              ) : (
+                                <img 
+                                  src={selectedMuralItem.src} 
+                                  alt={selectedMuralItem.title} 
+                                  className="w-full h-full max-h-[90vh] object-contain bg-black" 
+                                />
+                              )}
+                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 pointer-events-none">
+                                <span className="text-[10px] font-bold text-[#CBB79A] tracking-[0.3em] uppercase block mb-2">{selectedMuralItem.tag}</span>
+                                <h3 className="text-2xl font-black text-white uppercase tracking-wider">{selectedMuralItem.title}</h3>
+                              </div>
+                            </motion.div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
-                  {/* 4. Photo: barberia.jpg (col-span-1, row-span-2) */}
-                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                    <img src={mural3} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
-                  </div>
+                      {/* Custom Cursor Overlay */}
+                      <AnimatePresence>
+                        {isHoveringMural && !selectedMuralItem && !bentoEditMode && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                            className="fixed z-50 pointer-events-none w-[72px] h-[72px] rounded-full flex items-center justify-center border border-white/20 bg-black/10 backdrop-blur-md shadow-2xl"
+                            style={{
+                              left: cursorPos.x,
+                              top: cursorPos.y,
+                              x: "-50%",
+                              y: "-50%"
+                            }}
+                          >
+                            <span className="text-[9px] font-semibold tracking-[0.2em] text-white uppercase drop-shadow-md opacity-90">Ver</span>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </>,
+                    document.body
+                  )}
 
-                  {/* 5. Photo: DSC_7081 (col-span-1, row-span-1) */}
-                  <div className="md:col-span-1 md:row-span-1 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                    <img src={mural4} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
-                  </div>
+                  {/* Bento Grid — Videos vertical 9:16, photos proportional */}
+                  <motion.div 
+                    ref={muralGridRef}
+                    className={`grid grid-cols-12 gap-3 auto-rows-[80px] ${!bentoEditMode ? 'cursor-none' : ''}`}
+                    onMouseEnter={() => setIsHoveringMural(true)}
+                    onMouseLeave={() => setIsHoveringMural(false)}
+                    onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
+                    style={{
+                      opacity: useTransform(muralScrollY, [0.6, 0.9], [1, 0]),
+                      scale: useTransform(muralScrollY, [0.6, 0.9], [1, 0.95])
+                    }}
+                  >
+                    {bentoGridItems.map((item, idx) => (
+                      <motion.div 
+                        key={item.id} 
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: false, margin: "-50px" }}
+                        transition={{ duration: 0.7, delay: idx * 0.03, ease: [0.21, 0.47, 0.32, 0.98] }}
+                        onClick={() => !bentoEditMode && setSelectedMuralItem(item)}
+                        className={`rounded-2xl overflow-hidden relative group border ${bentoEditMode ? 'border-[#CBB79A] border-dashed ring-1 ring-[#CBB79A]/30' : 'border-white/5'} hover:border-[#CBB79A]/30 transition-colors duration-500`}
+                        style={{
+                          gridColumn: `span ${item.colSpan} / span ${item.colSpan}`,
+                          gridRow: `span ${item.rowSpan} / span ${item.rowSpan}`
+                        }}
+                      >
+                        {item.type === 'video' ? (
+                          <motion.video 
+                            src={item.src} 
+                            style={{ 
+                              objectPosition: `${item.posX}% ${item.posY}%`,
+                              y: idx % 2 === 0 ? yParallaxEven : yParallaxOdd,
+                              scale: 1.15 
+                            }}
+                            whileHover={{ scale: 1.2 }}
+                            transition={{ duration: 0.8, ease: "easeOut" }}
+                            className="w-full h-full object-cover brightness-[0.7] group-hover:brightness-[0.9] transition-all duration-700" 
+                            autoPlay loop muted playsInline 
+                          />
+                        ) : (
+                          <motion.img 
+                            src={item.src} 
+                            alt={item.title} 
+                            style={{ 
+                              objectPosition: `${item.posX}% ${item.posY}%`,
+                              y: idx % 2 === 0 ? yParallaxEven : yParallaxOdd,
+                              scale: 1.15 
+                            }}
+                            whileHover={{ scale: 1.2 }}
+                            transition={{ duration: 0.8, ease: "easeOut" }}
+                            className="w-full h-full object-cover brightness-[0.7] group-hover:brightness-[0.9] transition-all duration-700" 
+                          />
+                        )}
+                        {/* Gradient & Text - Hidden by default, reveal on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="absolute bottom-4 left-4 z-10 pointer-events-none opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                          <span className="text-[9px] font-bold text-[#CBB79A] tracking-[0.3em] uppercase block mb-1">{item.tag}</span>
+                          <h4 className="text-base font-bold text-white uppercase tracking-wider transition-colors duration-300">{item.title}</h4>
+                        </div>
 
-                  {/* 6. Photo: 479889969.jpg (col-span-1, row-span-1) */}
-                  <div className="md:col-span-1 md:row-span-1 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                    <img src={mural5} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
-                  </div>
+                        {/* EDIT OVERLAY */}
+                        {bentoEditMode && (
+                          <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-3 opacity-0 hover:opacity-100 transition-opacity z-20">
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="text-white/50 text-[9px] font-mono uppercase tracking-widest whitespace-nowrap">ID: {item.id}</div>
+                              
+                              <select 
+                                className="bg-white/10 text-white text-[9px] font-mono uppercase rounded px-2 py-1 outline-none border border-white/20 hover:bg-white/20 cursor-pointer max-w-[120px]"
+                                value=""
+                                onChange={(e) => {
+                                  const targetId = parseInt(e.target.value);
+                                  if (!targetId) return;
+                                  
+                                  setBentoGridItems(prev => {
+                                    const next = [...prev];
+                                    const currentIdx = next.findIndex(p => p.id === item.id);
+                                    const targetIdx = next.findIndex(p => p.id === targetId);
+                                    
+                                    if (currentIdx !== -1 && targetIdx !== -1) {
+                                      // Intercambiar posiciones
+                                      [next[currentIdx], next[targetIdx]] = [next[targetIdx], next[currentIdx]];
+                                    }
+                                    return next;
+                                  });
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <option value="" disabled className="bg-black text-white/50">Cambiar por...</option>
+                                {bentoGridItems.map(otherItem => {
+                                  if (otherItem.id === item.id) return null;
+                                  return (
+                                    <option key={otherItem.id} value={otherItem.id} className="bg-black text-white">
+                                      ID {otherItem.id}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            </div>
+                            
+                            {/* Size Controls */}
+                            <div className="flex gap-4 mb-4">
+                              <div className="flex flex-col items-center gap-1.5">
+                                <span className="text-[9px] text-[#CBB79A] font-bold uppercase tracking-wider">Ancho (Col)</span>
+                                <div className="flex bg-white/10 rounded-full overflow-hidden items-center">
+                                  <button onClick={() => setBentoGridItems(prev => prev.map(p => p.id === item.id ? {...p, colSpan: Math.max(1, p.colSpan - 1)} : p))} className="px-3 py-1 hover:bg-white/20 text-white font-bold transition-colors">-</button>
+                                  <span className="px-2 text-[11px] font-mono text-white min-w-[20px] text-center">{item.colSpan}</span>
+                                  <button onClick={() => setBentoGridItems(prev => prev.map(p => p.id === item.id ? {...p, colSpan: Math.min(12, p.colSpan + 1)} : p))} className="px-3 py-1 hover:bg-white/20 text-white font-bold transition-colors">+</button>
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-center gap-1.5">
+                                <span className="text-[9px] text-[#CBB79A] font-bold uppercase tracking-wider">Alto (Row)</span>
+                                <div className="flex bg-white/10 rounded-full overflow-hidden items-center">
+                                  <button onClick={() => setBentoGridItems(prev => prev.map(p => p.id === item.id ? {...p, rowSpan: Math.max(1, p.rowSpan - 1)} : p))} className="px-3 py-1 hover:bg-white/20 text-white font-bold transition-colors">-</button>
+                                  <span className="px-2 text-[11px] font-mono text-white min-w-[20px] text-center">{item.rowSpan}</span>
+                                  <button onClick={() => setBentoGridItems(prev => prev.map(p => p.id === item.id ? {...p, rowSpan: Math.min(12, p.rowSpan + 1)} : p))} className="px-3 py-1 hover:bg-white/20 text-white font-bold transition-colors">+</button>
+                                </div>
+                              </div>
+                            </div>
 
-                  {/* 7. Photo: DSC_7828 (col-span-1, row-span-2) */}
-                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                    <img src={mural7} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
-                  </div>
-
-                  {/* 8. Photo: DSC_7829 (col-span-1, row-span-2) */}
-                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                    <img src={mural8} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
-                  </div>
-
-                  {/* 9. Photo: DSC_7837 (col-span-1, row-span-2) */}
-                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                    <img src={mural9} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
-                  </div>
-
-                  {/* 10. Photo: DSC_7927 (col-span-1, row-span-2) */}
-                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                    <img src={mural10} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
-                  </div>
-
-                  {/* 11. Photo: DSC_7935 (col-span-1, row-span-2) */}
-                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 relative group cursor-pointer shadow-lg">
-                    <img src={mural11} alt="Panda Barber" className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all duration-500" />
-                  </div>
-
-                  {/* 12. Video: Panda Cafe (col-span-1, row-span-2) */}
-                  <div className="md:col-span-1 md:row-span-2 rounded-2xl overflow-hidden border border-white/10 bg-black relative group shadow-lg">
-                    <video 
-                      src={cafeVideo}
-                      className="w-full h-full object-cover transition-all duration-700 brightness-[0.9]"
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                    />
-                  </div>
-
+                            {/* Position Controls */}
+                            <div className="w-full px-4 flex flex-col gap-3">
+                              <div className="flex items-center gap-3">
+                                <span className="text-[9px] text-white/70 font-bold uppercase w-8 text-right">Eje X</span>
+                                <input type="range" min="0" max="100" value={item.posX} onChange={(e) => setBentoGridItems(prev => prev.map(p => p.id === item.id ? {...p, posX: parseInt(e.target.value)} : p))} className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-[#CBB79A] [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-125 transition-all" />
+                                <span className="text-[9px] text-[#CBB79A] font-mono w-6">{item.posX}%</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-[9px] text-white/70 font-bold uppercase w-8 text-right">Eje Y</span>
+                                <input type="range" min="0" max="100" value={item.posY} onChange={(e) => setBentoGridItems(prev => prev.map(p => p.id === item.id ? {...p, posY: parseInt(e.target.value)} : p))} className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-[#CBB79A] [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-125 transition-all" />
+                                <span className="text-[9px] text-[#CBB79A] font-mono w-6">{item.posY}%</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </motion.div>
                 </div>
-
               </div>
-
             </div>
 
             {/* SECTION: ¿POR QUÉ ELEGIR PANDA BARBER? / NUESTRAS SEDES */}
             {/* SECTION: ¿POR QUÉ ELEGIR PANDA BARBER? & UBICACIÓN */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch" id="ubicacion">
+            <FadeInUp className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch" id="ubicacion">
               
               {/* Left Column: Why Choose Us (Redesigned as premium cards) */}
               <div className="lg:col-span-6 flex flex-col justify-center text-left">
@@ -3178,10 +3480,10 @@ export default function BookAppointment() {
                   </div>
                 </div>
               </div>
-            </div>
+              </FadeInUp>
 
             {/* SECTION: INSTAGRAM FEED & CTA */}
-            <div className="w-full text-center space-y-8 pt-8 reveal-item">
+            <FadeInUp className="w-full text-center space-y-8 pt-8 reveal-item">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#CBB79A] block mb-2">SÍGUENOS EN REDES</span>
                 <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight uppercase font-sans mb-3 title-loop-pulse">INSTAGRAM <span className="text-[#CBB79A]">FEED</span></h2>
@@ -3203,7 +3505,7 @@ export default function BookAppointment() {
               {/* Grid of 4 Videos */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-[1200px] mx-auto">
                 {[
-                  { video: instaVideo1, url: 'https://www.instagram.com/p/DZitYBeBsDk/', likes: '284', comments: '24' },
+                  { video: instaVideo1, url: 'https://www.instagram.com/p/Dbl8A0Ovv1R/', likes: '284', comments: '24' },
                   { video: instaVideo2, url: 'https://www.instagram.com/p/Dbd_QOHolsp/', likes: '342', comments: '31' },
                   { video: instaVideo3, url: 'https://www.instagram.com/p/DbOP3D_R7sG/', likes: '198', comments: '16' },
                   { video: instaVideo4, url: 'https://www.instagram.com/p/DZ8SmG3JFcH/', likes: '412', comments: '39' }
@@ -3214,10 +3516,14 @@ export default function BookAppointment() {
                   };
 
                   return (
-                    <div
+                    <motion.div
                       key={idx}
+                      initial={{ opacity: 0, scale: 0.6, rotate: idx % 2 === 0 ? -6 : 6 }}
+                      whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                      viewport={{ once: false, margin: "-50px" }}
+                      transition={{ duration: 0.8, delay: idx * 0.15, type: "spring", damping: 12, stiffness: 100 }}
                       onDoubleClick={handleDoubleClick}
-                      className="group relative rounded-2xl overflow-hidden border border-white/5 bg-[#1c1c24] cursor-pointer select-none"
+                      className="group relative aspect-[9/16] rounded-2xl overflow-hidden border border-white/5 bg-[#1c1c24] cursor-pointer select-none"
                       title="Doble clic para ver en Instagram"
                     >
                       <video
@@ -3225,7 +3531,7 @@ export default function BookAppointment() {
                         loop
                         muted
                         playsInline
-                        className="w-full h-auto block transition-transform duration-500 group-hover:scale-105"
+                        className="w-full h-full object-cover block transition-transform duration-500 group-hover:scale-105"
                       >
                         <source src={post.video} type="video/mp4" />
                       </video>
@@ -3236,13 +3542,13 @@ export default function BookAppointment() {
                         </span>
                         <span className="text-[7.5px] text-white/55 uppercase tracking-widest mt-1">Doble clic para abrir</span>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
 
               {/* Follow Button */}
-              <div className="pt-2">
+              <div className="pt-8">
                 <a
                   href="https://www.instagram.com/pandabarberestudio/"
                   target="_blank"
@@ -3257,99 +3563,87 @@ export default function BookAppointment() {
                   </svg>
                   SEGUIR EN INSTAGRAM
                 </a>
-              </div>
             </div>
-
-
-              {/* SECTION: FOOTER (PANDA BARBER STUDIO) */}
-              <footer className="w-full pt-16 border-t border-white/[0.05] text-left">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-12">
-                  
-                  {/* Column 1: Navigation */}
-                  <div>
-                    <h5 className="text-[11px] font-extrabold text-white uppercase tracking-[0.2em] mb-5">Navegación</h5>
-                    <ul className="space-y-3 text-[12px] font-bold text-white/50 list-none">
-                      <li><Link to="/" onClick={() => handleScrollTo('inicio')} className="hover:text-[#CBB79A] transition-colors no-underline">Inicio</Link></li>
-                      <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Servicios</a></li>
-                      <li><a href="#equipo" className="hover:text-[#CBB79A] transition-colors no-underline">Equipo</a></li>
-                      <li><a href="#experiencia-section" className="hover:text-[#CBB79A] transition-colors no-underline">Experiencia</a></li>
-                      <li><a href="#ubicacion" className="hover:text-[#CBB79A] transition-colors no-underline">Ubicación</a></li>
-                    </ul>
-                  </div>
-
-                  {/* Column 2: Services */}
-                  <div>
-                    <h5 className="text-[11px] font-extrabold text-white uppercase tracking-[0.2em] mb-5">Servicios</h5>
-                    <ul className="space-y-3 text-[12px] font-bold text-white/50 list-none">
-                      <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Cortes</a></li>
-                      <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Barba</a></li>
-                      <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Tatuajes</a></li>
-                      <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Paquetes</a></li>
-                      <li><a href="#servicios" className="hover:text-[#CBB79A] transition-colors no-underline">Productos</a></li>
-                    </ul>
-                  </div>
-
-                  {/* Column 3: Contact */}
-                  <div>
-                    <h5 className="text-[11px] font-extrabold text-white uppercase tracking-[0.2em] mb-5">Contacto</h5>
-                    <ul className="space-y-4 text-[12px] font-bold text-white/50 list-none">
-                      <li className="flex items-center gap-2.5">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#CBB79A]">
-                          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                        </svg>
-                        <a href="https://wa.me/584242259724" target="_blank" rel="noopener noreferrer" className="hover:text-[#CBB79A] transition-colors text-white/70">+58 424-2259724</a>
-                      </li>
-                      <li className="flex items-center gap-2.5">
-                        <MapPin size={14} className="text-[#CBB79A]" />
-                        <span className="text-white/70">Maracay, Venezuela</span>
-                      </li>
-                      <li className="flex items-center gap-2.5">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#CBB79A]">
-                          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                        </svg>
-                        <a href="https://www.instagram.com/pandabarberestudio/" target="_blank" rel="noopener noreferrer" className="hover:text-[#CBB79A] transition-colors text-[#CBB79A]/85">@pandabarberestudio</a>
-                      </li>
-                    </ul>
-                  </div>
-
-                  {/* Column 4: Hours */}
-                  <div>
-                    <h5 className="text-[11px] font-extrabold text-white uppercase tracking-[0.2em] mb-5">Horarios</h5>
-                    <ul className="space-y-3.5 text-[12px] font-bold text-white/50 list-none">
-                      <li className="flex items-start gap-2.5">
-                        <Clock size={14} className="text-[#CBB79A] shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-white/70">Lun - Sáb</p>
-                          <p className="text-white/40 text-[11px] mt-0.5">9:00am - 8:00pm</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start gap-2.5 text-white/30">
-                        <Clock size={14} className="shrink-0 mt-0.5 text-white/10" />
-                        <div>
-                          <p className="text-white/30">Domingos</p>
-                          <p className="text-white/20 text-[11px] mt-0.5">Cerrado</p>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Sub-footer strip */}
-                <div className="border-t border-white/[0.04] pt-8 pb-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] sm:text-[11px] font-bold text-white/30">
-                  <p className="tracking-wide">© 2026 Panda Barber Studio. Todos los derechos reservados.</p>
-                  <p className="flex items-center gap-1.5 bg-white/[0.02] border border-white/[0.04] py-1.5 px-3 rounded-full hover:border-[#CBB79A]/20 transition-all duration-300 group cursor-pointer">
-                    <span className="text-white/40 tracking-wider">Diseño & Desarrollo</span>
-                    <span className="text-[#CBB79A] text-[9px] group-hover:rotate-45 transition-transform duration-500">★</span>
-                    <span className="text-white/60 group-hover:text-white transition-colors tracking-widest font-extrabold uppercase text-[10px]">SomosDos Studio</span>
-                  </p>
-                </div>
-              </footer>
-
-            </div>
+            </FadeInUp>
           </div>
-        );
+
+        {/* PARALLAX REVEAL FOOTER */}
+        <div className="w-full bg-transparent relative z-10" ref={footerRef}>
+          <motion.footer 
+            style={{ y: footerY, minHeight: '380px' }}
+            className="w-full bg-transparent relative text-center pt-0 pb-16 px-6 md:px-16 flex flex-col justify-between overflow-hidden" 
+          >
+              <div className="max-w-[1240px] mx-auto w-full hidden md:flex flex-row justify-between items-center gap-8 mb-10">
+                {/* Left links */}
+                <div className="flex flex-wrap justify-start gap-5 text-[10px] font-black tracking-[0.25em] text-white/40 uppercase">
+                  <a href="https://www.instagram.com/pandabarberestudio/" target="_blank" rel="noopener noreferrer" className="hover:text-[#CBB79A] transition-colors no-underline">Instagram</a>
+                  <span className="text-white/10 select-none">•</span>
+                  <a href="https://wa.me/584242259724" target="_blank" rel="noopener noreferrer" className="hover:text-[#CBB79A] transition-colors no-underline">WhatsApp</a>
+                </div>
+
+                {/* Panda Logo Center */}
+                <div className="w-12 h-12 flex items-center justify-center">
+                  <img src={pandaLogo} alt="Panda" className="w-full h-full object-contain opacity-40 hover:opacity-70 transition-opacity duration-500" style={{ filter: 'invert(1)' }} />
+                </div>
+
+                {/* Right links */}
+                <div className="flex flex-wrap justify-end gap-5 text-[10px] font-black tracking-[0.25em] text-white/40 uppercase">
+                  <span className="cursor-pointer hover:text-[#CBB79A] transition-colors" onClick={() => document.getElementById('servicios')?.scrollIntoView({ behavior: 'smooth' })}>Servicios</span>
+                  <span className="text-white/10 select-none">•</span>
+                  <span className="cursor-pointer hover:text-[#CBB79A] transition-colors" onClick={() => document.getElementById('ubicacion')?.scrollIntoView({ behavior: 'smooth' })}>Ubicación</span>
+                </div>
+              </div>
+
+              {/* Mobile Footer — Cosmos-style centered stacked layout */}
+              <div className="flex md:hidden flex-col items-center gap-8 mb-16">
+                {/* Panda Logo */}
+                <div className="w-14 h-14 flex items-center justify-center">
+                  <img src={pandaLogo} alt="Panda" className="w-full h-full object-contain" style={{ filter: 'invert(1)' }} />
+                </div>
+
+                {/* Connect Section */}
+                <div className="flex flex-col items-center gap-2.5">
+                  <span className="text-[11px] font-black text-white/70 uppercase tracking-[0.2em]">Conecta</span>
+                  <a href="https://www.instagram.com/pandabarberestudio/" target="_blank" rel="noopener noreferrer" className="text-[12px] text-white/40 hover:text-[#CBB79A] transition-colors no-underline">Instagram</a>
+                  <a href="https://wa.me/584242259724" target="_blank" rel="noopener noreferrer" className="text-[12px] text-white/40 hover:text-[#CBB79A] transition-colors no-underline">WhatsApp</a>
+                </div>
+
+                {/* More Section */}
+                <div className="flex flex-col items-center gap-2.5">
+                  <span className="text-[11px] font-black text-white/70 uppercase tracking-[0.2em]">Más</span>
+                  <span className="text-[12px] text-white/40 cursor-pointer hover:text-[#CBB79A] transition-colors" onClick={() => document.getElementById('servicios')?.scrollIntoView({ behavior: 'smooth' })}>Servicios</span>
+                  <span className="text-[12px] text-white/40 cursor-pointer hover:text-[#CBB79A] transition-colors" onClick={() => document.getElementById('ubicacion')?.scrollIntoView({ behavior: 'smooth' })}>Ubicación</span>
+                </div>
+              </div>
+
+              {/* Giant Background Outline Brand Text (Stretches across footer and cuts off) */}
+              <div className="absolute bottom-0 left-0 w-full translate-y-[12%] pointer-events-none flex justify-center">
+                <motion.h2 
+                  initial={{ opacity: 0, scale: 0.85, y: 100, filter: 'blur(10px)' }}
+                  whileInView={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+                  transition={{ duration: 1.2, ease: "easeOut" }}
+                  viewport={{ once: false }}
+                  className="text-[25vw] md:text-[22vw] font-black text-center tracking-tighter leading-[0.8] select-none uppercase font-sans pointer-events-auto flex justify-center items-center flex-wrap"
+                >
+                  {['P', 'A', 'N', 'D', 'A'].map((letter, i) => (
+                    <motion.span 
+                      key={i}
+                      initial={{ opacity: 0, y: 50 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.8, delay: i * 0.1, ease: "easeOut" }}
+                      className="inline-block px-1 md:px-3 text-[#1C1C22] hover:text-[#2A2A33] hover:scale-105 hover:-translate-y-4 transition-all duration-300 cursor-default"
+                    >
+                      {letter}
+                    </motion.span>
+                  ))}
+                </motion.h2>
+              </div>
+
+
+            </motion.footer>
+          </div>
+        </div>
+      );
       }
     
     return (
@@ -5924,6 +6218,28 @@ export default function BookAppointment() {
             </button>
           </div>
         </div>
+      </div>
+      {/* Elegant Scroll-to-Top Button */}
+      <div
+        className={`fixed bottom-8 right-8 z-[9999] transition-all duration-500 ${
+          showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
+      >
+        <button
+          onClick={() => {
+            if (scrollContainerRef.current) {
+              scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}
+          className="w-12 h-12 rounded-full border border-[#CBB79A]/30 bg-[#0d0d11]/80 backdrop-blur-xl flex items-center justify-center text-[#CBB79A] hover:bg-[#CBB79A] hover:text-black hover:border-transparent transition-all duration-300 hover:scale-110 cursor-pointer shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+          aria-label="Scroll to top"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 15l-6-6-6 6" />
+          </svg>
+        </button>
       </div>
     </div>
   );

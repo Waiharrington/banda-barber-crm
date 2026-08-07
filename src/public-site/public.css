@@ -453,7 +453,7 @@
   50% { transform: translate(45px, -35px) scale(1.1); }
 }
 
-/* Step transitions anim — opacity/transform only (no filter) so it stays on the
+/* Step transitions anim â€” opacity/transform only (no filter) so it stays on the
    compositor and doesn't drop frames on mobile, especially on real devices where
    animating `filter: blur()` forces a repaint every frame. */
 .transition-step-container {
@@ -509,7 +509,7 @@
   box-shadow: 0 0 8px rgba(203, 183, 154, 0.4);
 }
 
-/* ── CINEMATIC DIAGNOL SCISSOR CUT TRANSITION ── */
+/* â”€â”€ CINEMATIC DIAGNOL SCISSOR CUT TRANSITION â”€â”€ */
 
 /* Overlay Container for Slices */
 .slice-container {
@@ -532,11 +532,11 @@
   height: 100%;
   background: #07070a;
   pointer-events: auto;
-  /* No CSS transition here — movement is handled by @keyframe animations */
+  /* No CSS transition here â€” movement is handled by @keyframe animations */
   z-index: 30;
 }
 
-/* Diagonal split — clip-paths only active during transition via welcome-exit parent */
+/* Diagonal split â€” clip-paths only active during transition via welcome-exit parent */
 .welcome-exit .slice-top-left {
   clip-path: polygon(0 0, 101% 0, 0 101%);
   animation: sliceExitTopLeft 0.85s cubic-bezier(0.76, 0, 0.24, 1) forwards;
@@ -680,7 +680,7 @@
 
 /* Wizard Cinematic 3D Reveal */
 
-/* ── RETURN ANIMATION (reverse slices come together) ── */
+/* â”€â”€ RETURN ANIMATION (reverse slices come together) â”€â”€ */
 .welcome-return .slice-return-top-left {
   clip-path: polygon(0 0, 101% 0, 0 101%);
   animation: sliceReturnTopLeft 0.75s cubic-bezier(0.76, 0, 0.24, 1) forwards;
@@ -776,7 +776,7 @@
   }
 }
 
-/* ── SUSTAINED TITLE ANIMATION ── */
+/* â”€â”€ SUSTAINED TITLE ANIMATION â”€â”€ */
 @keyframes titleGlow {
   0%, 100% {
     text-shadow: 0 0 10px rgba(203, 183, 154, 0.3), 0 0 20px rgba(203, 183, 154, 0.1);
@@ -1107,9 +1107,9 @@
   transform: scale(0.95);
 }
 
-/* ══════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    PREMIUM MICRO-INTERACTIONS
-   ══════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* 1. Parallax on service card images */
 .accordion-category-header:hover .category-image-wrapper img,
@@ -1239,7 +1239,7 @@
   }
 }
 
-/* ═══════ DISRUPTIVE BARBER CARDS ═══════ */
+/* â•â•â•â•â•â•â• DISRUPTIVE BARBER CARDS â•â•â•â•â•â•â• */
 
 .barber-hero-card {
   position: relative;
@@ -1400,7 +1400,7 @@
   animation: profileFadeSlideUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both;
 }
 
-/* Sobre Mí bio: fades in after stats */
+/* Sobre MÃ­ bio: fades in after stats */
 .profile-bio-enter {
   animation: profileFadeSlideUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both;
 }
@@ -1468,7 +1468,7 @@
   z-index: 10;
 }
 
-/* ── PREMIUM GLOBAL FLUID TRANSITIONS & INTERACTIVE MICRO-ANIMATIONS ── */
+/* â”€â”€ PREMIUM GLOBAL FLUID TRANSITIONS & INTERACTIVE MICRO-ANIMATIONS â”€â”€ */
 
 /* Apply smooth cubic-bezier transitions to all interactive, hoverable, and focusable elements */
 button,
@@ -1532,15 +1532,15 @@ input[type="date"] {
   color-scheme: dark;
 }
 
-/* ── MINI-LANDING PAGE STYLES ── */
+/* â”€â”€ MINI-LANDING PAGE STYLES â”€â”€ */
 .landing-scroll-container {
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: block;
   height: 100%;
+  position: relative !important;
+  z-index: 1 !important;
   scrollbar-width: none;
 }
 .landing-scroll-container::-webkit-scrollbar {
@@ -1596,7 +1596,7 @@ input[type="date"] {
   padding: 0;
 }
 
-/* ── Servicios Populares (vertical list showcase) ── */
+/* â”€â”€ Servicios Populares (vertical list showcase) â”€â”€ */
 .landing-services-scroll {
   display: flex;
   flex-direction: column;
@@ -1703,32 +1703,26 @@ input[type="date"] {
   z-index: 2;
 }
 
-/* ── Barbero Destacado del Mes (horizontal card) ── */
+/* â”€â”€ Barbero Destacado del Mes (horizontal card) â”€â”€ */
 .landing-barber-month-card {
   width: 100%;
   display: flex;
-  gap: 16px;
-  background: #0a0a0c;
-  border: 1px solid rgba(203, 183, 154, 0.25);
-  border-radius: 18px;
-  padding: 14px;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(203, 183, 154, 0.08) 0%, rgba(15, 15, 18, 0.95) 100%);
+  border: 1.5px solid rgba(203, 183, 154, 0.22);
+  border-radius: 24px;
+  padding: 16px;
   position: relative;
   overflow: hidden;
-}
-
-.landing-bm-photo-wrapper {
-  width: 38%;
-  max-width: 140px;
-  min-height: 220px;
-  display: flex;
-  position: relative;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .landing-bm-photo {
-  width: 100%;
-  height: 100%;
+  width: 110px;
+  min-width: 110px;
+  height: 170px;
+  border-radius: 16px;
   object-fit: cover;
-  border-radius: 12px;
 }
 
 .landing-bm-content {
@@ -1736,56 +1730,53 @@ input[type="date"] {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 6px 0;
+  padding-right: 36px;
 }
 
 .landing-bm-medal {
   position: absolute;
-  top: 6px;
-  right: -5px;
-  width: 44px;
-  height: 44px;
+  top: 14px;
+  right: 14px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2a2a2a 0%, #111 100%);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: radial-gradient(circle at 30% 30%, #2c2c33, #0f0f12);
+  border: 1px solid rgba(203, 183, 154, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #D5B990;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-  z-index: 2;
+  color: var(--champagne);
+  box-shadow: 0 0 14px rgba(203, 183, 154, 0.18);
 }
 
 .landing-bm-label {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--champagne);
-  max-width: 100%;
   line-height: 1.3;
 }
 
 .landing-bm-name {
-  font-size: 24px;
+  font-size: 30px;
   font-weight: 900;
   color: var(--white);
   line-height: 1;
-  margin-top: 10px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  margin-top: 6px;
+  letter-spacing: -0.02em;
 }
 
 .landing-bm-role {
   font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
+  font-weight: 800;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--champagne);
-  margin-top: 6px;
+  margin-top: 5px;
 }
 
 .landing-bm-rating {
@@ -1798,38 +1789,37 @@ input[type="date"] {
 }
 
 .landing-bm-quote {
-  font-size: 10.5px;
+  font-size: 10px;
   font-style: italic;
-  color: rgba(255, 255, 255, 0.5);
-  line-height: 1.45;
-  margin-top: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.5;
+  margin-top: 8px;
 }
 
 .landing-bm-btn {
-  margin-top: auto;
-  align-self: flex-start;
+  margin-top: 14px;
   width: 100%;
-  background: #D5B990;
+  background: linear-gradient(to bottom, #d2c1aa, #bba789);
   color: #000;
   border: none;
-  padding: 12px;
-  border-radius: 10px;
+  padding: 12px 16px;
+  border-radius: 14px;
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   cursor: pointer;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   gap: 6px;
 }
 
-.landing-bm-btn:hover {
-  filter: brightness(1.08);
+.landing-bm-btn:active {
+  filter: brightness(0.94);
 }
 
-/* ── Equipo Disponible (flush top photo card) ── */
+/* â”€â”€ Equipo Disponible (flush top photo card) â”€â”€ */
 .landing-team-subtitle {
   font-size: 11px;
   font-weight: 800;
@@ -1950,7 +1940,7 @@ input[type="date"] {
   box-shadow: 0 0 12px rgba(255, 214, 107, 0.4);
 }
 
-/* ── Club Panda VIP ── */
+/* â”€â”€ Club Panda VIP â”€â”€ */
 .landing-vip-card {
   width: 100%;
   display: flex;
@@ -2040,7 +2030,7 @@ input[type="date"] {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* ── Podio individual Premium ── */
+/* â”€â”€ Podio individual Premium â”€â”€ */
 @keyframes float {
   0% { transform: translateY(0px); }
   50% { transform: translateY(-5px); }
@@ -2209,7 +2199,7 @@ input[type="date"] {
   filter: drop-shadow(0 0 6px rgba(255, 200, 80, 0.5));
 }
 
-/* ── Cliente del Mes: ganador único ── */
+/* â”€â”€ Cliente del Mes: ganador Ãºnico â”€â”€ */
 .landing-vip-winner {
   display: flex;
   flex-direction: column;
@@ -2273,7 +2263,7 @@ input[type="date"] {
   }
 }
 
-/* ── 3D PANDA BEAR & WAVING HAND EFFECTS ── */
+/* â”€â”€ 3D PANDA BEAR & WAVING HAND EFFECTS â”€â”€ */
 .bear-glow-effect {
   filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.35)) drop-shadow(0 0 10px rgba(203, 183, 154, 0.4));
 }
@@ -2352,7 +2342,7 @@ input[type="date"] {
 
 
 
-/* ── Hero depth effects ── */
+/* â”€â”€ Hero depth effects â”€â”€ */
 .hero-grain {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
   background-repeat: repeat;
@@ -2361,7 +2351,7 @@ input[type="date"] {
   mix-blend-mode: overlay;
 }
 
-/* ── Desktop Dashboard Layout adjustments ── */
+/* â”€â”€ Desktop Dashboard Layout adjustments â”€â”€ */
 @media (min-width: 1024px) {
   .landing-services-scroll {
     display: grid !important;
@@ -2545,7 +2535,7 @@ input[type="date"] {
 .delay-500 { transition-delay: 500ms !important; }
 .delay-600 { transition-delay: 600ms !important; }
 
-/* ── PREMIUM VISUAL ELEVATION ── */
+/* â”€â”€ PREMIUM VISUAL ELEVATION â”€â”€ */
 
 /* 1. Shimmer sweep effect on Gold CTA Buttons */
 .btn-gold {
@@ -2650,7 +2640,7 @@ input[type="date"] {
   animation: slowFloat2 24s ease-in-out infinite;
 }
 
-/* ── NEXT-LEVEL BUTTON ANIMATIONS ── */
+/* â”€â”€ NEXT-LEVEL BUTTON ANIMATIONS â”€â”€ */
 
 /* 1. Liquid Gold Button - Ultra Premium */
 .btn-gold {
@@ -3052,7 +3042,7 @@ body.hide-public-header nav {
   animation: float-subtle 4s ease-in-out infinite;
 }
 
-/* ── TITLE ANIMATION SYSTEM ── */
+/* â”€â”€ TITLE ANIMATION SYSTEM â”€â”€ */
 
 /* 1. Entrance animation (Slide-up & Fade-in) */
 .title-enter-active {
@@ -3110,35 +3100,33 @@ body.hide-public-header nav {
 
 @keyframes fadeInUp {
   0% {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  position: relative;
+  z-index: 10;
+  overflow: hidden;
 }
 
-/* === Marquee Photo Strip Animations === */
-@keyframes marquee-scroll-left {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+@keyframes panImageMask {
+  0% { background-position: 0% 50%; background-size: 100%; }
+  50% { background-position: 100% 50%; background-size: 150%; }
+  100% { background-position: 0% 50%; background-size: 100%; }
+}
+.animate-pan-mask {
+  animation: panImageMask 25s infinite ease-in-out;
 }
 
-@keyframes marquee-scroll-right {
-  0% { transform: translateX(-50%); }
-  100% { transform: translateX(0); }
+
+@keyframes zoomImageMask {
+  0% { background-size: 110%; }
+  100% { background-size: 130%; }
+}
+.animate-zoom-mask {
+  animation: zoomImageMask 15s infinite alternate ease-in-out;
 }
 
-.marquee-strip-left {
-  animation: marquee-scroll-left 25s linear infinite;
+
+@keyframes zoomImageMask {
+  0% { background-size: 200%; }
+  100% { background-size: 230%; }
 }
 
-.marquee-strip-right {
-  animation: marquee-scroll-right 30s linear infinite;
-}
 
-.marquee-strip-left:hover,
-.marquee-strip-right:hover {
-  animation-play-state: paused;
-}
