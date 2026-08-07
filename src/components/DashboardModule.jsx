@@ -1412,13 +1412,13 @@ const DashboardModule = ({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, overflowY: 'auto' }}>
-                {topServicesList.slice(0, 4).map((service, idx) => (
+                {finalTopServices.slice(0, 4).map((service, idx) => (
                   <div key={service.id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 8px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.02)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--champagne)' }}>{idx + 1}</span>
                       <span style={{ fontSize: '11px', fontWeight: '700', color: 'white' }}>{service.name}</span>
                     </div>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(255,255,255,0.9)' }}>{service.count}</span>
+                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(255,255,255,0.9)' }}>{service.val}</span>
                   </div>
                 ))}
               </div>
