@@ -13,6 +13,7 @@ import { AuthProvider } from './context/AuthContext';
 import { DialogProvider } from './context/DialogContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { ModalProvider } from './context/ModalContext';
+import PublicErrorBoundary from './public-site/components/PublicErrorBoundary';
 
 export default function PublicRouter() {
   return (
@@ -21,6 +22,7 @@ export default function PublicRouter() {
         <DialogProvider>
           <NotificationProvider>
             <ModalProvider>
+              <PublicErrorBoundary>
               <Routes>
                 <Route path="/admin.html" element={<Home />} />  {/* legacy redirect */}
                 <Route element={<PublicLayout />}>
@@ -36,6 +38,7 @@ export default function PublicRouter() {
                   <Route path="*" element={<BookAppointment />} />
                 </Route>
               </Routes>
+              </PublicErrorBoundary>
             </ModalProvider>
           </NotificationProvider>
         </DialogProvider>
