@@ -495,7 +495,7 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
         paymentMethod = meta.method_usd;
       }
     }
-    const paymentReference = meta.payment_reference_bs || meta.paymentReferenceBs || '';
+    const paymentReference = meta.paymentReferenceBs || meta.payment_reference_bs || meta.paymentReference || meta.reference_number || meta.reference || meta.transfer_ref || meta.transferRef || meta.ref || '';
     
     // Lavado: check if any staff member is involved with washing logic or if it's in meta
     let didWash = meta.didWash ? 'Si' : 'No';
@@ -515,8 +515,59 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
   const isHistoricalImport = (transaction) => transaction?.metadata?.importedHistorical === true;
 
+  const getDeduplicationKey = (t) => {
+    if (!t) return '';
+    const meta = t.metadata || {};
+    const desc = (t.description || '').toLowerCase();
+    const { clientName, barbero, paymentReference } = parseTxExcel(t);
+
+    const normClient = (clientName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const amountVal = Number(t.amount || 0).toFixed(2);
+    const dateDay = t.created_at ? new Date(t.created_at).toISOString().split('T')[0] : '';
+
+    // 1. If client name is known (e.g. "Daniel García"), deduplicate ALL entries for this client on this day with this amount
+    if (normClient && normClient !== 'sn' && normClient !== 'cliente') {
+      return `client_${dateDay}_${normClient}_${amountVal}`;
+    }
+
+    // 2. Reference extraction from metadata or description
+    let ref = String(paymentReference || '').trim();
+    if (!ref) {
+      const match = desc.match(/ref[.:\s]*([0-9a-z]+)/i);
+      if (match) ref = match[1];
+    }
+
+    if (ref && ref.length > 1 && ref !== '0' && ref !== '0000') {
+      return `ref_${dateDay}_${ref}_${amountVal}`;
+    }
+
+    // 3. Appointment IDs
+    const rawAppIds = [
+      meta.appointment_id,
+      ...(Array.isArray(meta.appointmentIds) ? meta.appointmentIds : (meta.appointmentIds ? [meta.appointmentIds] : []))
+    ].filter(Boolean);
+
+    if (rawAppIds.length > 0) {
+      return `app_${rawAppIds.map(String).sort().join('_')}`;
+    }
+
+    const dateMinuteStr = t.created_at ? new Date(t.created_at).toISOString().substring(0, 16) : '';
+    return `tx_${normClient}_${barbero.toLowerCase().replace(/[^a-z0-9]/g, '')}_${amountVal}_${dateMinuteStr}`;
+  };
+
   const operationalTransactions = useMemo(
-    () => transactions.filter(t => !isHistoricalImport(t)),
+    () => {
+      const seenIds = new Set();
+      const seenKeys = new Set();
+      return transactions.filter(t => {
+        if (!t?.id || seenIds.has(t.id)) return false;
+        const key = getDeduplicationKey(t);
+        if (key && seenKeys.has(key)) return false;
+        seenIds.add(t.id);
+        if (key) seenKeys.add(key);
+        return !isHistoricalImport(t);
+      });
+    },
     [transactions]
   );
 
@@ -665,30 +716,19 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
 
       // 2. Barber Stats (Based on staffInvolved)
       staffInvolved.forEach(s => {
-        // Find staff name from staffId if possible, or use ID
-        // Note: We might need the full staff list here or just use what's in metadata if we store names there.
-        // For now, let's assume we can at least aggregate by ID and we'll need names later.
         const sId = s.staffId;
         if (!barberStats[sId]) {
           barberStats[sId] = { id: sId, services: 0, incomeBs: 0, lavados: 0 };
         }
         
-        // If they earned commission and it's an appointment (not just tip)
         if (meta.appointment_id) {
           barberStats[sId].services += 1;
           barberStats[sId].incomeBs += bsAmount;
-          
-          // Washing Logic: If this staff member was involved and there was a washer selected
-          if (meta.staffInvolved.some(si => si.staffId === sId && si.commissionEarned > 0)) {
-             // This is a bit complex without knowing roles here. 
-             // We'll simplify: if they are in staffInvolved, they did a service.
-          }
         }
       });
 
       // 3. Service Stats
       if (meta.appointment_id) {
-        // Extract service name from description or metadata
         const serviceName = t.description.split(' - ')[1]?.replace('Servi: ', '') || 'Varios';
         serviceStats[serviceName] = (serviceStats[serviceName] || 0) + 1;
       }
@@ -703,43 +743,56 @@ const FinanceModule = ({ isMobile, currency, rates, staff = [] }) => {
   }, 0) + (fixedCosts.extraCosts?.reduce((acc, c) => acc + Number(c.value || 0), 0) || 0);
 
   const netProfit = balance - totalFixedCosts;
-  const breakEven = totalFixedCosts / 0.4; // Assuming 40% margin (after 60% commission)
+  const breakEven = totalFixedCosts / 0.4; 
   const avgTicket = totalIncome / (Object.values(analysisData.barberStats).reduce((acc, b) => acc + b.services, 0) || 1);
 
-  const filteredTransactions = useMemo(() => transactions.filter(t => {
-    // 1. Filter by Type
-    if (filterType !== 'all' && t.type !== filterType) return false;
-    
-    // Parse transaction details
-    const { clientName, serviceName } = parseTxExcel(t);
-    
-    // 2. Filter by Service
-    if (filterService !== 'all' && serviceName.toLowerCase() !== filterService.toLowerCase()) return false;
+  const filteredTransactions = useMemo(() => {
+    const seenTxIds = new Set();
+    const seenKeys = new Set();
 
-    // 3. Filter by Search Query (Client Name / Description)
-    if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
-      const matchClient = clientName.toLowerCase().includes(q);
-      const matchDesc = (t.description || '').toLowerCase().includes(q);
-      if (!matchClient && !matchDesc) return false;
-    }
-    
-    // 4. Filter by Barber
-    if (filterBarber !== 'all') {
-      const isAssociated = t.metadata?.staffInvolved?.some(s => String(s.staffId) === String(filterBarber));
-      if (!isAssociated) return false;
-    }
-    
-    // 5. Filter by Date
-    if (filterDate !== 'all') {
-      const txDate = new Date(t.created_at);
-      const { start, end } = getDateRangeForFilter(filterDate, startDate, endDate);
-      if (start && txDate < start) return false;
-      if (end && txDate > end) return false;
-    }
-    
-    return true;
-  }), [transactions, filterType, filterService, searchQuery, filterBarber, filterDate, startDate, endDate]);
+    return transactions.filter(t => {
+      if (!t?.id || seenTxIds.has(t.id)) return false;
+
+      const key = getDeduplicationKey(t);
+      if (key && seenKeys.has(key)) return false;
+
+      seenTxIds.add(t.id);
+      if (key) seenKeys.add(key);
+
+      // 1. Filter by Type
+      if (filterType !== 'all' && t.type !== filterType) return false;
+      
+      // Parse transaction details
+      const { clientName, serviceName } = parseTxExcel(t);
+      
+      // 2. Filter by Service
+      if (filterService !== 'all' && serviceName.toLowerCase() !== filterService.toLowerCase()) return false;
+
+      // 3. Filter by Search Query (Client Name / Description)
+      if (searchQuery.trim() !== '') {
+        const q = searchQuery.toLowerCase();
+        const matchClient = clientName.toLowerCase().includes(q);
+        const matchDesc = (t.description || '').toLowerCase().includes(q);
+        if (!matchClient && !matchDesc) return false;
+      }
+      
+      // 4. Filter by Barber
+      if (filterBarber !== 'all') {
+        const isAssociated = t.metadata?.staffInvolved?.some(s => String(s.staffId) === String(filterBarber));
+        if (!isAssociated) return false;
+      }
+      
+      // 5. Filter by Date
+      if (filterDate !== 'all') {
+        const txDate = new Date(t.created_at);
+        const { start, end } = getDateRangeForFilter(filterDate, startDate, endDate);
+        if (start && txDate < start) return false;
+        if (end && txDate > end) return false;
+      }
+      
+      return true;
+    });
+  }, [transactions, filterType, filterService, searchQuery, filterBarber, filterDate, startDate, endDate]);
 
   const uniqueServices = useMemo(() => (
     Array.from(new Set(transactions.map(t => parseTxExcel(t).serviceName).filter(Boolean)))

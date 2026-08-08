@@ -46,7 +46,6 @@ const MobileBottomNav = ({ activeTab, setActiveTab }) => {
     { id: 'checkout', label: 'Caja', icon: CreditCard, roles: ['Admin', 'Caja'] },
     { id: 'reception', label: 'Recepción', icon: ClipboardList, roles: ['Admin', 'Recepcionista'] },
     { id: 'finance', label: 'Finanzas', icon: Wallet, roles: ['Admin', 'Caja'] },
-    { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
     { id: 'personnel', label: 'Equipo', icon: UserCheck, roles: ['Admin'] },
     { id: 'reports', label: 'Reportes', icon: PieChart, roles: ['Admin'] },
     { id: 'services', label: 'Servicios', icon: Star, roles: ['Admin'] },

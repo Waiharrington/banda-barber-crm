@@ -71,7 +71,6 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
     { id: 'inventory', label: 'Inventario', icon: Package, roles: ['Admin', 'Caja'] },
     { id: 'reports', label: 'Reportes', icon: PieChart, roles: ['Admin'] },
     { id: 'finance', label: 'Finanzas', icon: Wallet, roles: ['Admin', 'Caja'] },
-    { id: 'history', label: 'Historial', icon: History, roles: ['Admin', 'Barbero', 'Recepcionista', 'Caja', 'Asistente de Lavado'] },
     { id: 'settings', label: 'Ajustes', icon: Settings, roles: ['Admin'] },
   ];
 
@@ -81,7 +80,7 @@ const Sidebar = ({ activeTab, setActiveTab, isMobile, rates, isCollapsed, setIsC
     const isServiceProf = (roleName.toLowerCase().includes('barber') || roleName.toLowerCase().includes('tatu')) && roleName !== 'Admin';
 
     if (isServiceProf) {
-      const barberOrder = ['barber', 'scheduling', 'my-profile', 'clients', 'history'];
+      const barberOrder = ['barber', 'scheduling', 'my-profile', 'clients'];
       return barberOrder
         .map(id => allMenuItems.find(m => m.id === id))
         .filter(Boolean);

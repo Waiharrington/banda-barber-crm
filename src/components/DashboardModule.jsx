@@ -153,7 +153,11 @@ const DashboardModule = ({
   const sortedStaff = [...staffList]
     .filter(s => {
       const role = String(s.role || '').toLowerCase();
-      return role.includes('barbero') || role.includes('tatuador');
+      const name = String(s.name || '').toLowerCase();
+      const isBarber = role.includes('barber') && !role.includes('tatuad');
+      const isNonBarberRole = role.includes('admin') || role.includes('caja') || role.includes('recep') || role.includes('asistent') || role.includes('archived');
+      const isNonBarberName = name.includes('admin') || name.includes('caja') || name.includes('yarilin');
+      return isBarber && !isNonBarberRole && !isNonBarberName;
     })
     .sort((a, b) => (b.stats?.monthlyIncome || 0) - (a.stats?.monthlyIncome || 0));
 
@@ -1015,7 +1019,7 @@ const DashboardModule = ({
 
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: (isMobile || isTablet) ? '1fr' : '3.1fr 1.3fr', 
+        gridTemplateColumns: (isMobile || isTablet) ? '1fr' : '3.4fr 1.1fr', 
         gap: '16px', 
         flex: 1, 
         minHeight: 0,
@@ -1350,58 +1354,152 @@ const DashboardModule = ({
             </div>
           </div>
 
-          {/* Bottom Row: Ingresos Chart and Top Services */}
+          {/* Bottom Row: Top Barberos (Podium + List) and Top Services */}
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr', 
+            gridTemplateColumns: isMobile ? '1fr' : '2.1fr 0.9fr', 
             gap: '12px',
             flex: '1 1 0%',
             minHeight: 0
           }}>
-            {/* 1. Ingresos Card */}
+            {/* 1. Top Barberos Card */}
             <div className="glass-card" style={{ padding: '12px 14px', borderRadius: '16px', backgroundColor: '#161617', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px', flexShrink: 0 }}>
-                <span style={{ fontSize: '10px', fontWeight: '800', color: 'white', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Ingresos</span>
-                <span style={{ fontSize: '8.5px', fontWeight: '700', color: 'rgba(255,255,255,0.75)', cursor: 'pointer' }}>Esta semana ▾</span>
-              </div>
-              <div style={{ flexShrink: 0, marginBottom: '6px' }}>
-                <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>
-                  ${formatCurrency(weeklyIncomeAmount)}
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Crown size={14} color="var(--champagne)" fill="var(--champagne)" />
+                  <span style={{ fontSize: '10px', fontWeight: '800', color: 'white', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Top Barberos</span>
                 </div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700', marginTop: '2px' }}>
-                  {renderComparison(weeklyIncomeAmount, stats?.previousWeekIncome, 'vs semana anterior')}
-                </div>
+                <span style={{ fontSize: '8.5px', fontWeight: '700', color: 'var(--champagne)', backgroundColor: 'rgba(197, 168, 128, 0.1)', padding: '2px 8px', borderRadius: '100px', border: '1px solid rgba(197, 168, 128, 0.2)' }}>
+                  MES EN CURSO
+                </span>
               </div>
-              <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-                <Line 
-                  data={chartData ? weeklyChartData : {
-                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-                    datasets: [
-                      {
-                        data: [0, 0, 0, 0, 0, 0, 0],
-                        borderColor: '#c5a880',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#c5a880',
-                        pointBorderColor: '#161617',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        tension: 0.4,
-                        fill: true,
-                        backgroundColor: (context) => {
-                          const chart = context.chart;
-                          const { ctx, chartArea } = chart;
-                          if (!chartArea) return null;
-                          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                          gradient.addColorStop(0, 'rgba(197, 168, 128, 0.2)');
-                          gradient.addColorStop(1, 'rgba(197, 168, 128, 0.0)');
-                          return gradient;
-                        },
-                      }
-                    ]
-                  }} 
-                  options={chartOptions} 
-                />
+
+              {/* 🏆 ALL BARBERS PODIUMS SIDE-BY-SIDE STAGE */}
+              <div style={{ 
+                flex: 1, 
+                minHeight: 0, 
+                display: 'flex', 
+                justifyContent: sortedStaff.length <= 4 ? 'space-around' : 'flex-start',
+                alignItems: 'flex-end', 
+                padding: '16px 8px 6px 8px', 
+                overflowX: 'auto',
+                gap: '10px'
+              }} className="panda-scrollbar">
+                {sortedStaff.length === 0 ? (
+                  <div style={{ width: '100%', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '11px', padding: '20px' }}>
+                    No hay barberos registrados
+                  </div>
+                ) : (
+                  sortedStaff.map((barber, rankIndex) => {
+                    const rank = rankIndex + 1;
+                    const isTop1 = rank === 1;
+                    const isTop2 = rank === 2;
+                    const isTop3 = rank === 3;
+
+                    // Styling based on rank
+                    const borderColor = isTop1 ? 'var(--champagne)' : isTop2 ? '#a1a1aa' : isTop3 ? '#b45309' : 'rgba(255,255,255,0.2)';
+                    const rankBg = isTop1 ? 'var(--champagne)' : isTop2 ? '#a1a1aa' : isTop3 ? '#b45309' : 'rgba(255,255,255,0.15)';
+                    const textColor = isTop1 ? '#000' : isTop2 ? '#000' : isTop3 ? '#fff' : '#fff';
+                    
+                    // Compact podium heights to fit cleanly
+                    const blockHeight = isTop1 ? '42px' : isTop2 ? '30px' : isTop3 ? '22px' : rank === 4 ? '16px' : rank === 5 ? '12px' : rank === 6 ? '10px' : '8px';
+                    const avatarSize = isTop1 ? '40px' : isTop2 ? '34px' : isTop3 ? '32px' : '28px';
+                    const elevateY = '0px';
+
+                    const bgGradient = isTop1 
+                      ? 'linear-gradient(to bottom, rgba(197, 168, 128, 0.4), rgba(197, 168, 128, 0.05))'
+                      : isTop2 
+                      ? 'linear-gradient(to bottom, rgba(161, 161, 170, 0.28), rgba(161, 161, 170, 0.03))'
+                      : isTop3 
+                      ? 'linear-gradient(to bottom, rgba(180, 83, 9, 0.28), rgba(180, 83, 9, 0.03))'
+                      : 'linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02))';
+
+                    return (
+                      <div 
+                        key={barber.id || rankIndex}
+                        style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          alignItems: 'center', 
+                          flex: '1 1 0%', 
+                          minWidth: '65px',
+                          transform: `translateY(${elevateY})`,
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        {/* Avatar Frame with Border & Floating Crown if #1 */}
+                        <div style={{ position: 'relative', marginBottom: '6px' }}>
+                          {isTop1 && (
+                            <div style={{ position: 'absolute', top: '-13px', left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}>
+                              <Crown size={14} color="var(--champagne)" fill="var(--champagne)" />
+                            </div>
+                          )}
+                          <div style={{
+                            width: avatarSize,
+                            height: avatarSize,
+                            borderRadius: '12px',
+                            border: isTop1 ? '2.5px solid var(--champagne)' : `2px solid ${borderColor}`,
+                            boxShadow: isTop1 ? '0 0 16px rgba(197, 168, 128, 0.65)' : '0 2px 6px rgba(0,0,0,0.3)',
+                            padding: '2px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: isTop1 ? 'rgba(197, 168, 128, 0.1)' : 'rgba(0,0,0,0.3)'
+                          }}>
+                            {barber.image_url ? (
+                              <img src={barber.image_url} alt={barber.name} style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} />
+                            ) : (
+                              <span style={{ fontSize: isTop1 ? '15px' : '12px', fontWeight: '900', color: borderColor }}>
+                                {barber.name ? barber.name.charAt(0).toUpperCase() : 'B'}
+                              </span>
+                            )}
+                          </div>
+                          {/* Rank Badge */}
+                          <div style={{
+                            position: 'absolute',
+                            bottom: '-6px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            width: '15px',
+                            height: '15px',
+                            borderRadius: '50%',
+                            backgroundColor: rankBg,
+                            color: textColor,
+                            fontSize: '8.5px',
+                            fontWeight: '950',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.6)'
+                          }}>
+                            {rank}
+                          </div>
+                        </div>
+
+                        {/* Info */}
+                        <span style={{ fontSize: isTop1 ? '11.5px' : '10.5px', fontWeight: '900', color: 'white', marginTop: '4px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
+                          {getShortName(barber.name)}
+                        </span>
+                        <span style={{ fontSize: isTop1 ? '11px' : '9.5px', fontWeight: '900', color: isTop1 ? 'var(--champagne)' : 'rgba(255,255,255,0.85)', marginTop: '1px' }}>
+                          ${formatCurrency(barber.stats?.monthlyIncome || 0)}
+                        </span>
+
+                        {/* Podium Block */}
+                        <div style={{
+                          width: '80%',
+                          maxWidth: '44px',
+                          height: blockHeight,
+                          background: bgGradient,
+                          border: `1.5px solid ${borderColor}`,
+                          borderBottom: 'none',
+                          borderRadius: '6px 6px 0 0',
+                          marginTop: '6px'
+                        }} />
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -1577,246 +1675,59 @@ const DashboardModule = ({
             </div>
           </div>
 
-          {/* Card 3: Top 3 Barberos del Mes (Podium Style) */}
+          {/* Card 3: Gráfica de Ingresos */}
           <div className="glass-card" style={{ 
-            padding: '14px 16px', 
+            padding: '12px 14px', 
             borderRadius: '16px', 
             backgroundColor: '#161617', 
             border: '1px solid rgba(255,255,255,0.05)', 
             display: 'flex', 
             flexDirection: 'column', 
-            flexShrink: 0
+            flexShrink: 0,
+            height: '210px'
           }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexShrink: 0 }}>
-              <h3 style={{ fontSize: '10px', fontWeight: '800', color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Top barberos</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px', flexShrink: 0 }}>
+              <span style={{ fontSize: '10px', fontWeight: '800', color: 'white', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Ingresos</span>
+              <span style={{ fontSize: '8.5px', fontWeight: '700', color: 'rgba(255,255,255,0.75)', cursor: 'pointer' }}>Esta semana ▾</span>
             </div>
-
-            {/* Podium Grid */}
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-around', 
-              alignItems: 'flex-end', 
-              padding: '15px 0 5px 0', 
-              minHeight: '175px', 
-              position: 'relative' 
-            }}>
-              
-              {/* 2nd Place (Left) */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '30%' }}>
-                {/* Avatar Frame with Border */}
-                <div style={{ position: 'relative', marginBottom: '8px' }}>
-                  <div style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '12px',
-                    border: '2px solid #a1a1aa',
-                    padding: '2px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(255,255,255,0.02)'
-                  }}>
-                    {secondPlace.image_url ? (
-                      <img 
-                        src={secondPlace.image_url} 
-                        alt={secondPlace.name} 
-                        style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} 
-                      />
-                    ) : (
-                      <span style={{ fontSize: '13px', fontWeight: '900', color: '#a1a1aa' }}>
-                        {getShortName(secondPlace.name).substring(0, 1).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  {/* Rank Badge */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '-6px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '15px',
-                    height: '15px',
-                    borderRadius: '50%',
-                    backgroundColor: '#a1a1aa',
-                    color: 'black',
-                    fontSize: '8.5px',
-                    fontWeight: '950',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
-                  }}>
-                    2
-                  </div>
-                </div>
-                
-                {/* Info */}
-                <span style={{ fontSize: '11px', fontWeight: '800', color: 'white', marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
-                  {getShortName(secondPlace.name)}
-                </span>
-                <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--champagne)', marginTop: '2px' }}>
-                  ${formatCurrency(secondPlace.stats?.monthlyIncome || 0)}
-                </span>
-                <span style={{ fontSize: '6.5px', color: 'rgba(255,255,255,0.4)', fontWeight: '700', letterSpacing: '0.2px', marginTop: '1px' }}>MES EN CURSO</span>
-
-                {/* Podium Block */}
-                <div style={{
-                  width: '34px',
-                  height: '22px',
-                  background: 'linear-gradient(to bottom, rgba(161, 161, 170, 0.2), rgba(161, 161, 170, 0.03))',
-                  border: '1.5px solid rgba(161, 161, 170, 0.25)',
-                  borderBottom: 'none',
-                  borderRadius: '6px 6px 0 0',
-                  marginTop: '8px'
-                }} />
+            <div style={{ flexShrink: 0, marginBottom: '6px' }}>
+              <div style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>
+                ${formatCurrency(weeklyIncomeAmount)}
               </div>
-
-              {/* 1st Place (Center - Elevated) */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '34%', transform: 'translateY(-14px)' }}>
-                {/* Avatar Frame with Border & Glow */}
-                <div style={{ position: 'relative', marginBottom: '8px' }}>
-                  {/* Floating Crown */}
-                  <div style={{ position: 'absolute', top: '-11px', left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}>
-                    <Crown size={12} color="var(--champagne)" fill="var(--champagne)" />
-                  </div>
-                  <div style={{
-                    width: '46px',
-                    height: '46px',
-                    borderRadius: '14px',
-                    border: '2px solid var(--champagne)',
-                    boxShadow: '0 0 10px rgba(197, 168, 128, 0.45)',
-                    padding: '2px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(197, 168, 128, 0.05)'
-                  }}>
-                    {firstPlace.image_url ? (
-                      <img 
-                        src={firstPlace.image_url} 
-                        alt={firstPlace.name} 
-                        style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }} 
-                      />
-                    ) : (
-                      <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--champagne)' }}>
-                        {getShortName(firstPlace.name).substring(0, 1).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  {/* Rank Badge */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '-6px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '16px',
-                    height: '16px',
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--champagne)',
-                    color: 'black',
-                    fontSize: '9px',
-                    fontWeight: '950',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
-                  }}>
-                    1
-                  </div>
-                </div>
-                
-                {/* Info */}
-                <span style={{ fontSize: '12.5px', fontWeight: '900', color: 'white', marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
-                  {getShortName(firstPlace.name)}
-                </span>
-                <span style={{ fontSize: '11.5px', fontWeight: '900', color: 'var(--champagne)', marginTop: '2px' }}>
-                  ${formatCurrency(firstPlace.stats?.monthlyIncome || 0)}
-                </span>
-                <span style={{ fontSize: '6.5px', color: 'rgba(255,255,255,0.4)', fontWeight: '700', letterSpacing: '0.2px', marginTop: '1px' }}>MES EN CURSO</span>
-
-                {/* Podium Block */}
-                <div style={{
-                  width: '38px',
-                  height: '35px',
-                  background: 'linear-gradient(to bottom, rgba(197, 168, 128, 0.22), rgba(197, 168, 128, 0.03))',
-                  border: '1.5px solid rgba(197, 168, 128, 0.3)',
-                  borderBottom: 'none',
-                  borderRadius: '6px 6px 0 0',
-                  marginTop: '8px'
-                }} />
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#c5a880', fontWeight: '700', marginTop: '2px' }}>
+                {renderComparison(weeklyIncomeAmount, stats?.previousWeekIncome, 'vs semana anterior')}
               </div>
-
-              {/* 3rd Place (Right) */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '30%' }}>
-                {/* Avatar Frame with Border */}
-                <div style={{ position: 'relative', marginBottom: '8px' }}>
-                  <div style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '12px',
-                    border: '2px solid #b45309',
-                    padding: '2px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(255,255,255,0.02)'
-                  }}>
-                    {thirdPlace.image_url ? (
-                      <img 
-                        src={thirdPlace.image_url} 
-                        alt={thirdPlace.name} 
-                        style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} 
-                      />
-                    ) : (
-                      <span style={{ fontSize: '13px', fontWeight: '900', color: '#b45309' }}>
-                        {getShortName(thirdPlace.name).substring(0, 1).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  {/* Rank Badge */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '-6px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '15px',
-                    height: '15px',
-                    borderRadius: '50%',
-                    backgroundColor: '#b45309',
-                    color: 'white',
-                    fontSize: '8.5px',
-                    fontWeight: '950',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
-                  }}>
-                    3
-                  </div>
-                </div>
-                
-                {/* Info */}
-                <span style={{ fontSize: '11px', fontWeight: '800', color: 'white', marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
-                  {getShortName(thirdPlace.name)}
-                </span>
-                <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--champagne)', marginTop: '2px' }}>
-                  ${formatCurrency(thirdPlace.stats?.monthlyIncome || 0)}
-                </span>
-                <span style={{ fontSize: '6.5px', color: 'rgba(255,255,255,0.4)', fontWeight: '700', letterSpacing: '0.2px', marginTop: '1px' }}>MES EN CURSO</span>
-
-                {/* Podium Block */}
-                <div style={{
-                  width: '34px',
-                  height: '14px',
-                  background: 'linear-gradient(to bottom, rgba(180, 83, 9, 0.2), rgba(180, 83, 9, 0.03))',
-                  border: '1.5px solid rgba(180, 83, 9, 0.25)',
-                  borderBottom: 'none',
-                  borderRadius: '6px 6px 0 0',
-                  marginTop: '8px'
-                }} />
-              </div>
-
+            </div>
+            <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+              <Line 
+                data={chartData ? weeklyChartData : {
+                  labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                  datasets: [
+                    {
+                      data: [0, 0, 0, 0, 0, 0, 0],
+                      borderColor: '#c5a880',
+                      borderWidth: 2,
+                      pointBackgroundColor: '#c5a880',
+                      pointBorderColor: '#161617',
+                      pointBorderWidth: 2,
+                      pointRadius: 4,
+                      pointHoverRadius: 6,
+                      tension: 0.4,
+                      fill: true,
+                      backgroundColor: (context) => {
+                        const chart = context.chart;
+                        const { ctx, chartArea } = chart;
+                        if (!chartArea) return null;
+                        const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                        gradient.addColorStop(0, 'rgba(197, 168, 128, 0.2)');
+                        gradient.addColorStop(1, 'rgba(197, 168, 128, 0.0)');
+                        return gradient;
+                      },
+                    }
+                  ]
+                }} 
+                options={chartOptions} 
+              />
             </div>
           </div>
 

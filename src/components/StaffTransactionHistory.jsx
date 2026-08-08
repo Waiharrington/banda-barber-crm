@@ -278,13 +278,67 @@ const StaffTransactionHistory = ({ staffMember, rates, isMobile }) => {
     };
   }, [staffMember?.id, filter, customStart, customEnd]);
 
-  const rows = useMemo(
-    () => transactions.map(transaction => ({
-      ...transaction,
-      staffAmounts: getStaffAmounts(transaction, staffMember.id)
-    })),
-    [transactions, staffMember.id]
-  );
+  const getDeduplicationKey = (t) => {
+    if (!t) return '';
+    const metadata = t.metadata || {};
+    const appointment = t.appointments?.[0] || null;
+    const desc = (t.description || '').toLowerCase();
+    const descriptionClient = t.description?.match(/Cliente:\s*(.*?)(?:\s+-\s+(?:Servi|Servicio):|$)/i)?.[1];
+    const clientName = (t.client?.name || appointment?.clients?.name || metadata.clientName || metadata.client_name || metadata.originalClientName || descriptionClient || 'Cliente').toLowerCase();
+    const serviceName = (appointment?.services?.name || metadata.serviceName || metadata.service_name || 'Servicio').toLowerCase();
+    
+    const normClient = clientName.replace(/[^a-z0-9]/g, '');
+    const amountVal = Number(t.amount || 0).toFixed(2);
+    const dateDay = t.created_at ? new Date(t.created_at).toISOString().split('T')[0] : '';
+
+    // 1. Priority 1: If client name is known, deduplicate ALL entries for this client on this day with this amount
+    if (normClient && normClient !== 'sn' && normClient !== 'cliente') {
+      return `client_${dateDay}_${normClient}_${amountVal}`;
+    }
+
+    let referenceNo = (metadata.paymentReferenceBs || metadata.payment_reference_bs || metadata.paymentReference || metadata.reference_number || metadata.reference || metadata.transfer_ref || metadata.transferRef || metadata.ref || '').trim();
+    if (!referenceNo) {
+      const match = desc.match(/ref[.:\s]*([0-9a-z]+)/i);
+      if (match) referenceNo = match[1];
+    }
+
+    if (referenceNo.length > 1 && referenceNo !== '0' && referenceNo !== '0000') {
+      return `ref_${dateDay}_${referenceNo}_${amountVal}`;
+    }
+
+    const rawAppIds = [
+      metadata.appointment_id,
+      ...(Array.isArray(metadata.appointmentIds) ? metadata.appointmentIds : (metadata.appointmentIds ? [metadata.appointmentIds] : []))
+    ].filter(Boolean);
+
+    if (rawAppIds.length > 0) {
+      return `app_${rawAppIds.map(String).sort().join('_')}`;
+    }
+
+    const dateMinuteStr = t.created_at ? new Date(t.created_at).toISOString().substring(0, 16) : '';
+    return `tx_${normClient}_${serviceName.replace(/[^a-z0-9]/g, '')}_${amountVal}_${dateMinuteStr}`;
+  };
+
+  const rows = useMemo(() => {
+    const seenTxIds = new Set();
+    const seenKeys = new Set();
+    const unique = [];
+
+    for (const transaction of transactions) {
+      if (!transaction?.id || seenTxIds.has(transaction.id)) continue;
+      const key = getDeduplicationKey(transaction);
+      if (key && seenKeys.has(key)) continue;
+
+      seenTxIds.add(transaction.id);
+      if (key) seenKeys.add(key);
+
+      unique.push({
+        ...transaction,
+        staffAmounts: getStaffAmounts(transaction, staffMember.id)
+      });
+    }
+    return unique;
+  }, [transactions, staffMember.id]);
 
   const rate = Number(rates?.usd || 550);
 
@@ -403,6 +457,7 @@ const StaffTransactionHistory = ({ staffMember, rates, isMobile }) => {
             {rows.map(transaction => {
               const metadata = transaction.metadata || {};
               const method = getPaymentMethod(metadata);
+              const referenceNo = metadata.paymentReferenceBs || metadata.payment_reference_bs || metadata.paymentReference || metadata.reference_number || metadata.reference || metadata.transfer_ref || metadata.ref || '';
               const appointment = transaction.appointments?.[0] || null;
               const descriptionClient = transaction.description?.match(/Cliente:\s*(.*?)(?:\s+-\s+(?:Servi|Servicio):|$)/i)?.[1];
               const clientName = transaction.client?.name || appointment?.clients?.name || metadata.clientName || metadata.client_name || metadata.originalClientName || descriptionClient || 'Cliente no identificado';
@@ -443,7 +498,14 @@ const StaffTransactionHistory = ({ staffMember, rates, isMobile }) => {
                   <div>
                     <div style={{ color: 'white', fontWeight: '900', fontSize: '14px' }}>{clientName}</div>
                     <div style={{ marginTop: '3px', color: 'var(--text-secondary)', fontSize: '12px' }}>{serviceName}</div>
-                    <div style={{ marginTop: '3px', color: 'var(--text-muted)', fontSize: '10px' }}>{method}</div>
+                    <div style={{ marginTop: '4px', color: 'var(--text-muted)', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span>{method}</span>
+                      {referenceNo && (
+                        <span style={{ backgroundColor: 'rgba(212,175,55,0.15)', color: 'var(--gold-primary)', padding: '2px 7px', borderRadius: '6px', fontWeight: '800', fontSize: '10px', border: '1px solid rgba(212,175,55,0.25)' }}>
+                          Ref: #{referenceNo}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-end', gap: '10px' }}>
@@ -472,6 +534,9 @@ const StaffTransactionHistory = ({ staffMember, rates, isMobile }) => {
                           <MoneyRow label={'Tu ganancia'} usd={transaction.staffAmounts.commission + transaction.staffAmounts.productCommission} transactionRate={transactionRate} accent />
                           {transaction.staffAmounts.tips > 0 && <MoneyRow label={'Tu propina'} usd={transaction.staffAmounts.tips} transactionRate={transactionRate} />}
                           <DetailRow label={'Método de pago'} value={method} />
+                          {referenceNo && (
+                            <DetailRow label={'Nº Referencia'} value={<span style={{ color: 'var(--gold-primary)', fontWeight: '900' }}>#{referenceNo}</span>} />
+                          )}
                           {cashUsd > 0 && <MoneyRow label={`Parte en ${metadata.methodUsd || metadata.method_usd || 'USD'}`} usd={cashUsd} transactionRate={transactionRate} />}
                           {transferBs > 0 && <MoneyRow label={`Parte en ${metadata.methodBs || metadata.method_bs || 'bolívares'}`} usd={transferBs / transactionRate} transactionRate={transactionRate} />}
                           <DetailRow label={'Tasa de la operación'} value={`${transactionRate.toLocaleString('es-VE')} Bs./USD`} />

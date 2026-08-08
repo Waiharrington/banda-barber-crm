@@ -61,8 +61,13 @@ const BarberPanel = ({ isMobile, rates }) => {
   const { user } = useAuth();
   const { showToast, triggerConfetti, triggerRocket } = useNotifs();
   const { confirm } = useDialog();
-  const [staff, setStaff] = useState([]);
-  const [selectedBarber, setSelectedBarber] = useState(null);
+  const roleName = (user?.role || '').toLowerCase();
+  const isServiceProfessional = !!user &&
+    !roleName.includes('admin') &&
+    !roleName.includes('recepcionista') &&
+    !roleName.includes('caja');
+  const [staff, setStaff] = useState(() => isServiceProfessional ? [user] : []);
+  const [selectedBarber, setSelectedBarber] = useState(() => isServiceProfessional ? user : null);
   const [myServices, setMyServices] = useState([]);
   const [completedToday, setCompletedToday] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -106,7 +111,9 @@ const BarberPanel = ({ isMobile, rates }) => {
   const [stats, setStats] = useState({ production: 0, services: 0, earnings: 0, tips: 0 });
 
   useEffect(() => {
-    loadStaff();
+    // A barber's authenticated profile is enough to load their chair. Avoid
+    // waiting for the complete staff list before the first useful request.
+    if (!isServiceProfessional) loadStaff();
     loadCatalog();
   }, []);
 
@@ -189,15 +196,41 @@ const BarberPanel = ({ isMobile, rates }) => {
     if (!selectedBarber) return;
     try {
       const now = new Date();
-      const todayStartISO = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const todayStartISO = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
       const data = await dataService.getAppointmentsByState(['Completado', 'Por Pagar'], todayStartISO, { light: true });
-      const today = now.toISOString().split('T')[0];
+      const getLocalDateString = (d) => {
+        if (!d) return '';
+        const dateObj = typeof d === 'string' || typeof d === 'number' ? new Date(d) : d;
+        if (isNaN(dateObj.getTime())) return '';
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      const todayLocal = getLocalDateString(now);
       const isAssistant = selectedBarber.role?.toLowerCase().includes('asistente');
-      const filtered = data.filter(s => {
-        const createdDate = s.created_at ? new Date(s.created_at).toISOString().split('T')[0] : '';
-        const isToday = createdDate === today;
+      const filtered = data.filter((s, index, self) => {
+        // 1. Deduplicate by appointment ID
+        if (self.findIndex(t => String(t.id) === String(s.id)) !== index) return false;
+
+        // 2. Filter by local date
+        const createdDate = getLocalDateString(s.created_at || s.completed_at || s.appointment_date);
+        const isToday = createdDate === todayLocal;
         if (!isToday) return false;
         
+        // 3. Exclude empty 0-value records without services, extras or products
+        const hasService = !!s.service_id || !!s.services?.name;
+        const hasExtras = (s.appointment_extras?.length > 0);
+        const hasProducts = (s.appointment_products?.length > 0);
+        const totalVal = (Number(s.services?.price) || Number(s.total_price) || 0) + 
+                         (s.appointment_extras?.reduce((sum, e) => sum + (Number(e.price) || 0), 0) || 0) + 
+                         (s.appointment_products?.reduce((sum, p) => sum + ((Number(p.price) || 0) * (p.quantity || 1)), 0) || 0);
+
+        if (!hasService && !hasExtras && !hasProducts && totalVal === 0) {
+          return false;
+        }
+
+        // 4. Filter by staff member
         if (isAssistant) {
           return s.appointment_staff?.some(as => String(as.staff_id) === String(selectedBarber.id));
         } else {
@@ -289,14 +322,25 @@ const BarberPanel = ({ isMobile, rates }) => {
     try {
       const isAssistant = selectedBarber.role?.toLowerCase().includes('asistente');
       if (isAssistant) {
-        const data = await dataService.getAppointmentsByState(['Completado', 'Por Pagar'], null, { light: true });
-        const today = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const todayStartISO = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
+        const data = await dataService.getAppointmentsByState(['Completado', 'Por Pagar'], todayStartISO, { light: true });
+        const getLocalDateString = (d) => {
+          if (!d) return '';
+          const dateObj = typeof d === 'string' || typeof d === 'number' ? new Date(d) : d;
+          if (isNaN(dateObj.getTime())) return '';
+          const year = dateObj.getFullYear();
+          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+          const day = String(dateObj.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+        const todayLocal = getLocalDateString(now);
         let count = 0;
         let earned = 0;
         let tips = 0;
         data.forEach(s => {
-          const createdDate = s.created_at ? new Date(s.created_at).toISOString().split('T')[0] : '';
-          if (createdDate === today) {
+          const createdDate = getLocalDateString(s.created_at || s.completed_at || s.appointment_date);
+          if (createdDate === todayLocal) {
             const myRecord = s.appointment_staff?.find(as => String(as.staff_id) === String(selectedBarber.id));
             if (myRecord) {
               count++;

@@ -1371,7 +1371,8 @@ export const dataService = {
   },
 
   async getBarberDailyStats(staffId) {
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const todayStartISO = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
     const { data, error } = await supabase
       .from('appointments')
       .select(`
@@ -1385,7 +1386,7 @@ export const dataService = {
         appointment_staff(staff_id, commission_earned, product_commission, tip_amount)
       `)
       .eq('staff_id', staffId)
-      .gte('created_at', today)
+      .gte('created_at', todayStartISO)
       .in('status', ['En Silla', 'Por Pagar', 'Completado']);
 
     if (error) throw error;
@@ -1393,7 +1394,12 @@ export const dataService = {
     let totalUsd = 0;
     let earningsUsd = 0;
     let tipsUsd = 0;
-    const apps = _asArray(data).map(_normalizeAppointment);
+    const apps = _asArray(data).map(_normalizeAppointment).filter(app => {
+      const sPrice = app.services?.price || 0;
+      const ePrice = app.appointment_extras?.reduce((sum, e) => sum + (e.price || 0), 0) || 0;
+      const pPrice = app.appointment_products?.reduce((sum, p) => sum + ((p.price || 0) * (p.quantity || 1)), 0) || 0;
+      return (sPrice + ePrice + pPrice) > 0 || !!app.service_id;
+    });
     let serviceCount = apps.length;
 
     apps.forEach(app => {

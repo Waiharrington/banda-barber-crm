@@ -14,7 +14,14 @@ const toSessionUser = (staffProfile, authUser) => ({
 });
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const cached = localStorage.getItem('panda_active_session_profile');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
 
   const loadStaffProfile = async (authUser) => {
@@ -71,6 +78,9 @@ export const AuthProvider = ({ children }) => {
         if (error) throw error;
         if (mounted && session?.user) {
           await loadStaffProfile(session.user);
+        } else if (mounted) {
+          setUser(null);
+          localStorage.removeItem('panda_active_session_profile');
         }
       } catch (error) {
         console.error('Auth session error:', error);
@@ -82,8 +92,13 @@ export const AuthProvider = ({ children }) => {
 
     initSession();
 
-    const { data: { subscription } } = dataService.supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = dataService.supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
+
+      // getSession() above owns the initial restore. Supabase also emits
+      // INITIAL_SESSION, which previously repeated the profile request and
+      // restarted the application loading sequence.
+      if (event === 'INITIAL_SESSION') return;
 
       if (!session?.user) {
         setUser(null);

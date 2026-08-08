@@ -280,6 +280,22 @@ function App() {
     // Phase 1: Load only what's needed to show the UI (fast)
     // Phase 2: Load heavy data silently in background
     const initApp = async () => {
+      const roleName = (user?.role || '').toLowerCase();
+      const isServiceProfessionalOnly = (roleName.includes('barber') || roleName.includes('tatu')) &&
+                                       !roleName.includes('admin') &&
+                                       !roleName.includes('recepcionista') &&
+                                       !roleName.includes('caja');
+
+      // Barbers already have everything required to enter their own panel in
+      // the authenticated profile. Do not hold their UI behind global CRM
+      // lists that are only needed by administrative modules. BarberPanel
+      // owns its operational/catalog requests, so starting those global loads
+      // here would duplicate traffic and compete with the chair data.
+      if (isServiceProfessionalOnly) {
+        setIsAppLoading(false);
+        return;
+      }
+
       try {
         await fetchCriticalData();
       } catch (error) {

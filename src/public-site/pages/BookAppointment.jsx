@@ -40,7 +40,7 @@ import {
 import { publicService } from '../services/publicService';
 import PandaLoader from '../../components/PandaLoader';
 import PandaDatePicker from '../../components/PandaDatePicker';
-import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import HorizontalScrollGallery from '../components/HorizontalScrollGallery';
 
 // Import background images and logo
